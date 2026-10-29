@@ -1,4 +1,4 @@
-<!doctype html><html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1D4B77"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231D4B77'/%3E%3Cpath d='M18 44l8-8m10-10l10-10M26 36a8 8 0 1 0 10-10' stroke='%23F2B200' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"><style>html{color-scheme:light}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
+<!doctype html><html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1D4B77"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231D4B77'/%3E%3Cpath d='M18 44l8-8m10-10l10-10M26 36a8 8 0 1 0 10-10' stroke='%23F2B200' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"><link rel="preconnect" href="https://photon.komoot.io" crossorigin><link rel="preconnect" href="https://api.tomtom.com" crossorigin><style>html{color-scheme:light}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Carnet du garage mobile</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -303,6 +303,11 @@ body.locked{overflow:hidden}
 .addrsug .opt.street b{font-weight:500}
 .addrsug .opt.street small{color:var(--steel)}
 #c-addrfix .banner,#c-sameaddr .banner{margin-top:8px}
+.addrsug .opt.local small{color:var(--ok)}
+.addrsug .opt-wait{display:flex;align-items:center;gap:10px;padding:12px 14px;color:var(--muted);font-size:15px;border-bottom:1px solid var(--line)}
+.addrsug .spin{width:16px;height:16px;flex:none;border:2px solid var(--line-strong);border-top-color:var(--steel);border-radius:50%;animation:gmspin .7s linear infinite}
+@keyframes gmspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.addrsug .spin{animation-duration:2s}}
 .addrsug .src{padding:6px 14px;font-size:12px;color:var(--muted);border-top:1px solid var(--line);background:var(--sunk)}
 .ttnote{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .ttnote:empty{display:none}
@@ -446,10 +451,12 @@ body.locked{overflow:hidden}
   function provider(){ return lsGet(TTK) && !keyRefused ? 'TomTom' : 'OpenStreetMap'; }
   window.__addrProvider = provider;
   function q(o){ return Object.keys(o).filter(function(k){ return o[k] !== undefined && o[k] !== null && o[k] !== ''; }).map(function(k){ return encodeURIComponent(k) + '=' + encodeURIComponent(o[k]); }).join('&'); }
-  function tomtom(input, key){
+  var inflight = {}, cache = {}, cacheKeys = [], photonTry = 0;
+  function remember(k, v){ if (!(k in cache)){ cacheKeys.push(k); if (cacheKeys.length > 300) delete cache[cacheKeys.shift()]; } cache[k] = v; }
+  function tomtom(input, key, signal){
     var pos = input.position || [], url = 'https://api.tomtom.com/search/2/search/' + encodeURIComponent(String(input.query || '').replace(/[\/\\]/g, ' ')) + '.json?' +
       q({key:key, typeahead:input.typeahead === false ? 'false' : 'true', limit:input.limit || 5, countrySet:(input.countries || ['CA']).join(','), language:input.language || 'fr-CA', idxSet:input.idxSet, lon:pos[0], lat:pos[1]});
-    return fetch(url).then(function(r){
+    return fetch(url, {signal:signal}).then(function(r){
       if (r.status === 401 || r.status === 403){ var e = new Error('bad key'); e.badKey = true; throw e; }
       if (!r.ok) throw new Error('TomTom ' + r.status);
       return r.json();
@@ -466,20 +473,33 @@ body.locked{overflow:hidden}
       return {type:'Feature', geometry:f.geometry, properties:{type:kind, address:{streetNumber:num, streetName:street, municipality:city, neighbourhood:p.district || '', countrySubdivision:prov, postalCode:pc.slice(0, 3), freeformAddress:free}}};
     })};
   }
-  function photon(input){
+  function photon(input, signal){
     var pos = input.position || [], layer = input.idxSet === 'Str' ? 'street' : 'house';
     var plain = 'https://photon.komoot.io/api/?' + q({q:input.query, limit:Math.min(10, (input.limit || 5) + 3), lon:pos[0], lat:pos[1]});
     var tries = [plain + '&layer=' + layer + '&lang=fr', plain + '&layer=' + layer, plain];
-    function go(i){ return fetch(tries[i]).then(function(r){ if (r.ok) return r.json(); if (i + 1 < tries.length && r.status >= 400 && r.status < 500) return go(i + 1); throw new Error('Photon ' + r.status); }); }
-    return go(0).then(fromPhoton);
+    function go(i){ return fetch(tries[i], {signal:signal}).then(function(r){ if (r.ok){ photonTry = i; return r.json(); } if (i + 1 < tries.length && r.status >= 400 && r.status < 500) return go(i + 1); throw new Error('Photon ' + r.status); }); }
+    return go(photonTry).then(fromPhoton);
   }
   var mcp = Object.freeze({callTool:function(server, tool, input){
-    var t0 = (window.performance || Date).now(), key = lsGet(TTK);
-    var p = key && !keyRefused ? tomtom(input || {}, key).catch(function(e){ if (e && e.badKey){ keyRefused = true; bar('Clé TomTom refusée : retour à OpenStreetMap. Vérifie la clé dans « Réglages de l\'essai ».'); return photon(input || {}); } throw e; }) : photon(input || {});
+    input = input || {};
+    var t0 = (window.performance || Date).now(), key = lsGet(TTK), useTT = !!(key && !keyRefused), ck = (useTT ? 'tt|' : 'osm|') + JSON.stringify(input);
+    if (cache[ck]){ last = {ms:0, prov:provider(), n:last.n + 1, cached:true}; bar(); return Promise.resolve({content:[], payload:cache[ck]}); }
+    /* typing fast: the previous unfinished search is cancelled, only the latest one counts */
+    var lane = input.typeahead === false ? 'check' : 'type';
+    if (inflight[lane]) try { inflight[lane].abort(); } catch(x){}
+    var ctl = window.AbortController ? new AbortController() : null; inflight[lane] = ctl;
+    var sig = ctl ? ctl.signal : undefined;
+    var p = useTT ? tomtom(input, key, sig).catch(function(e){ if (e && e.badKey){ keyRefused = true; bar('Clé TomTom refusée : retour à OpenStreetMap. Vérifie la clé dans « Réglages de l\'essai ».'); return photon(input, sig); } throw e; }) : photon(input, sig);
     return p.then(function(payload){
+      if (inflight[lane] === ctl) inflight[lane] = null;
+      remember(ck, payload);
       last = {ms:Math.round((window.performance || Date).now() - t0), prov:provider(), n:last.n + 1}; bar();
       return {content:[{type:'text', text:JSON.stringify(payload)}], payload:payload};
-    }, function(e){ bar(provider() + ' ne répond pas (' + (e && e.message || 'réseau') + ').'); return Promise.reject({code:'server_unavailable', retryable:true, message:String(e && e.message || e)}); });
+    }, function(e){
+      if (inflight[lane] === ctl) inflight[lane] = null;
+      if (e && e.name === 'AbortError') return Promise.reject({code:'cancelled', message:'remplacée par une recherche plus récente'});
+      bar(provider() + ' ne répond pas (' + (e && e.message || 'réseau') + ').'); return Promise.reject({code:'server_unavailable', retryable:true, message:String(e && e.message || e)});
+    });
   }});
 
   var caps = {db:db, user:user, downloads:downloads, mcp:mcp};
@@ -491,7 +511,7 @@ body.locked{overflow:hidden}
     if (msg !== undefined) note = msg;
     var el = document.getElementById('demo-bar'); if (!el) return;
     document.getElementById('db-prov').textContent = provider() === 'TomTom' ? 'TomTom en direct' : 'OpenStreetMap';
-    document.getElementById('db-ms').textContent = last.ms == null ? 'aucune recherche encore' : 'dernière recherche : ' + last.ms + ' ms';
+    document.getElementById('db-ms').textContent = last.ms == null ? 'aucune recherche encore' : last.cached ? 'dernière recherche : instantanée (déjà en mémoire)' : 'dernière recherche : ' + last.ms + ' ms';
     var n = document.getElementById('db-note'); n.textContent = !persistOk ? 'Ce navigateur bloque le stockage : les données seront perdues en fermant.' : note; n.hidden = !n.textContent;
   }
   function mount(){
@@ -621,7 +641,7 @@ var DSHORT = new Intl.DateTimeFormat('fr-CA', {weekday:'short', day:'numeric', m
 function dShort(iso){ return cap(DSHORT.format(parseISO(iso))); }
 
 /* ---------- state ---------- */
-var TT = {mcp:null, state:'off', seq:0, vseq:0, opts:[], active:-1, picked:null, timer:null, fix:null}, TT_SERVER = 'TomTom Maps', TT_TOOL = 'tomtom-fuzzy-search';
+var TT = {mcp:null, state:'off', seq:0, vseq:0, opts:[], local:[], list:[], loading:false, hint:'', active:-1, picked:null, timer:null, fix:null}, TT_SERVER = 'TomTom Maps', TT_TOOL = 'tomtom-fuzzy-search';
 var S = {
   db:null, dl:null, uid:null, noDb:false, clients:[], clientId:null, clientTab:'suivi', formClient:null, bookCtx:null, cq:'', backTo:null, dupOk:null, loaded:false, loadErr:false, canWrite:null, isAdmin:false, userUnknown:true,
   jobs:[], cfg:{}, tab:'agenda', screen:null, jobId:null, editId:null, quick:false,
@@ -1200,7 +1220,7 @@ function prefillFromJob(j){
 function buildClientForm(c, mode, draft, prefill){
   S.cformEdit = !!(c && c.id); S.cformMode = mode; S.cformId = c && c.id || null; S.dupOk = null;
   var v = c || draft || prefill || {}, edit = S.cformEdit, hasJobs = edit && clientJobs(c.id).length > 0;
-  clearTimeout(TT.timer); TT.seq++; TT.vseq++; TT.opts = []; TT.active = -1; TT.fix = null;
+  clearTimeout(TT.timer); TT.seq++; TT.vseq++; TT.opts = []; TT.local = []; TT.list = []; TT.loading = false; TT.hint = ''; TT.active = -1; TT.fix = null;
   TT.picked = (v.geo && v.address && isFinite(v.geo.lat) && isFinite(v.geo.lon)) ? {text:v.address, lat:+v.geo.lat, lon:+v.geo.lon} : null;
   var html = '<form id="clientform" class="stack" novalidate>' +
     (draft && !edit ? '<div class="banner" id="cdraftbanner"><p>On a repris la fiche commencée.</p><button type="button" class="btn sm" data-act="cd-reset">Recommencer</button></div>' : '') +
@@ -1236,7 +1256,7 @@ function renderAddrMsg(){
   if (!pc){ var tip = ttOn() && !(TT.picked && normAddr(a) === normAddr(TT.picked.text)); box.className = tip ? 'hint' : 'hint warn'; box.textContent = tip ? "Choisis l'adresse proposée, ou ajoute le code postal à la fin (ex. H4P 2B5)." : 'Ajoute le code postal à la fin, ex. H4P 2B5.'; return; }
   var g = addrGeo();
   box.className = z ? 'hint ok' : 'hint warn';
-  box.textContent = (g ? (TT.picked.verified ? 'Adresse vérifiée sur ' + PROV() + ' · ' : 'Adresse trouvée sur ' + PROV() + ' · ') : '') + (pq.unit ? 'App./bureau ' + pq.unit + ' · ' : '') + 'Code postal ' + pc + (z ? ' · zone ' + z.fsa + ' (' + z.name + ')' : ' · zone introuvable (hors Québec ?), pas de calcul de distance');
+  box.textContent = (g ? (TT.picked.local ? 'Adresse déjà connue · ' : TT.picked.verified ? 'Adresse vérifiée sur ' + PROV() + ' · ' : 'Adresse trouvée sur ' + PROV() + ' · ') : '') + (pq.unit ? 'App./bureau ' + pq.unit + ' · ' : '') + 'Code postal ' + pc + (z ? ' · zone ' + z.fsa + ' (' + z.name + ')' : ' · zone introuvable (hors Québec ?), pas de calcul de distance');
 }
 
 /* reading what was typed: unit (app./bureau), civic number, postal code */
@@ -1310,11 +1330,25 @@ function ttFail(e){
   if (code === 'approval_required'){ TT.state = 'approval'; ttNote("Les suggestions d'adresse TomTom ont besoin de ton accord.", 'Activer les suggestions'); return; }
   if (code === 'server_unavailable' || code === 'upstream_error' || code === 'rate_limited'){ ttNote(PROV() + " ne répond pas pour l'instant. Continue à taper ou entre l'adresse au complet."); return; }
 }
-function ttWorth(q){ return q.length >= 4 && !isPostalOnly(q) && (/[A-Za-zÀ-ÿ]{2,}/.test(q) || !!findPostal(q)); }
+function ttWorth(q){ q = String(q || '').trim(); return q.length >= 2 && !isPostalOnly(q) && (/[A-Za-zÀ-ÿ]/.test(q.replace(PC_ANY, ' ')) || !!findPostal(q)); }
+/* instant suggestions, no network: fiches already in the carnet + addresses picked before on this device */
+var RECENT_K = 'gm.addr.recent';
+function recentAddrs(){ try { var a = JSON.parse(localStorage.getItem(RECENT_K) || '[]'); return Array.isArray(a) ? a : []; } catch(e){ return []; } }
+function rememberAddr(text, lat, lon){ if (!text || !isFinite(lat) || !isFinite(lon)) return; try { var a = recentAddrs().filter(function(x){ return x && normAddr(x.text) !== normAddr(text); }); a.unshift({text:text, lat:lat, lon:lon}); localStorage.setItem(RECENT_K, JSON.stringify(a.slice(0, 40))); } catch(e){} }
+function addrWords(t){ return norm(String(t || '').replace(/[,.()#]/g, ' ')).split(/[\s-]+/).filter(Boolean); }
+function wordsFit(typed, text, skipDigits){ var tw = addrWords(typed).filter(function(x){ return !skipDigits || !/^\d+[a-z]?$/.test(x); }), w = addrWords(text); return tw.length > 0 && tw.every(function(x){ return w.some(function(y){ return y.indexOf(x) === 0; }); }); }
+function localAddrs(raw){
+  var q = splitUnit(raw).q; if (!q.trim()) return [];
+  var seen = {}, out = [];
+  S.clients.slice().sort(byName).forEach(function(c){ if (c.id === S.cformId || !c.address || !wordsFit(q, c.address)) return; var k = normAddr(c.address).toLowerCase(); if (seen[k]) return; seen[k] = 1; out.push({kind:'addr', local:true, text:c.address, sub:'Fiche de ' + clientName(c), lat:c.geo ? +c.geo.lat : NaN, lon:c.geo ? +c.geo.lon : NaN, pc:findPostal(c.address)}); });
+  recentAddrs().forEach(function(r){ if (!r || !r.text || !wordsFit(q, r.text)) return; var k = normAddr(r.text).toLowerCase(); if (seen[k]) return; seen[k] = 1; out.push({kind:'addr', local:true, text:r.text, sub:'Déjà utilisée sur cet appareil', lat:+r.lat, lon:+r.lon, pc:findPostal(r.text)}); });
+  return out.slice(0, 3);
+}
 function ttSearch(raw){
   if (!ttOn()) return;
   var pq = splitUnit(raw), q = pq.q, civ = civicOf(q), my = ++TT.seq;
-  if (!ttWorth(q)){ TT.opts = []; renderAddrOpts(false); return; }
+  if (!ttWorth(q)){ TT.loading = false; renderAddrOpts(document.activeElement === $('#c-addr')); return; }
+  TT.loading = true;
   var base = {typeahead:true, countries:['CA'], language:'fr-CA', limit:5, position:ttPos()};
   var run = function(idx, qq){ return ttCall(Object.assign({query:qq, idxSet:idx}, base)); };
   var p = civ ? run('PAD,Addr', q).then(function(list){
@@ -1325,25 +1359,32 @@ function ttSearch(raw){
   p.then(function(list){
     if (my !== TT.seq || !$('#c-addr') || val('c-addr') !== raw) return;
     var n = $('#c-ttnote'); if (n && !n.querySelector('button')) ttNote('');
+    TT.loading = false; TT.hint = '';
     TT.opts = list.map(function(o){ o.unit = pq.unit; if (o.kind === 'addr') o.text = withUnit(o.text, pq.unit); return o; }); TT.active = -1;
     renderAddrOpts(document.activeElement === $('#c-addr'));
-  }, function(e){ if (my === TT.seq) ttFail(e); });
+  }, function(e){ if (my !== TT.seq) return; TT.loading = false; renderAddrOpts(document.activeElement === $('#c-addr')); ttFail(e); });
 }
+function addrList(){ var seen = {}, out = []; TT.local.concat(TT.opts).forEach(function(o){ var k = normAddr(o.text).toLowerCase(), had = seen[k]; if (had){ if (!isFinite(had.lat) && isFinite(o.lat)){ had.lat = o.lat; had.lon = o.lon; } return; } seen[k] = o; out.push(o); }); return out; }
 function renderAddrOpts(show){
   var box = $('#c-addrsug'), inp = $('#c-addr'); if (!box || !inp) return;
-  if (!show || !TT.opts.length){ box.hidden = true; box.innerHTML = ''; inp.setAttribute('aria-expanded', 'false'); inp.removeAttribute('aria-activedescendant'); TT.active = -1; return; }
-  if (TT.active >= TT.opts.length) TT.active = TT.opts.length - 1;
+  TT.list = addrList();
+  var loading = TT.loading && ttOn(), hint = !loading && !TT.opts.length ? TT.hint : '';
+  if (!show || (!TT.list.length && !loading && !hint)){ box.hidden = true; box.innerHTML = ''; inp.setAttribute('aria-expanded', 'false'); inp.removeAttribute('aria-activedescendant'); TT.active = -1; return; }
+  if (TT.active >= TT.list.length) TT.active = TT.list.length - 1;
   var unit = TT.opts[0] && TT.opts[0].unit;
-  box.innerHTML = TT.opts.map(function(o, i){
-    var sub = o.kind === 'street' ? (o.missNum ? 'Le numéro ' + o.civic + ' est introuvable sur cette rue' : 'Rue · ajoute ensuite le numéro civique') : [o.sub, o.km != null ? '≈ ' + o.km + ' km du point de départ' : '', o.outQC ? 'hors Québec' : ''].filter(Boolean).join(' · ');
-    return '<button type="button" tabindex="-1" class="opt' + (o.kind === 'street' ? ' street' : '') + (i === TT.active ? ' active' : '') + '" id="c-addr-opt-' + i + '" role="option" aria-selected="' + (i === TT.active) + '" data-act="addr-pick" data-v="' + i + '"><b>' + esc(o.text) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</button>';
-  }).join('') + '<div class="src">' + (unit ? 'App./bureau ' + esc(unit) + ' gardé · ' : '') + 'Adresses proposées par ' + PROV() + '</div>';
+  box.innerHTML = TT.list.map(function(o, i){
+    var sub = o.local ? o.sub : o.kind === 'street' ? (o.missNum ? 'Le numéro ' + o.civic + ' est introuvable sur cette rue' : 'Rue · ajoute ensuite le numéro civique') : [o.sub, o.km != null ? '≈ ' + o.km + ' km du point de départ' : '', o.outQC ? 'hors Québec' : ''].filter(Boolean).join(' · ');
+    return '<button type="button" tabindex="-1" class="opt' + (o.local ? ' local' : '') + (o.kind === 'street' ? ' street' : '') + (i === TT.active ? ' active' : '') + '" id="c-addr-opt-' + i + '" role="option" aria-selected="' + (i === TT.active) + '" data-act="addr-pick" data-v="' + i + '"><b>' + esc(o.text) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</button>';
+  }).join('') +
+    (loading ? '<div class="opt-wait" role="status"><span class="spin" aria-hidden="true"></span>Recherche ' + esc(PROV()) + '…</div>' : '') +
+    (hint ? '<div class="opt-wait">' + esc(hint) + '</div>' : '') +
+    (TT.opts.length || loading ? '<div class="src">' + (unit ? 'App./bureau ' + esc(unit) + ' gardé · ' : '') + 'Adresses proposées par ' + PROV() + '</div>' : '');
   box.hidden = false; inp.setAttribute('aria-expanded', 'true');
   if (TT.active >= 0) inp.setAttribute('aria-activedescendant', 'c-addr-opt-' + TT.active); else inp.removeAttribute('aria-activedescendant');
 }
 function addrPick(i){
-  var o = TT.opts[i], inp = $('#c-addr'); if (!o || !inp) return;
-  TT.seq++; TT.vseq++; clearTimeout(TT.timer); TT.opts = []; renderAddrOpts(false); renderAddrFix(null);
+  var o = TT.list[i], inp = $('#c-addr'); if (!o || !inp) return;
+  TT.seq++; TT.vseq++; clearTimeout(TT.timer); TT.opts = []; TT.local = []; TT.loading = false; TT.hint = ''; renderAddrOpts(false); renderAddrFix(null);
   var e = $('#c-err'); if (e && !e.hidden) e.hidden = true;
   if (o.kind === 'street'){
     inp.value = o.civic ? withUnit(o.civic + ' ' + o.text, o.unit) : o.text; TT.picked = null;
@@ -1353,7 +1394,8 @@ function addrPick(i){
     return;
   }
   inp.value = o.text;
-  TT.picked = isFinite(o.lat) && isFinite(o.lon) ? {text:o.text, lat:o.lat, lon:o.lon} : null;
+  TT.picked = isFinite(o.lat) && isFinite(o.lon) ? {text:o.text, lat:o.lat, lon:o.lon, local:!!o.local} : null;
+  if (TT.picked) rememberAddr(o.text, o.lat, o.lon);
   renderAddrMsg(); clientDraftChanged();
   try { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); } catch(x){}
 }
@@ -1383,6 +1425,7 @@ function ttVerify(){
 function addrFix(){
   var r = TT.fix, inp = $('#c-addr'); if (!r || !inp) return;
   inp.value = r.text; TT.picked = isFinite(r.lat) && isFinite(r.lon) ? {text:r.text, lat:r.lat, lon:r.lon} : null;
+  if (TT.picked) rememberAddr(r.text, r.lat, r.lon);
   renderAddrFix(null); renderAddrMsg(); clientDraftChanged();
   var e = $('#c-err'); if (e && !e.hidden) e.hidden = true;
 }
@@ -1391,11 +1434,18 @@ function bindAddr(){
   ['pointerdown', 'mousedown'].forEach(function(ev){ box.addEventListener(ev, function(e){ e.preventDefault(); }); });
   inp.addEventListener('input', function(){
     renderAddrMsg(); renderAddrFix(null); clearTimeout(TT.timer); TT.seq++; TT.vseq++;
-    if (!ttOn() || !ttWorth(splitUnit(inp.value).q)){ TT.opts = []; renderAddrOpts(false); return; }
-    TT.timer = setTimeout(function(){ ttSearch(inp.value); }, 250);
+    var raw = inp.value, q = splitUnit(raw).q.trim(), go = ttOn() && ttWorth(q);
+    TT.local = localAddrs(raw);
+    /* keep what was already found while the next answer comes, narrowed to what is typed now */
+    TT.opts = q ? TT.opts.filter(function(o){ return wordsFit(q, o.kind === 'street' ? o.text : o.text.replace(/^[0-9A-Za-z]{1,6}-(?=\d)/, ''), o.kind === 'street'); }) : [];
+    TT.hint = !ttOn() || !q || go || isPostalOnly(q) ? '' : /^\d+[A-Za-z]?$/.test(q) ? 'Continue avec le nom de la rue…' : 'Continue à taper…';
+    TT.loading = go; TT.active = -1;
+    renderAddrOpts(true);
+    if (go) TT.timer = setTimeout(function(){ ttSearch(inp.value); }, 120);
   });
+  inp.addEventListener('focus', function(){ if (inp.value.trim() && !addrGeo()){ TT.local = localAddrs(inp.value); renderAddrOpts(true); } });
   inp.addEventListener('keydown', function(e){
-    var n = TT.opts.length, open = !box.hidden;
+    var n = (TT.list || []).length, open = !box.hidden;
     if (e.key === 'ArrowDown' && n){ e.preventDefault(); TT.active = (TT.active + 1) % n; renderAddrOpts(true); }
     else if (e.key === 'ArrowUp' && n){ e.preventDefault(); TT.active = TT.active <= 0 ? n - 1 : TT.active - 1; renderAddrOpts(true); }
     else if (e.key === 'Enter' && open && TT.active >= 0){ e.preventDefault(); addrPick(TT.active); }
