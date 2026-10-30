@@ -28,7 +28,7 @@ with sync_playwright() as p:
     br = p.chromium.launch()
     # ---------- empty carnet ----------
     ctx, pg, errs = new_page(br, {})
-    check('K0. Tab bar has 4 tabs including Clients', pg.locator('.tab').count() == 4 and pg.locator('.tab[data-t="clients"]').count() == 1)
+    check('K0. Tab bar has 5 tabs (Accueil first) including Clients', pg.locator('.tab').count() == 5 and pg.locator('.tab').first.get_attribute('data-t') == 'accueil' and pg.locator('.tab[data-t="clients"]').count() == 1)
     pg.click('.tab[data-t="clients"]'); pg.wait_for_timeout(100)
     check('K0b. Empty Clients tab explains the fiche and offers to create the first one', 'Aucune fiche client' in pg.inner_text('main') and pg.locator('main [data-act="cl-new"]').count() == 1)
     ctx.close()

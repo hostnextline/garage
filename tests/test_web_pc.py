@@ -36,7 +36,7 @@ def web_page(br, net):
             feats = [{'type': 'Feature', 'geometry': {'type': 'Point', 'coordinates': [h['lon'], h['lat']]}, 'properties': {'housenumber': h['num'], 'street': h['street'], 'city': 'Montréal', 'postcode': h['pc'], 'state': 'Québec', 'countrycode': 'CA', 'type': 'house'}}] if h else []
             return r.fulfill(status=200, body=json.dumps({'type': 'FeatureCollection', 'features': feats}), content_type='application/json', headers=hdr)
         return r.abort()
-    pg.route('**/*', route); pg.goto('https://local.test/'); pg.wait_for_timeout(300)
+    pg.route('**/*', route); pg.goto('https://local.test/#agenda'); pg.wait_for_timeout(300)
     return ctx, pg, errs, live
 def wait_done(pg):
     for _ in range(60):

@@ -287,7 +287,7 @@
       if (!r[2].error) X.members = r[2].data;
       X.liveAt = Date.now(); X.liveLoading = null;
       drawMap();
-      if (A() && A().S.tab === 'carte' && !A().S.screen) render();
+      if (A() && (A().S.tab === 'carte' || A().S.tab === 'accueil') && !A().S.screen) render();
     }, function(){ X.liveLoading = null; });
   }
   function crew(){
@@ -373,6 +373,20 @@
     });
     body += '</section><p class="muted small">Positions partagées seulement pendant la journée de chaque mécano, gardées 30 jours.</p>';
     return {top:top, body:body};
+  }
+  /* dashboard: who is working and who is on the way */
+  function dashExtra(){
+    if (!isStaff()) return '';
+    if (!X.liveAt || Date.now() - X.liveAt > 30000) loadLive();
+    var c = crew(), on = c.filter(function(x){ return mechState(x.l) !== 'off'; });
+    var h = '<section class="sect" aria-labelledby="d-road"><div class="sect-head"><h3 id="d-road">Sur la route</h3><button type="button" class="btn sm" data-act="tab" data-t="carte">Voir la carte</button></div>';
+    if (!c.length) return h + '<p class="muted">Aucun mécano n\'a encore de compte.' + (me.role === 'owner' ? ' <a href="#equipe">Ajouter l\'équipe</a>' : '') + '</p></section>';
+    if (!on.length) h += '<p class="muted small">Personne n\'a commencé sa journée.</p>';
+    h += '<div class="qrows">' + c.map(function(x){
+      var st = mechState(x.l), t = X.active.filter(function(a){ return a.user_id === x.m.user_id; })[0];
+      return '<div class="qrow"><span class="qicon" aria-hidden="true">' + esc(initials(x.m.name)) + '</span><div><b>' + esc(x.m.name) + '</b><span>' + (t ? 'En route vers ' + esc(t.client_first || 'un client') + (t.eta_at ? ' · ' + esc(clock(t.eta_at)) : '') : st === 'off' ? 'Pas en journée' : 'Position ' + esc(ago(x.l.at))) + '</span></div><span class="pillx ' + STATE[st].cls + '">' + STATE[st].lbl + '</span></div>';
+    }).join('') + '</div></section>';
+    return h;
   }
   setInterval(function(){ if (document.visibilityState !== 'hidden' && A() && A().S.tab === 'carte' && !A().S.screen) loadLive().then(function(){ Object.keys(X.showPath).forEach(function(uid){ if (X.showPath[uid]) loadPath(uid); }); }); }, 10000);
 
@@ -494,7 +508,7 @@
         if (rl === 'mecano' && !mc) return eqErr(api.mechanics().length ? 'Choisis son nom dans l\'agenda (liste des mécanos).' : 'Ajoute d\'abord le nom de ce mécano dans Réglages → Mécanos.');
         eqErr(''); b.disabled = true; b.textContent = 'Création…';
         invoke('members', {action:'create', name:nm, email:em, role:rl, mechanic:mc}).then(function(r){
-          X.eq.list = r.members; X.eq.created = {name:nm, email:em, password:r.password};
+          X.eq.list = r.members; X.eq.created = {name:nm, email:em, password:r.password}; X.liveAt = 0;
           ['nw-name', 'nw-email', 'nw-mech'].forEach(function(i){ var e = document.getElementById(i); if (e) e.value = ''; });
           render(); window.scrollTo(0, 0);
         }, function(e){ b.disabled = false; b.textContent = 'Créer le compte'; eqErr(e.message); });
@@ -571,10 +585,12 @@
       if (w === 'tab:reglages') return r === 'owner';
       if (w === 'tab:carte') return r !== 'mecano';
       if (w === 'tab:equipe') return r === 'owner';
-      if (w === 'book' || w === 'deleteJob' || w === 'hours') return r !== 'mecano';
+      if (w === 'book' || w === 'deleteJob' || w === 'hours' || w === 'money') return r !== 'mecano';
       return undefined;
     },
     myMechanic:function(){ return me && me.role === 'mecano' ? me.mechanic : null; },
+    greetName:function(){ return me ? first(me.name) : ''; },
+    dashTop:agendaTop, dashExtra:dashExtra,
     agendaTop:agendaTop, settingsTop:settingsTop, jobExtra:jobExtra, onStatus:onStatus, onAction:onAction,
     nextInvoiceNo:function(start){ return T.sb.rpc('next_invoice_number', {p_start:start}).then(function(r){ if (r.error || typeof r.data !== 'number') throw r.error || new Error('no number'); return r.data; }); }
   };

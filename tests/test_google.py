@@ -56,7 +56,7 @@ def new_page(br, scheme='light', gkey=None, ttkey=None, strict=False):
     if ttkey: init.append(f"localStorage.setItem('gm.web.ttkey', {json.dumps(ttkey)});")
     if strict: init.append("window.__gmStrict = true;")
     if init: pg.add_init_script("try{ if (!sessionStorage.getItem('__init')){ " + "".join(init) + " sessionStorage.setItem('__init','1'); } }catch(e){}")
-    pg.goto('https://local.test/'); pg.wait_for_timeout(300)
+    pg.goto('https://local.test/#agenda'); pg.wait_for_timeout(300)
     return ctx, pg, errs, net
 def calls(pg): return pg.evaluate('window.__gmCalls || []')
 def store(pg): return pg.evaluate("JSON.parse(localStorage.getItem('gm.web.db') || '{}')")

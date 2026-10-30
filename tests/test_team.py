@@ -53,7 +53,7 @@ def toast_has(p, text, ms=8000):
         p.wait_for_function('t => { const e = document.getElementById("toast"); return e && !e.hidden && e.textContent.includes(t); }', arg=text, timeout=ms); return True
     except Exception: return False
 def login(p, email, pw):
-    p.goto(BASE); p.wait_for_selector('#gate #g-email', timeout=10000)
+    p.goto(BASE + '#agenda'); p.wait_for_selector('#gate #g-email', timeout=10000)
     p.fill('#g-email', email); p.fill('#g-pw', pw); p.click('#g-go')
 def resync(p): p.evaluate('window.__supa.resync(true)'); p.wait_for_timeout(600)
 
@@ -71,7 +71,9 @@ with sync_playwright() as pw:
     op.wait_for_selector('#gate', state='detached', timeout=15000)
     op.wait_for_selector('.acct', timeout=10000)
     check('owner signed in after setup', 'Hassan Banho' in op.text_content('.acct') and 'Propriétaire' in op.text_content('.acct'))
-    check('owner tabs: Agenda Clients Factures Carte Réglages', visible_tabs(op) == ['Agenda', 'Clients', 'Factures', 'Carte', 'Réglages'], visible_tabs(op))
+    check('owner tabs: Accueil Agenda Clients Factures Carte Réglages', visible_tabs(op) == ['Accueil', 'Agenda', 'Clients', 'Factures', 'Carte', 'Réglages'], visible_tabs(op))
+    check('owner lands on the dashboard with his first name', op.locator('.tab[data-t="accueil"][aria-current="page"]').count() == 1 and op.text_content('h1') in ('Bonjour Hassan', 'Bonsoir Hassan'), op.text_content('h1'))
+    check('owner dashboard: revenue + team on the road', 'Revenus facturés' in op.text_content('main') and op.locator('[aria-labelledby="d-road"]').count() == 1)
     check('owner (with a mechanic name) gets the workday card', op.locator('text=Début de journée').count() == 1)
     check('owner agenda no sideways scroll', no_hscroll(op))
     otok = token('hassan@garage.test', 'Motdepasse-2026')
@@ -131,7 +133,10 @@ with sync_playwright() as pw:
     check('wrong password message', 'incorrect' in (sp.text_content('#g-msg') or ''))
     sp.fill('#g-pw', SALEH_PW); sp.click('#g-go'); sp.wait_for_selector('.acct', timeout=15000)
     check('mechanic signed in', 'Saleh Haddad' in sp.text_content('.acct') and 'Mécano' in sp.text_content('.acct'))
-    check('mechanic tabs: Agenda Clients Factures', visible_tabs(sp) == ['Agenda', 'Clients', 'Factures'], visible_tabs(sp))
+    check('mechanic tabs: Accueil Agenda Clients Factures', visible_tabs(sp) == ['Accueil', 'Agenda', 'Clients', 'Factures'], visible_tabs(sp))
+    sp.click('.tab[data-t="accueil"]'); sp.wait_for_timeout(400)
+    check('mechanic dashboard: his day and workday button, no money', 'Début de journée' in sp.text_content('main') and 'Revenus' not in sp.text_content('main') and 'À recevoir' not in sp.text_content('main') and sp.locator('.mcard').count() == 0)
+    sp.click('.tab[data-t="agenda"]'); sp.wait_for_timeout(400)
     sp.wait_for_timeout(800)
     main = sp.text_content('main')
     check('mechanic sees his job (Marie)', 'Marie' in main, main[:300])
@@ -140,7 +145,7 @@ with sync_playwright() as pw:
     check('no mechanic filter chips for a mechanic', sp.locator('[data-act="mech"]').count() == 0)
     check('first-time workday explanation (Loi 25)', 'gardées 30 jours' in main and 'Rien n\'est envoyé avant' in main)
     sp.goto(BASE + '#reglages'); sp.wait_for_timeout(500)
-    check('mechanic cannot open Réglages (back to agenda)', sp.locator('.tab[data-t="agenda"][aria-current="page"]').count() == 1)
+    check('mechanic cannot open Réglages (back to home)', sp.locator('.tab[data-t="accueil"][aria-current="page"]').count() == 1)
     sp.goto(BASE + '#carte'); sp.wait_for_timeout(500)
     check('mechanic cannot open the map', sp.locator('#map-slot').count() == 0)
     sp.goto(BASE + '#agenda'); sp.wait_for_selector('[data-act="sh-start"]')
@@ -206,7 +211,7 @@ with sync_playwright() as pw:
 
     # ---------- 6. office map ----------
     op.goto(BASE + '#carte'); op.wait_for_selector('#gm-map', timeout=10000)
-    try: op.wait_for_selector('.mc', timeout=10000); ok = True
+    try: op.wait_for_function('() => /Saleh Haddad/.test((document.querySelector("main")||{}).textContent||"")', timeout=12000); ok = True
     except Exception: ok = False
     check('map tab: mechanics list', ok and 'Saleh Haddad' in op.text_content('main'))
     check('map tab: Saleh « En route » with arrival', 'En route vers Marie' in op.text_content('main') and op.locator('.gm-map .gm-pin.p-route').count() == 1, op.text_content('main')[:500])
@@ -240,13 +245,19 @@ with sync_playwright() as pw:
     # ---------- 8. office person ----------
     lc = ctx_for(br); lp = page_for(lc, 'lina'); login(lp, 'lina@garage.test', LINA_PW); lp.wait_for_selector('.acct', timeout=15000)
     lp.wait_for_timeout(600); lp.screenshot(path=os.path.join(SC, 'team_office.png'))
-    check('office tabs: Agenda Clients Factures Carte', visible_tabs(lp) == ['Agenda', 'Clients', 'Factures', 'Carte'], visible_tabs(lp))
+    check('office tabs: Accueil Agenda Clients Factures Carte', visible_tabs(lp) == ['Accueil', 'Agenda', 'Clients', 'Factures', 'Carte'], visible_tabs(lp))
+    lp.click('.tab[data-t="accueil"]')
+    try: lp.wait_for_function('() => /Saleh Haddad/.test((document.querySelector("[aria-labelledby=d-road]")||{}).textContent||"")', timeout=10000); ok = True
+    except Exception: ok = False
+    check('office dashboard: who is working', ok and 'En journée' in lp.text_content('[aria-labelledby="d-road"]'), lp.text_content('main')[-400:])
+    lp.screenshot(path=os.path.join(SC, 'team_office_dash.png'), full_page=True)
+    lp.click('.tab[data-t="agenda"]'); lp.wait_for_timeout(500)
     lp.wait_for_timeout(800)
     check('office sees both jobs', 'Marie' in lp.text_content('main') and 'Paul' in lp.text_content('main'))
     check('office can book', lp.locator('[data-act="new"]').count() >= 1)
     check('office has no workday card', lp.locator('[data-act="sh-start"]').count() == 0)
     lp.goto(BASE + '#reglages'); lp.wait_for_timeout(500)
-    check('office cannot open Réglages', lp.locator('.tab[data-t="agenda"][aria-current="page"]').count() == 1)
+    check('office cannot open Réglages', lp.locator('.tab[data-t="accueil"][aria-current="page"]').count() == 1)
     lp.goto(BASE + '#equipe'); lp.wait_for_timeout(500)
     check('office cannot open team screen', lp.locator('#nw-name').count() == 0)
     # office presses « En route » for Ali's job: Ali is not on shift → link without position

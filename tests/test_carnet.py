@@ -36,7 +36,7 @@ def new_page(browser, mode, scheme='light', width=390, secure=True):
         else:
             r.abort()
     page.route('**/*', route)
-    page.goto(base)
+    page.goto(base + '#agenda')
     page.wait_for_timeout(250)
     return ctx, page, errors
 
@@ -438,8 +438,9 @@ with sync_playwright() as p:
                         'invoice': {'lines': [{'type': 'piece', 'desc': 'Batterie', 'qty': 1, 'price': 180}], 'taxesOn': True, 'sub': 180, 'tps': 9, 'tvq': 17.96, 'total': 206.96, 'paid': False, 'method': '', 'paidAt': None, 'note': '', 'number': 'F-0009', 'issuedAt': td}},
             'jobs/a2': {'client': {'name': 'Marie Côté', 'address': '88 rue Saint-Denis'}, 'vehicle': {'year': '2015', 'make': 'Toyota', 'model': 'RAV4'}, 'service': "Changement d'huile", 'date': td, 'time': '13:00', 'durationMin': 45, 'mechanic': 'Marc', 'status': 'planifie'}}
     ctx, pg, errs = new_page(br, {'seed': seed}, scheme='dark', secure=False)
-    bg = pg.evaluate('getComputedStyle(document.body).backgroundColor')
-    check('20. Dark theme applies to page background', bg == 'rgb(14, 19, 24)', bg)
+    bg = pg.evaluate('getComputedStyle(document.documentElement).backgroundColor')
+    scene = pg.evaluate("getComputedStyle(document.body, '::after').backgroundImage")
+    check('20. Dark theme applies to page background (dark base + night scene)', bg == 'rgb(20, 15, 12)' and 'rgb(23, 18, 15)' in scene, (bg, scene[:120]))
     check('20a. Seeded day shows 2 appointments and the day summary', pg.locator('.appt').count() == 2 and '206,96' in pg.inner_text('.sum'), pg.inner_text('main')[:300])
     pg.screenshot(path=os.path.join(SC, 'shot_dark.png'), full_page=True)
     pg.locator('.appt', has_text='Jean Tremblay').click(); pg.click('[data-act="preview"]'); pg.wait_for_timeout(80)
