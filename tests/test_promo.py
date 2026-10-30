@@ -1,0 +1,77 @@
+exec(open('test_carnet.py').read().split("with sync_playwright() as p:")[0])
+import datetime
+td = datetime.date.today().isoformat()
+hours = {str(d): {'open': True, 'start': '07:00', 'end': '20:00'} for d in range(7)}
+cfgm = {'biz': {'name': 'Garage Test'}, 'mechanics': ['Ali'], 'hours': hours, 'rate': 95, 'taxesOn': True, 'services': [{'name': "Changement d'huile et filtre", 'price': 89.99}]}
+seed = {'config/main': cfgm, 'clients/c1': {'firstName': 'Jean', 'lastName': 'Test', 'phone': '(514) 555-0000', 'address': '1 rue Test, Montréal H4P 2B5', 'postal': 'H4P 2B5', 'notes': []}}
+PN = 'Promo : pneus non montés + huile + inspection + top up liquides'
+def units(pg): return pg.input_value('#f-units')
+with sync_playwright() as p:
+    br = p.chromium.launch()
+    ctx, pg, errs = new_page(br, {'seed': seed})
+    pg.click('#top [data-act="new"]'); pg.wait_for_timeout(250); sheet_pick_client(pg, 'jean')
+    pg.click('#f-svc-in'); pg.wait_for_timeout(80)
+    first = pg.locator('#svc-opts .opt').first
+    check('P1. The promo comes first in the list, with a PROMO tag, 200 $, its time and what is included', 'PROMO' in first.inner_text().upper() and '200,00' in first.inner_text() and '≈ 2 h 40' in first.inner_text()
+          and 'Inclus : Changement de pneus non montés (montage et équilibrage) · Changement d\'huile et filtre · Inspection multipoints · Top up des liquides' in first.inner_text(), first.inner_text())
+    h = pg.evaluate("(function(){ var o = document.querySelector('#svc-opts .opt'); return [o.offsetHeight, o.scrollHeight]; })()")
+    check('P1b. The promo row is tall enough for its text (nothing overlaps)', h[0] >= h[1] - 1, h)
+    pg.screenshot(path=os.path.join(SC, 'shot_promo_list.png'))
+    pg.keyboard.type('pneu'); pg.wait_for_timeout(80)
+    rows = pg.locator('#svc-opts .opt:not(.new)')
+    check('P2. Typing "pneu" finds the promo (word in what is included), marked', any('PROMO' in r.upper() for r in rows.all_inner_texts()) and pg.locator('#svc-opts .opt', has_text='Inclus').locator('mark').count() >= 1)
+    pg.locator('#svc-opts .opt', has_text='Inclus').first.click(); pg.wait_for_timeout(100)
+    chip = pg.locator('.pchip').first.inner_text()
+    check('P3. Picked: chip with 200 $ and ≈ 2 h 40; estimate 2 h 40; duration 17 units', PN in chip and '200,00' in chip and '≈ 2 h 40' in chip and 'Temps estimé : 2 h 40' in pg.inner_text('#svc-est') and units(pg) == '17', (chip, pg.inner_text('#svc-est'), units(pg)))
+    pg.fill('#f-time', '09:00'); pg.click('#f-save'); pg.wait_for_timeout(300)
+    j = list(jobs(pg).values())
+    check('P4. Booking saved with the promo and 2 h 50', len(j) == 1 and j[0]['services'] == [PN] and j[0]['durationMin'] == 170, j and (j[0]['services'], j[0]['durationMin']))
+    # invoice from that job
+    pg.locator('.appt', has_text='Jean Test').first.click() if pg.locator('.appt', has_text='Jean Test').count() else pg.locator('.ticket', has_text='Jean Test').first.click()
+    pg.wait_for_timeout(150)
+    pg.click('[data-act="invoice"]') if pg.locator('[data-act="invoice"]').count() else None
+    pg.wait_for_timeout(250)
+    check('P5. Invoice line: the promo, what is included, 1 × 200 $', pg.input_value('#l0-desc').startswith(PN + ' (inclus : Changement de pneus non montés') and pg.input_value('#l0-qty') == '1' and pg.input_value('#l0-price') == '200', (pg.input_value('#l0-desc'), pg.input_value('#l0-qty'), pg.input_value('#l0-price')))
+    check('P5b. The promo is also a one-tap chip in the invoice; its line is a "Forfait"', pg.locator('[data-act="addpromo"]').count() == 1 and pg.input_value('#l0-type') == 'forfait')
+    pg.click('[data-act="finalize"]'); pg.wait_for_timeout(400)
+    inv = [v['invoice'] for v in jobs(pg).values() if v.get('invoice', {}).get('number')]
+    check('P6. Total 200 $ + TPS 10 $ + TVQ 19,95 $ = 229,95 $', inv and inv[0]['sub'] == 200 and inv[0]['total'] == 229.95, inv and (inv[0]['sub'], inv[0]['total']))
+    check('P6b. Invoice shows "Forfait · 1 × 200,00 $" (not hours)', 'Forfait · 1 × 200,00' in pg.inner_text('.paper') and '1 h × 200' not in pg.inner_text('.paper'), pg.inner_text('.paper')[:400])
+    pg.click('[data-act="pdf"]'); pg.wait_for_timeout(2500)
+    saved = pg.evaluate('window.__saved')
+    txt = ''.join(x.extract_text() for x in PdfReader(io.BytesIO(base64.b64decode(saved[-1]['b64']))).pages) if saved else ''
+    check('P6c. PDF shows the promo as "Forfait", 200,00 and the total 229,95', 'Forfait' in txt and '200,00' in txt and '229,95' in txt and 'Promo : pneus non mont' in txt, txt[:300])
+    pg.screenshot(path=os.path.join(SC, 'shot_promo_invoice.png'), full_page=True)
+    # settings
+    pg.click('.tab[data-t="reglages"]'); pg.wait_for_timeout(150)
+    check('P7. Réglages has a Promos section with this promo (name, 200, 4 items, offered)', pg.input_value('#pr-name-0') == PN and pg.input_value('#pr-price-0') == '200' and pg.input_value('#pr-items-0').count('\n') == 3 and pg.is_checked('#pr-on-0'))
+    pg.fill('#pr-price-0', '189'); pg.click('[data-act="addpromorow"]'); pg.wait_for_timeout(60)
+    pg.fill('#pr-name-1', 'Promo : freins avant et arrière')
+    pg.click('#s-save'); pg.wait_for_timeout(200)
+    check('P8. A promo without a price is refused, nothing saved', 'Mets un prix à la promo' in pg.inner_text('#toast') and store(pg)['config/main'].get('promos') is None, pg.inner_text('#toast'))
+    pg.fill('#pr-name-1', 'Promo : freins avant et arrière'); pg.fill('#pr-price-1', '399'); pg.fill('#pr-items-1', 'Freins avant (plaquettes et disques)\nFreins arrière (plaquettes et disques)')
+    pg.click('#s-save'); pg.wait_for_timeout(300)
+    pr = store(pg)['config/main'].get('promos')
+    check('P9. Saved: 2 promos, new price 189, the rest of the settings kept', pr and len(pr) == 2 and pr[0]['price'] == 189 and pr[1]['price'] == 399 and pr[1]['items'] == ['Freins avant (plaquettes et disques)', 'Freins arrière (plaquettes et disques)'] and store(pg)['config/main']['rate'] == 95 and store(pg)['config/main']['services'][0]['price'] == 89.99, pr)
+    pg.click('.tab[data-t="agenda"]'); pg.click('#top [data-act="new"]'); pg.wait_for_timeout(250); sheet_pick_client(pg, 'jean')
+    pg.click('#f-svc-in'); pg.wait_for_timeout(80)
+    t = pg.locator('#svc-opts .opt').all_inner_texts()
+    check('P10. Both promos offered first; new price shown; brake promo ≈ 3 h', 'freins avant et arrière' in t[1] and '399,00' in t[1] and '≈ 3 h' in t[1] and '189,00' in t[0], t[:2])
+    pg.click('.sheet-head [data-act="sheet-close"]'); pg.wait_for_timeout(100)
+    pg.click('.tab[data-t="reglages"]'); pg.wait_for_timeout(150); pg.uncheck('#pr-on-0'); pg.click('#s-save'); pg.wait_for_timeout(300)
+    pg.click('.tab[data-t="agenda"]'); pg.click('#top [data-act="new"]'); pg.wait_for_timeout(300)
+    if pg.locator('#cs-q').count(): sheet_pick_client(pg, 'jean')  # otherwise the unfinished booking (draft) reopens directly
+    pg.click('#f-svc-in'); pg.wait_for_timeout(80)
+    t = pg.locator('#svc-opts .opt').all_inner_texts()
+    check('P11. Promo turned off: no longer offered', not any('non montés' in x for x in t) and 'freins avant et arrière' in t[0], t[:2])
+    pg.click('.sheet-head [data-act="sheet-close"]'); pg.wait_for_timeout(100)
+    check('P12. No script errors; no side-scroll', not errs and no_hscroll(pg), errs[:3])
+    pg.click('.tab[data-t="reglages"]'); pg.wait_for_timeout(150); pg.locator('#promos-box').scroll_into_view_if_needed(); pg.screenshot(path=os.path.join(SC, 'shot_promo_settings.png'))
+    ctx.close()
+    # contributor: sees promos, cannot edit them
+    ctx, pg, errs = new_page(br, {'seed': seed, 'notAdmin': True})
+    pg.click('.tab[data-t="reglages"]'); pg.wait_for_timeout(150)
+    check('P13. Contributor: promo shown but locked', pg.is_disabled('#pr-name-0') and pg.locator('[data-act="addpromorow"]').count() == 0 and pg.locator('[data-act="delpromo"]').count() == 0)
+    check('P13b. No script errors (contributor)', not errs, errs[:3])
+    ctx.close(); br.close()
+print('\n%d/%d passed' % (sum(1 for r in results if r[1]), len(results)))
