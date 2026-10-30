@@ -323,13 +323,21 @@ revoke all on public.members, public.docs, public.docs_deleted, public.mech_live
 revoke insert, update, delete on public.mech_live, public.mech_positions, public.tracks, public.docs_deleted from authenticated;
 revoke insert, delete on public.members from authenticated;
 
+-- explicit access (works whether or not the project exposes new tables automatically)
+grant usage on schema public to anon, authenticated, service_role;
+grant select, insert, update, delete on public.docs to authenticated;
+grant select on public.members, public.docs_deleted, public.mech_live, public.mech_positions, public.tracks to authenticated;
+grant update on public.members to authenticated;
+grant all on all tables in schema public to service_role;
+grant usage, select on all sequences in schema public to service_role;
+
 revoke execute on all functions in schema public from public, anon, authenticated;
 grant execute on function public.get_track(text), public.setup_needed() to anon, authenticated;
 grant execute on function public.my_role(), public.my_mechanic(), public.is_staff(), public.mech_client_ids(),
   public.can_read_doc(text, text, text), public.can_write_doc(text, text, text), public.jsonb_merge_deep(jsonb, jsonb),
   public.doc_merge(text, jsonb), public.doc_set(text, jsonb), public.doc_delete(text), public.next_invoice_number(int), public.shift_start(), public.shift_end(),
   public.report_position(double precision, double precision, real, real, real) to authenticated;
-grant execute on function public.purge_old() to service_role;
+grant execute on all functions in schema public to service_role;
 alter default privileges in schema public revoke execute on functions from public, anon;
 
 -- instant updates between phones (when the realtime service exists)
