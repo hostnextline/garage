@@ -2,7 +2,7 @@
 <title>Carnet du garage · équipe</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: a mechanic's clipboard: sticky day header, job tickets with a perforated time stub, thumb-reach tab bar at the bottom */
 :root{
@@ -400,6 +400,282 @@ body.locked{overflow:hidden}
 .tab[aria-current="page"] svg{color:var(--signal)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:40;background:var(--ink);color:var(--paper);padding:11px 16px;border-radius:10px;font-weight:600;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.18)}
 @media (prefers-reduced-motion:no-preference){.toast{animation:pop .18s ease-out}@keyframes pop{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}}
+
+/* ===================== Glass look =====================
+   Frosted panels over a warm, softly lit backdrop (light) or a smoky night garage (dark).
+   Big panels blur what is behind them; repeated small cards are translucent without blur (lighter for phones). */
+:root{
+  --f-display:"Inter Tight","Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --paper:#F7F1EA; --surface:rgba(255,255,255,.66); --surface-solid:#FFFCF9; --sunk:rgba(110,85,65,.07); --ink:#1E1915; --muted:#6B5E55;
+  --line:rgba(110,85,65,.13); --line-strong:rgba(110,85,65,.25); --line-faint:rgba(110,85,65,.07);
+  --signal:#EE6A2F; --on-signal:#1A0E06; --steel:#1E1915; --on-steel:#FFFFFF; --steel-soft:rgba(255,255,255,.58);
+  --ok:#1C7A4B; --ok-bg:rgba(52,168,99,.17); --warn:#9E4F06; --warn-bg:rgba(245,158,45,.22); --bad:#B3261E; --bad-bg:rgba(229,72,55,.15);
+  --info:#2257A8; --info-bg:rgba(66,128,228,.16); --idle:#6B5E55; --idle-bg:rgba(110,85,65,.10);
+  --closed-a:rgba(110,85,65,.10); --closed-b:rgba(110,85,65,.03); --scrim:rgba(40,24,12,.30);
+  --glass:rgba(255,255,255,.56); --glass-strong:rgba(255,253,250,.86); --card:rgba(255,255,255,.72); --glass-edge:rgba(255,255,255,.78);
+  --glass-shadow:0 1px 0 rgba(255,255,255,.8) inset, 0 12px 34px rgba(80,48,22,.12);
+  --card-shadow:0 1px 0 rgba(255,255,255,.85) inset, 0 4px 14px rgba(80,48,22,.08);
+  --blur:saturate(165%) blur(22px);
+  --accent:linear-gradient(135deg,#F7974F 0%,#E9572A 100%);
+  --r:14px;
+  --scene:
+    radial-gradient(38% 32% at 10% 6%, rgba(255,238,218,.95), transparent 70%),
+    radial-gradient(34% 34% at 94% 12%, rgba(226,184,146,.80), transparent 70%),
+    radial-gradient(42% 36% at 82% 82%, rgba(240,138,80,.34), transparent 72%),
+    radial-gradient(44% 40% at 6% 90%, rgba(148,170,192,.42), transparent 70%),
+    linear-gradient(165deg,#F4ECE4 0%,#E7D7C7 48%,#D6BFA8 100%);
+  --scene-base:#E9DED2;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#15110E; --surface:rgba(40,34,30,.60); --surface-solid:#1D1815; --sunk:rgba(255,255,255,.05); --ink:#F5EFE9; --muted:#B8AA9F;
+    --line:rgba(255,255,255,.09); --line-strong:rgba(255,255,255,.18); --line-faint:rgba(255,255,255,.05);
+    --signal:#FF7B3E; --on-signal:#1A0E06; --steel:#F5EFE9; --on-steel:#15110E; --steel-soft:rgba(255,255,255,.08);
+    --ok:#62D59C; --ok-bg:rgba(98,213,156,.14); --warn:#F7B45E; --warn-bg:rgba(247,180,94,.15); --bad:#FF8C7C; --bad-bg:rgba(255,140,124,.14);
+    --info:#8FBAF6; --info-bg:rgba(143,186,246,.14); --idle:#B8AA9F; --idle-bg:rgba(255,255,255,.07);
+    --closed-a:rgba(255,255,255,.07); --closed-b:rgba(255,255,255,.02); --scrim:rgba(0,0,0,.55);
+    --glass:rgba(36,30,27,.55); --glass-strong:rgba(30,25,22,.88); --card:rgba(40,34,30,.74); --glass-edge:rgba(255,255,255,.10);
+    --glass-shadow:0 1px 0 rgba(255,255,255,.07) inset, 0 14px 38px rgba(0,0,0,.40);
+    --card-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 6px 18px rgba(0,0,0,.30);
+    --scene:
+      radial-gradient(38% 32% at 10% 6%, rgba(150,78,34,.40), transparent 70%),
+      radial-gradient(34% 34% at 94% 14%, rgba(60,90,124,.42), transparent 70%),
+      radial-gradient(42% 36% at 82% 84%, rgba(238,110,50,.22), transparent 72%),
+      radial-gradient(44% 40% at 6% 92%, rgba(90,60,40,.40), transparent 70%),
+      linear-gradient(165deg,#17120F 0%,#1E1713 50%,#120E0B 100%);
+    --scene-base:#140F0C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#15110E; --surface:rgba(40,34,30,.60); --surface-solid:#1D1815; --sunk:rgba(255,255,255,.05); --ink:#F5EFE9; --muted:#B8AA9F;
+  --line:rgba(255,255,255,.09); --line-strong:rgba(255,255,255,.18); --line-faint:rgba(255,255,255,.05);
+  --signal:#FF7B3E; --on-signal:#1A0E06; --steel:#F5EFE9; --on-steel:#15110E; --steel-soft:rgba(255,255,255,.08);
+  --ok:#62D59C; --ok-bg:rgba(98,213,156,.14); --warn:#F7B45E; --warn-bg:rgba(247,180,94,.15); --bad:#FF8C7C; --bad-bg:rgba(255,140,124,.14);
+  --info:#8FBAF6; --info-bg:rgba(143,186,246,.14); --idle:#B8AA9F; --idle-bg:rgba(255,255,255,.07);
+  --closed-a:rgba(255,255,255,.07); --closed-b:rgba(255,255,255,.02); --scrim:rgba(0,0,0,.55);
+  --glass:rgba(36,30,27,.55); --glass-strong:rgba(30,25,22,.88); --card:rgba(40,34,30,.74); --glass-edge:rgba(255,255,255,.10);
+  --glass-shadow:0 1px 0 rgba(255,255,255,.07) inset, 0 14px 38px rgba(0,0,0,.40);
+  --card-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 6px 18px rgba(0,0,0,.30);
+  --scene:
+    radial-gradient(38% 32% at 10% 6%, rgba(150,78,34,.40), transparent 70%),
+    radial-gradient(34% 34% at 94% 14%, rgba(60,90,124,.42), transparent 70%),
+    radial-gradient(42% 36% at 82% 84%, rgba(238,110,50,.22), transparent 72%),
+    radial-gradient(44% 40% at 6% 92%, rgba(90,60,40,.40), transparent 70%),
+    linear-gradient(165deg,#17120F 0%,#1E1713 50%,#120E0B 100%);
+  --scene-base:#140F0C;
+}
+html{background:var(--scene-base)}
+body{background:transparent;font-feature-settings:"cv11","ss01";letter-spacing:-.005em}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:var(--scene)}
+body::before{background:var(--glass-strong);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
+h1,h2,h3{font-weight:700;letter-spacing:-.022em;line-height:1.08}
+h1{font-size:28px} h2{font-size:22px} h3{font-size:17px;font-weight:650;letter-spacing:-.012em}
+.eyebrow,.lbl{font:500 13px/1.3 var(--f-body);letter-spacing:0;text-transform:none;color:var(--muted)}
+.field>label{font:600 14px/1.3 var(--f-body);letter-spacing:0;text-transform:none;color:var(--ink)}
+.kv dt{font:500 13px/1.3 var(--f-body);letter-spacing:0;text-transform:none;color:var(--muted)}
+:focus-visible{outline:2.5px solid var(--ink);outline-offset:2px;box-shadow:0 0 0 6px rgba(238,106,47,.28)}
+
+/* frosted panels */
+.top,.sect,.stat,.empty-card,.cal,.sheet,.hours-panel,.gpanel{-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
+.top{top:calc(env(safe-area-inset-top,0px) + 8px);margin:8px 10px 0;background:var(--glass);border:1px solid var(--glass-edge);border-radius:24px;box-shadow:var(--glass-shadow)}
+.sect,.gpanel{background:var(--glass);border:1px solid var(--glass-edge);border-radius:22px;padding:18px;box-shadow:var(--glass-shadow)}
+.stat{background:var(--glass);border:1px solid var(--glass-edge);border-radius:18px;box-shadow:var(--card-shadow)}
+.stat b{font-family:var(--f-display);letter-spacing:-.02em}
+.empty-card{background:var(--glass);border:1.5px dashed var(--line-strong);border-radius:22px}
+.steps div{background:var(--card);border-radius:14px}
+.banner{background:var(--steel-soft);border:1px solid var(--glass-edge);border-radius:16px}
+.banner.warn{background:var(--warn-bg);border-color:transparent}
+.hours-panel{background:var(--warn-bg);border-color:rgba(245,158,45,.45);border-radius:18px}
+.err{border-radius:12px}
+
+/* cards in lists: translucent, no blur */
+.ticket,.row,.crow,.tile,.vrow,.sug,.ccard,.rec,.line,.promo-row{background:var(--card);border:1px solid var(--glass-edge);box-shadow:var(--card-shadow)}
+.ticket{border-radius:18px} .row,.crow{border-radius:18px} .tile{border-radius:18px} .vrow,.sug,.ccard,.rec,.line,.promo-row{border-radius:14px}
+.ticket:hover,.row:hover,.crow:hover,.vrow:hover{border-color:var(--line-strong)}
+.stub{background:rgba(255,255,255,.35);border-right:2px dashed var(--line-strong)}
+.stub b{font-size:18px;letter-spacing:-.02em}
+.ticket.s-route .stub{background:var(--info-bg)} .ticket.s-place .stub{background:var(--warn-bg)} .ticket.s-termine .stub{background:var(--ok-bg)}
+.tk-veh{font-size:16px;font-weight:650;letter-spacing:-.01em}
+.row .r-amt,.invbox b,.due-big,.amt,.tot .grand dt,.tot .grand dd{letter-spacing:-.02em}
+.tile{font-size:17px;font-weight:650}
+.tile.book{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.tile.book small{color:var(--paper);opacity:.75}
+.tile.on{border-color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}
+
+/* controls */
+.btn{border-radius:999px;border:1px solid var(--glass-edge);background:var(--card);box-shadow:var(--card-shadow);font-weight:600;transition:transform .12s ease,box-shadow .12s ease}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:var(--paper);box-shadow:0 6px 18px rgba(30,20,12,.22)}
+.btn.steel{background:var(--accent);border-color:transparent;color:var(--on-signal);box-shadow:0 6px 16px rgba(233,87,42,.28)}
+.btn.danger{background:var(--card);border-color:rgba(179,38,30,.45)}
+.btn.danger.solid{background:var(--bad);border-color:var(--bad);color:#fff}
+.btn.ghost{background:transparent;border-color:transparent;box-shadow:none}
+.iconbtn{border-radius:50%;background:var(--card);border:1px solid var(--glass-edge);box-shadow:var(--card-shadow)}
+.chip{background:var(--card);border:1px solid var(--glass-edge);box-shadow:var(--card-shadow)}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.chip.add{border:1.5px dashed var(--line-strong);box-shadow:none}
+.chip.add.promo{background:var(--accent);border-color:transparent;color:var(--on-signal)}
+input,select,textarea{border-radius:12px;border:1px solid var(--line-strong);background:rgba(255,255,255,.78)}
+input[disabled],select[disabled],textarea[disabled]{background:var(--sunk)}
+.picker{border-radius:12px;background:rgba(255,255,255,.78)}
+.seg button{border-radius:14px;background:var(--card);border:1px solid var(--glass-edge);box-shadow:var(--card-shadow)}
+.radio2 label{border-radius:14px;background:var(--card);border-color:var(--glass-edge)}
+.radio2 label:has(input:checked){border-color:var(--ink);background:var(--glass-strong);box-shadow:inset 0 0 0 1px var(--ink)}
+.check input,.radio2 input{accent-color:var(--signal)}
+.pill{background:var(--idle-bg)}
+.tag{background:var(--card);border:1px solid var(--glass-edge)}
+.pchip{background:var(--glass-strong);border:1px solid var(--line)}
+.promo-tag{background:var(--accent);color:var(--on-signal)}
+.opt mark{background:rgba(238,106,47,.28)}
+.opts,.addrsug{background:var(--glass-strong);border:1px solid var(--glass-edge);border-radius:16px;-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
+.opts .opt-count,.addrsug .opt-head,.addrsug .src{background:rgba(255,255,255,.4)}
+#svc-est .est{background:var(--glass-strong);border:1px solid var(--glass-edge);border-radius:14px}
+.sugbox{background:var(--steel-soft);border:1px solid var(--glass-edge);border-radius:18px}
+.sug.on{border-color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}
+
+/* week strip */
+.day{border-radius:16px}
+.day.on{background:var(--ink);color:var(--paper);box-shadow:0 8px 18px rgba(30,20,12,.22)}
+.day .dn{letter-spacing:-.03em;font-size:21px}
+.day .dc i{background:var(--signal)}
+.day.today .dn{text-decoration:none}
+.day.today:not(.on) .dn{color:var(--signal)}
+
+/* schedule grid */
+.cal{background:var(--glass);border:1px solid var(--glass-edge);border-radius:22px;box-shadow:var(--glass-shadow)}
+.cal-head,.cal-head>div:first-child,.gutter{background:var(--glass-strong);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.cal-head{border-bottom:1px solid var(--line)}
+.colh{font-size:15px;font-weight:650;letter-spacing:-.01em}
+.dayh.today{background:var(--ink);color:var(--paper)}
+.slot.open:hover,.slot.open:focus-visible{background:rgba(238,106,47,.10)}
+.slot{color:var(--ink)}
+.appt{border-radius:12px;border:1px solid var(--glass-edge);border-left:3px solid var(--signal);background:rgba(255,255,255,.88);box-shadow:0 4px 12px rgba(80,48,22,.10)}
+.appt.s-planifie{background:rgba(255,255,255,.90);border-left-color:var(--signal)}
+.appt.s-route{background:rgba(232,240,252,.92);border-left-color:var(--info)}
+.appt.s-place{background:rgba(253,240,222,.94);border-left-color:var(--warn)}
+.appt.s-termine{background:rgba(226,244,233,.92);border-left-color:var(--ok)}
+.legend i{border-radius:4px}
+
+/* invoice paper stays like paper */
+.paper{background:var(--surface-solid);border:1px solid var(--glass-edge);border-radius:22px;box-shadow:var(--glass-shadow)}
+.paper-head{border-bottom-color:var(--signal)}
+.tot .grand{border-top-color:var(--ink)}
+
+/* sheet, tab bar, toast */
+.sheet{background:var(--glass-strong);border:1px solid var(--glass-edge);border-radius:26px 26px 0 0;box-shadow:0 -14px 50px rgba(30,18,8,.28)}
+.sheet-back{-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.sheet-head{border-bottom-color:var(--line)}
+@media (min-width:700px){.sheet{border-radius:26px}}
+.tabbar{left:50%;right:auto;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));width:min(640px,calc(100% - 20px));padding-bottom:0;background:var(--glass);border:1px solid var(--glass-edge);border-radius:26px;box-shadow:var(--glass-shadow);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
+.tabbar .wrap{padding-left:6px;padding-right:6px}
+.tabs{gap:2px;padding-block:6px}
+.tab{min-height:52px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:0;padding:6px 0 5px}
+.tab svg{width:21px;height:21px}
+.tab[aria-current="page"]{background:var(--glass-strong);color:var(--ink);box-shadow:0 3px 12px rgba(80,48,22,.14), 0 1px 0 rgba(255,255,255,.9) inset}
+.tab[aria-current="page"] svg{color:var(--signal)}
+.toast{border-radius:18px;background:rgba(28,22,18,.88);color:#F7F1EA;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+
+/* dark mode: inputs and grid colours */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) input,:root:not([data-theme="light"]) select,:root:not([data-theme="light"]) textarea,:root:not([data-theme="light"]) .picker{background:rgba(255,255,255,.06)}
+  :root:not([data-theme="light"]) .stub{background:rgba(255,255,255,.04)}
+  :root:not([data-theme="light"]) .bar i{background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,.10))}
+  :root:not([data-theme="light"]) .appt{background:rgba(44,37,33,.92)}
+  :root:not([data-theme="light"]) .appt.s-route{background:rgba(32,44,62,.94)}
+  :root:not([data-theme="light"]) .appt.s-place{background:rgba(60,44,24,.94)}
+  :root:not([data-theme="light"]) .appt.s-termine{background:rgba(26,52,38,.94)}
+  :root:not([data-theme="light"]) .toast{background:rgba(245,239,233,.92);color:#15110E}
+  :root:not([data-theme="light"]) .opts .opt-count,:root:not([data-theme="light"]) .addrsug .opt-head,:root:not([data-theme="light"]) .addrsug .src{background:rgba(255,255,255,.04)}
+}
+:root[data-theme="dark"] input,:root[data-theme="dark"] select,:root[data-theme="dark"] textarea,:root[data-theme="dark"] .picker{background:rgba(255,255,255,.06)}
+:root[data-theme="dark"] .stub{background:rgba(255,255,255,.04)}
+:root[data-theme="dark"] .bar i{background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,.10))}
+:root[data-theme="dark"] .appt{background:rgba(44,37,33,.92)}
+:root[data-theme="dark"] .appt.s-route{background:rgba(32,44,62,.94)}
+:root[data-theme="dark"] .appt.s-place{background:rgba(60,44,24,.94)}
+:root[data-theme="dark"] .appt.s-termine{background:rgba(26,52,38,.94)}
+:root[data-theme="dark"] .toast{background:rgba(245,239,233,.92);color:#15110E}
+
+/* people who ask for less transparency, or browsers without blur, get solid panels */
+@media (prefers-reduced-transparency: reduce){
+  :root{--glass:var(--surface-solid);--glass-strong:var(--surface-solid);--card:var(--surface-solid);--surface:var(--surface-solid);--steel-soft:var(--surface-solid)}
+  *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+}
+@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){
+  :root{--glass:var(--surface-solid);--glass-strong:var(--surface-solid)}
+}
+@media (prefers-reduced-motion: reduce){.btn{transition:none}.btn:active{transform:none}}
+
+/* ===================== Tableau de bord ===================== */
+.dash{display:grid;gap:14px}
+.quick{display:flex;flex-wrap:wrap;gap:8px}
+.dash-hero{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+@media (min-width:760px){.dash-hero{grid-template-columns:minmax(0,1.55fr) minmax(0,1fr)}}
+.hero-in{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+@media (min-width:520px){.hero-in{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);align-items:end}}
+.kpi-big{font:700 clamp(34px,10vw,46px)/1 var(--f-display);letter-spacing:-.035em;font-variant-numeric:tabular-nums;margin:6px 0 8px;overflow-wrap:anywhere}
+.delta{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:999px;font-size:13px;font-weight:600;background:var(--ok-bg);color:var(--ok)}
+.delta.down{background:var(--bad-bg);color:var(--bad)} .delta.flat{background:var(--idle-bg);color:var(--idle)}
+.kpi-sub{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:13.5px;color:var(--muted)}
+.pbar{height:8px;border-radius:99px;margin-top:14px;background:repeating-linear-gradient(90deg,var(--line-strong) 0 2px,transparent 2px 5px);overflow:hidden}
+.pbar i{display:block;height:100%;border-radius:99px;background:var(--accent);min-width:6px}
+.pbar-cap{font-size:12.5px;color:var(--muted);margin-top:6px}
+.bars-wrap{display:grid;gap:6px}
+.bars{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;align-items:end;height:136px}
+.bar{display:grid;grid-template-rows:auto 1fr auto;justify-items:center;align-items:end;gap:4px;height:100%}
+.bar i{display:block;width:100%;max-width:34px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(255,255,255,.62));border:1px solid var(--glass-edge);box-shadow:var(--card-shadow);min-height:6px}
+.bar.cur i{background:repeating-linear-gradient(135deg,#F6965A 0 5px,#E8582A 5px 10px);border-color:transparent;box-shadow:0 6px 16px rgba(233,87,42,.30)}
+.bar small{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.bar em{font-style:normal;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.qrows{display:grid;gap:4px}
+.qrow{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.qrow:first-child{border-top:0}
+.qicon{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;background:var(--glass-strong);border:1px solid var(--glass-edge);box-shadow:var(--card-shadow)}
+.qicon svg{width:19px;height:19px}
+.qicon.big{width:64px;height:64px;border-radius:22px}.qicon.big svg{width:30px;height:30px;color:var(--signal)}
+.qrow b{display:block;font-weight:600;font-size:15px}
+.qrow span{font-size:13px;color:var(--muted)}
+.qnum{font:700 22px/1 var(--f-display);letter-spacing:-.02em;font-variant-numeric:tabular-nums;min-width:28px;text-align:right}
+.dot-route{color:var(--info)} .dot-place{color:var(--warn)} .dot-done{color:var(--ok)}
+.rings{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px}
+.ringcard{display:grid;justify-items:center;align-content:start;gap:8px;text-align:center;padding:16px 12px;min-width:0}
+.ringcard h3{font-size:15px;font-weight:650}
+.ringcard p{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.ring{position:relative;width:92px;height:92px;flex:none}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg);display:block}
+.ring .trk{stroke:var(--line)} .ring .val{stroke:var(--signal)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font:700 20px/1 var(--f-display);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.ring b small{display:block;font:500 11px/1 var(--f-body);color:var(--muted);letter-spacing:0;margin-top:3px}
+.ring b span{display:grid;justify-items:center}
+.mechs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.mcard{display:grid;justify-items:center;gap:8px;text-align:center;padding:14px 12px}
+.mcard .who{display:flex;align-items:center;justify-content:space-between;width:100%;gap:8px}
+.avatar{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;font:700 13px/1 var(--f-body);background:var(--glass-strong);border:1px solid var(--glass-edge);box-shadow:var(--card-shadow)}
+.mcard .when{font:600 12px/1 var(--f-body);padding:4px 8px;border-radius:999px;background:var(--glass-strong);border:1px solid var(--glass-edge);color:var(--muted)}
+.mcard h3{font-size:15px}
+.mcard p{font-size:13px;color:var(--muted)}
+.mcard .btn{width:100%}
+.mcard.add{border:1.5px dashed var(--line-strong);background:transparent;box-shadow:none;place-content:center;min-height:200px;cursor:pointer;color:var(--ink);font:inherit}
+.mcard.add .plus{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--glass-strong);border:1px solid var(--glass-edge);font-size:22px;box-shadow:var(--card-shadow)}
+.nextlist{display:grid;gap:8px}
+.nrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:center;width:100%;text-align:left;padding:10px 12px;border-radius:16px;background:var(--card);border:1px solid var(--glass-edge);box-shadow:var(--card-shadow);cursor:pointer;color:var(--ink)}
+.nrow .t{font:700 15px/1.1 var(--f-display);letter-spacing:-.02em;white-space:nowrap;text-align:center}
+.nrow .t small{display:block;font:500 11.5px/1.2 var(--f-body);color:var(--muted);letter-spacing:0}
+.nrow .m{min-width:0;display:grid;gap:1px}
+.nrow .m b{font-weight:600;overflow-wrap:anywhere}
+.nrow .m span{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.hbars{display:grid;gap:10px}
+.hbar{display:grid;gap:4px}
+.hbar .hl2{display:flex;justify-content:space-between;gap:10px;font-size:14px}
+.hbar .hl2 span{min-width:0;overflow-wrap:anywhere}
+.hbar .hl2 b{font-variant-numeric:tabular-nums}
+.hbar i{display:block;height:8px;border-radius:99px;background:var(--accent);min-width:6px}
+.hbar .trk2{height:8px;border-radius:99px;background:var(--line)}
+.two{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+@media (min-width:760px){.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.money-due{font:700 30px/1 var(--f-display);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 </style>
 <script>window.__GARAGE_TEAM = true;</script>
 <script src="config.js"></script>
@@ -1238,7 +1514,7 @@ body.locked{overflow:hidden}
       if (!r[2].error) X.members = r[2].data;
       X.liveAt = Date.now(); X.liveLoading = null;
       drawMap();
-      if (A() && A().S.tab === 'carte' && !A().S.screen) render();
+      if (A() && (A().S.tab === 'carte' || A().S.tab === 'accueil') && !A().S.screen) render();
     }, function(){ X.liveLoading = null; });
   }
   function crew(){
@@ -1324,6 +1600,20 @@ body.locked{overflow:hidden}
     });
     body += '</section><p class="muted small">Positions partagées seulement pendant la journée de chaque mécano, gardées 30 jours.</p>';
     return {top:top, body:body};
+  }
+  /* dashboard: who is working and who is on the way */
+  function dashExtra(){
+    if (!isStaff()) return '';
+    if (!X.liveAt || Date.now() - X.liveAt > 30000) loadLive();
+    var c = crew(), on = c.filter(function(x){ return mechState(x.l) !== 'off'; });
+    var h = '<section class="sect" aria-labelledby="d-road"><div class="sect-head"><h3 id="d-road">Sur la route</h3><button type="button" class="btn sm" data-act="tab" data-t="carte">Voir la carte</button></div>';
+    if (!c.length) return h + '<p class="muted">Aucun mécano n\'a encore de compte.' + (me.role === 'owner' ? ' <a href="#equipe">Ajouter l\'équipe</a>' : '') + '</p></section>';
+    if (!on.length) h += '<p class="muted small">Personne n\'a commencé sa journée.</p>';
+    h += '<div class="qrows">' + c.map(function(x){
+      var st = mechState(x.l), t = X.active.filter(function(a){ return a.user_id === x.m.user_id; })[0];
+      return '<div class="qrow"><span class="qicon" aria-hidden="true">' + esc(initials(x.m.name)) + '</span><div><b>' + esc(x.m.name) + '</b><span>' + (t ? 'En route vers ' + esc(t.client_first || 'un client') + (t.eta_at ? ' · ' + esc(clock(t.eta_at)) : '') : st === 'off' ? 'Pas en journée' : 'Position ' + esc(ago(x.l.at))) + '</span></div><span class="pillx ' + STATE[st].cls + '">' + STATE[st].lbl + '</span></div>';
+    }).join('') + '</div></section>';
+    return h;
   }
   setInterval(function(){ if (document.visibilityState !== 'hidden' && A() && A().S.tab === 'carte' && !A().S.screen) loadLive().then(function(){ Object.keys(X.showPath).forEach(function(uid){ if (X.showPath[uid]) loadPath(uid); }); }); }, 10000);
 
@@ -1445,7 +1735,7 @@ body.locked{overflow:hidden}
         if (rl === 'mecano' && !mc) return eqErr(api.mechanics().length ? 'Choisis son nom dans l\'agenda (liste des mécanos).' : 'Ajoute d\'abord le nom de ce mécano dans Réglages → Mécanos.');
         eqErr(''); b.disabled = true; b.textContent = 'Création…';
         invoke('members', {action:'create', name:nm, email:em, role:rl, mechanic:mc}).then(function(r){
-          X.eq.list = r.members; X.eq.created = {name:nm, email:em, password:r.password};
+          X.eq.list = r.members; X.eq.created = {name:nm, email:em, password:r.password}; X.liveAt = 0;
           ['nw-name', 'nw-email', 'nw-mech'].forEach(function(i){ var e = document.getElementById(i); if (e) e.value = ''; });
           render(); window.scrollTo(0, 0);
         }, function(e){ b.disabled = false; b.textContent = 'Créer le compte'; eqErr(e.message); });
@@ -1522,10 +1812,12 @@ body.locked{overflow:hidden}
       if (w === 'tab:reglages') return r === 'owner';
       if (w === 'tab:carte') return r !== 'mecano';
       if (w === 'tab:equipe') return r === 'owner';
-      if (w === 'book' || w === 'deleteJob' || w === 'hours') return r !== 'mecano';
+      if (w === 'book' || w === 'deleteJob' || w === 'hours' || w === 'money') return r !== 'mecano';
       return undefined;
     },
     myMechanic:function(){ return me && me.role === 'mecano' ? me.mechanic : null; },
+    greetName:function(){ return me ? first(me.name) : ''; },
+    dashTop:agendaTop, dashExtra:dashExtra,
     agendaTop:agendaTop, settingsTop:settingsTop, jobExtra:jobExtra, onStatus:onStatus, onAction:onAction,
     nextInvoiceNo:function(start){ return T.sb.rpc('next_invoice_number', {p_start:start}).then(function(r){ if (r.error || typeof r.data !== 'number') throw r.error || new Error('no number'); return r.data; }); }
   };
@@ -1559,6 +1851,7 @@ body.locked{overflow:hidden}
 <main class="wrap" id="main"></main>
 <nav class="tabbar" id="tabbar" aria-label="Sections">
   <div class="wrap tabs">
+    <button type="button" class="tab" data-act="tab" data-t="accueil"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="8" rx="2"/><rect x="13.5" y="3.5" width="7" height="5" rx="2"/><rect x="13.5" y="11.5" width="7" height="9" rx="2"/><rect x="3.5" y="14.5" width="7" height="6" rx="2"/></svg><span>Accueil</span></button>
     <button type="button" class="tab" data-act="tab" data-t="agenda"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Agenda</span></button>
     <button type="button" class="tab" data-act="tab" data-t="clients"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20c1.3-3.7 4-5.6 7.2-5.6s5.9 1.9 7.2 5.6"/></svg><span>Clients</span></button>
     <button type="button" class="tab" data-act="tab" data-t="factures"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg><span>Factures</span></button>
@@ -1678,7 +1971,7 @@ function canHours(){ var e = ext(); return canAdmin() || (canWrite() && !!(e && 
 function lockedMech(){ var e = ext(), m = e && typeof e.myMechanic === 'function' ? e.myMechanic() : null; if (!m) return null; return mechanics().filter(function(x){ return norm(x) === norm(m); })[0] || m; }
 function extTabs(){ var e = ext(); return e && Array.isArray(e.tabs) ? e.tabs : []; }
 function extTab(k){ return extTabs().filter(function(t){ return t.key === k; })[0] || null; }
-function tabOk(k){ return (['agenda','clients','factures','reglages'].indexOf(k) >= 0 || !!extTab(k)) && allow('tab:' + k); }
+function tabOk(k){ return (['accueil','agenda','clients','factures','reglages'].indexOf(k) >= 0 || !!extTab(k)) && allow('tab:' + k); }
 function findJob(id){ for (var i = 0; i < S.jobs.length; i++) if (S.jobs[i].id === id) return S.jobs[i]; return null; }
 function jobPostal(j){ var c = j.client || {}; return c.postal || findPostal(c.address); }
 function jobPt(j){ return ptOf(jobPostal(j)); }
@@ -1846,7 +2139,7 @@ function renderNav(){
   $$('.tab').forEach(function(b){ if (b.dataset.t === S.tab) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
 }
 function render(){
-  if (!tabOk(S.tab)) S.tab = 'agenda';
+  if (!tabOk(S.tab)) S.tab = 'accueil';
   var lm = lockedMech(); if (lm) S.mech = lm;
   renderNav();
   if (S.screen === 'edit' || S.screen === 'invoice' || S.screen === 'cform') return;
@@ -1855,6 +2148,7 @@ function render(){
   if (S.screen === 'job') v = viewJob();
   else if (S.screen === 'preview') v = viewPreview();
   else if (S.screen === 'client') v = viewClient();
+  else if (S.tab === 'accueil') v = viewDash();
   else if (S.tab === 'clients') v = viewClients();
   else if (S.tab === 'factures') v = viewInvoices();
   else if (S.tab === 'reglages') v = viewSettings();
@@ -2782,6 +3076,119 @@ function checkHours(){
   box.textContent = slotOpen(dayInfo(date), colKeyFor(val('f-mech')), t) ? '' : 'Attention : ce moment est en dehors de l\'horaire d\'ouverture.';
 }
 
+/* ---------- tableau de bord ---------- */
+var DMS = new Intl.DateTimeFormat('fr-CA', {month:'short'});
+var DI = {
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>',
+  van:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16V8a2 2 0 0 1 2-2h9l4 4h1a2 2 0 0 1 2 2v4h-2"/><circle cx="7.5" cy="16.5" r="2"/><circle cx="16.5" cy="16.5" r="2"/><path d="M9.5 16.5h5"/></svg>',
+  wrench:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6.5a4 4 0 0 0 5 5l-8.5 8.5a2.1 2.1 0 0 1-3-3z"/><path d="M14.5 6.5 17 4l3 3-2.5 2.5"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg>',
+  bill:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M14.5 8.5c-.4-.9-1.4-1.5-2.5-1.5-1.4 0-2.5.8-2.5 1.9 0 2.6 5 1.4 5 4.1 0 1.1-1.1 2-2.5 2-1.2 0-2.2-.6-2.6-1.6M12 6v1M12 15v1"/></svg>'
+};
+function monthsBack(n){ var d = parseISO(today()), out = []; for (var i = n - 1; i >= 0; i--){ var x = new Date(d.getFullYear(), d.getMonth() - i, 1); out.push(x.getFullYear() + '-' + pad(x.getMonth() + 1)); } return out; }
+function kMoney(n){ n = +n || 0; return n >= 1000 ? (Math.round(n / 100) / 10).toLocaleString('fr-CA') + ' k$' : Math.round(n) + ' $'; }
+function ring(frac, big, small, label){
+  var r = 40, c = 2 * Math.PI * r, f = Math.max(0, Math.min(1, +frac || 0));
+  return '<div class="ring" role="img" aria-label="' + esc(label) + '"><svg viewBox="0 0 96 96" aria-hidden="true"><circle class="trk" cx="48" cy="48" r="' + r + '" fill="none" stroke-width="9"/>' +
+    (f > 0 ? '<circle class="val" cx="48" cy="48" r="' + r + '" fill="none" stroke-width="9" stroke-linecap="round" stroke-dasharray="' + (c * f).toFixed(1) + ' ' + c.toFixed(1) + '"/>' : '') +
+    '</svg><b><span>' + esc(big) + (small ? '<small>' + esc(small) + '</small>' : '') + '</span></b></div>';
+}
+/* how much of this week's open time is already booked */
+function weekLoad(){
+  var wk = weekOf(today()), sm = slotMin(), cols = mechanics().length ? mechanics() : ['_all'], open = 0, booked = 0;
+  wk.forEach(function(d){ var info = dayInfo(d); if (!info.open && !info.opened.length) return; cols.forEach(function(c){ for (var m = 5 * 60; m < 23 * 60 + 30; m += sm){ if (slotOpen(info, c, toHM(m))) open += sm; } }); });
+  S.jobs.forEach(function(j){ if (wk.indexOf(j.date) >= 0 && j.status !== 'annule') booked += (+j.durationMin || 60); });
+  return {open:open, booked:booked, frac:open ? Math.min(1, booked / open) : 0};
+}
+function byWhen(a, b){ return String(a.date).localeCompare(String(b.date)) || String(a.time).localeCompare(String(b.time)); }
+function viewDash(){
+  var t = today(), now = nowHM(), money_ = allow('money'), lm = lockedMech(), e = ext(), w = canWrite();
+  var jobs = S.jobs.filter(function(j){ return !lm || norm(j.mechanic) === norm(lm); });
+  var todays = jobs.filter(function(j){ return j.date === t && j.status !== 'annule'; }).sort(byWhen);
+  var cnt = {planifie:0, route:0, place:0, termine:0};
+  todays.forEach(function(j){ var k = j.status || 'planifie'; if (k in cnt) cnt[k]++; });
+  var upcoming = jobs.filter(function(j){ return j.status !== 'annule' && j.status !== 'termine' && (j.date > t || (j.date === t && (j.status === 'route' || j.status === 'place' || String(j.time || '') >= now))); }).sort(byWhen);
+  var name = e && typeof e.greetName === 'function' ? e.greetName() : '';
+  var hr = new Date().getHours(), hello = hr >= 18 ? 'Bonsoir' : 'Bonjour';
+  var top = '<div class="wrap top-in"><div class="brandrow"><div><div class="eyebrow">' + esc(bizName()) + ' · ' + esc(cap(dayLong(t))) + '</div><h1>' + esc(hello + (name ? ' ' + name : '')) + '</h1></div>' +
+    (canBook() ? '<button type="button" class="btn primary sm" data-act="new">+ Réservation</button>' : '') + '</div></div>';
+  var b = banners();
+  if (!S.loaded && !S.noDb){ b += '<p class="muted">Ouverture du carnet…</p>'; return {top:top, body:b}; }
+  if (e && typeof e.dashTop === 'function') b += e.dashTop() || '';
+  var quick = '';
+  if (w && allow('quick')) quick += '<button type="button" class="chip" data-act="quick">+ Facture sur place</button>';
+  if (w && allow('newClient')) quick += '<button type="button" class="chip" data-act="cl-new">+ Nouveau client</button>';
+  quick += '<button type="button" class="chip" data-act="tab" data-t="agenda">Ouvrir l\'agenda</button>';
+  b += '<div class="dash"><div class="quick" role="group" aria-label="Raccourcis">' + quick + '</div>';
+
+  /* today, like a control panel */
+  var nextToday = upcoming.filter(function(j){ return j.date === t; })[0];
+  var todayCard = '<section class="sect" aria-labelledby="d-today"><div class="sect-head"><h3 id="d-today">Aujourd\'hui</h3><span class="pill">' + todays.length + ' job' + (todays.length > 1 ? 's' : '') + '</span></div><div class="qrows">' +
+    [['cal', 'Planifiées', 'à faire aujourd\'hui', cnt.planifie, ''], ['van', 'En route', 'le client est avisé', cnt.route, 'dot-route'], ['wrench', 'Sur place', 'travail en cours', cnt.place, 'dot-place'], ['check', 'Terminées', 'bravo', cnt.termine, 'dot-done']].map(function(r){
+      return '<div class="qrow"><span class="qicon ' + r[4] + '">' + DI[r[0]] + '</span><div><b>' + r[1] + '</b><span>' + r[2] + '</span></div><span class="qnum">' + r[3] + '</span></div>';
+    }).join('') + '</div>' +
+    (nextToday ? '<button type="button" class="nrow" data-act="open" data-id="' + esc(nextToday.id) + '"><span class="t">' + esc(hm(nextToday.time)) + '<small>prochaine</small></span><span class="m"><b>' + esc(cl(nextToday).name || 'Client') + '</b><span>' + esc([vehLabel(nextToday), nextToday.mechanic].filter(Boolean).join(' · ')) + '</span></span>' + pill(nextToday.status || 'planifie', ST[nextToday.status || 'planifie']) + '</button>' : '<p class="muted small">Plus rien à l\'horaire aujourd\'hui.</p>') + '</section>';
+
+  if (money_){
+    var months = monthsBack(6), sums = {}, paid = 0, issuedN = 0;
+    months.forEach(function(m){ sums[m] = 0; });
+    jobs.forEach(function(j){ var v = j.invoice; if (!v || !v.number) return; var k = String(v.issuedAt || j.date || '').slice(0, 7); if (k in sums) sums[k] += num(v.total); if (k === months[5]){ issuedN++; if (v.paid) paid += num(v.total); } });
+    var cur = sums[months[5]], prev = sums[months[4]], goal = num(cfg().goal), max = Math.max.apply(null, months.map(function(m){ return sums[m]; }).concat([1]));
+    var delta = prev > 0 ? Math.round((cur - prev) / prev * 100) : null;
+    var frac = goal ? cur / goal : (cur ? paid / cur : 0);
+    var mName = DMONTH.format(parseISO(t));
+    var hero = '<section class="sect" aria-labelledby="d-rev"><div class="hero-in"><div><div class="eyebrow" id="d-rev">Revenus facturés en ' + esc(mName) + '</div><div class="kpi-big">' + esc(money(cur)) + '</div>' +
+      '<div class="kpi-sub">' + (delta === null ? '<span class="delta flat">nouveau</span>' : '<span class="delta' + (delta < 0 ? ' down' : delta === 0 ? ' flat' : '') + '">' + (delta > 0 ? '+' : '') + delta + ' %</span>') + '<span>par rapport à ' + esc(DMONTH.format(parseISO(months[4] + '-01'))) + '</span></div>' +
+      '<div class="pbar" aria-hidden="true"><i style="width:' + Math.round(Math.min(1, frac) * 100) + '%"></i></div>' +
+      '<p class="pbar-cap">' + (goal ? Math.round(frac * 100) + ' % de l\'objectif de ' + esc(money(goal)) : 'Payé : ' + esc(money(paid)) + ' sur ' + esc(money(cur)) + ' · ' + issuedN + ' facture' + (issuedN > 1 ? 's' : '')) + '</p></div>' +
+      '<div class="bars-wrap"><div class="eyebrow">6 derniers mois</div><div class="bars" role="img" aria-label="' + esc(months.map(function(m){ return DMONTH.format(parseISO(m + '-01')) + ' ' + money(sums[m]); }).join(', ')) + '">' +
+      months.map(function(m, i){ var hgt = Math.max(4, Math.round(sums[m] / max * 100)); return '<div class="bar' + (i === 5 ? ' cur' : '') + '"><em>' + (sums[m] ? esc(kMoney(sums[m])) : '') + '</em><i style="height:' + hgt + '%"></i><small>' + esc(DMS.format(parseISO(m + '-01')).replace('.', '')) + '</small></div>'; }).join('') +
+      '</div></div></div></section>';
+    b += '<div class="dash-hero">' + hero + todayCard + '</div>';
+  } else b += todayCard;
+
+  /* rings */
+  var done = cnt.termine, tot = todays.length, wl = weekLoad(), rings = '';
+  rings += '<section class="sect ringcard">' + ring(tot ? done / tot : 0, done + '/' + tot, 'terminées', done + ' jobs terminées sur ' + tot + ' aujourd\'hui') + '<h3>Jobs du jour</h3><p>' + (tot ? (tot - done) + ' encore à faire' : 'Aucune job aujourd\'hui') + '</p></section>';
+  rings += '<section class="sect ringcard">' + ring(wl.frac, Math.round(wl.frac * 100) + ' %', 'réservé', 'Semaine réservée à ' + Math.round(wl.frac * 100) + ' %') + '<h3>Cette semaine</h3><p>' + esc(dur(wl.booked) || '0 h') + ' réservées sur ' + esc(dur(wl.open) || '0 h') + ' ouvertes</p></section>';
+  if (money_){
+    var mk = t.slice(0, 7), iss = 0, pd = 0, due = 0, nDue = 0;
+    S.jobs.forEach(function(j){ var v = j.invoice; if (!v || !v.number) return; if (String(v.issuedAt || '').slice(0, 7) === mk){ iss += num(v.total); if (v.paid) pd += num(v.total); } if (!v.paid){ due += num(v.total); nDue++; } });
+    rings += '<section class="sect ringcard">' + ring(iss ? pd / iss : 0, (iss ? Math.round(pd / iss * 100) : 0) + ' %', 'payé', 'Factures du mois payées à ' + (iss ? Math.round(pd / iss * 100) : 0) + ' %') + '<h3>Factures du mois</h3><p>' + esc(money(pd)) + ' encaissés</p></section>';
+    rings += '<section class="sect ringcard"><div class="ring" aria-hidden="true" style="display:grid;place-items:center"><span class="qicon big">' + DI.bill + '</span></div><h3>À recevoir</h3><div class="money-due">' + esc(money(due)) + '</div><p>' + nDue + ' facture' + (nDue > 1 ? 's' : '') + ' non payée' + (nDue > 1 ? 's' : '') + '</p>' + (nDue ? '<button type="button" class="btn sm" data-act="dash-unpaid">Voir</button>' : '') + '</section>';
+  }
+  b += '<div class="rings">' + rings + '</div>';
+
+  /* each mechanic, like goal cards */
+  var ms = mechanics();
+  if (ms.length && !lm){
+    var cards = ms.map(function(m){
+      var mj = todays.filter(function(j){ return j.mechanic === m; }), md = mj.filter(function(j){ return j.status === 'termine'; }).length, nx = mj.filter(function(j){ return j.status !== 'termine'; })[0];
+      var ini = String(m).trim().split(/\s+/).map(function(x){ return x.charAt(0); }).join('').slice(0, 2).toUpperCase();
+      return '<section class="sect mcard"><div class="who"><span class="avatar" aria-hidden="true">' + esc(ini) + '</span><span class="when">' + (nx ? esc(hm(nx.time)) : 'libre') + '</span></div>' +
+        ring(mj.length ? md / mj.length : 0, mj.length ? Math.round(md / mj.length * 100) + ' %' : '—', mj.length ? md + '/' + mj.length : 'aucune', m + ' : ' + md + ' jobs terminées sur ' + mj.length) +
+        '<h3>' + esc(m) + '</h3><p>' + (mj.length ? mj.length + ' job' + (mj.length > 1 ? 's' : '') + ' aujourd\'hui' : 'Pas de job aujourd\'hui') + '</p><button type="button" class="btn sm" data-act="dash-mech" data-v="' + esc(m) + '">Voir son agenda</button></section>';
+    }).join('');
+    if (canBook()) cards += '<button type="button" class="sect mcard add" data-act="new"><span class="plus" aria-hidden="true">+</span><h3>Nouvelle réservation</h3><p>Trouver un moment libre</p></button>';
+    b += '<section aria-labelledby="d-team"><h2 id="d-team" class="sr-only">Mécanos</h2><div class="mechs">' + cards + '</div></section>';
+  }
+
+  /* what is coming + popular services */
+  var nextList = upcoming.slice(0, 5).map(function(j){
+    return '<button type="button" class="nrow" data-act="open" data-id="' + esc(j.id) + '"><span class="t">' + esc(hm(j.time)) + '<small>' + esc(j.date === t ? 'aujourd\'hui' : j.date === addDays(t, 1) ? 'demain' : dShort(j.date)) + '</small></span><span class="m"><b>' + esc(cl(j).name || 'Client') + '</b><span>' + esc([jobServices(j)[0], j.mechanic].filter(Boolean).join(' · ') || vehLabel(j)) + '</span></span>' + pill(j.status || 'planifie', ST[j.status || 'planifie']) + '</button>';
+  }).join('');
+  var since = addDays(t, -30), counts = {};
+  jobs.forEach(function(j){ if (j.status === 'annule' || j.date < since || j.date > t) return; jobServices(j).forEach(function(n){ var k = String(n).trim(); if (k) counts[k] = (counts[k] || 0) + 1; }); });
+  var topS = Object.keys(counts).sort(function(x, y){ return counts[y] - counts[x] || x.localeCompare(y, 'fr'); }).slice(0, 5), topMax = topS.length ? counts[topS[0]] : 1;
+  b += '<div class="two"><section class="sect" aria-labelledby="d-next"><div class="sect-head"><h3 id="d-next">À venir</h3>' + (upcoming.length > 5 ? '<button type="button" class="linkbtn" data-act="tab" data-t="agenda">Tout voir</button>' : '') + '</div>' +
+    (nextList ? '<div class="nextlist">' + nextList + '</div>' : '<p class="muted">Rien à l\'horaire pour l\'instant.</p>') + '</section>' +
+    '<section class="sect" aria-labelledby="d-svc"><h3 id="d-svc">Services populaires · 30 jours</h3>' +
+    (topS.length ? '<div class="hbars">' + topS.map(function(n){ return '<div class="hbar"><div class="hl2"><span>' + esc(n) + '</span><b>' + counts[n] + '</b></div><div class="trk2"><i style="width:' + Math.round(counts[n] / topMax * 100) + '%"></i></div></div>'; }).join('') + '</div>' : '<p class="muted">Les services des jobs apparaîtront ici.</p>') + '</section></div>';
+  if (e && typeof e.dashExtra === 'function') b += e.dashExtra() || '';
+  b += '</div>';
+  return {top:top, body:b};
+}
+
 /* ---------- job detail ---------- */
 function viewJob(){
   var j = findJob(S.jobId);
@@ -3491,7 +3898,7 @@ function viewSettings(){
     '<section class="sect"><h3>Taxes</h3><label class="check"><input type="checkbox" id="s-tax"' + (c.taxesOn !== false ? ' checked' : '') + dis + '> Inscrit aux taxes : ajouter TPS (5 %) et TVQ (9,975 %)</label>' +
       '<div class="grid2 stack-sm">' + inputF('s-tps', 'Numéro de TPS', c.tpsNo, 'class="mono" autocomplete="off" placeholder="123456789 RT0001"' + dis) + inputF('s-tvq', 'Numéro de TVQ', c.tvqNo, 'class="mono" autocomplete="off" placeholder="1234567890 TQ0001"' + dis) + '</div>' +
     '</section>' +
-    '<section class="sect"><h3>Tarifs</h3><div class="grid2">' + inputF('s-rate', 'Taux horaire ($/h)', c.rate ? String(c.rate).replace('.', ',') : '', 'inputmode="decimal" autocomplete="off"' + dis) + inputF('s-travel', 'Frais de déplacement ($)', c.travelFee ? String(c.travelFee).replace('.', ',') : '', 'inputmode="decimal" autocomplete="off"' + dis) + '</div></section>' +
+    '<section class="sect"><h3>Tarifs</h3><div class="grid2">' + inputF('s-rate', 'Taux horaire ($/h)', c.rate ? String(c.rate).replace('.', ',') : '', 'inputmode="decimal" autocomplete="off"' + dis) + inputF('s-travel', 'Frais de déplacement ($)', c.travelFee ? String(c.travelFee).replace('.', ',') : '', 'inputmode="decimal" autocomplete="off"' + dis) + '</div>' + inputF('s-goal', 'Objectif de revenus par mois ($, optionnel)', c.goal ? String(c.goal).replace('.', ',') : '', 'inputmode="decimal" autocomplete="off" placeholder="Ex. 20 000"' + dis) + '<p class="hint">Le tableau de bord montre où tu en es face à cet objectif.</p></section>' +
     '<section class="sect"><div class="sect-head"><h3>Liste de prix</h3></div><p class="muted small">Tes services à prix fixe. Ils s\'ajoutent à la facture en un clic.</p><div id="svcs-box" class="stack">' +
       (svc.length ? svc.map(function(s, i){ return svcRow(s, i, dis); }).join('') : (adm ? svcRow({name:'', price:''}, 0, '') : '<p class="muted">Aucun service.</p>')) +
       '</div>' + (adm ? '<button type="button" class="btn sm" data-act="addsvcrow">+ Ajouter un service</button>' : '') + '</section>' +
@@ -3525,7 +3932,7 @@ function saveSettings(e){
     promos:prs,
     biz:{name:val('s-name'), phone:fmtPhone(val('s-phone')), email:val('s-email'), address:val('s-addr')},
     taxesOn:$('#s-tax').checked, tpsNo:val('s-tps').toUpperCase(), tvqNo:val('s-tvq').toUpperCase(),
-    rate:r2(num(val('s-rate'))), travelFee:r2(num(val('s-travel'))),
+    rate:r2(num(val('s-rate'))), travelFee:r2(num(val('s-travel'))), goal:r2(num(val('s-goal'))),
     services:svc, mechanics:val('s-mechs').split('\n').map(function(s){ return s.trim(); }).filter(Boolean),
     prefix:$('#s-prefix').value.trim(), startNo:Math.max(1, parseInt(val('s-start'), 10) || 1), footer:val('s-footer'), updatedAt:Date.now()
   };
@@ -3720,6 +4127,8 @@ document.addEventListener('click', function(e){
     case 'addsvcrow': { var box = $('#svcs-box'); if (box){ box.insertAdjacentHTML('beforeend', svcRow({name:'', price:''}, svcSeq++, '')); S.settingsDirty = true; var r = $('#s-reset'); if (r) r.hidden = false; var inp = box.lastElementChild.querySelector('input'); if (inp) inp.focus(); } break; }
     case 'delsvc': { var row = b.closest('.svc-row'); if (row){ row.remove(); S.settingsDirty = true; var rr = $('#s-reset'); if (rr) rr.hidden = false; } break; }
     case 'setreset': S.settingsDirty = false; render(); break;
+    case 'dash-mech': S.mech = v || ''; lsSet('gm.mech', S.mech); S.day = today(); if (location.hash !== '#agenda') location.hash = 'agenda'; else { S.tab = 'agenda'; render(); } break;
+    case 'dash-unpaid': S.invFilter = 'unpaid'; if (location.hash !== '#factures') location.hash = 'factures'; else { S.tab = 'factures'; render(); } break;
     default: if (ext() && typeof ext().onAction === 'function') ext().onAction(a, b);
   }
 });
@@ -3740,7 +4149,7 @@ window.addEventListener('hashchange', function(){
   if (S.sheet){ S.sheet = false; $('#sheet').hidden = true; $('#sheet-body').innerHTML = ''; document.body.classList.remove('locked'); }
   S.hoursEdit = false;
   var h = location.hash.slice(1);
-  S.tab = tabOk(h) ? h : 'agenda';
+  S.tab = tabOk(h) ? h : 'accueil';
   S.screen = null; S.inv = null; render(); window.scrollTo(0, 0);
 });
 
@@ -3749,7 +4158,7 @@ document.addEventListener('visibilitychange', function(){ if (document.visibilit
 /* ---------- boot ---------- */
 function boot(){
   var h = location.hash.slice(1);
-  S.tab = tabOk(h) ? h : 'agenda';
+  S.tab = tabOk(h) ? h : 'accueil';
   render();
   var C = window.claude;
   if (!C || typeof C.use !== 'function'){ S.noDb = true; render(); return; }
