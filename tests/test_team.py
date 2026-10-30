@@ -33,9 +33,10 @@ ghl_reset()
 CODE = 'R4ND-0M7X-Q2PZ'
 psql("insert into public.setup_codes (code_hash) values ('%s')" % hashlib.sha256(CODE.replace('-', '').encode()).hexdigest())
 
-def ctx_for(browser, geo=None, perms=True):
-    c = browser.new_context(viewport={'width': 390, 'height': 844}, timezone_id='America/Toronto', locale='fr-CA',
+def ctx_for(browser, geo=None, perms=True, simple=False):
+    c = browser.new_context(viewport={'width': 390, 'height': 844}, timezone_id='America/Toronto', locale='fr-CA', has_touch=simple,
                             geolocation=geo, permissions=(['geolocation', 'clipboard-read', 'clipboard-write'] if perms else []))
+    if not simple: c.add_init_script("try{localStorage.setItem('gm.ui','full')}catch(e){}")
     c.route('https://tile.openstreetmap.org/**', lambda r: r.fulfill(status=200, content_type='image/png', body=b''))
     c.route('https://fonts.googleapis.com/**', lambda r: r.fulfill(status=200, content_type='text/css', body=''))
     c.route('https://photon.komoot.io/**', lambda r: r.fulfill(status=200, content_type='application/json', body='{"type":"FeatureCollection","features":[]}'))
@@ -276,6 +277,54 @@ with sync_playwright() as pw:
     except Exception: ok = False
     check('GPS refused: clear instruction', ok, ap.text_content('#sh-line'))
     ap.click('[data-act="sh-end"]'); check('Ali ends day', toast_has(ap, 'Bonne soirée'))
+
+    # ---------- 9b. simple phone version (real logins) ----------
+    def plus_rows(p): return p.evaluate("[...document.querySelectorAll('nav.ph-menu .ph-row b')].map(b=>b.textContent)")
+    def ph_tabs(p): return p.evaluate("[...document.querySelectorAll('#tabbar .tab:not([hidden])')].sort((a,b)=>a.getBoundingClientRect().x-b.getBoundingClientRect().x).map(b=>b.dataset.t ? b.textContent.trim() : '+')")
+    mc = ctx_for(br, perms=False, simple=True); mp = page_for(mc, 'ali-phone'); login(mp, 'ali@garage.test', ALI_PW); mp.wait_for_selector('.ph-list, .empty-card', timeout=15000)
+    mp.wait_for_timeout(800)
+    check('phone · mechanic: tabs « Ma journée », Clients, +, Factures, Plus', ph_tabs(mp) == ['Ma journée', 'Clients', '+', 'Factures', 'Plus'], ph_tabs(mp))
+    check('phone · mechanic: his day only (Paul, not Marie), no free-time rows', mp.locator('.ph-job[data-id="j2"]').count() == 1 and mp.locator('.ph-job[data-id="j1"]').count() == 0 and mp.locator('.ph-gap').count() == 0)
+    check('phone · mechanic: « Commencer ma journée » on top of his day', mp.locator('[data-act="sh-start"]').count() == 1)
+    check('phone · mechanic: no mechanic filter', mp.locator('#ph-mech').count() == 0)
+    check('phone · mechanic: no sideways scroll', no_hscroll(mp))
+    mp.screenshot(path=os.path.join(SC, 'team_phone_mech.png'))
+    mp.click('[data-act="ph-day"][data-v="1"]'); mp.wait_for_timeout(300)
+    check('phone · mechanic: workday card only on today', mp.locator('[data-act="sh-start"]').count() == 0)
+    mp.click('[data-act="ph-today"]'); mp.wait_for_timeout(300)
+    mp.click('.ph-job[data-id="j2"]'); mp.wait_for_selector('.nextbtn', timeout=8000)
+    check('phone · mechanic job: big button « Je suis arrivé » (job is en route)', mp.text_content('.nextbtn') == 'Je suis arrivé', mp.text_content('.nextbtn'))
+    check('phone · mechanic job: tracking details shown, no duplicate buttons', mp.locator('.er').count() == 1 and mp.locator('.er [data-act="status"]').count() == 0)
+    mp.click('.nextbtn')
+    ok = False
+    for _ in range(25):
+        if psql("select data->>'status' from public.docs where path='jobs/j2'") == 'place' and psql("select status from public.tracks where job_id='j2'") == 'arrived': ok = True; break
+        time.sleep(0.4)
+    check('phone · mechanic: « Je suis arrivé » saved + client tracking closed (real base)', ok, psql("select data->>'status' from public.docs where path='jobs/j2'"))
+    mp.wait_for_timeout(500)
+    check('phone · mechanic job: next = « Terminer la job »', (mp.text_content('.nextbtn') or '') == 'Terminer la job', mp.text_content('.nextbtn'))
+    mp.click('.tab[data-t="plus"]'); mp.wait_for_timeout(400)
+    check('phone · mechanic Plus: dashboard only (no map, team, hours, settings)', plus_rows(mp) == ['Tableau de bord'], plus_rows(mp))
+    check('phone · mechanic Plus: who is signed in + sign out', 'Ali' in mp.text_content('main') and mp.locator('[data-act="acct-out"]').count() == 1)
+    mp.click('.tab-new'); mp.wait_for_timeout(300)
+    nm = mp.evaluate("[...document.querySelectorAll('#sheet .ph-row b')].map(b=>b.textContent)")
+    check('phone · mechanic « + »: no booking', 'Nouvelle réservation' not in nm and 'Facture sur place' in nm, nm)
+    mc.close()
+    oc2 = ctx_for(br, perms=False, simple=True); op2 = page_for(oc2, 'owner-phone'); login(op2, 'hassan@garage.test', 'Motdepasse-2026'); op2.wait_for_selector('.dayhead', timeout=15000)
+    op2.wait_for_timeout(800)
+    check('phone · owner: tabs « Aujourd\'hui », Clients, +, Factures, Plus', ph_tabs(op2) == ["Aujourd'hui", 'Clients', '+', 'Factures', 'Plus'], ph_tabs(op2))
+    check('phone · owner: sees both jobs + mechanic filter', op2.locator('.ph-job').count() == 2 and op2.locator('#ph-mech').count() == 1)
+    op2.click('.tab[data-t="plus"]'); op2.wait_for_timeout(400)
+    check('phone · owner Plus: dashboard, map, team, hours, settings', plus_rows(op2) == ['Tableau de bord', 'Carte des mécanos', 'Équipe et accès', "Heures d'ouverture", 'Réglages'], plus_rows(op2))
+    op2.screenshot(path=os.path.join(SC, 'team_phone_plus.png'))
+    op2.click('a[href="#carte"]'); op2.wait_for_selector('#map-slot', timeout=8000)
+    check('phone · owner: map opens from Plus, back arrow to Plus', op2.locator('#map-slot').count() == 1 and op2.locator('[data-act="ph-back"]').count() == 1 and op2.locator('.tab[data-t="plus"][aria-current="page"]').count() == 1)
+    op2.click('[data-act="ph-back"]'); op2.wait_for_timeout(400)
+    op2.click('a[href="#equipe"]'); op2.wait_for_selector('.eqp', timeout=8000)
+    check('phone · owner: team screen from Plus', op2.locator('.eqp').count() == 4 and no_hscroll(op2))
+    op2.goto(BASE + '#reglages'); op2.wait_for_selector('#ph-setlist', timeout=8000)
+    check('phone · owner: Réglages as a list (team link moved to Plus)', op2.locator('text=Gérer l\'équipe et les accès').count() == 0)
+    oc2.close()
 
     # ---------- 10. end of day, access removed ----------
     sp.click('.tab[data-t="agenda"]'); sp.wait_for_selector('[data-act="sh-end"]', timeout=8000); sp.click('[data-act="sh-end"]')

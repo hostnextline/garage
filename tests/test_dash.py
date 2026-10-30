@@ -29,7 +29,7 @@ for (i, d, t, m, st, c, sv, inv) in jobs:
     j = {'date': d, 'time': t, 'durationMin': 90, 'mechanic': m, 'status': st, 'client': c, 'services': sv, 'service': ', '.join(sv), 'vehicle': {'year': '2018', 'make': 'Honda', 'model': 'Civic'}}
     if inv: j['invoice'] = dict(inv, lines=[{'type': 'mo', 'desc': sv[0], 'qty': 1, 'price': inv['total']}], taxesOn=False, sub=inv['total'], tps=0, tvq=0)
     seed['jobs/' + i] = j
-def harness(mode): return ('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">' f'<style>{RESET}</style><script>window.__MOCK={json.dumps(mode)};</script><script>{MOCK}</script></head><body>{PAGE}</body></html>')
+def harness(mode): return ('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">' f'<style>{RESET}</style><script>try{{localStorage.setItem("gm.ui","full")}}catch(e){{}}window.__MOCK={json.dumps(mode)};</script><script>{MOCK}</script></head><body>{PAGE}</body></html>')
 
 results = []
 def check(name, cond, detail=''):

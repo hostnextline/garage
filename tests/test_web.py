@@ -24,6 +24,7 @@ PH_STREET = {'type': 'FeatureCollection', 'features': [ph('', 'Rue Essai-Sud', '
 def new_page(ctx_or_browser, scheme='light', width=390, net=None, ctx=None):
     if ctx is None:
         ctx = ctx_or_browser.new_context(viewport={'width': width, 'height': 844}, color_scheme=scheme, timezone_id='America/Toronto', locale='fr-CA', accept_downloads=True)
+        ctx.add_init_script("try{localStorage.setItem('gm.ui','full')}catch(e){}")
     pg = ctx.new_page(); errs = []; net = net if net is not None else []
     pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' and 'fonts.g' not in m.text and 'ERR_FAILED' not in m.text else None)
@@ -59,7 +60,7 @@ def new_client(pg):
 with sync_playwright() as p:
     br = p.chromium.launch()
     ctx, pg, errs, net = new_page(br)
-    check('H1. Hosted page opens alone (no claude.ai): title, "Version rapide" strip, OpenStreetMap by default', pg.title() == 'Carnet du garage mobile' and pg.is_visible('#demo-bar') and 'OpenStreetMap' in pg.inner_text('#db-prov') and pg.locator('.tab').count() == 5 and not errs, errs[:3])
+    check('H1. Hosted page opens alone (no claude.ai): title, "Version rapide" strip, OpenStreetMap by default', pg.title() == 'Carnet du garage mobile' and pg.is_visible('#demo-bar') and 'OpenStreetMap' in pg.inner_text('#db-prov') and pg.locator('.tab:not([hidden])').count() == 5 and not errs, errs[:3])
     check('H1b. Owner tools available (hours button, + Réservation)', pg.locator('#top [data-act="new"]').count() == 1 and pg.locator('[data-act="hours-edit"]').count() == 1)
     new_client(pg)
     check('H2. Address field in fast mode invites to type', 'OpenStreetMap complète' in pg.inner_text('#c-addrmsg'))

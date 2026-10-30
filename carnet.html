@@ -610,6 +610,97 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
 }
 @media (prefers-reduced-motion: reduce){.btn{transition:none}.btn:active{transform:none}}
 
+/* ===================== Téléphone ===================== */
+.ui-phone{font-size:17px}
+.ui-phone .top-in{padding-block:12px 10px;gap:10px}
+.ui-phone .tab[data-t="jour"]{order:1}.ui-phone .tab[data-t="clients"]{order:2}.ui-phone .tab-new{order:3}.ui-phone .tab[data-t="factures"]{order:4}.ui-phone .tab[data-t="plus"]{order:5}
+.tab-new{display:grid;place-items:center;background:none!important;box-shadow:none!important}
+.tab-new .tn-plus{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:var(--paper);font:400 32px/1 var(--f-body);box-shadow:0 8px 20px rgba(30,20,12,.28);margin-top:-14px}
+.dayhead{display:grid;grid-template-columns:48px minmax(0,1fr) 48px;align-items:center;gap:6px}
+.dayhead .iconbtn{width:48px;height:48px;font-size:26px}
+.daypick{position:relative;display:grid;justify-items:center;text-align:center;cursor:pointer;min-width:0}
+.daypick .dp-t{font:700 21px/1.15 var(--f-display);letter-spacing:-.02em}
+.daypick .dp-s{font-size:14px;color:var(--muted)}
+.daypick input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;min-height:0;padding:0;border:0}
+.dayopts{display:flex;gap:8px;align-items:center}
+.dayopts select{flex:1;min-height:44px;border-radius:999px;padding:8px 14px}
+.ph-list{display:grid;gap:10px}
+.ph-job,.ph-gap{display:grid;grid-template-columns:62px minmax(0,1fr) auto;gap:4px 12px;align-items:center;width:100%;min-height:76px;text-align:left;padding:12px 14px;border-radius:20px;color:var(--ink);cursor:pointer;font:inherit}
+.ph-job{background:var(--card);border:1px solid var(--glass-edge);border-left:5px solid var(--signal);box-shadow:var(--card-shadow)}
+.ph-job.s-route{border-left-color:var(--info)}.ph-job.s-place{border-left-color:var(--warn)}.ph-job.s-termine{border-left-color:var(--ok)}.ph-job.s-annule{opacity:.55;border-left-color:var(--line-strong)}
+.ph-job.s-annule b{text-decoration:line-through}
+.pj-t{font:700 17px/1.1 var(--f-display);letter-spacing:-.02em;white-space:nowrap}
+.pj-t small{display:block;font:500 12.5px/1.3 var(--f-body);color:var(--muted);letter-spacing:0}
+.pj-m{display:grid;gap:1px;min-width:0}
+.pj-m b{font-size:17px;font-weight:650;overflow-wrap:anywhere}
+.pj-m span{font-size:14px;color:var(--muted);overflow-wrap:anywhere}
+.ph-gap{background:transparent;border:1.5px dashed var(--line-strong);min-height:58px}
+.ph-gap .pj-t{color:var(--muted);font-weight:600}
+.ph-gap .pj-m{font-size:15px;color:var(--muted)}
+.pg-add{font-weight:700;font-size:15px;white-space:nowrap;padding:8px 12px;border-radius:999px;background:var(--glass-strong);border:1px solid var(--glass-edge)}
+.ph-hint{text-align:center}
+.pjob .pj-what{display:grid;gap:2px}
+.pjob .pj-what b{font-size:18px;font-weight:650}
+.pjob .pj-what span{color:var(--muted);font-size:15px}
+.rounds{display:flex;justify-content:space-around;gap:8px;flex-wrap:wrap}
+.round{display:grid;justify-items:center;gap:6px;font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:none;min-width:72px}
+.round span{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:var(--glass-strong);border:1px solid var(--glass-edge);box-shadow:var(--card-shadow)}
+.round svg{width:24px;height:24px}
+.steps4{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;font-size:12.5px;text-align:center;color:var(--muted)}
+.steps4 li{padding-top:10px;border-top:4px solid var(--line);font-weight:500}
+.steps4 li.past{border-top-color:var(--ok);color:var(--ok)}
+.steps4 li.here{border-top-color:var(--signal);color:var(--ink);font-weight:700}
+.nextbtn{min-height:62px;font-size:18px;border-radius:22px}
+.ph-st select{border-radius:999px}
+.fold{padding:0}
+.fold summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 18px;font:650 17px/1.2 var(--f-display);letter-spacing:-.01em;min-height:56px}
+.fold summary::-webkit-details-marker{display:none}
+.fold summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin-right:4px;flex:none;transition:transform .15s}
+.fold[open] summary::after{transform:rotate(-135deg)}
+.fold > :not(summary){margin:0 18px 16px}
+.fold > ol,.fold > p{margin-top:0}
+.danger-t{color:var(--bad)}
+.ph-menu{display:grid;gap:10px}
+.ph-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:64px;padding:12px 16px;border-radius:20px;background:var(--card);border:1px solid var(--glass-edge);box-shadow:var(--card-shadow);color:var(--ink);text-decoration:none;text-align:left;cursor:pointer;font:inherit}
+.ph-row > span{display:grid;gap:2px;min-width:0}
+.ph-row b{font-size:17px;font-weight:650}
+.ph-row span span{font-size:14px;color:var(--muted)}
+.ph-row svg{width:20px;height:20px;flex:none;color:var(--muted)}
+.ph-row.big{display:grid;justify-items:start;gap:2px;min-height:76px}
+.ph-row.big b{font-size:19px}
+.ph-row.big span{font-size:14px;color:var(--muted)}
+.wiz{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.wiz li{display:grid;justify-items:center;gap:4px;font-size:13px;color:var(--muted);text-align:center;font-weight:500}
+.wiz li span{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--glass-strong);border:1px solid var(--glass-edge)}
+.wiz li.here{color:var(--ink);font-weight:700}.wiz li.here span{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.wiz li.past{color:var(--ok)}.wiz li.past span{background:var(--ok-bg);color:var(--ok)}
+.wizard [data-step]:not(.cur){display:none}
+.wizard:not(.wiz-last) .actions{display:none}
+.wiznav{display:grid;gap:10px}
+.wizard.wiz-last .wiznav{order:9}
+.ph-sets > section.sect{display:none}
+.ph-sets.ph-open > section.sect.cur{display:grid}
+.ph-sets.ph-open #ph-setlist{display:none}
+.ph-sets:not(.ph-open) .actions{display:none}
+.ph-secback{justify-self:start;margin:-6px 0 0 -4px}
+.ph-sets .ph-secback{display:block}
+form:not(.ph-sets) .ph-secback{display:none}
+.hzs{display:grid;gap:4px}
+.hz{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.hz:first-child{border-top:0}
+.hz-d{display:grid;gap:1px;min-width:0}.hz-d b{font-weight:650}.hz-d span{font-size:14px;color:var(--muted)}
+.hz.off .hz-d b{color:var(--muted)}
+.hz-t{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center}
+.hz-t select{min-height:44px}
+.switch{width:58px;height:34px;border-radius:999px;border:1px solid var(--line-strong);background:var(--sunk);position:relative;cursor:pointer;flex:none;padding:0}
+.switch i{position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2);transition:left .15s}
+.switch[aria-checked="true"]{background:var(--signal);border-color:var(--signal)}
+.switch[aria-checked="true"] i{left:27px}
+.hzw{display:grid;gap:6px}.hz-w{display:flex;justify-content:space-between;gap:10px;font-size:15px}.hz-w span{color:var(--muted)}
+.paybtns{display:flex;flex-wrap:wrap;gap:8px}
+.paybtns .chip{min-height:48px;padding:10px 16px;font-size:16px}
+@media (prefers-reduced-motion: reduce){.switch i,.fold summary::after{transition:none}}
+
 /* ===================== Tableau de bord ===================== */
 .dash{display:grid;gap:14px}
 .quick{display:flex;flex-wrap:wrap;gap:8px}
@@ -684,6 +775,9 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
 <main class="wrap" id="main"></main>
 <nav class="tabbar" id="tabbar" aria-label="Sections">
   <div class="wrap tabs">
+    <button type="button" class="tab" data-act="tab" data-t="jour" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path d="M8 14h3"/></svg><span>Aujourd'hui</span></button>
+    <button type="button" class="tab tab-new" data-act="ph-new" aria-label="Ajouter : réservation, facture sur place ou client" hidden><span class="tn-plus" aria-hidden="true">+</span></button>
+    <button type="button" class="tab" data-act="tab" data-t="plus" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Plus</span></button>
     <button type="button" class="tab" data-act="tab" data-t="accueil"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="8" rx="2"/><rect x="13.5" y="3.5" width="7" height="5" rx="2"/><rect x="13.5" y="11.5" width="7" height="9" rx="2"/><rect x="3.5" y="14.5" width="7" height="6" rx="2"/></svg><span>Accueil</span></button>
     <button type="button" class="tab" data-act="tab" data-t="agenda"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Agenda</span></button>
     <button type="button" class="tab" data-act="tab" data-t="clients"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20c1.3-3.7 4-5.6 7.2-5.6s5.9 1.9 7.2 5.6"/></svg><span>Clients</span></button>
@@ -804,7 +898,16 @@ function canHours(){ var e = ext(); return canAdmin() || (canWrite() && !!(e && 
 function lockedMech(){ var e = ext(), m = e && typeof e.myMechanic === 'function' ? e.myMechanic() : null; if (!m) return null; return mechanics().filter(function(x){ return norm(x) === norm(m); })[0] || m; }
 function extTabs(){ var e = ext(); return e && Array.isArray(e.tabs) ? e.tabs : []; }
 function extTab(k){ return extTabs().filter(function(t){ return t.key === k; })[0] || null; }
-function tabOk(k){ return (['accueil','agenda','clients','factures','reglages'].indexOf(k) >= 0 || !!extTab(k)) && allow('tab:' + k); }
+function tabOk(k){ return (['accueil','agenda','clients','factures','reglages','jour','plus','heures'].indexOf(k) >= 0 || !!extTab(k)) && allow('tab:' + k); }
+/* phone: a simpler set of screens (Aujourd'hui, Clients, Factures, Plus); bigger screens keep everything */
+var MQ = window.matchMedia ? window.matchMedia('(max-width: 699px)') : null;
+function phone(){ var o = lsGet('gm.ui'); if (o === 'full') return false; if (o === 'phone') return true; return !!(MQ && MQ.matches); }
+function defTab(){ return phone() ? 'jour' : 'accueil'; }
+function tabShown(k){ if (phone()) return ['jour','clients','factures','plus'].indexOf(k) >= 0; if (['jour','plus','heures'].indexOf(k) >= 0) return false; return ['accueil','agenda','clients','factures','reglages'].indexOf(k) >= 0 || (!!extTab(k) && !extTab(k).hidden); }
+function fitTab(){
+  if (phone()){ if (S.tab === 'agenda') S.tab = 'jour'; }
+  else if (S.tab === 'jour' || S.tab === 'heures') S.tab = 'agenda'; else if (S.tab === 'plus') S.tab = 'accueil';
+}
 function findJob(id){ for (var i = 0; i < S.jobs.length; i++) if (S.jobs[i].id === id) return S.jobs[i]; return null; }
 function jobPostal(j){ var c = j.client || {}; return c.postal || findPostal(c.address); }
 function jobPt(j){ return ptOf(jobPostal(j)); }
@@ -968,30 +1071,40 @@ function renderNav(){
   var hide = S.screen === 'edit' || S.screen === 'invoice' || S.screen === 'cform';
   $('#tabbar').hidden = hide;
   extTabs().forEach(function(t){ if (t.hidden || $('.tab[data-t="' + t.key + '"]')) return; var rb = $('.tab[data-t="reglages"]'); rb.insertAdjacentHTML('beforebegin', '<button type="button" class="tab" data-act="tab" data-t="' + esc(t.key) + '">' + (t.icon || '') + '<span>' + esc(t.label) + '</span></button>'); });
-  $$('.tab').forEach(function(b){ b.hidden = !tabOk(b.dataset.t); });
-  $$('.tab').forEach(function(b){ if (b.dataset.t === S.tab) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
+  document.body.classList.toggle('ui-phone', phone());
+  $$('.tab[data-t]').forEach(function(b){ b.hidden = !(tabShown(b.dataset.t) && tabOk(b.dataset.t)); });
+  var nb = $('.tab-new'); if (nb) nb.hidden = !(phone() && canWrite());
+  var jl = $('.tab[data-t="jour"] span'); if (jl) jl.textContent = lockedMech() ? 'Ma journée' : 'Aujourd\'hui';
+  var cur = phone() && ['accueil','reglages','heures','equipe'].concat(extTabs().map(function(t){ return t.key; })).indexOf(S.tab) >= 0 ? 'plus' : S.tab;
+  $$('.tab[data-t]').forEach(function(b){ if (b.dataset.t === cur) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
 }
 function render(){
-  if (!tabOk(S.tab)) S.tab = 'accueil';
+  if (!tabOk(S.tab)) S.tab = defTab();
+  fitTab();
   var lm = lockedMech(); if (lm) S.mech = lm;
   renderNav();
   if (S.screen === 'edit' || S.screen === 'invoice' || S.screen === 'cform') return;
   if (S.tab === 'reglages' && !S.screen && S.settingsDirty) return;
   var v;
-  if (S.screen === 'job') v = viewJob();
+  if (S.screen === 'job') v = phone() ? viewJobPhone() : viewJob();
   else if (S.screen === 'preview') v = viewPreview();
   else if (S.screen === 'client') v = viewClient();
+  else if (S.tab === 'jour') v = viewDay();
+  else if (S.tab === 'plus') v = viewPlus();
+  else if (S.tab === 'heures') v = viewHours();
   else if (S.tab === 'accueil') v = viewDash();
   else if (S.tab === 'clients') v = viewClients();
   else if (S.tab === 'factures') v = viewInvoices();
   else if (S.tab === 'reglages') v = viewSettings();
   else if (extTab(S.tab)) v = extTab(S.tab).view();
   else v = viewAgenda();
+  if (phone() && !S.screen && (S.tab === 'accueil' || S.tab === 'reglages')) v.top = topBack(S.tab === 'accueil' ? 'Tableau de bord' : 'Réglages', 'ph-back', 'Plus');
   var old = $('#cal'), keep = old ? {top:old.scrollTop, left:old.scrollLeft} : null, prevKey = S._calKey;
   var vkey = [S.tab, S.screen, S.jobId, S.clientId, S.clientTab].join('|'), vals = {}, ae = document.activeElement, aeId = (ae && ae.id && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ($('#main').contains(ae) || $('#top').contains(ae))) ? ae.id : null, selS = null, selE = null;
   if (vkey === S._vkey) $$('#main input[id], #main textarea[id], #main select[id]').forEach(function(el){ if (el.type !== 'checkbox' && el.type !== 'radio' && el.type !== 'hidden') vals[el.id] = el.value; });
   try { if (aeId){ selS = ae.selectionStart; selE = ae.selectionEnd; } } catch(x){}
   setView(v);
+  if (phone()) phoneAfter();
   if (vkey === S._vkey) Object.keys(vals).forEach(function(id){ var el = document.getElementById(id); if (el && el.value !== vals[id] && el.dataset.keep !== 'no') el.value = vals[id]; });
   S._vkey = vkey;
   if (aeId){ var ne = document.getElementById(aeId); if (ne && ne !== document.activeElement){ try { ne.focus({preventScroll:true}); if (selS != null) ne.setSelectionRange(selS, selE); } catch(x){} } }
@@ -1952,6 +2065,7 @@ function viewDash(){
   if (w && allow('quick')) quick += '<button type="button" class="chip" data-act="quick">+ Facture sur place</button>';
   if (w && allow('newClient')) quick += '<button type="button" class="chip" data-act="cl-new">+ Nouveau client</button>';
   quick += '<button type="button" class="chip" data-act="tab" data-t="agenda">Ouvrir l\'agenda</button>';
+  if (lsGet('gm.ui') === 'full' && MQ && MQ.matches) quick += '<button type="button" class="chip" data-act="ui-phone">Version simple pour téléphone</button>';
   b += '<div class="dash"><div class="quick" role="group" aria-label="Raccourcis">' + quick + '</div>';
 
   /* today, like a control panel */
@@ -2107,6 +2221,8 @@ function clientCardHTML(c, canChange){
 function formPostal(){ var c = S.formClient; return c ? (c.postal || findPostal(c.address)) : ''; }
 function buildEdit(id, quick, draft, preset, inSheet, clientArg){
   var j = id ? findJob(id) : null;
+  /* on the phone the booking is a full page (the client-choice sheet closes) */
+  if (phone()){ inSheet = false; if (S.sheet){ S.sheet = false; $('#sheet').hidden = true; $('#sheet-body').innerHTML = ''; document.body.classList.remove('locked'); } }
   if (!j){
     S.bookCtx = {quick:!!quick, preset:preset || null};
     if (clientArg && draft && draft.clientId !== clientArg.id) draft = null;
@@ -2130,24 +2246,24 @@ function buildEdit(id, quick, draft, preset, inSheet, clientArg){
   var body = '<form id="jobform" class="stack" novalidate>' +
     (draft ? '<div class="banner" id="draftbanner"><p>On a repris ton brouillon' + (draft.savedAt ? ' sauvegardé le ' + esc(dayLong(isoDate(new Date(draft.savedAt)))) + ' à ' + esc(hm(pad(new Date(draft.savedAt).getHours()) + ':' + pad(new Date(draft.savedAt).getMinutes()))) : '') + '.</p><button type="button" class="btn sm" data-act="draft-reset">Recommencer à zéro</button></div>' : '') +
     (auto ? '<p id="draftmsg" class="hint draftmsg' + (draft ? ' ok' : '') + '" aria-live="polite">' + (draft ? 'Brouillon sauvegardé' : 'Sauvegarde automatique : tout ce que tu tapes est gardé, même si tu fermes.') + '</p>' : '') +
-    '<section class="sect"><h3>Client</h3>' + clientCardHTML(S.formClient, !id) +
+    '<section class="sect" data-step="1"><h3>Client</h3>' + clientCardHTML(S.formClient, !id) +
       '<div id="sugbox" class="sugbox" aria-live="polite" hidden></div>' +
     '</section>' +
-    '<section class="sect"><h3>Véhicule</h3>' +
+    '<section class="sect" data-step="1"><h3>Véhicule</h3>' +
       '<div class="field"><label for="f-vin">VIN (17 caractères)</label><input id="f-vin" class="mono" maxlength="17" autocomplete="off" autocapitalize="characters" spellcheck="false" value="' + esc(v.vin) + '" placeholder="Sur le tableau de bord ou la portière"><div id="vinmsg" class="hint" aria-live="polite"></div></div>' +
       '<div class="veh">' + inputF('f-year', 'Année', v.year, 'inputmode="numeric" maxlength="4" autocomplete="off"') + inputF('f-make', 'Marque', v.make, 'list="makes" autocomplete="off"') + inputF('f-model', 'Modèle', v.model, 'autocomplete="off"') + '</div>' +
       '<datalist id="makes">' + MAKES.map(function(m){ return '<option value="' + m + '">'; }).join('') + '</datalist>' +
       '<div class="grid2">' + inputF('f-plate', 'Plaque', v.plate, 'class="mono" autocomplete="off" autocapitalize="characters"') + inputF('f-km', 'Kilométrage', v.km, 'inputmode="numeric" autocomplete="off"') + '</div>' +
     '</section>' +
-    '<section class="sect"><h3>Travail demandé</h3>' +
+    '<section class="sect" data-step="2"><h3>Travail demandé</h3>' +
       '<div class="field"><label for="f-svc-in">Services demandés</label>' +
         '<div class="picker" id="svc-picker"><div class="picked" id="svc-picked"></div>' +
         '<input id="f-svc-in" role="combobox" aria-expanded="false" aria-controls="svc-opts" aria-autocomplete="list" autocomplete="off" enterkeyhint="done" value="' + esc(draft && draft.pendingService || '') + '"></div>' +
         '<div class="opts" id="svc-opts" role="listbox" aria-label="Choix de services" hidden></div>' +
-        '<div class="hint">Choisis-en autant que tu veux. Pas dans la liste ? Tape-le, puis « Ajouter ».</div><div id="svc-est" aria-live="polite"></div></div>' +
+        '<div class="hint">Choisis-en autant que tu veux. Pas dans la liste ? Tape-le, puis « Ajouter ».</div><div id="svc-est" aria-live="polite"></div></div>' +
       '<div class="field"><label for="f-prob">Ce que le client décrit</label><textarea id="f-prob" placeholder="Ex. Le témoin de batterie s\'allume, l\'auto ne redémarre plus">' + esc(d.problem) + '</textarea></div>' +
     '</section>' +
-    '<section class="sect"><h3>Rendez-vous</h3>' +
+    '<section class="sect" data-step="3"><h3>Rendez-vous</h3>' +
       '<div class="grid2">' + inputF('f-date', 'Date', d.date, 'type="date" required') + inputF('f-time', 'Heure', d.time, 'type="time" step="' + (unitMin() * 60) + '" required') + '</div>' +
       '<div id="hourmsg" class="hint warn" aria-live="polite"></div>' +
       '<div id="momentmsg" class="moment" aria-live="polite"></div>' +
@@ -2164,6 +2280,7 @@ function buildEdit(id, quick, draft, preset, inSheet, clientArg){
     window.scrollTo(0, 0);
   }
   bindForm();
+  if (phone() && !id) wizInit(quick);
   var e0 = svcEstimate(PK.picked), u0 = parseInt(val('f-units'), 10);
   PK.durAuto = !id && (!draft || u0 === unitsOf(60) || (e0.known > 0 && u0 === e0.units));
   renderPicked();
@@ -2431,6 +2548,7 @@ function openInvoice(id, fresh){
   $('#lines').addEventListener('change', onLineChange);
   $('#i-tax').addEventListener('change', function(e){ S.inv.taxesOn = e.target.checked; renderTotals(); });
   $$('input[name="i-paid"]').forEach(function(r){ r.addEventListener('change', function(){ S.inv.paid = $('#i-paid-1').checked; hideInvErr(); }); });
+  if (phone()) phoneInvoice();
   window.scrollTo(0, 0);
 }
 function renderLines(){
@@ -2915,13 +3033,7 @@ document.addEventListener('click', function(e){
     case 'today': S.day = today(); render(); break;
     case 'mech': S.mech = v || ''; lsSet('gm.mech', S.mech); render(); break;
     case 'invf': S.invFilter = v; render(); break;
-    case 'status': {
-      var j = findJob(S.jobId); if (!j || j.status === v) return;
-      var was = j.status || 'planifie', ex = ext();
-      if (ex && typeof ex.beforeStatus === 'function' && ex.beforeStatus(j, v, was) === false) break;
-      write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update({status:v, updatedAt:Date.now()}); }, ex && typeof ex.onStatus === 'function' ? '' : ST[v]).then(function(ok){ if (ok && ex && typeof ex.onStatus === 'function') ex.onStatus(j, v, was); });
-      break;
-    }
+    case 'status': changeStatus(v); break;
     case 'edit': openEdit(id, false); break;
     case 'del': S.confirmDel = true; render(); break;
     case 'del-no': S.confirmDel = false; render(); break;
@@ -2960,6 +3072,18 @@ document.addEventListener('click', function(e){
     case 'addsvcrow': { var box = $('#svcs-box'); if (box){ box.insertAdjacentHTML('beforeend', svcRow({name:'', price:''}, svcSeq++, '')); S.settingsDirty = true; var r = $('#s-reset'); if (r) r.hidden = false; var inp = box.lastElementChild.querySelector('input'); if (inp) inp.focus(); } break; }
     case 'delsvc': { var row = b.closest('.svc-row'); if (row){ row.remove(); S.settingsDirty = true; var rr = $('#s-reset'); if (rr) rr.hidden = false; } break; }
     case 'setreset': S.settingsDirty = false; render(); break;
+    case 'ph-day': S.day = addDays(S.day || today(), +v); render(); break;
+    case 'ph-today': S.day = today(); render(); break;
+    case 'ph-book': openEdit(null, false, {date:S.day || today(), time:b.dataset.t, mechanic:b.dataset.m || ''}, false); break;
+    case 'ph-new': openSheet('Ajouter', 'Que veux-tu faire ?', phoneNewMenu()); break;
+    case 'ph-go': { closeSheet(); if (v === 'new') openEdit(null, false, {date:S.tab === 'jour' ? (S.day || today()) : today()}, false); else if (v === 'quick') openEdit(null, true); else if (v === 'client') { S.linkJob = null; openClientNew('page'); } break; }
+    case 'ph-back': if (location.hash !== '#plus') location.hash = 'plus'; else { S.tab = 'plus'; render(); } break;
+    case 'ph-sec': phoneSecShow(v); break;
+    case 'wiz-next': wizNext(); break;
+    case 'wiz-prev': wizGo(Math.max(1, (S.wiz || 1) - 1)); break;
+    case 'ui-full': lsSet('gm.ui', 'full'); S.tab = 'accueil'; if (location.hash) location.hash = 'accueil'; render(); window.scrollTo(0, 0); break;
+    case 'ui-phone': lsSet('gm.ui', null); S.tab = defTab(); if (location.hash) location.hash = S.tab; render(); window.scrollTo(0, 0); break;
+    case 'ph-install': installApp(); break;
     case 'dash-mech': S.mech = v || ''; lsSet('gm.mech', S.mech); S.day = today(); if (location.hash !== '#agenda') location.hash = 'agenda'; else { S.tab = 'agenda'; render(); } break;
     case 'dash-unpaid': S.invFilter = 'unpaid'; if (location.hash !== '#factures') location.hash = 'factures'; else { S.tab = 'factures'; render(); } break;
     default: if (ext() && typeof ext().onAction === 'function') ext().onAction(a, b);
@@ -2982,7 +3106,7 @@ window.addEventListener('hashchange', function(){
   if (S.sheet){ S.sheet = false; $('#sheet').hidden = true; $('#sheet-body').innerHTML = ''; document.body.classList.remove('locked'); }
   S.hoursEdit = false;
   var h = location.hash.slice(1);
-  S.tab = tabOk(h) ? h : 'accueil';
+  S.tab = tabOk(h) ? h : defTab();
   S.screen = null; S.inv = null; render(); window.scrollTo(0, 0);
 });
 
@@ -2991,7 +3115,7 @@ document.addEventListener('visibilitychange', function(){ if (document.visibilit
 /* ---------- boot ---------- */
 function boot(){
   var h = location.hash.slice(1);
-  S.tab = tabOk(h) ? h : 'accueil';
+  S.tab = tabOk(h) ? h : defTab();
   render();
   var C = window.claude;
   if (!C || typeof C.use !== 'function'){ S.noDb = true; render(); return; }
@@ -3011,10 +3135,225 @@ function boot(){
     });
   });
 }
+
+/* ===================== Téléphone : écrans simplifiés ===================== */
+var DPH = new Intl.DateTimeFormat('fr-CA', {weekday:'long', day:'numeric', month:'short'});
+function firstName(c){ return String((c && (c.firstName || c.name)) || '').trim().split(/\s+/)[0] || ''; }
+/* free time of one day: open slots where at least one mechanic has nothing booked */
+function dayGaps(d, info, sel){
+  var ms = mechanics(), sm = slotMin(), cols = sel ? [sel] : (ms.length ? ms : ['_all']), busy = {}, out = [], cur = null;
+  cols.forEach(function(c){ busy[c] = []; });
+  S.jobs.forEach(function(j){ if (j.date !== d || j.status === 'annule') return; var c = ms.length ? colKeyFor(j.mechanic) : '_all'; if (!busy[c]) return; var a = toMin(j.time); busy[c].push([a, a + (+j.durationMin || 60)]); });
+  var nowM = d === today() ? toMin(nowHM()) : -1;
+  for (var m = 5 * 60; m < 23 * 60 + 30; m += sm){
+    var tt = toHM(m), free = m < nowM ? [] : cols.filter(function(c){ return slotOpen(info, c, tt) && !busy[c].some(function(b){ return m < b[1] && m + sm > b[0]; }); }), key = free.join('|');
+    if (free.length && cur && cur.key === key && cur.end === m){ cur.end = m + sm; continue; }
+    if (cur) out.push(cur);
+    cur = free.length ? {start:m, end:m + sm, key:key, free:free} : null;
+  }
+  if (cur) out.push(cur);
+  return out.filter(function(g){ return g.end - g.start >= 30; }).map(function(g){ g.all = g.free.length === cols.length; return g; });
+}
+function viewDay(){
+  var d = S.day || today(), t = today(), info = dayInfo(d), ms = mechanics(), lm = lockedMech(), e = ext();
+  var sel = lm || (S.mech && ms.indexOf(S.mech) >= 0 ? S.mech : '');
+  var all = S.jobs.filter(function(j){ return j.date === d && (!sel || j.mechanic === sel); }).sort(byWhen);
+  var live = all.filter(function(j){ return j.status !== 'annule'; }), done = live.filter(function(j){ return j.status === 'termine'; }).length;
+  var top = '<div class="wrap top-in"><div class="dayhead"><button type="button" class="iconbtn" data-act="ph-day" data-v="-1" aria-label="Jour précédent">‹</button>' +
+    '<label class="daypick"><span class="dp-t">' + esc(cap(DPH.format(parseISO(d)).replace('.', ''))) + '</span><span class="dp-s">' + (d === t ? 'Aujourd\'hui · ' : '') + (live.length ? live.length + ' job' + (live.length > 1 ? 's' : '') + (done ? ' · ' + done + ' terminée' + (done > 1 ? 's' : '') : '') : 'Aucune job') + '</span>' +
+    '<input type="date" id="ph-date" value="' + esc(d) + '" aria-label="Choisir une date"></label>' +
+    '<button type="button" class="iconbtn" data-act="ph-day" data-v="1" aria-label="Jour suivant">›</button></div>' +
+    ((ms.length > 1 && !lm) || d !== t ? '<div class="dayopts">' + (ms.length > 1 && !lm ? '<select id="ph-mech" aria-label="Mécano"><option value="">Tous les mécanos</option>' + ms.map(function(m){ return '<option' + (m === sel ? ' selected' : '') + '>' + esc(m) + '</option>'; }).join('') + '</select>' : '') + (d !== t ? '<button type="button" class="chip" data-act="ph-today">Aujourd\'hui</button>' : '') + '</div>' : '') + '</div>';
+  var b = banners();
+  if (d === t && e && typeof e.phoneTop === 'function') b += e.phoneTop() || '';
+  if (!S.loaded && !S.noDb) return {top:top, body:b + '<p class="muted">Ouverture du carnet…</p>'};
+  var closed = !info.open && !info.opened.length;
+  if (closed) b += '<div class="banner"><p><b>Fermé ce jour-là.</b></p>' + (canHours() ? '<button type="button" class="btn sm" data-act="day-open">Ouvrir cette journée</button>' : '') + '</div>';
+  var rows = all.map(function(j, i){ return {at:toMin(j.time), job:j, i:i}; });
+  if (canBook() && !closed) dayGaps(d, info, sel).forEach(function(g, i){ rows.push({at:g.start, gap:g, i:1000 + i}); });
+  rows.sort(function(x, y){ return x.at - y.at || x.i - y.i; });
+  var list = rows.map(function(r){
+    if (r.gap){
+      var g = r.gap, who = (!g.all && g.free[0] !== '_all') ? ' · ' + g.free.join(', ') : '';
+      return '<button type="button" class="ph-gap" data-act="ph-book" data-t="' + toHM(g.start) + '" data-m="' + esc(g.free.length === 1 && g.free[0] !== '_all' ? g.free[0] : sel) + '"><span class="pj-t">' + esc(hm(toHM(g.start))) + '</span><span class="pj-m">Libre jusqu\'à ' + esc(hm(toHM(g.end))) + esc(who) + '</span><span class="pg-add">+ Réserver</span></button>';
+    }
+    var j = r.job, c = cl(j), st = j.status || 'planifie';
+    return '<button type="button" class="ph-job s-' + st + '" data-act="open" data-id="' + esc(j.id) + '"><span class="pj-t">' + esc(hm(j.time)) + (j.durationMin ? '<small>' + esc(dur(j.durationMin)) + '</small>' : '') + '</span><span class="pj-m"><b>' + esc(c.name || 'Client') + '</b><span>' + esc([vehLabel(j), jobServices(j)[0]].filter(Boolean).join(' · ') || 'Service à préciser') + '</span>' + (!sel && ms.length > 1 && j.mechanic ? '<span>' + esc(j.mechanic) + '</span>' : '') + '</span>' + pill(st, ST[st]) + '</button>';
+  }).join('');
+  if (list) b += '<div class="ph-list" aria-label="Horaire de la journée">' + list + '</div>';
+  else if (!closed) b += '<div class="empty-card"><p>Aucune job ce jour-là.</p>' + (canBook() ? '<button type="button" class="btn primary" data-act="ph-book" data-t="" data-m="' + esc(sel) + '">+ Réserver</button>' : '') + '</div>';
+  b += '<p class="muted small ph-hint">Glisse vers la gauche ou la droite pour changer de jour.</p>';
+  return {top:top, body:b};
+}
+/* one job: the next step is one big button */
+function nextStep(j){
+  var st = j.status || 'planifie', is = invState(j), who = firstName(cl(j)), e = ext();
+  if (st === 'planifie') return {act:'status', v:'route', label:(e && e.tellsClient ? (typeof e.isMine === 'function' && !e.isMine(j) ? 'En route : aviser ' : 'Je pars : aviser ') + (who || 'le client') : 'Je pars')};
+  if (st === 'route') return {act:'status', v:'place', label:'Je suis arrivé'};
+  if (st === 'place') return {act:'status', v:'termine', label:'Terminer la job'};
+  if (st === 'termine') return is === 'none' || is === 'draft' ? {act:'invoice', id:j.id, label:is === 'draft' ? 'Continuer la facture' : 'Faire la facture'} : {act:'preview', id:j.id, label:'Voir la facture'};
+  return null;
+}
+function viewJobPhone(){
+  var j = findJob(S.jobId);
+  if (!j) return viewJob();
+  var c = cl(j), v = j.vehicle || {}, st = j.status || 'planifie', w = canWrite(), is = invState(j), e = ext(), ph = String(c.phone || '').replace(/[^\d+]/g, ''), addr = addrFull(c);
+  var top = topBack(c.name || 'Client', 'back', cap(dShort(j.date)) + ' · ' + hm(j.time) + (j.mechanic ? ' · ' + j.mechanic : ''));
+  var b = banners() + '<section class="sect pjob"><p class="pj-what"><b>' + esc(vehLabel(j) || 'Véhicule à préciser') + '</b><span>' + esc(jobServices(j).join(', ') || 'Service à préciser') + (j.durationMin ? ' · ' + esc(dur(j.durationMin)) : '') + '</span></p>' +
+    '<div class="rounds">' +
+      (ph ? '<a class="round" href="' + esc(telHref(c.phone)) + '"><span aria-hidden="true">' + RI.phone + '</span>Appeler</a><a class="round" href="sms:' + esc(ph) + '"><span aria-hidden="true">' + RI.sms + '</span>Texter</a>' : '') +
+      (addr ? '<a class="round" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&amp;query=' + esc(encodeURIComponent(addr)) + '"><span aria-hidden="true">' + RI.pin + '</span>Itinéraire</a>' : '') +
+    '</div>' +
+    (st !== 'annule' ? '<ol class="steps4" aria-label="Étapes">' + ST_FLOW.map(function(k, i){ var cur = ST_FLOW.indexOf(st); return '<li class="' + (i < cur ? 'past' : i === cur ? 'here' : '') + '"' + (i === cur ? ' aria-current="step"' : '') + '>' + ST[k] + '</li>'; }).join('') + '</ol>' : '<div class="banner warn"><p>Cette job est annulée.</p></div>') + '</section>';
+  if (e && typeof e.jobExtra === 'function') b += e.jobExtra(j) || '';
+  var nx = w ? nextStep(j) : null;
+  if (nx) b += '<button type="button" class="btn primary block nextbtn" data-act="' + nx.act + '"' + (nx.v ? ' data-v="' + nx.v + '"' : '') + (nx.id ? ' data-id="' + esc(nx.id) + '"' : '') + '>' + esc(nx.label) + '</button>';
+  if (w && st === 'annule') b += '<button type="button" class="btn primary block nextbtn" data-act="status" data-v="planifie">Remettre la job à l\'agenda</button>';
+  if (w) b += '<div class="field ph-st"><label for="ph-st">Corriger le statut</label><select id="ph-st">' + ['planifie','route','place','termine','annule'].map(function(k){ return '<option value="' + k + '"' + (k === st ? ' selected' : '') + '>' + ST[k] + '</option>'; }).join('') + '</select></div>';
+  b += '<details class="sect fold"><summary>Client</summary><dl class="kv">' + (c.phone ? '<div><dt>Téléphone</dt><dd class="mono sel">' + esc(c.phone) + '</dd></div>' : '') + (addr ? '<div><dt>Adresse</dt><dd class="sel">' + esc(addr) + '</dd></div>' : '') + (c.email ? '<div><dt>Courriel</dt><dd class="sel">' + esc(c.email) + '</dd></div>' : '') + '</dl>' +
+    (j.clientId && findClient(j.clientId) ? '<button type="button" class="btn sm" data-act="cl-open" data-id="' + esc(j.clientId) + '">Voir la fiche client</button>' : (w ? '<button type="button" class="btn sm" data-act="cl-link">Créer sa fiche client</button>' : '')) + '</details>';
+  b += '<details class="sect fold"><summary>Véhicule</summary><dl class="kv"><div><dt>Modèle</dt><dd>' + esc(vehLabel(j) || '—') + '</dd></div>' + (v.vin ? '<div><dt>VIN</dt><dd class="vin sel">' + esc(v.vin) + '</dd></div>' : '') + (v.plate ? '<div><dt>Plaque</dt><dd class="mono">' + esc(v.plate) + '</dd></div>' : '') + (v.km ? '<div><dt>Kilométrage</dt><dd>' + esc(v.km) + ' km</dd></div>' : '') + '</dl></details>';
+  if (j.problem || j.notes) b += '<details class="sect fold" open><summary>Notes</summary><dl class="kv">' + (j.problem ? '<div><dt>Ce que le client décrit</dt><dd>' + esc(j.problem) + '</dd></div>' : '') + (j.notes ? '<div><dt>Notes pour le mécano</dt><dd>' + esc(j.notes) + '</dd></div>' : '') + '</dl></details>';
+  b += '<details class="sect fold"><summary>Facture <span class="muted small">' + (is === 'none' ? 'pas encore' : esc(INV_LBL[is]) + (j.invoice && j.invoice.total ? ' · ' + esc(money(j.invoice.total)) : '')) + '</span></summary>' +
+    (is === 'none' ? (w ? '<button type="button" class="btn block" data-act="invoice" data-id="' + esc(j.id) + '">Faire la facture</button>' : '<p class="muted">Pas encore facturée.</p>') : '<button type="button" class="btn block" data-act="' + (is === 'draft' && w ? 'invoice' : 'preview') + '" data-id="' + esc(j.id) + '">' + (is === 'draft' ? 'Continuer la facture' : 'Voir la facture') + '</button>') + '</details>';
+  if (w){
+    b += '<div class="actions"><button type="button" class="btn block" data-act="edit" data-id="' + esc(j.id) + '">Modifier la réservation</button>';
+    if (is !== 'unpaid' && is !== 'paid' && allow('deleteJob')) b += S.confirmDel ? '<div class="banner warn"><p>Supprimer cette job pour de bon ?</p></div><div class="grid2"><button type="button" class="btn" data-act="del-no">Garder</button><button type="button" class="btn danger solid" data-act="del-yes">Supprimer</button></div>' : '<button type="button" class="btn ghost block danger-t" data-act="del">Supprimer la job</button>';
+    b += '</div>';
+  }
+  return {top:top, body:b};
+}
+var RI = {
+  phone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>',
+  sms:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 10h8M8 13h5"/></svg>',
+  pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+  chev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>'
+};
+function phoneNewMenu(){
+  var h = '<div class="ph-menu">';
+  if (canBook()) h += '<button type="button" class="ph-row big" data-act="ph-go" data-v="new"><b>Nouvelle réservation</b><span>Client, service, moment</span></button>';
+  if (canWrite() && allow('quick')) h += '<button type="button" class="ph-row big" data-act="ph-go" data-v="quick"><b>Facture sur place</b><span>Client sans rendez-vous</span></button>';
+  if (canWrite() && allow('newClient')) h += '<button type="button" class="ph-row big" data-act="ph-go" data-v="client"><b>Nouveau client</b><span>Créer sa fiche</span></button>';
+  return h + '</div>';
+}
+/* everything else, tidied in one list */
+function viewPlus(){
+  var e = ext(), items = [];
+  items.push({href:'#accueil', label:'Tableau de bord', sub:'Revenus, semaine, mécanos'});
+  if (e && typeof e.plusItems === 'function') items = items.concat(e.plusItems() || []);
+  if (canHours()) items.push({href:'#heures', label:'Heures d\'ouverture', sub:'Ouvrir ou fermer une journée'});
+  if (tabOk('reglages')) items.push({href:'#reglages', label:'Réglages', sub:'Garage, prix, taxes, services, mécanos'});
+  var top = '<div class="wrap top-in"><div class="brandrow"><div><div class="eyebrow">' + esc(bizName()) + '</div><h1>Plus</h1></div></div></div>';
+  var b = banners() + '<nav class="ph-menu" aria-label="Plus">' + items.map(function(it){ return '<a class="ph-row" href="' + esc(it.href) + '"><span><b>' + esc(it.label) + '</b>' + (it.sub ? '<span>' + esc(it.sub) + '</span>' : '') + '</span>' + RI.chev + '</a>'; }).join('') + '</nav>';
+  if (window.__webDownloads) b += '<details class="sect fold"><summary>Mettre l\'app sur l\'écran d\'accueil</summary><p class="small">Elle s\'ouvrira en plein écran, comme une vraie app.</p>' + (window.__bip ? '<button type="button" class="btn primary block" data-act="ph-install">Installer l\'app</button>' : '') +
+    '<ol class="small"><li><b>iPhone (Safari)</b> : bouton Partager, puis « Sur l\'écran d\'accueil ».</li><li><b>Android (Chrome)</b> : menu ⋮, puis « Ajouter à l\'écran d\'accueil » ou « Installer l\'application ».</li></ol></details>';
+  b += '<button type="button" class="ph-row" data-act="ui-full"><span><b>Version complète</b><span>Grille de l\'agenda, semaine, tous les détails</span></span>' + RI.chev + '</button>';
+  if (e && typeof e.accountRow === 'function') b += e.accountRow() || '';
+  return {top:top, body:b};
+}
+window.addEventListener('beforeinstallprompt', function(ev){ ev.preventDefault(); window.__bip = ev; });
+function installApp(){ var p = window.__bip; if (!p) return; p.prompt(); p.userChoice.then(function(){ window.__bip = null; render(); }, function(){}); }
+/* opening hours, one day at a time */
+function viewHours(){
+  var t = today(), rows = '';
+  for (var i = 0; i < 14; i++){
+    var d = addDays(t, i), info = dayInfo(d), open = info.open || info.opened.length > 0;
+    rows += '<div class="hz' + (open ? '' : ' off') + '"><div class="hz-d"><b>' + esc(cap(DPH.format(parseISO(d)).replace('.', ''))) + '</b><span>' + (open ? esc(hm(info.start)) + ' à ' + esc(hm(info.end)) : 'Fermé') + (S.days[d] && (S.days[d].closed !== undefined || S.days[d].start) ? ' · changé' : '') + '</span></div>' +
+      '<button type="button" class="switch" role="switch" aria-checked="' + open + '" aria-label="Ouvert le ' + esc(DPH.format(parseISO(d))) + '" data-act="wday-toggle" data-v="' + d + '"><i></i></button>' +
+      (open ? '<div class="hz-t"><select data-hz="start" data-d="' + d + '" aria-label="Ouverture">' + timeOpts(info.start) + '</select><span aria-hidden="true">à</span><select data-hz="end" data-d="' + d + '" aria-label="Fermeture">' + timeOpts(info.end) + '</select></div>' : '') + '</div>';
+  }
+  var wk = [1,2,3,4,5,6,0].map(function(dw){ var h = weekHours(dw); return '<div class="hz-w"><span>' + DOW_FR[dw] + '</span><b>' + (h.open ? esc(hm(h.start)) + ' à ' + esc(hm(h.end)) : 'Fermé') + '</b></div>'; }).join('');
+  var top = topBack('Heures d\'ouverture', 'ph-back', 'Plus');
+  var b = banners() + '<section class="sect"><h3>Les 2 prochaines semaines</h3><p class="muted small">Touche l\'interrupteur pour ouvrir ou fermer une journée.</p><div class="hzs">' + rows + '</div></section>' +
+    '<section class="sect"><h3>Horaire habituel</h3><div class="hzw">' + wk + '</div>' + (canAdmin() ? '<a class="btn block" href="#reglages" data-sec="Horaire">Modifier l\'horaire habituel</a>' : '') + '</section>';
+  return {top:top, body:b};
+}
+/* booking: three small steps */
+var WIZ = ['Client et auto', 'Service', 'Moment'];
+function wizInit(quick){
+  var f = $('#jobform'); if (!f) return;
+  f.classList.add('wizard'); S.wizQuick = !!quick;
+  f.insertAdjacentHTML('afterbegin', '<ol class="wiz" id="wiz" aria-label="Étapes"></ol>');
+  var rv = f.querySelector('[data-step="3"]'), sb = $('#sugbox'); if (rv && sb) rv.insertBefore(sb, rv.children[1] || null);
+  var act = f.querySelector('.actions'); if (act) act.insertAdjacentHTML('beforebegin', '<div class="wiznav" id="wiznav"></div>');
+  wizGo(1);
+}
+function wizGo(n){
+  var f = $('#jobform'); if (!f || !f.classList.contains('wizard')) return;
+  S.wiz = n;
+  $$('#jobform [data-step]').forEach(function(sct){ sct.classList.toggle('cur', +sct.dataset.step === n); });
+  f.classList.toggle('wiz-last', n === 3);
+  var names = WIZ.slice(); if (S.wizQuick) names[2] = 'Confirmer';
+  $('#wiz').innerHTML = names.map(function(x, i){ return '<li class="' + (i + 1 < n ? 'past' : i + 1 === n ? 'here' : '') + '"' + (i + 1 === n ? ' aria-current="step"' : '') + '><span>' + (i + 1) + '</span>' + esc(x) + '</li>'; }).join('');
+  $('#wiznav').innerHTML = n < 3 ? '<button type="button" class="btn primary block nextbtn" data-act="wiz-next">Continuer</button>' + (n > 1 ? '<button type="button" class="btn ghost block" data-act="wiz-prev">Retour</button>' : '') : '<button type="button" class="btn ghost block" data-act="wiz-prev">Retour</button>';
+  var er = $('#formerr'); if (er) er.hidden = true;
+  window.scrollTo(0, 0);
+}
+function wizNext(){
+  if (S.wiz === 1 && !(S.formClient && S.formClient.name)){ var er = $('#formerr'); er.textContent = 'Choisis le client avant de continuer.'; er.hidden = false; return; }
+  if (S.wiz === 2){ var left = val('f-svc-in'); if (left && !PK.picked.some(function(n){ return norm(n) === norm(left); })){ PK.picked.push(left); $('#f-svc-in').value = ''; renderPicked(); formChanged(); } }
+  wizGo(Math.min(3, (S.wiz || 1) + 1));
+}
+/* réglages: a list, then one part at a time */
+function phoneAfter(){
+  if (S.tab === 'reglages' && !S.screen) phoneSettings();
+}
+function phoneSettings(){
+  var f = $('#setform'); if (!f || f.dataset.ph) return;
+  f.dataset.ph = '1'; f.classList.add('ph-sets');
+  var secs = $$('#setform > section.sect');
+  f.insertAdjacentHTML('afterbegin', '<nav class="ph-menu" id="ph-setlist" aria-label="Réglages">' + secs.map(function(sct, i){ var h = sct.querySelector('h3'); return '<button type="button" class="ph-row" data-act="ph-sec" data-v="' + i + '"><span><b>' + esc(h ? h.textContent : 'Réglages') + '</b></span>' + RI.chev + '</button>'; }).join('') + '</nav>');
+  secs.forEach(function(sct, i){ sct.dataset.sec = i; sct.insertAdjacentHTML('afterbegin', '<button type="button" class="linkbtn ph-secback" data-act="ph-sec" data-v="">‹ Tous les réglages</button>'); });
+  if (S.setSecName){ secs.forEach(function(sct, i){ var h = sct.querySelector('h3'); if (h && h.textContent.indexOf(S.setSecName) === 0) S.setSec = i; }); S.setSecName = null; }
+  phoneSecShow(S.setSec == null ? '' : S.setSec, true);
+}
+function phoneSecShow(i, quiet){
+  var f = $('#setform'); if (!f) return;
+  S.setSec = (i === '' || i == null) ? null : +i;
+  f.classList.toggle('ph-open', S.setSec != null);
+  $$('#setform > section.sect').forEach(function(sct){ sct.classList.toggle('cur', +sct.dataset.sec === S.setSec); });
+  if (!quiet) window.scrollTo(0, 0);
+}
+/* invoice: payment method as big buttons */
+function phoneInvoice(){
+  var sel = $('#i-method'); if (!sel) return;
+  sel.classList.add('sr-only'); sel.setAttribute('tabindex', '-1');
+  var box = document.createElement('div'); box.className = 'paybtns'; box.setAttribute('role', 'group'); box.setAttribute('aria-label', 'Mode de paiement');
+  box.innerHTML = PAY.map(function(p){ return '<button type="button" class="chip' + (sel.value === p ? ' on' : '') + '" data-pay="' + esc(p) + '" aria-pressed="' + (sel.value === p) + '">' + esc(p.replace('Virement Interac', 'Virement')) + '</button>'; }).join('');
+  sel.insertAdjacentElement('afterend', box);
+  box.addEventListener('click', function(ev){ var bt = ev.target.closest('[data-pay]'); if (!bt) return; sel.value = bt.dataset.pay; $$('.paybtns [data-pay]').forEach(function(x){ var on = x === bt; x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on)); }); var p1 = $('#i-paid-1'); if (p1 && !p1.checked){ p1.checked = true; S.inv.paid = true; } hideInvErr(); });
+}
+/* swipe left or right on the day to change day; date picker; small menus */
+(function(){
+  var sx = 0, sy = 0, ok = false;
+  document.addEventListener('touchstart', function(ev){ var t0 = ev.touches[0]; ok = phone() && S.tab === 'jour' && !S.screen && !S.sheet && !ev.target.closest('input,select,textarea,.sheet'); sx = t0.clientX; sy = t0.clientY; }, {passive:true});
+  document.addEventListener('touchend', function(ev){ if (!ok) return; var t1 = ev.changedTouches[0], dx = t1.clientX - sx, dy = t1.clientY - sy; ok = false; if (Math.abs(dx) > 70 && Math.abs(dy) < 50){ S.day = addDays(S.day || today(), dx < 0 ? 1 : -1); render(); } }, {passive:true});
+  document.addEventListener('change', function(ev){
+    var el = ev.target;
+    if (el.id === 'ph-date' && el.value){ S.day = el.value; render(); }
+    else if (el.id === 'ph-mech'){ S.mech = el.value; lsSet('gm.mech', S.mech); render(); }
+    else if (el.id === 'ph-st'){ changeStatus(el.value); }
+    else if (el.dataset && el.dataset.hz){
+      var d = el.dataset.d, info = dayInfo(d), nd = Object.assign({}, info.doc), other = $('select[data-hz="' + (el.dataset.hz === 'start' ? 'end' : 'start') + '"][data-d="' + d + '"]');
+      nd[el.dataset.hz] = el.value; nd[el.dataset.hz === 'start' ? 'end' : 'start'] = other ? other.value : (el.dataset.hz === 'start' ? info.end : info.start);
+      if (nd.end <= nd.start){ toast('La fermeture doit être après l\'ouverture.'); render(); return; }
+      if (!info.open && !info.opened.length) nd.closed = false;
+      saveDay(d, nd);
+    }
+  });
+  document.addEventListener('click', function(ev){ var a = ev.target.closest('a[data-sec]'); if (a) S.setSecName = a.dataset.sec; });
+  if (MQ){ var onMq = function(){ if (!lsGet('gm.ui')){ fitTab(); render(); } }; if (MQ.addEventListener) MQ.addEventListener('change', onMq); else if (MQ.addListener) MQ.addListener(onMq); }
+})();
+function changeStatus(v){
+  var j = findJob(S.jobId); if (!j || j.status === v || !ST[v]) return;
+  var was = j.status || 'planifie', ex = ext();
+  if (ex && typeof ex.beforeStatus === 'function' && ex.beforeStatus(j, v, was) === false) return;
+  write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update({status:v, updatedAt:Date.now()}); }, ex && typeof ex.onStatus === 'function' ? '' : ST[v]).then(function(ok){ if (ok && ex && typeof ex.onStatus === 'function') ex.onStatus(j, v, was); });
+}
 /* what the team version may use (absent extension = nothing happens) */
 window.__garageApi = Object.freeze({S:S, render:render, toast:toast, findJob:findJob, findClient:findClient, cfg:cfg, mechanics:mechanics, esc:esc, hm:hm, money:money,
   bizName:bizName, dayLong:dayLong, dShort:dShort, today:today, jobServices:jobServices, cl:cl, addrFull:addrFull, clientName:clientName, telHref:telHref, fmtPhone:fmtPhone,
-  topBack:topBack, banners:banners, pill:pill, norm:norm, canWrite:canWrite, canAdmin:canAdmin, lockedMech:lockedMech, ST:ST});
+  topBack:topBack, banners:banners, pill:pill, norm:norm, canWrite:canWrite, canAdmin:canAdmin, lockedMech:lockedMech, ST:ST, phone:phone, changeStatus:changeStatus});
 boot();
 })();
 </script>

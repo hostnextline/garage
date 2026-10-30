@@ -12,7 +12,7 @@ RESET = 'html{color-scheme:light}:root{padding-top:env(safe-area-inset-top,0px);
 
 def harness(mode):
     return ('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
-            f'<style>{RESET}</style><script>window.__MOCK={json.dumps(mode)};</script><script>{MOCK}</script></head><body>{PAGE}</body></html>')
+            f'<style>{RESET}</style><script>try{{localStorage.setItem("gm.ui","full")}}catch(e){{}}window.__MOCK={json.dumps(mode)};</script><script>{MOCK}</script></head><body>{PAGE}</body></html>')
 
 results = []
 def check(name, cond, detail=''):

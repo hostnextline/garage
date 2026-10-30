@@ -10,6 +10,7 @@ def nearest(lon, lat, rad):
     return best if bd <= rad else None
 def web_page(br, net):
     ctx = br.new_context(viewport={'width': 390, 'height': 844}, locale='fr-CA', timezone_id='America/Toronto')
+    ctx.add_init_script("try{localStorage.setItem('gm.ui','full')}catch(e){}")
     pg = ctx.new_page(); errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)))
     live = {'n': 0, 'max': 0}

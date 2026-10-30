@@ -36,6 +36,7 @@ FAKE_GOOGLE = r"""
 PH = {'type': 'FeatureCollection', 'features': [{'type': 'Feature', 'geometry': {'type': 'Point', 'coordinates': [-73.651, 45.501]}, 'properties': {'housenumber': '1200', 'street': 'Rue Essai-Sud', 'city': 'Montréal', 'postcode': 'H4P 2B5', 'state': 'Québec', 'countrycode': 'CA', 'type': 'house'}}]}
 def new_page(br, scheme='light', gkey=None, ttkey=None, strict=False):
     ctx = br.new_context(viewport={'width': 390, 'height': 844}, color_scheme=scheme, locale='fr-CA', timezone_id='America/Toronto')
+    ctx.add_init_script("try{localStorage.setItem('gm.ui','full')}catch(e){}")
     pg = ctx.new_page(); errs = []; net = []
     pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' and 'fonts.g' not in m.text and 'ERR_FAILED' not in m.text else None)

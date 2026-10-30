@@ -29,6 +29,7 @@
     });
   }
   function mineJob(j){ return !!(me && me.mechanic && (norm(j.mechanic) === norm(me.mechanic) || (!j.mechanic && me.role === 'mecano'))); }
+  function onPhone(){ var a = A(); return !!(a && a.phone && a.phone()); }
   function isStaff(){ return me && (me.role === 'owner' || me.role === 'bureau'); }
   function worksShifts(){ return !!(me && (me.role === 'mecano' || me.mechanic)); }
   function trackBase(){ return location.origin + location.pathname.replace(/[^\/]*$/, ''); }
@@ -202,7 +203,8 @@
     var c = A().cl(j), who = first(c.firstName || c.name) || 'le client', phone = c.phone || '', mine = mineJob(j), busy = X.busy[j.id];
     var h = '<section class="sect er" aria-labelledby="er-h"><h3 id="er-h">' + (st === 'route' ? 'En route vers ' + esc(who) : st === 'place' ? 'Sur place' : 'Départ vers le client') + '</h3>';
     if (st === 'planifie'){
-      h += '<button type="button" class="btn primary block er-go" data-act="status" data-v="route"' + (busy ? ' disabled' : '') + '>' + (busy ? 'Envoi du texto…' : (mine ? 'Je pars : aviser ' : 'En route : aviser ') + esc(who)) + '</button>';
+      if (onPhone()) h += busy ? '<p class="er-line">Envoi du texto…</p>' : '';
+      else h += '<button type="button" class="btn primary block er-go" data-act="status" data-v="route"' + (busy ? ' disabled' : '') + '>' + (busy ? 'Envoi du texto…' : (mine ? 'Je pars : aviser ' : 'En route : aviser ') + esc(who)) + '</button>';
       h += '<p class="muted small">' + (phone ? esc(who) + ' reçoit un texto avec le lien pour suivre le trajet en direct.' : 'Pas de téléphone au dossier : le lien de suivi sera prêt à partager.') + '</p>';
       if (!mine && j.mechanic) h += '<p class="muted small">Le client suivra la position de ' + esc(j.mechanic) + ' (s\'il a commencé sa journée).</p>';
       if (mine && !G.on) h += '<p class="muted small">Ta journée commencera en même temps (ta position sera partagée).</p>';
@@ -224,7 +226,7 @@
           (t.sms_status !== 'off' && t.sms_status ? '<button type="button" class="btn sm" data-act="er-resend" data-id="' + esc(j.id) + '">Renvoyer le texto</button>' : '') + '</div>';
       }
       if (X.near && X.enRoute && X.enRoute.jobId === j.id) h += '<div class="banner ok"><p>Tu sembles arrivé chez ' + esc(who) + '.</p></div>';
-      h += '<button type="button" class="btn block" data-act="status" data-v="place">Je suis arrivé</button>';
+      if (!onPhone()) h += '<button type="button" class="btn block" data-act="status" data-v="place">Je suis arrivé</button>';
     } else if (st === 'place'){
       h += '<p class="muted small">' + (t && t.status === 'arrived' ? 'Le suivi est fermé' + (t.ended_at ? ' depuis ' + esc(clock(t.ended_at)) : '') + ' : le client ne voit plus ta position.' : 'Le client ne voit pas ta position.') + '</p>';
     }
@@ -240,7 +242,10 @@
   /* ================= haut de l'agenda : compte, journée, trajet en cours ================= */
   function agendaTop(){
     if (!me) return '';
-    var h = '<div class="acct"><span>Connecté : <b>' + esc(me.name) + '</b> · ' + esc(ROLE[me.role]) + '</span><button type="button" class="linkbtn" data-act="acct-out">Se déconnecter</button></div>';
+    return (onPhone() ? '' : '<div class="acct"><span>Connecté : <b>' + esc(me.name) + '</b> · ' + esc(ROLE[me.role]) + '</span><button type="button" class="linkbtn" data-act="acct-out">Se déconnecter</button></div>') + shiftCard();
+  }
+  function shiftCard(){
+    var h = '';
     if (worksShifts()){
       if (!G.on){
         var known = lsGet('gm.team.gpsok') === '1';
@@ -261,7 +266,7 @@
     return h;
   }
   function settingsTop(){
-    if (!me || me.role !== 'owner') return '';
+    if (!me || me.role !== 'owner' || onPhone()) return '';
     return '<section class="sect"><h3>Équipe et accès</h3><p class="muted small">Comptes du bureau et des mécanos, mots de passe, textos aux clients (GoHighLevel).</p><a class="btn block" href="#equipe">Gérer l\'équipe et les accès</a></section>';
   }
 
@@ -352,8 +357,8 @@
   function viewMap(){
     var a = A();
     if (!X.liveAt || Date.now() - X.liveAt > 8000) loadLive();
-    var top = '<div class="wrap top-in"><div class="brandrow"><div><div class="eyebrow">' + esc(a.bizName()) + '</div><h1>Carte</h1></div><button type="button" class="btn sm" data-act="map-fit">Tout voir</button></div></div>';
-    var body = a.banners();
+    var top = onPhone() ? a.topBack('Carte des mécanos', 'ph-back', 'Plus') : '<div class="wrap top-in"><div class="brandrow"><div><div class="eyebrow">' + esc(a.bizName()) + '</div><h1>Carte</h1></div><button type="button" class="btn sm" data-act="map-fit">Tout voir</button></div></div>';
+    var body = a.banners() + (onPhone() ? '<button type="button" class="btn sm" data-act="map-fit">Tout voir sur la carte</button>' : '');
     body += window.L ? '<div id="map-slot" class="mapslot"></div>' : '<div class="banner warn"><p>La carte n\'a pas pu se charger. Vérifie Internet et recharge la page.</p></div>';
     body += '<p class="legend small"><span><i class="gm-pin p-route mini"></i>En route</span><span><i class="gm-pin p-shift mini"></i>En journée</span><span><i class="gm-pin p-stale mini"></i>Signal perdu</span><span><i class="gm-pin p-job mini"></i>Job d\'aujourd\'hui</span></p>';
     var list = crew();
@@ -407,7 +412,7 @@
     var a = A();
     if (!me || me.role !== 'owner') return {top:a.topBack('Équipe et accès', 'eq-back'), body:'<div class="banner"><p>Seul le propriétaire gère les accès.</p></div>'};
     if (!X.eq.list && !X.eq.loading && !X.eq.err) eqLoad();
-    var top = a.topBack('Équipe et accès', 'eq-back', 'Réglages');
+    var top = a.topBack('Équipe et accès', 'eq-back', onPhone() ? 'Plus' : 'Réglages');
     var b = '';
     if (X.eq.err) b += '<div class="banner warn"><p>' + esc(X.eq.err) + '</p><button type="button" class="btn sm" data-act="eq-reload">Réessayer</button></div>';
     if (X.eq.created){
@@ -476,7 +481,7 @@
       case 'map-fit': fit(); break;
       case 'map-sel': selectMech(v, false); break;
       case 'map-path': X.showPath[v] = !X.showPath[v]; if (X.showPath[v]) loadPath(v); else { drawMap(); render(); } break;
-      case 'eq-back': location.hash = 'reglages'; break;
+      case 'eq-back': location.hash = onPhone() ? 'plus' : 'reglages'; break;
       case 'eq-reload': X.eq.err = ''; X.eq.list = null; eqLoad(); render(); break;
       case 'eq-edit': X.eq.editing = v; X.eq.confirm = null; render(); break;
       case 'eq-confirm': X.eq.confirm = v; X.eq.editing = null; render(); break;
@@ -590,6 +595,15 @@
     },
     myMechanic:function(){ return me && me.role === 'mecano' ? me.mechanic : null; },
     greetName:function(){ return me ? first(me.name) : ''; },
+    tellsClient:true, isMine:mineJob,
+    phoneTop:function(){ return me ? shiftCard() : ''; },
+    plusItems:function(){
+      var out = [];
+      if (isStaff()) out.push({href:'#carte', label:'Carte des mécanos', sub:'Où est chaque mécano, qui est en route'});
+      if (me && me.role === 'owner') out.push({href:'#equipe', label:'Équipe et accès', sub:'Comptes, mots de passe, textos aux clients'});
+      return out;
+    },
+    accountRow:function(){ return me ? '<section class="sect"><p class="small">Connecté : <b>' + esc(me.name) + '</b> · ' + esc(ROLE[me.role]) + '</p><button type="button" class="btn block" data-act="acct-out">Se déconnecter</button></section>' : ''; },
     dashTop:agendaTop, dashExtra:dashExtra,
     agendaTop:agendaTop, settingsTop:settingsTop, jobExtra:jobExtra, onStatus:onStatus, onAction:onAction,
     nextInvoiceNo:function(start){ return T.sb.rpc('next_invoice_number', {p_start:start}).then(function(r){ if (r.error || typeof r.data !== 'number') throw r.error || new Error('no number'); return r.data; }); }
