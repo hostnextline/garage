@@ -219,7 +219,7 @@ main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .pchip small{font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .pchip button{flex:none;width:30px;height:30px;border-radius:50%;border:0;background:transparent;cursor:pointer;color:var(--muted);font-size:15px}
 .pchip button:hover{background:var(--surface);color:var(--ink)}
-.opts{display:grid;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);overflow:hidden}
+.opts{display:grid;grid-auto-rows:max-content;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);overflow:hidden}
 #svc-opts{position:relative;max-height:min(55vh,420px);overflow-y:auto;overscroll-behavior:contain}
 label[for="f-svc-in"]{scroll-margin-top:96px}
 #sheet-body label[for="f-svc-in"]{scroll-margin-top:12px}
@@ -383,6 +383,12 @@ body.locked{overflow:hidden}
 .daybox{min-height:36px}
 
 /* settings */
+.promo-row{display:grid;gap:6px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--sunk)}
+.promo-tag{display:inline-block;margin-right:6px;padding:1px 6px;border-radius:4px;background:var(--signal);color:var(--on-signal);font:700 11px/1.5 var(--f-body);font-style:normal;letter-spacing:.06em;text-transform:uppercase;vertical-align:1px}
+.promo-inc{display:block;margin-top:2px;font-size:13px;color:var(--muted)}
+.opt.promo{flex-direction:column;align-items:stretch;gap:4px}
+.opt.promo small{color:var(--ink);font-weight:600}
+.chip.add.promo{border-color:var(--signal);background:var(--signal);color:var(--on-signal);font-weight:600}
 .svc-row{display:grid;grid-template-columns:minmax(0,1fr) 110px 40px;gap:8px;align-items:center}
 .copyfb textarea{min-height:160px;font-family:var(--f-mono);font-size:14px}
 
@@ -699,7 +705,7 @@ body.locked{overflow:hidden}
 var TPS = 0.05, TVQ = 0.09975;
 var ST = {planifie:'Planifié', route:'En route', place:'Sur place', termine:'Terminé', annule:'Annulé'};
 var ST_FLOW = ['planifie','route','place','termine'];
-var LT = {piece:'Pièce', mo:"Main-d'œuvre", frais:'Frais', rabais:'Rabais'};
+var LT = {piece:'Pièce', mo:"Main-d'œuvre", forfait:'Forfait', frais:'Frais', rabais:'Rabais'};
 var PAY = ['Comptant','Débit','Crédit','Virement Interac'];
 var MAKES = ['Acura','Audi','BMW','Buick','Cadillac','Chevrolet','Chrysler','Dodge','Ford','Genesis','GMC','Honda','Hyundai','Infiniti','Jeep','Kia','Lexus','Lincoln','Mazda','Mercedes-Benz','Mini','Mitsubishi','Nissan','Porsche','Ram','Subaru','Tesla','Toyota','Volkswagen','Volvo'];
 var TAB_ID = 'tab-' + Math.random().toString(36).slice(2,10);
@@ -780,6 +786,12 @@ function biz(){ return cfg().biz || {}; }
 function bizName(){ return biz().name || 'Garage mobile'; }
 function mechanics(){ return (Array.isArray(cfg().mechanics) ? cfg().mechanics : []).filter(Boolean); }
 function services(){ return (Array.isArray(cfg().services) ? cfg().services : []).filter(function(s){ return s && s.name; }); }
+/* promos: package deals at one price; until they are saved in Réglages, the current promo is offered by default */
+var DEFAULT_PROMOS = [{name:'Promo : pneus non montés + huile + inspection + top up liquides', price:200, on:true,
+  items:['Changement de pneus non montés (montage et équilibrage)', "Changement d'huile et filtre", 'Inspection multipoints', 'Top up des liquides']}];
+function allPromos(){ return (Array.isArray(cfg().promos) ? cfg().promos : DEFAULT_PROMOS).filter(function(p){ return p && p.name; }); }
+function promos(){ return allPromos().filter(function(p){ return p.on !== false; }); }
+function promoByName(name){ var n = norm(name); return allPromos().filter(function(p){ return norm(p.name) === n; })[0] || null; }
 function prefix(){ return typeof cfg().prefix === 'string' ? cfg().prefix : 'F-'; }
 function canWrite(){ return !!S.db && S.canWrite !== false; }
 function canAdmin(){ return !!S.db && (S.isAdmin || S.userUnknown); }
@@ -896,13 +908,14 @@ var INV_LBL = {draft:'Brouillon', unpaid:'Non payée', paid:'Payée'};
 var COMMON_SVCS = ["Changement d'huile et filtre", 'Diagnostic (lecture des codes)', 'Freins avant (plaquettes et disques)', 'Freins arrière (plaquettes et disques)', "Remplacement de l'alternateur", 'Remplacement du démarreur', 'Remplacement de la batterie', 'Survoltage (boost)', 'Changement de pneus saisonnier', 'Remplacement des bougies', 'Courroie de serpentin', 'Courroie de distribution', 'Pompe à eau', 'Vidange du liquide de refroidissement', 'Amortisseurs', 'Rotules et biellettes', 'Recharge de climatisation', 'Inspection avant achat'];
 function norm(s){ return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); }
 function jobServices(j){ if (Array.isArray(j.services) && j.services.length) return j.services.filter(Boolean); return j.service ? [j.service] : []; }
-function catalogPrice(name){ var n = norm(name), m = services().filter(function(s){ return norm(s.name) === n; })[0]; return m ? r2(num(m.price)) : null; }
+function catalogPrice(name){ var n = norm(name), m = services().filter(function(s){ return norm(s.name) === n; })[0] || promoByName(name); return m ? r2(num(m.price)) : null; }
 function svcChoices(){
   var seen = {}, out = [];
-  function add(name, price, src){ var k = norm(name); if (!k || seen[k]) return; seen[k] = 1; out.push({name:name, price:price, src:src}); }
+  function add(name, price, src, items){ var k = norm(name); if (!k || seen[k]) return; seen[k] = 1; out.push({name:name, price:price, src:src, items:items || null}); }
+  promos().forEach(function(p){ add(p.name, r2(num(p.price)), 'promo', (p.items || []).filter(Boolean)); });
   services().forEach(function(s){ add(s.name, r2(num(s.price)), 'prix'); });
   var used = {}; S.jobs.forEach(function(j){ jobServices(j).forEach(function(n){ used[n] = (used[n] || 0) + 1; }); });
-  Object.keys(used).sort(function(a, b){ return used[b] - used[a]; }).forEach(function(n){ add(n, null, 'deja'); });
+  Object.keys(used).sort(function(a, b){ return used[b] - used[a]; }).forEach(function(n){ var pr = promoByName(n); if (pr && pr.on === false) return; add(n, null, 'deja'); });
   COMMON_SVCS.forEach(function(n){ add(n, null, 'courant'); });
   return out;
 }
@@ -2033,7 +2046,10 @@ function buildEdit(id, quick, draft, preset, inSheet, clientArg){
 function svcTime(name){
   var n = ' ' + svcFold(name) + ' ', r = null;
   function has(re){ return re.test(n); }
-  if (has(/distribution/)) r = has(/chain/) ? [8, 6, 10] : [4, 2.5, 6];
+  var pr = promoByName(name);
+  if (pr && (pr.items || []).length){ var hs = svcHours(pr.items), tot = {h:0, lo:0, hi:0}, any = false; hs.forEach(function(t){ if (t){ any = true; tot.h += t.h; tot.lo += t.lo; tot.hi += t.hi; } }); return any ? tot : null; }
+  if (has(/top up|mise a niveau|niveaux/)) r = [0.2, 0.1, 0.3];
+  else if (has(/distribution/)) r = has(/chain/) ? [8, 6, 10] : [4, 2.5, 6];
   else if (has(/pompe a eau/)) r = [3, 1.5, 4];
   else if (has(/thermostat/)) r = [1.2, 0.8, 1.8];
   else if (has(/refroidissement|antigel/)) r = [1, 0.8, 1.5];
@@ -2043,7 +2059,7 @@ function svcTime(name){
   else if (has(/survolt|boost/)) r = [0.3, 0.2, 0.5];
   else if (has(/batterie/)) r = [0.5, 0.3, 0.8];
   else if (has(/bougie/)) r = [1, 0.8, 3.5];
-  else if (has(/inspection/)) r = has(/frein/) ? [0.5, 0.3, 0.8] : [1, 0.7, 1.5];
+  else if (has(/inspection/)) r = has(/frein|multi|rapide|visuel/) ? [0.5, 0.3, 0.8] : [1, 0.7, 1.5];
   else if (has(/purge|liquide de frein/)) r = [0.8, 0.6, 1];
   else if (has(/etrier/)) r = [1, 0.8, 1.5];
   else if (has(/ cable /)) r = [1, 0.8, 1.5];
@@ -2053,8 +2069,8 @@ function svcTime(name){
   else if (has(/clim/)) r = [1, 0.8, 1.5];
   else if (has(/diagnostic| code|scan|lecture/)) r = [1, 0.5, 1.5];
   else if (has(/huile/)) r = has(/transmission|boite/) ? [0.8, 0.6, 1] : [0.5, 0.4, 0.6];
+  else if (has(/pneu/)) r = has(/non mont|montage|monter|demont/) ? [1.5, 1, 2] : [0.75, 0.5, 1];
   else if (has(/equilibr|balancement/)) r = [1, 0.8, 1.2];
-  else if (has(/pneu/)) r = [0.75, 0.5, 1];
   return r ? {h:r[0], lo:r[1], hi:r[2]} : null;
 }
 /* hours per picked service; a water pump done with the timing belt counts 1 h (same parts taken off) */
@@ -2077,7 +2093,7 @@ function renderEstimate(){
   if (PK.durAuto && e.known && ui && parseInt(ui.value, 10) !== e.units){ ui.value = e.units; unitsChanged(); }
   var cur = ui ? parseInt(ui.value, 10) : 0;
   box.innerHTML = e.known
-    ? '<div class="est"><div><b>Temps estimé : ' + esc(dur(e.min)) + '</b>' + (e.minHi > e.minLo ? ' <span class="muted">(entre ' + esc(dur(e.minLo)) + ' et ' + esc(dur(e.minHi)) + ' selon le véhicule)</span>' : '') +
+    ? '<div class="est"><div><b>Temps estimé : ' + esc(dur(Math.max(5, Math.round(e.min / 5) * 5))) + '</b>' + (e.minHi > e.minLo ? ' <span class="muted">(entre ' + esc(dur(e.minLo)) + ' et ' + esc(dur(e.minHi)) + ' selon le véhicule)</span>' : '') +
       '<span class="small muted est-src">Temps des concessionnaires, voiture 4 cylindres' + (e.shared ? ' · pompe à eau comptée 1 h (faite avec la courroie)' : '') + '</span>' +
       (e.unknown.length ? '<span class="small est-miss">Sans estimé : ' + esc(e.unknown.join(', ')) + '. Ajoute ce temps à la durée.</span>' : '') + '</div>' +
       (cur !== e.units ? '<button type="button" class="btn sm" data-act="units-est">Mettre la durée à ' + esc(dur(e.units * unitMin())) + '</button>' : '') + '</div>'
@@ -2115,7 +2131,7 @@ function renderOpts(show){
   PK.picked.forEach(function(n){ taken[norm(n)] = 1; });
   var list = svcChoices().filter(function(c){ return !taken[norm(c.name)]; }), total = list.length;
   if (words.length){
-    list = list.map(function(c, i){ return {c:c, i:i, sc:svcScore(c.name, words)}; })
+    list = list.map(function(c, i){ var sc = svcScore(c.name + (c.items ? ' ' + c.items.join(' ') : ''), words); return {c:c, i:i, sc:sc < 0 ? sc : sc + (c.src === 'promo' ? 0.5 : 0)}; })
       .filter(function(x){ return x.sc >= 0; }).sort(function(a, b){ return (a.sc - b.sc) || (a.i - b.i); }).map(function(x){ return x.c; });
   } else list = list.slice(0, 8);
   var exact = list.some(function(c){ return norm(c.name) === q; }), addNew = !!raw && !exact && !taken[q];
@@ -2126,7 +2142,7 @@ function renderOpts(show){
   var head = words.length ? (list.length ? list.length + ' service' + (list.length > 1 ? 's' : '') + ' avec « ' + raw + ' »' : 'Aucun service avec « ' + raw + ' »')
     : (total > list.length ? 'Tape un mot : tous les services qui le contiennent s\'affichent' : '');
   box.innerHTML = (head ? '<div class="opt-count" aria-hidden="true">' + esc(head) + '</div>' : '') + list.map(function(c, i){
-    return '<button type="button" tabindex="-1" class="opt' + (i === PK.active ? ' active' : '') + '" id="svc-opt-' + i + '" role="option" aria-selected="' + (i === PK.active) + '" data-act="pick" data-v="' + esc(c.name) + '"><span>' + (words.length ? svcMark(c.name, words) : esc(c.name)) + '</span>' +
+    return '<button type="button" tabindex="-1" class="opt' + (c.src === 'promo' ? ' promo' : '') + (i === PK.active ? ' active' : '') + '" id="svc-opt-' + i + '" role="option" aria-selected="' + (i === PK.active) + '" data-act="pick" data-v="' + esc(c.name) + '"><span>' + (function(){ var show = c.src === 'promo' ? c.name.replace(/^promo\s*:\s*/i, '') : c.name; return (c.src === 'promo' ? '<em class="promo-tag">Promo</em>' : '') + (words.length ? svcMark(show, words) : esc(show)) + (c.items && c.items.length ? '<span class="promo-inc">Inclus : ' + (words.length ? svcMark(c.items.join(' · '), words) : esc(c.items.join(' · '))) + '</span>' : ''); })() + '</span>' +
       (function(){ var t = svcTime(c.name), tag = [c.price != null ? money(c.price) : c.src === 'deja' ? 'déjà utilisé' : '', t ? '≈ ' + hrsTxt(t.h) : ''].filter(Boolean).join(' · '); return tag ? '<small>' + esc(tag) + '</small>' : ''; })() + '</button>';
   }).join('') + (addNew ? '<button type="button" tabindex="-1" class="opt new' + (list.length === PK.active ? ' active' : '') + '" id="svc-opt-' + list.length + '" role="option" aria-selected="' + (list.length === PK.active) + '" data-act="pick" data-v="' + esc(raw) + '"><span>+ Ajouter « ' + esc(raw) + ' »</span></button>' : '');
   box.hidden = false; inp.setAttribute('aria-expanded', 'true');
@@ -2255,13 +2271,14 @@ function openInvoice(id, fresh){
     var rate = cfg().rate ? String(cfg().rate).replace('.', ',') : '';
     /* a service without a set price is billed like a dealership: estimated hours × hourly rate */
     var js0 = jobServices(j), hs0 = svcHours(js0);
-    js0.forEach(function(n, i){ var cp = catalogPrice(n), t = hs0[i]; base.lines.push({type:'mo', desc:n, qty:cp == null && t ? fmtQty(t.h) : '1', price:cp != null ? String(cp).replace('.', ',') : rate}); });
+    js0.forEach(function(n, i){ var cp = catalogPrice(n), t = hs0[i], pr = promoByName(n); base.lines.push({type:pr ? 'forfait' : 'mo', desc:pr ? promoDesc(pr) : n, qty:cp == null && t ? fmtQty(t.h) : '1', price:cp != null ? String(cp).replace('.', ',') : rate}); });
     if (!base.lines.length) base.lines.push({type:'mo', desc:'', qty:'1', price:rate});
   }
   S.inv = base; S.invJob = id; S.screen = 'invoice'; renderNav();
   var svc = services();
   var body = '<div class="stack">' +
     '<section class="sect"><h3>Ajouter</h3>' +
+      (promos().length ? '<div class="chips">' + promos().map(function(p, i){ return '<button type="button" class="chip add promo" data-act="addpromo" data-v="' + i + '">' + esc(p.name) + ' · ' + esc(money(p.price)) + '</button>'; }).join('') + '</div>' : '') +
       (svc.length ? '<div class="chips">' + svc.map(function(s, i){ return '<button type="button" class="chip add" data-act="addsvc" data-v="' + i + '">' + esc(s.name) + ' · ' + esc(money(s.price)) + '</button>'; }).join('') + '</div>' : '<p class="muted small">Ajoute ta liste de prix dans Réglages pour avoir tes services en un clic.</p>') +
       '<div class="addrow"><button type="button" class="btn sm" data-act="addline" data-v="piece">+ Pièce</button><button type="button" class="btn sm" data-act="addline" data-v="mo">+ Main-d\'œuvre</button><button type="button" class="btn sm" data-act="addline" data-v="frais">+ Déplacement</button><button type="button" class="btn sm" data-act="addline" data-v="rabais">+ Rabais</button></div>' +
     '</section>' +
@@ -2557,7 +2574,14 @@ function svcRow(s, i, dis){
   return '<div class="svc-row"><input id="sv-name-' + i + '" data-f="name" aria-label="Nom du service" placeholder="Ex. Changement d\'huile" value="' + esc(s.name) + '"' + dis + '><input id="sv-price-' + i + '" data-f="price" aria-label="Prix" inputmode="decimal" placeholder="Prix $" value="' + esc(s.price === '' || s.price == null ? '' : String(s.price).replace('.', ',')) + '"' + dis + '>' +
     (dis ? '<span></span>' : '<button type="button" class="iconbtn" data-act="delsvc" aria-label="Retirer ce service">✕</button>') + '</div>';
 }
-var svcSeq = 0;
+function promoDesc(p){ var it = (p.items || []).filter(Boolean); return p.name + (it.length ? ' (inclus : ' + it.join(', ') + ')' : ''); }
+function promoRow(p, i, dis){
+  return '<div class="promo-row"><div class="svc-row"><input id="pr-name-' + i + '" data-f="name" aria-label="Nom de la promo" placeholder="Ex. Promo : pneus + huile" value="' + esc(p.name) + '"' + dis + '><input id="pr-price-' + i + '" data-f="price" aria-label="Prix de la promo" inputmode="decimal" placeholder="Prix $" value="' + esc(p.price === '' || p.price == null ? '' : String(p.price).replace('.', ',')) + '"' + dis + '>' +
+    (dis ? '<span></span>' : '<button type="button" class="iconbtn" data-act="delpromo" aria-label="Retirer cette promo">✕</button>') + '</div>' +
+    '<div class="field"><label for="pr-items-' + i + '" class="small">Inclus (un par ligne)</label><textarea id="pr-items-' + i + '" data-f="items" rows="3"' + dis + '>' + esc((p.items || []).join('\n')) + '</textarea></div>' +
+    '<label class="check small"><input type="checkbox" id="pr-on-' + i + '" data-f="on"' + (p.on !== false ? ' checked' : '') + dis + '> Offerte en ce moment</label></div>';
+}
+var svcSeq = 0, promoSeq = 0;
 function viewSettings(){
   var c = cfg(), b = biz(), adm = canAdmin(), dis = adm ? '' : ' disabled';
   var svc = services(); svcSeq = Math.max(svc.length, 1);
@@ -2578,6 +2602,9 @@ function viewSettings(){
     '<section class="sect"><div class="sect-head"><h3>Liste de prix</h3></div><p class="muted small">Tes services à prix fixe. Ils s\'ajoutent à la facture en un clic.</p><div id="svcs-box" class="stack">' +
       (svc.length ? svc.map(function(s, i){ return svcRow(s, i, dis); }).join('') : (adm ? svcRow({name:'', price:''}, 0, '') : '<p class="muted">Aucun service.</p>')) +
       '</div>' + (adm ? '<button type="button" class="btn sm" data-act="addsvcrow">+ Ajouter un service</button>' : '') + '</section>' +
+    '<section class="sect"><h3>Promos</h3><p class="muted small">Un forfait à un seul prix. Il sort en premier quand tu choisis les services et s\'ajoute à la facture en un clic.</p><div id="promos-box" class="stack">' +
+      (function(){ var ps = allPromos(); promoSeq = Math.max(ps.length, 1); return ps.length ? ps.map(function(p, i){ return promoRow(p, i, dis); }).join('') : '<p class="muted">Aucune promo.</p>'; })() +
+      '</div>' + (adm ? '<button type="button" class="btn sm" data-act="addpromorow">+ Ajouter une promo</button>' : '') + '</section>' +
     '<section class="sect"><h3>Horaire d\'ouverture</h3><p class="muted small">Ta semaine type. Les cases fermées sont hachurées dans l\'agenda. Pour un congé ou une journée spéciale, utilise « Ouvrir / fermer l\'horaire » dans l\'agenda.</p>' +
       [1,2,3,4,5,6,0].map(function(dw){ var h = weekHours(dw); return '<div class="hrow"><label class="check"><input type="checkbox" id="h-' + dw + '-open"' + (h.open ? ' checked' : '') + dis + '> ' + DOW_FR[dw] + '</label><select id="h-' + dw + '-start" aria-label="Ouverture le ' + DOW_FR[dw].toLowerCase() + '"' + dis + '>' + timeOpts(h.start) + '</select><span class="muted">à</span><select id="h-' + dw + '-end" aria-label="Fermeture le ' + DOW_FR[dw].toLowerCase() + '"' + dis + '>' + timeOpts(h.end) + '</select></div>'; }).join('') +
       '<div class="field"><label for="s-slot">Durée d\'une unité (une case de l\'agenda)</label><select id="s-slot"' + dis + '>' + [10,15,30,60].map(function(m){ return opt(m, '1 unité = ' + dur(m), slotMin() === m); }).join('') + '</select></div>' +
@@ -2598,7 +2625,11 @@ function bindSettings(){
 function saveSettings(e){
   e.preventDefault();
   var svc = $$('#svcs-box .svc-row').map(function(r){ return {name:r.querySelector('[data-f="name"]').value.trim(), price:r2(num(r.querySelector('[data-f="price"]').value))}; }).filter(function(s){ return s.name; });
+  var prs = $$('#promos-box .promo-row').map(function(r){ return {name:r.querySelector('[data-f="name"]').value.trim(), price:r2(num(r.querySelector('[data-f="price"]').value)), items:r.querySelector('[data-f="items"]').value.split('\n').map(function(x){ return x.trim(); }).filter(Boolean), on:r.querySelector('[data-f="on"]').checked}; }).filter(function(p){ return p.name && !/^promo\s*:?\s*$/i.test(p.name); });
+  var noPrice = prs.filter(function(p){ return !(p.price > 0); })[0];
+  if (noPrice){ toast('Mets un prix à la promo « ' + noPrice.name + ' ».'); return; }
   var data = {
+    promos:prs,
     biz:{name:val('s-name'), phone:fmtPhone(val('s-phone')), email:val('s-email'), address:val('s-addr')},
     taxesOn:$('#s-tax').checked, tpsNo:val('s-tps').toUpperCase(), tvqNo:val('s-tvq').toUpperCase(),
     rate:r2(num(val('s-rate'))), travelFee:r2(num(val('s-travel'))),
@@ -2772,6 +2803,9 @@ document.addEventListener('click', function(e){
       if (invState(oj) === 'draft' && canWrite()) openInvoice(id); else { S.screen = 'preview'; render(); window.scrollTo(0, 0); }
       break;
     }
+    case 'addpromo': { var pp = promos()[+v]; if (pp){ S.inv.lines.push({type:'forfait', desc:promoDesc(pp), qty:'1', price:String(r2(num(pp.price))).replace('.', ',')}); renderLines(); renderTotals(); hideInvErr(); } break; }
+    case 'addpromorow': { var pbx = $('#promos-box'); if (pbx){ pbx.insertAdjacentHTML('beforeend', promoRow({name:'Promo : ', price:'', items:[], on:true}, promoSeq++, '')); S.settingsDirty = true; var rp = $('#s-reset'); if (rp) rp.hidden = false; var pin = pbx.lastElementChild.querySelector('input'); if (pin){ pin.focus(); pin.setSelectionRange(pin.value.length, pin.value.length); } } break; }
+    case 'delpromo': { var prow = b.closest('.promo-row'); if (prow){ prow.remove(); S.settingsDirty = true; var rq = $('#s-reset'); if (rq) rq.hidden = false; } break; }
     case 'addsvc': { var s = services()[+v]; if (s){ S.inv.lines.push({type:'mo', desc:s.name, qty:'1', price:String(r2(num(s.price))).replace('.', ',')}); renderLines(); renderTotals(); hideInvErr(); } break; }
     case 'addline': addLine(v); hideInvErr(); break;
     case 'delline': S.inv.lines.splice(+v, 1); renderLines(); renderTotals(); break;
