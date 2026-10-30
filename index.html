@@ -220,6 +220,11 @@ main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .pchip button{flex:none;width:30px;height:30px;border-radius:50%;border:0;background:transparent;cursor:pointer;color:var(--muted);font-size:15px}
 .pchip button:hover{background:var(--surface);color:var(--ink)}
 .opts{display:grid;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);overflow:hidden}
+#svc-opts{position:relative;max-height:min(55vh,420px);overflow-y:auto;overscroll-behavior:contain}
+label[for="f-svc-in"]{scroll-margin-top:96px}
+#sheet-body label[for="f-svc-in"]{scroll-margin-top:12px}
+.opts .opt-count{position:sticky;top:0;z-index:1;padding:7px 14px;font-size:13px;font-weight:600;color:var(--muted);background:var(--sunk);border-bottom:1px solid var(--line)}
+.opt mark{background:var(--signal-soft, rgba(242,178,0,.32));color:inherit;border-radius:3px;padding:0 1px}
 .opt{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 14px;border:0;border-bottom:1px solid var(--line);background:transparent;cursor:pointer;font-size:16px;min-height:48px;color:var(--ink)}
 .opt:last-child{border-bottom:0}
 .opt span{min-width:0;overflow-wrap:anywhere}
@@ -2024,28 +2029,48 @@ function renderPicked(){
   box.innerHTML = PK.picked.map(function(n, i){ var p = catalogPrice(n); return '<span class="pchip">' + esc(n) + (p != null ? ' <small>' + esc(money(p)) + '</small>' : '') + '<button type="button" data-act="unpick" data-v="' + i + '" aria-label="Retirer ' + esc(n) + '">✕</button></span>'; }).join('');
   var inp = $('#f-svc-in'); if (inp) inp.placeholder = PK.picked.length ? 'Ajouter un autre service…' : 'Tape pour chercher : huile, freins, alternateur…';
 }
+/* service search: every typed word can be anywhere in the phrase (even inside a word), accents and apostrophes ignored */
+function svcFold(t){ return norm(String(t || '').replace(/['’`´\-–(),.\/]/g, ' ')).replace(/\s+/g, ' ').trim(); }
+function svcWords(raw){ var seen = {}; return svcFold(raw).split(' ').filter(function(w){ if (!w || seen[w]) return false; seen[w] = 1; return true; }); }
+function svcScore(name, words){
+  var h = ' ' + svcFold(name), first = words[0], sc = 0;
+  for (var i = 0; i < words.length; i++){ if (h.indexOf(words[i]) < 0) return -1; if (h.indexOf(' ' + words[i]) < 0) sc += 2; }
+  return (h.indexOf(' ' + first) === 0 ? 0 : 1) + sc;
+}
+/* the name with the typed words marked, found on the folded text and mapped back to the real letters */
+function svcMark(name, words){
+  var src = String(name), map = [], fold = '';
+  for (var i = 0; i < src.length; i++){ var f = svcFold(src.charAt(i)) || ' '; for (var k = 0; k < f.length; k++){ fold += f.charAt(k); map.push(i); } }
+  var on = new Array(src.length);
+  words.forEach(function(w){ var at = fold.indexOf(w); while (at >= 0){ for (var j = at; j < at + w.length; j++) on[map[j]] = true; at = fold.indexOf(w, at + 1); } });
+  var out = '', open = false;
+  for (var c = 0; c < src.length; c++){ if (on[c] && !open){ out += '<mark>'; open = true; } else if (!on[c] && open){ out += '</mark>'; open = false; } out += esc(src.charAt(c)); }
+  return out + (open ? '</mark>' : '');
+}
 function renderOpts(show){
   var box = $('#svc-opts'), inp = $('#f-svc-in'); if (!box || !inp) return;
   if (!show){ box.hidden = true; inp.setAttribute('aria-expanded', 'false'); inp.removeAttribute('aria-activedescendant'); PK.active = -1; return; }
-  var raw = inp.value.trim(), q = norm(raw), taken = {};
+  var raw = inp.value.trim(), q = norm(raw), words = svcWords(raw), taken = {};
   PK.picked.forEach(function(n){ taken[norm(n)] = 1; });
-  var list = svcChoices().filter(function(c){ return !taken[norm(c.name)]; });
-  if (q){
-    list = list.map(function(c){ var n = norm(c.name); return {c:c, sc:n.indexOf(q) === 0 ? 0 : (' ' + n).indexOf(' ' + q) >= 0 ? 1 : n.indexOf(q) >= 0 ? 2 : -1}; })
-      .filter(function(x){ return x.sc >= 0; }).sort(function(a, b){ return a.sc - b.sc; }).map(function(x){ return x.c; });
-  }
-  list = list.slice(0, 8);
+  var list = svcChoices().filter(function(c){ return !taken[norm(c.name)]; }), total = list.length;
+  if (words.length){
+    list = list.map(function(c, i){ return {c:c, i:i, sc:svcScore(c.name, words)}; })
+      .filter(function(x){ return x.sc >= 0; }).sort(function(a, b){ return (a.sc - b.sc) || (a.i - b.i); }).map(function(x){ return x.c; });
+  } else list = list.slice(0, 8);
   var exact = list.some(function(c){ return norm(c.name) === q; }), addNew = !!raw && !exact && !taken[q];
   PK.opts = list.map(function(c){ return c.name; }); if (addNew) PK.opts.push(raw);
   if (!PK.opts.length){ box.hidden = true; inp.setAttribute('aria-expanded', 'false'); PK.active = -1; return; }
-  if (q && PK.active < 0) PK.active = 0;
+  if (words.length && PK.active < 0) PK.active = 0;
   if (PK.active >= PK.opts.length) PK.active = PK.opts.length - 1;
-  box.innerHTML = list.map(function(c, i){
-    return '<button type="button" tabindex="-1" class="opt' + (i === PK.active ? ' active' : '') + '" id="svc-opt-' + i + '" role="option" aria-selected="' + (i === PK.active) + '" data-act="pick" data-v="' + esc(c.name) + '"><span>' + esc(c.name) + '</span>' +
+  var head = words.length ? (list.length ? list.length + ' service' + (list.length > 1 ? 's' : '') + ' avec « ' + raw + ' »' : 'Aucun service avec « ' + raw + ' »')
+    : (total > list.length ? 'Tape un mot : tous les services qui le contiennent s\'affichent' : '');
+  box.innerHTML = (head ? '<div class="opt-count" aria-hidden="true">' + esc(head) + '</div>' : '') + list.map(function(c, i){
+    return '<button type="button" tabindex="-1" class="opt' + (i === PK.active ? ' active' : '') + '" id="svc-opt-' + i + '" role="option" aria-selected="' + (i === PK.active) + '" data-act="pick" data-v="' + esc(c.name) + '"><span>' + (words.length ? svcMark(c.name, words) : esc(c.name)) + '</span>' +
       (c.price != null ? '<small>' + esc(money(c.price)) + '</small>' : c.src === 'deja' ? '<small>déjà utilisé</small>' : '') + '</button>';
   }).join('') + (addNew ? '<button type="button" tabindex="-1" class="opt new' + (list.length === PK.active ? ' active' : '') + '" id="svc-opt-' + list.length + '" role="option" aria-selected="' + (list.length === PK.active) + '" data-act="pick" data-v="' + esc(raw) + '"><span>+ Ajouter « ' + esc(raw) + ' »</span></button>' : '');
   box.hidden = false; inp.setAttribute('aria-expanded', 'true');
-  if (PK.active >= 0) inp.setAttribute('aria-activedescendant', 'svc-opt-' + PK.active); else inp.removeAttribute('aria-activedescendant');
+  if (PK.active >= 0){ inp.setAttribute('aria-activedescendant', 'svc-opt-' + PK.active); var act = $('#svc-opt-' + PK.active); if (act && box.scrollHeight > box.clientHeight){ var top = act.offsetTop, bot = top + act.offsetHeight; if (top < box.scrollTop + 30) box.scrollTop = Math.max(0, top - 30); else if (bot > box.scrollTop + box.clientHeight) box.scrollTop = bot - box.clientHeight; } }
+  else { inp.removeAttribute('aria-activedescendant'); box.scrollTop = 0; }
 }
 function pickSvc(name){
   name = String(name || '').trim(); if (!name) return;
@@ -2058,8 +2083,11 @@ function bindPicker(){
   var inp = $('#f-svc-in'), box = $('#svc-opts'), wrap = $('#svc-picker');
   ['pointerdown', 'mousedown'].forEach(function(ev){ box.addEventListener(ev, function(e){ e.preventDefault(); }); });
   wrap.addEventListener('click', function(e){ if (e.target === wrap || e.target.id === 'svc-picked') inp.focus(); });
-  inp.addEventListener('focus', function(){ renderOpts(true); });
-  inp.addEventListener('input', function(){ PK.active = -1; renderOpts(true); });
+  /* bring the field near the top so the list of services is visible above the phone keyboard */
+  function lift(){ var lab = $('label[for="f-svc-in"]') || inp; lab.scrollIntoView(true); }
+  var lifted = false;
+  inp.addEventListener('focus', function(){ renderOpts(true); lifted = false; });
+  inp.addEventListener('input', function(){ PK.active = -1; renderOpts(true); if (!lifted){ lifted = true; lift(); } });
   inp.addEventListener('blur', function(){ setTimeout(function(){ if (document.activeElement !== inp) renderOpts(false); }, 150); });
   inp.addEventListener('keydown', function(e){
     var n = PK.opts.length;
