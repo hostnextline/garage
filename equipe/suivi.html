@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#1D4B77">
+<title>Suivi de votre mécano</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231D4B77'/%3E%3Cpath d='M18 44l8-8m10-10l10-10M26 36a8 8 0 1 0 10-10' stroke='%23F2B200' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="vendor/leaflet.css">
+<style>
+:root{
+  --paper:#ECEFF2; --surface:#FFFFFF; --ink:#14202B; --muted:#55626F; --line:#D2D9E0; --signal:#F2B200; --on-signal:#1E1600;
+  --steel:#1D4B77; --steel-soft:#DCE7F3; --ok:#1B6E45; --ok-bg:#DCF0E3; --warn:#8F5400; --warn-bg:#FBEACB;
+  --f-display:"Barlow Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif; --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --paper:#0E1318; --surface:#172029; --ink:#E6ECF1; --muted:#97A5B2; --line:#26323D; --steel:#93BCE4; --steel-soft:#1C3046; --ok:#5CCB93; --ok-bg:#15321F; --warn:#F2AE45; --warn-bg:#382709; color-scheme:dark; }
+}
+:root[data-theme="dark"]{ --paper:#0E1318; --surface:#172029; --ink:#E6ECF1; --muted:#97A5B2; --line:#26323D; --steel:#93BCE4; --steel-soft:#1C3046; --ok:#5CCB93; --ok-bg:#15321F; --warn:#F2AE45; --warn-bg:#382709; color-scheme:dark; }
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.45 var(--f-body);min-height:100vh;display:flex;flex-direction:column}
+.head{padding:max(14px,env(safe-area-inset-top)) 16px 12px;background:var(--surface);border-bottom:1px solid var(--line)}
+.in{max-width:640px;margin:0 auto}
+.eyebrow{font:600 13px/1.2 var(--f-display);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+h1{font:700 28px/1.05 var(--f-display);margin:4px 0 0;text-wrap:balance}
+.eta{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px;margin-top:10px}
+.eta b{font:700 44px/1 var(--f-display)}
+.eta span{color:var(--muted);font-weight:600}
+.note{margin:10px 0 0;color:var(--muted)}
+.state{display:inline-flex;align-items:center;gap:8px;margin-top:8px;font-weight:600;color:var(--ok)}
+.state i{width:10px;height:10px;border-radius:50%;background:currentColor;box-shadow:0 0 0 4px var(--ok-bg)}
+.state.warn{color:var(--warn)} .state.warn i{box-shadow:0 0 0 4px var(--warn-bg)}
+#map{flex:1;min-height:58vh;background:var(--steel-soft)}
+.foot{padding:10px 16px max(12px,env(safe-area-inset-bottom));color:var(--muted);font-size:13.5px;text-align:center}
+.pin-wrap{background:none;border:0}
+.pin{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;background:#1D4B77;color:#fff;border:3px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.4);font:700 18px/1 var(--f-body)}
+.pin.home{border-radius:10px;background:#F2B200;color:#1E1600}
+.msg{max-width:640px;margin:40px auto;padding:0 16px;display:grid;gap:10px;text-align:center}
+.leaflet-container{font:inherit}
+@media (prefers-reduced-motion:no-preference){ .state i{animation:p 2s ease-in-out infinite} @keyframes p{50%{box-shadow:0 0 0 8px var(--ok-bg)}} }
+</style>
+</head>
+<body>
+<header class="head"><div class="in">
+  <div class="eyebrow" id="garage">Suivi en direct</div>
+  <h1 id="title">Chargement…</h1>
+  <div class="eta" id="eta" hidden><b id="eta-time"></b><span id="eta-left"></span></div>
+  <div class="state" id="state" hidden><i aria-hidden="true"></i><span id="state-txt"></span></div>
+  <p class="note" id="note" hidden></p>
+</div></header>
+<div id="map" role="region" aria-label="Carte du trajet"></div>
+<p class="foot" id="foot">Cette page se met à jour toute seule.</p>
+<script src="config.js"></script>
+<script src="vendor/leaflet.js"></script>
+<script>
+(function(){
+  var CFG = window.GARAGE_CFG || {}, token = (location.hash.match(/t=([A-Za-z0-9_-]{20,})/) || [])[1];
+  var $ = function(id){ return document.getElementById(id); };
+  var TF = new Intl.DateTimeFormat('fr-CA', {hour:'numeric', minute:'2-digit'});
+  var map = null, me = null, home = null, line = null, fitted = false, last = null, timer = null, stopped = false;
+  function clock(d){ return TF.format(d).replace(/\s/g, ' '); }
+  function dist(a, b){ var R = 6371000, r = Math.PI / 180, x = Math.pow(Math.sin((b.lat - a.lat) * r / 2), 2) + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.pow(Math.sin((b.lon - a.lon) * r / 2), 2); return 2 * R * Math.asin(Math.sqrt(x)); }
+  function show(id, on){ $(id).hidden = !on; }
+  function stop(title, note){
+    stopped = true; clearTimeout(timer);
+    $('title').textContent = title; show('eta', false); show('state', false);
+    $('note').textContent = note || ''; show('note', !!note);
+    $('foot').textContent = 'Le suivi est terminé.';
+    if (me && map){ map.removeLayer(me); me = null; } if (line && map){ map.removeLayer(line); line = null; }
+  }
+  function ensureMap(){
+    if (map || !window.L) return;
+    map = L.map('map', {zoomControl:true}).setView([45.53, -73.62], 12);
+    map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(map);
+  }
+  function icon(cls, txt, s){ return L.divIcon({className:'pin-wrap', html:'<span class="pin ' + cls + '">' + txt + '</span>', iconSize:[s, s], iconAnchor:[s / 2, s / 2]}); }
+  /* what is left of the planned road from where the mechanic is now */
+  function remaining(pos, d){
+    var route = d.route || [];
+    if (route.length > 1 && d.km && d.minutes){
+      var best = 1e9, bi = 0; for (var i = 0; i < route.length; i++){ var dd = dist(pos, {lat:route[i][1], lon:route[i][0]}); if (dd < best){ best = dd; bi = i; } }
+      if (best < 400){
+        var m = best; for (var k = bi; k < route.length - 1; k++) m += dist({lat:route[k][1], lon:route[k][0]}, {lat:route[k + 1][1], lon:route[k + 1][0]});
+        var totalM = 0; for (var q = 0; q < route.length - 1; q++) totalM += dist({lat:route[q][1], lon:route[q][0]}, {lat:route[q + 1][1], lon:route[q + 1][0]});
+        var share = totalM > 0 ? m / totalM : 1;
+        return {km:d.km * share, min:d.minutes * share, path:[[pos.lat, pos.lon]].concat(route.slice(bi + 1).map(function(c){ return [c[1], c[0]]; }))};
+      }
+    }
+    if (!d.dest) return null;
+    var kmLeft = dist(pos, d.dest) * 1.35 / 1000;
+    return {km:kmLeft, min:kmLeft / 30 * 60 + 2, path:[[pos.lat, pos.lon], [d.dest.lat, d.dest.lon]]};
+  }
+  function draw(d){
+    var name = d.mech || 'Votre mécano';
+    $('garage').textContent = d.garage || 'Suivi en direct';
+    document.title = name + ' est en route';
+    if (d.status === 'arrived') return stop(name + ' est arrivé', d.ended_at ? 'Arrivé à ' + clock(new Date(d.ended_at)) + '. Bon service !' : 'Bon service !');
+    if (d.status === 'cancelled') return stop('Le suivi a été arrêté', 'Le garage vous contactera au besoin.');
+    if (d.status === 'expired') return stop('Ce lien n\'est plus actif', 'Le suivi s\'arrête automatiquement après quelques heures.');
+    $('title').textContent = (d.client ? 'Bonjour ' + d.client + ', ' : '') + name + ' est en route';
+    ensureMap();
+    var pts = [];
+    if (d.dest && map){ if (!home) home = L.marker([d.dest.lat, d.dest.lon], {icon:icon('home', '⌂', 36), title:'Chez vous'}).addTo(map); pts.push([d.dest.lat, d.dest.lon]); }
+    var pos = d.pos, left = null;
+    if (pos){
+      var fresh = (Date.parse(d.now) - Date.parse(pos.at)) / 1000;
+      left = remaining(pos, d);
+      if (map){
+        if (!me) me = L.marker([pos.lat, pos.lon], {icon:icon('', '🚐', 42), title:name, zIndexOffset:500}).addTo(map); else me.setLatLng([pos.lat, pos.lon]);
+        if (left){ if (!line) line = L.polyline(left.path, {color:'#1D4B77', weight:6, opacity:.85, lineCap:'round'}).addTo(map); else line.setLatLngs(left.path); }
+        pts.push([pos.lat, pos.lon]);
+      }
+      $('state-txt').textContent = fresh < 90 ? 'Position en direct' : 'Dernière position il y a ' + Math.round(fresh / 60) + ' min';
+      $('state').className = 'state' + (fresh < 90 ? '' : ' warn'); show('state', true);
+      show('note', false);
+    } else {
+      $('note').textContent = name + ' vient de partir. Sa position s\'affichera dès que son téléphone l\'envoie.'; show('note', true); show('state', false);
+    }
+    var eta = left ? new Date(Date.now() + left.min * 60000) : d.eta_at ? new Date(d.eta_at) : null;
+    if (eta){
+      $('eta-time').textContent = clock(eta);
+      $('eta-left').textContent = 'arrivée prévue' + (left ? ' · environ ' + Math.max(1, Math.round(left.min)) + ' min · ' + (Math.round(left.km * 10) / 10).toLocaleString('fr-CA') + ' km' : '');
+      show('eta', true);
+    } else show('eta', false);
+    if (map && pts.length && !fitted){ fitted = true; if (pts.length === 1) map.setView(pts[0], 14); else map.fitBounds(L.latLngBounds(pts).pad(0.25), {maxZoom:16}); }
+    $('foot').textContent = 'Mis à jour à ' + clock(new Date()) + ' · la page se met à jour toute seule.';
+  }
+  function poll(){
+    if (stopped) return;
+    var h = {'Content-Type':'application/json', apikey:CFG.key};
+    if (/^eyJ/.test(CFG.key || '')) h.Authorization = 'Bearer ' + CFG.key;
+    fetch(CFG.url + '/rest/v1/rpc/get_track', {method:'POST', headers:h, body:JSON.stringify({p_token:token}), cache:'no-store'}).then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); }).then(function(d){
+      if (!d) return stop('Lien de suivi introuvable', 'Vérifiez le lien reçu par texto.');
+      last = d; draw(d);
+      timer = setTimeout(poll, document.visibilityState === 'hidden' ? 30000 : 10000);
+    }, function(){
+      $('foot').textContent = 'Connexion perdue : on réessaie…';
+      timer = setTimeout(poll, 15000);
+    });
+  }
+  document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible' && !stopped){ clearTimeout(timer); poll(); } });
+  if (!token || !CFG.url) return stop('Lien de suivi incomplet', 'Vérifiez le lien reçu par texto.');
+  poll();
+})();
+</script>
+</body>
+</html>

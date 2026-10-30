@@ -394,7 +394,7 @@ body.locked{overflow:hidden}
 
 /* tab bar + toast */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
-.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding-block:6px}
+.tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px;padding-block:6px}
 .tab{display:grid;justify-items:center;gap:2px;background:none;border:0;border-radius:10px;padding:6px 0;font-weight:600;font-size:13.5px;color:var(--muted);cursor:pointer;min-height:52px}
 .tab[aria-current="page"]{color:var(--ink);background:var(--sunk)}
 .tab[aria-current="page"] svg{color:var(--signal)}
@@ -624,6 +624,9 @@ body.locked{overflow:hidden}
     });
   }});
 
+  /* the team version keeps its own notebook and sign-in; it only borrows the address search and the downloads */
+  window.__addrMcp = mcp; window.__webDownloads = downloads;
+  if (window.__GARAGE_TEAM) return;
   var caps = {db:db, user:user, downloads:downloads, mcp:mcp};
   window.claude = Object.freeze({use:function(name){ return new Promise(function(r){ setTimeout(function(){ r(caps[name] || null); }, 0); }); }});
 
@@ -795,6 +798,15 @@ function promoByName(name){ var n = norm(name); return allPromos().filter(functi
 function prefix(){ return typeof cfg().prefix === 'string' ? cfg().prefix : 'F-'; }
 function canWrite(){ return !!S.db && S.canWrite !== false; }
 function canAdmin(){ return !!S.db && (S.isAdmin || S.userUnknown); }
+/* team version (hosted with logins): an optional extension adds tabs, roles and the « en route » tools; inside Claude it is absent */
+function ext(){ return window.__garageExt || null; }
+function allow(what){ var e = ext(); return !(e && typeof e.can === 'function' && e.can(what) === false); }
+function canBook(){ return canWrite() && allow('book'); }
+function canHours(){ var e = ext(); return canAdmin() || (canWrite() && !!(e && typeof e.can === 'function' && e.can('hours') === true)); }
+function lockedMech(){ var e = ext(), m = e && typeof e.myMechanic === 'function' ? e.myMechanic() : null; if (!m) return null; return mechanics().filter(function(x){ return norm(x) === norm(m); })[0] || m; }
+function extTabs(){ var e = ext(); return e && Array.isArray(e.tabs) ? e.tabs : []; }
+function extTab(k){ return extTabs().filter(function(t){ return t.key === k; })[0] || null; }
+function tabOk(k){ return (['agenda','clients','factures','reglages'].indexOf(k) >= 0 || !!extTab(k)) && allow('tab:' + k); }
 function findJob(id){ for (var i = 0; i < S.jobs.length; i++) if (S.jobs[i].id === id) return S.jobs[i]; return null; }
 function jobPostal(j){ var c = j.client || {}; return c.postal || findPostal(c.address); }
 function jobPt(j){ return ptOf(jobPostal(j)); }
@@ -957,9 +969,13 @@ function banners(){
 function renderNav(){
   var hide = S.screen === 'edit' || S.screen === 'invoice' || S.screen === 'cform';
   $('#tabbar').hidden = hide;
+  extTabs().forEach(function(t){ if (t.hidden || $('.tab[data-t="' + t.key + '"]')) return; var rb = $('.tab[data-t="reglages"]'); rb.insertAdjacentHTML('beforebegin', '<button type="button" class="tab" data-act="tab" data-t="' + esc(t.key) + '">' + (t.icon || '') + '<span>' + esc(t.label) + '</span></button>'); });
+  $$('.tab').forEach(function(b){ b.hidden = !tabOk(b.dataset.t); });
   $$('.tab').forEach(function(b){ if (b.dataset.t === S.tab) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
 }
 function render(){
+  if (!tabOk(S.tab)) S.tab = 'agenda';
+  var lm = lockedMech(); if (lm) S.mech = lm;
   renderNav();
   if (S.screen === 'edit' || S.screen === 'invoice' || S.screen === 'cform') return;
   if (S.tab === 'reglages' && !S.screen && S.settingsDirty) return;
@@ -970,6 +986,7 @@ function render(){
   else if (S.tab === 'clients') v = viewClients();
   else if (S.tab === 'factures') v = viewInvoices();
   else if (S.tab === 'reglages') v = viewSettings();
+  else if (extTab(S.tab)) v = extTab(S.tab).view();
   else v = viewAgenda();
   var old = $('#cal'), keep = old ? {top:old.scrollTop, left:old.scrollLeft} : null, prevKey = S._calKey;
   var vkey = [S.tab, S.screen, S.jobId, S.clientId, S.clientTab].join('|'), vals = {}, ae = document.activeElement, aeId = (ae && ae.id && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ($('#main').contains(ae) || $('#top').contains(ae))) ? ae.id : null, selS = null, selE = null;
@@ -1192,7 +1209,7 @@ function viewAgenda(){
   }).join('');
   var top = '<div class="wrap top-in">' +
     '<div class="brandrow"><div><div class="eyebrow">Carnet de route</div><h1>' + esc(bizName()) + '</h1></div>' +
-    (canWrite() ? '<button type="button" class="btn primary sm" data-act="new">+ Réservation</button>' : '') + '</div>' +
+    (canBook() ? '<button type="button" class="btn primary sm" data-act="new">+ Réservation</button>' : '') + '</div>' +
     '<div class="weeknav"><button type="button" class="iconbtn" data-act="week" data-v="-7" aria-label="Semaine précédente">‹</button><span class="month">' + esc(DMON.format(parseISO(day))) + '</span>' +
     (day !== t ? '<button type="button" class="linkbtn" data-act="today">Aujourd\'hui</button>' : '') +
     '<button type="button" class="iconbtn" data-act="week" data-v="7" aria-label="Semaine suivante">›</button></div>' +
@@ -1206,13 +1223,14 @@ function viewAgenda(){
   var info = dayInfo(day);
 
   var body = banners();
+  if (ext() && typeof ext().agendaTop === 'function') body += ext().agendaTop() || '';
   if (canAdmin() && S.loaded && !biz().name) body += '<div class="banner"><p>Ajoute le nom du garage, tes numéros de TPS et TVQ et ton taux horaire. Ils apparaîtront sur les factures.</p><button type="button" class="btn sm" data-act="tab" data-t="reglages">Ouvrir les réglages</button></div>';
   body += isWeek ? '<div class="daytitle"><h2>' + esc(weekTitle(day)) + '</h2>' + (week.indexOf(t) >= 0 ? '<span class="eyebrow">Cette semaine</span>' : '') + '</div>'
     : '<div class="daytitle"><h2>' + esc(dayLong(day)) + '</h2>' + (day === t ? '<span class="eyebrow">Aujourd\'hui</span>' : '') + '</div>';
   body += '<div class="toolbar"><span class="hoursline">' + (isWeek ? 'Toute la semaine' : hoursText(info)) + '</span>' +
     '<div class="chips" role="group" aria-label="Affichage">' + chip('view', 'grid', 'Jour', S.view === 'grid') + chip('view', 'week', 'Semaine', isWeek) + chip('view', 'list', 'Liste', S.view === 'list') + '</div></div>';
-  if (canAdmin() && S.view !== 'list' && !S.hoursEdit) body += '<button type="button" class="btn sm" data-act="hours-edit">Ouvrir / fermer l\'horaire' + (isWeek ? ' de la semaine' : '') + '</button>';
-  if (mechanics().length){
+  if (canHours() && S.view !== 'list' && !S.hoursEdit) body += '<button type="button" class="btn sm" data-act="hours-edit">Ouvrir / fermer l\'horaire' + (isWeek ? ' de la semaine' : '') + '</button>';
+  if (mechanics().length && !lockedMech()){
     body += '<div class="chips" role="group" aria-label="Mécano">' + chip('mech', '', 'Tous les mécanos', S.mech === '') + mechanics().map(function(m){ return chip('mech', m, m, S.mech === m); }).join('') + '</div>';
   }
   if (live.length){
@@ -1221,11 +1239,11 @@ function viewAgenda(){
   }
   if (!S.loaded && !S.noDb) body += '<p class="muted">Ouverture du carnet…</p>';
   if (isWeek){
-    if (S.hoursEdit && canAdmin()) body += weekHoursPanel(day);
+    if (S.hoursEdit && canHours()) body += weekHoursPanel(day);
     else if (S.loaded && !S.jobs.length && canWrite()) body += '<div class="banner"><p>Touche une case libre pour réserver ce jour-là à cette heure. Touche le nom d\'un jour pour le voir en détail.</p></div>';
     body += weekGridHTML(day);
   } else if (S.view === 'grid'){
-    if (S.hoursEdit && canAdmin()) body += hoursPanel(day);
+    if (S.hoursEdit && canHours()) body += hoursPanel(day);
     else if (S.loaded && !S.jobs.length && canWrite()) body += '<div class="banner"><p>Touche une case libre de l\'horaire pour réserver un client. Le formulaire s\'ouvre avec la date, l\'heure et le mécano déjà remplis.</p></div>';
     body += gridHTML(day, list);
     if (!S.hoursEdit) body += routesHTML(day);
@@ -1233,9 +1251,9 @@ function viewAgenda(){
     if (noTime.length) body += '<h3>Sans heure</h3><div class="list">' + noTime.map(ticket).join('') + '</div>';
   } else if (S.loaded && !S.jobs.length){
     body += '<div class="empty-card"><h3>Le carnet est vide</h3><p>Chaque appel devient une réservation : le client, son véhicule avec le VIN, l\'adresse et l\'heure. Le mécano voit ses jobs ici et fait la facture sur place, taxes calculées.</p>' +
-      (canWrite() ? '<button type="button" class="btn primary" data-act="new">Réserver la première job</button>' : '') + '</div>';
+      (canBook() ? '<button type="button" class="btn primary" data-act="new">Réserver la première job</button>' : '') + '</div>';
   } else if (S.loaded && !list.length){
-    body += '<div class="empty-card"><p>Aucun rendez-vous ' + (S.mech ? 'pour ' + esc(S.mech) + ' ' : '') + 'ce jour-là.</p>' + (canWrite() ? '<button type="button" class="btn" data-act="new">Réserver le ' + esc(dayLong(day)) + '</button>' : '') + '</div>';
+    body += '<div class="empty-card"><p>Aucun rendez-vous ' + (S.mech ? 'pour ' + esc(S.mech) + ' ' : '') + 'ce jour-là.</p>' + (canBook() ? '<button type="button" class="btn" data-act="new">Réserver le ' + esc(dayLong(day)) + '</button>' : '') + '</div>';
   } else if (list.length){
     body += '<div class="list">' + list.map(ticket).join('') + '</div>' + routesHTML(day);
   }
@@ -1293,7 +1311,7 @@ function viewClient(){
     (c.email ? '<div><dt>Courriel</dt><dd class="sel">' + esc(c.email) + '</dd></div>' : '') + '</dl>' +
     (w ? '<div class="inline-actions"><button type="button" class="btn sm" data-act="cl-edit">Modifier la fiche</button></div>' : '') + '</section>';
   body += '<div class="tiles">' +
-    (w ? '<button type="button" class="tile book" data-act="cl-book">Prendre un rendez-vous<small>' + (upcoming.length ? upcoming.length + ' à venir' : 'Aucun à venir') + '</small></button>' : '') +
+    (w && canBook() ? '<button type="button" class="tile book" data-act="cl-book">Prendre un rendez-vous<small>' + (upcoming.length ? upcoming.length + ' à venir' : 'Aucun à venir') + '</small></button>' : '') +
     '<button type="button" class="tile' + (tab === 'factures' ? ' on' : '') + '" data-act="cl-tab" data-v="factures" aria-pressed="' + (tab === 'factures') + '">Facturation<small>' + invs.length + ' facture' + (invs.length > 1 ? 's' : '') + '</small></button>' +
     '<button type="button" class="tile' + (tab === 'suivi' ? ' on' : '') + '" data-act="cl-tab" data-v="suivi" aria-pressed="' + (tab === 'suivi') + '">Suivi client<small>' + js.length + ' visite' + (js.length > 1 ? 's' : '') + (c.notes && c.notes.length ? ' · ' + c.notes.length + ' note' + (c.notes.length > 1 ? 's' : '') : '') + '</small></button>' +
     '<button type="button" class="tile' + (tab === 'recevables' ? ' on' : '') + '" data-act="cl-tab" data-v="recevables" aria-pressed="' + (tab === 'recevables') + '">Comptes recevables<small>' + (due > 0 ? esc(money(due)) + ' dû' : 'Rien à recevoir') + '</small></button></div>';
@@ -1905,6 +1923,7 @@ function viewJob(){
   }
   if (w && st === 'annule') body += '<button type="button" class="btn" data-act="status" data-v="planifie">Remettre la job à l\'agenda</button>';
   body += '</section>';
+  if (ext() && typeof ext().jobExtra === 'function') body += ext().jobExtra(j) || '';
 
   body += '<section class="sect"><h3>Client</h3><dl class="kv">' +
     '<div><dt>Nom</dt><dd>' + esc(c.name || '—') + '</dd></div>' +
@@ -1941,7 +1960,7 @@ function viewJob(){
     if (is === 'unpaid' || is === 'paid'){
       body += '<p class="muted small">Cette job a une facture finalisée : elle reste au carnet pour ta comptabilité.</p>';
     } else if (!S.confirmDel){
-      body += '<button type="button" class="btn danger block" data-act="del">Supprimer la job</button>';
+      if (allow('deleteJob')) body += '<button type="button" class="btn danger block" data-act="del">Supprimer la job</button>';
     } else {
       body += '<div class="banner warn"><p>Supprimer cette job pour de bon ? On ne pourra pas la récupérer.</p></div><div class="grid2"><button type="button" class="btn" data-act="del-no">Garder</button><button type="button" class="btn danger solid" data-act="del-yes">Supprimer</button></div>';
     }
@@ -1994,7 +2013,7 @@ function buildEdit(id, quick, draft, preset, inSheet, clientArg){
   PK.picked = j ? jobServices(j).slice() : (draft && Array.isArray(draft.services) ? draft.services.slice() : []); PK.active = -1;
   var v = d.vehicle, mechs = mechanics(), auto = !!draftPath();
   var mechField = mechs.length
-    ? '<div class="field"><label for="f-mech">Mécano</label><select id="f-mech">' + opt('', 'Pas encore assigné', !d.mechanic) + mechs.map(function(m){ return opt(m, m, d.mechanic === m); }).join('') + (d.mechanic && mechs.indexOf(d.mechanic) < 0 ? opt(d.mechanic, d.mechanic, true) : '') + '</select></div>'
+    ? '<div class="field"><label for="f-mech">Mécano</label>' + (lockedMech() ? '<select id="f-mech" disabled>' + opt(lockedMech(), lockedMech(), true) + '</select>' : '<select id="f-mech">' + opt('', 'Pas encore assigné', !d.mechanic) + mechs.map(function(m){ return opt(m, m, d.mechanic === m); }).join('') + (d.mechanic && mechs.indexOf(d.mechanic) < 0 ? opt(d.mechanic, d.mechanic, true) : '') + '</select>') + '</div>'
     : inputF('f-mech', 'Mécano', d.mechanic, 'autocomplete="off"');
   var body = '<form id="jobform" class="stack" novalidate>' +
     (draft ? '<div class="banner" id="draftbanner"><p>On a repris ton brouillon' + (draft.savedAt ? ' sauvegardé le ' + esc(dayLong(isoDate(new Date(draft.savedAt)))) + ' à ' + esc(hm(pad(new Date(draft.savedAt).getHours()) + ':' + pad(new Date(draft.savedAt).getMinutes()))) : '') + '.</p><button type="button" class="btn sm" data-act="draft-reset">Recommencer à zéro</button></div>' : '') +
@@ -2345,6 +2364,7 @@ function hideInvErr(){ var e = $('#inverr'); if (e && !e.hidden) e.hidden = true
 function invErr(msg){ var e = $('#inverr'); e.textContent = msg; e.hidden = false; e.scrollIntoView({block:'center'}); }
 function claimNumber(){
   var pre = prefix(), start = Math.max(1, parseInt(cfg().startNo, 10) || 1), ref = S.db.doc('meta/invoices');
+  if (ext() && typeof ext().nextInvoiceNo === 'function') return ext().nextInvoiceNo(start).then(function(n){ return pre + String(n).padStart(4, '0'); }, function(){ return fallback(); });
   function fallback(){ var d = new Date(); return pre + String(d.getFullYear()).slice(2) + pad(d.getMonth()+1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()); }
   function tryOnce(n){
     if (n >= 8) return Promise.resolve(fallback());
@@ -2588,6 +2608,7 @@ function viewSettings(){
   var top = '<div class="wrap top-in"><div class="brandrow"><div><div class="eyebrow">' + esc(bizName()) + '</div><h1>Réglages</h1></div></div></div>';
   var body = banners();
   if (!adm && S.db) body += '<div class="banner"><p>Seuls le propriétaire et les éditeurs peuvent changer ces réglages.</p></div>';
+  if (ext() && typeof ext().settingsTop === 'function') body += ext().settingsTop() || '';
   body += '<form id="setform" class="stack" novalidate>' +
     '<section class="sect"><h3>Le garage</h3><p class="muted small">Ce qui apparaît en haut de chaque facture.</p>' +
       inputF('s-name', 'Nom du garage', b.name, 'autocomplete="off"' + dis) +
@@ -2661,7 +2682,7 @@ document.addEventListener('click', function(e){
       else if (('#' + t) !== location.hash) location.hash = t; else { S.tab = t; render(); }
       break;
     }
-    case 'new': openEdit(null, false, {date:S.day}, true); break;
+    case 'new': if (canBook()) openEdit(null, false, {date:S.day}, true); break;
     case 'cl-new': S.linkJob = null; openClientNew('page'); break;
     case 'cl-link': { var lkj = findJob(S.jobId); if (!lkj) break; S.linkJob = lkj.id; S.confirmClDel = false; buildClientForm(null, 'page', null, prefillFromJob(lkj)); break; }
     case 'cl-open': S.clientId = id; S.screen = 'client'; S.backTo = null; S.confirmClDel = false; if (S.tab !== 'clients' && b.closest('#main')) S.backTo = 'job'; render(); window.scrollTo(0, 0); break;
@@ -2709,9 +2730,9 @@ document.addEventListener('click', function(e){
       break;
     }
     case 'cd-reset': { var cdp = clientDraftPath(); clearTimeout(cdT); cdT = null; var mode0 = S.cformMode; (cdp ? serial(cdp, function(){ return S.db.doc(cdp).delete(); }).catch(function(){}) : Promise.resolve()).then(function(){ buildClientForm(null, mode0, null); }); break; }
-    case 'wday-toggle': { if (!canAdmin()) break; var wi = dayInfo(v); saveDay(v, wi.open ? Object.assign({}, wi.doc, {closed:true}) : openDayDoc(wi)); break; }
+    case 'wday-toggle': { if (!canHours()) break; var wi = dayInfo(v); saveDay(v, wi.open ? Object.assign({}, wi.doc, {closed:true}) : openDayDoc(wi)); break; }
     case 'wperiod': {
-      if (!canAdmin()) break;
+      if (!canHours()) break;
       var wf = $('#p-from').value, wt2 = $('#p-to').value, wc = $('#p-col') ? $('#p-col').value : '', wdays = $$('.p-day').filter(function(x){ return x.checked; }).map(function(x){ return x.value; });
       S.period = {from:wf, to:wt2, col:wc}; S.periodDays = {week:weekOf(S.day)[0], days:wdays};
       if (toMin(wt2) <= toMin(wf)){ toast('La fin de la période doit être après le début.'); break; }
@@ -2720,13 +2741,13 @@ document.addEventListener('click', function(e){
       toast((v === 'open' ? 'Ouvert' : 'Fermé') + ' de ' + hm(wf) + ' à ' + hm(wt2) + (wc ? ' pour ' + wc : '') + ' · ' + wdays.length + ' jour' + (wdays.length > 1 ? 's' : ''));
       break;
     }
-    case 'week-close': { if (!canAdmin()) break; weekOf(S.day).forEach(function(d0){ var i0 = dayInfo(d0); if (i0.open) saveDay(d0, Object.assign({}, i0.doc, {closed:true})); }); toast('Semaine fermée'); break; }
-    case 'week-reset': { if (!canAdmin()) break; weekOf(S.day).forEach(function(d0){ if (S.days[d0]) saveDay(d0, {}); }); toast('Horaire normal rétabli pour la semaine'); break; }
+    case 'week-close': { if (!canHours()) break; weekOf(S.day).forEach(function(d0){ var i0 = dayInfo(d0); if (i0.open) saveDay(d0, Object.assign({}, i0.doc, {closed:true})); }); toast('Semaine fermée'); break; }
+    case 'week-reset': { if (!canHours()) break; weekOf(S.day).forEach(function(d0){ if (S.days[d0]) saveDay(d0, {}); }); toast('Horaire normal rétabli pour la semaine'); break; }
     case 'slot': {
       var sc = b.dataset.c, stt = b.dataset.t;
-      if (S.hoursEdit){ if (canAdmin()) toggleSlot(S.day, sc, stt); break; }
-      if (!canWrite()) break;
-      if (!slotOpen(dayInfo(S.day), sc, stt)){ toast(canAdmin() ? "Case fermée. Touche « Ouvrir / fermer l'horaire » pour l'ouvrir." : 'Case fermée : on ne peut pas réserver à cette heure.'); break; }
+      if (S.hoursEdit){ if (canHours()) toggleSlot(S.day, sc, stt); break; }
+      if (!canBook()) break;
+      if (!slotOpen(dayInfo(S.day), sc, stt)){ toast(canHours() ? "Case fermée. Touche « Ouvrir / fermer l'horaire » pour l'ouvrir." : 'Case fermée : on ne peut pas réserver à cette heure.'); break; }
       openEdit(null, false, {date:S.day, time:stt, mechanic:(sc === '_all' || sc === '_none') ? '' : sc}, true);
       break;
     }
@@ -2734,7 +2755,7 @@ document.addEventListener('click', function(e){
     case 'units': { var ui = $('#f-units'); if (!ui) break; var uu = (parseInt(ui.value, 10) || unitsOf(60)) + (+v); ui.value = Math.max(1, Math.min(96, uu)); PK.durAuto = false; unitsChanged(); renderEstimate(); formChanged(); break; }
     case 'units-est': { var ue = $('#f-units'), ee = svcEstimate(PK.picked); if (!ue || !ee.known) break; ue.value = ee.units; PK.durAuto = true; unitsChanged(); renderEstimate(); formChanged(); toast('Durée mise à ' + dur(ee.units * unitMin())); break; }
     case 'period': {
-      if (!canAdmin()) break;
+      if (!canHours()) break;
       var pf = $('#p-from').value, pt2 = $('#p-to').value, pcol = $('#p-col') ? $('#p-col').value : '';
       S.period = {from:pf, to:pt2, col:pcol};
       if (toMin(pt2) <= toMin(pf)){ toast('La fin de la période doit être après le début.'); break; }
@@ -2755,13 +2776,13 @@ document.addEventListener('click', function(e){
     case 'goday': S.day = v; S.view = 'grid'; lsSet('gm.view', 'grid'); render(); var dt = $('.daytitle'); if (dt) dt.scrollIntoView({block:'start'}); break;
     case 'wslot': {
       var wd = b.dataset.d, wt = b.dataset.t;
-      if (S.hoursEdit){ if (canAdmin()) toggleWeekSlot(wd, wt); break; }
-      if (!canWrite()) break;
-      if (!weekSlotOpen(dayInfo(wd), wt)){ toast(canAdmin() ? "Case fermée. Touche « Ouvrir / fermer l'horaire de la semaine » pour l'ouvrir." : 'Case fermée : on ne peut pas réserver à cette heure.'); break; }
+      if (S.hoursEdit){ if (canHours()) toggleWeekSlot(wd, wt); break; }
+      if (!canBook()) break;
+      if (!weekSlotOpen(dayInfo(wd), wt)){ toast(canHours() ? "Case fermée. Touche « Ouvrir / fermer l'horaire de la semaine » pour l'ouvrir." : 'Case fermée : on ne peut pas réserver à cette heure.'); break; }
       openEdit(null, false, {date:wd, time:wt, mechanic:(S.mech && mechanics().indexOf(S.mech) >= 0) ? S.mech : ''}, true);
       break;
     }
-    case 'hours-edit': S.hoursEdit = !S.hoursEdit && canAdmin(); render(); if (S.hoursEdit){ var hp = $('#hours-panel'); if (hp) hp.scrollIntoView({block:'nearest'}); } break;
+    case 'hours-edit': S.hoursEdit = !S.hoursEdit && canHours(); render(); if (S.hoursEdit){ var hp = $('#hours-panel'); if (hp) hp.scrollIntoView({block:'nearest'}); } break;
     case 'day-close': { var di = dayInfo(S.day); saveDay(S.day, Object.assign({}, di.doc, {closed:true})); break; }
     case 'day-open': { var dj = dayInfo(S.day), nd = Object.assign({}, dj.doc); if (dj.week.open) delete nd.closed; else nd.closed = false; saveDay(S.day, nd); break; }
     case 'day-reset': saveDay(S.day, {}); break;
@@ -2784,7 +2805,9 @@ document.addEventListener('click', function(e){
     case 'invf': S.invFilter = v; render(); break;
     case 'status': {
       var j = findJob(S.jobId); if (!j || j.status === v) return;
-      write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update({status:v, updatedAt:Date.now()}); }, ST[v]);
+      var was = j.status || 'planifie', ex = ext();
+      if (ex && typeof ex.beforeStatus === 'function' && ex.beforeStatus(j, v, was) === false) break;
+      write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update({status:v, updatedAt:Date.now()}); }, ex && typeof ex.onStatus === 'function' ? '' : ST[v]).then(function(ok){ if (ok && ex && typeof ex.onStatus === 'function') ex.onStatus(j, v, was); });
       break;
     }
     case 'edit': openEdit(id, false); break;
@@ -2825,10 +2848,11 @@ document.addEventListener('click', function(e){
     case 'addsvcrow': { var box = $('#svcs-box'); if (box){ box.insertAdjacentHTML('beforeend', svcRow({name:'', price:''}, svcSeq++, '')); S.settingsDirty = true; var r = $('#s-reset'); if (r) r.hidden = false; var inp = box.lastElementChild.querySelector('input'); if (inp) inp.focus(); } break; }
     case 'delsvc': { var row = b.closest('.svc-row'); if (row){ row.remove(); S.settingsDirty = true; var rr = $('#s-reset'); if (rr) rr.hidden = false; } break; }
     case 'setreset': S.settingsDirty = false; render(); break;
+    default: if (ext() && typeof ext().onAction === 'function') ext().onAction(a, b);
   }
 });
 document.addEventListener('change', function(e){
-  var c = e.target && e.target.dataset ? e.target.dataset.chg : null; if (!c || !canAdmin()) return;
+  var c = e.target && e.target.dataset ? e.target.dataset.chg : null; if (!c || !canHours()) return;
   var di = dayInfo(S.day), nd = Object.assign({}, di.doc);
   if (c === 'daystart') nd.start = e.target.value; else if (c === 'dayend') nd.end = e.target.value; else return;
   if ((nd.end || di.end) <= (nd.start || di.start)){ toast("La fermeture doit être après l'ouverture."); render(); return; }
@@ -2844,7 +2868,7 @@ window.addEventListener('hashchange', function(){
   if (S.sheet){ S.sheet = false; $('#sheet').hidden = true; $('#sheet-body').innerHTML = ''; document.body.classList.remove('locked'); }
   S.hoursEdit = false;
   var h = location.hash.slice(1);
-  S.tab = ['agenda','clients','factures','reglages'].indexOf(h) >= 0 ? h : 'agenda';
+  S.tab = tabOk(h) ? h : 'agenda';
   S.screen = null; S.inv = null; render(); window.scrollTo(0, 0);
 });
 
@@ -2853,7 +2877,7 @@ document.addEventListener('visibilitychange', function(){ if (document.visibilit
 /* ---------- boot ---------- */
 function boot(){
   var h = location.hash.slice(1);
-  S.tab = ['agenda','clients','factures','reglages'].indexOf(h) >= 0 ? h : 'agenda';
+  S.tab = tabOk(h) ? h : 'agenda';
   render();
   var C = window.claude;
   if (!C || typeof C.use !== 'function'){ S.noDb = true; render(); return; }
@@ -2873,6 +2897,10 @@ function boot(){
     });
   });
 }
+/* what the team version may use (absent extension = nothing happens) */
+window.__garageApi = Object.freeze({S:S, render:render, toast:toast, findJob:findJob, findClient:findClient, cfg:cfg, mechanics:mechanics, esc:esc, hm:hm, money:money,
+  bizName:bizName, dayLong:dayLong, dShort:dShort, today:today, jobServices:jobServices, cl:cl, addrFull:addrFull, clientName:clientName, telHref:telHref, fmtPhone:fmtPhone,
+  topBack:topBack, banners:banners, pill:pill, norm:norm, canWrite:canWrite, canAdmin:canAdmin, lockedMech:lockedMech, ST:ST});
 boot();
 })();
 </script>
