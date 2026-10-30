@@ -331,6 +331,14 @@ grant update on public.members to authenticated;
 grant all on all tables in schema public to service_role;
 grant usage, select on all sequences in schema public to service_role;
 
+-- Supabase gives these by default (truncate, references, trigger, maintain): not needed by the app
+revoke truncate, references, trigger on all tables in schema public from anon, authenticated;
+do $$ begin
+  if current_setting('server_version_num')::int >= 170000 then
+    execute 'revoke maintain on all tables in schema public from anon, authenticated';
+  end if;
+end $$;
+
 revoke execute on all functions in schema public from public, anon, authenticated;
 grant execute on function public.get_track(text), public.setup_needed() to anon, authenticated;
 grant execute on function public.my_role(), public.my_mechanic(), public.is_staff(), public.mech_client_ids(),
@@ -344,5 +352,13 @@ alter default privileges in schema public revoke execute on functions from publi
 do $$ begin
   if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
     alter publication supabase_realtime add table public.docs, public.mech_live, public.tracks;
+  end if;
+end $$;
+
+-- new tables are not opened to the API by themselves: each table gets its rights explicitly, like above
+alter default privileges in schema public revoke select, insert, update, delete, truncate, references, trigger on tables from anon, authenticated;
+do $$ begin
+  if current_setting('server_version_num')::int >= 170000 then
+    execute 'alter default privileges in schema public revoke maintain on tables from anon, authenticated';
   end if;
 end $$;
