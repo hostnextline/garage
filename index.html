@@ -1,4 +1,4 @@
-<!doctype html><html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1D4B77"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231D4B77'/%3E%3Cpath d='M18 44l8-8m10-10l10-10M26 36a8 8 0 1 0 10-10' stroke='%23F2B200' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"><link rel="preconnect" href="https://photon.komoot.io" crossorigin><link rel="preconnect" href="https://api.tomtom.com" crossorigin><style>html{color-scheme:light}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
+<!doctype html><html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1D4B77"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231D4B77'/%3E%3Cpath d='M18 44l8-8m10-10l10-10M26 36a8 8 0 1 0 10-10' stroke='%23F2B200' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"><link rel="preconnect" href="https://photon.komoot.io" crossorigin><link rel="preconnect" href="https://api.tomtom.com" crossorigin><link rel="preconnect" href="https://maps.googleapis.com"><style>html{color-scheme:light}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Carnet du garage mobile</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -449,7 +449,7 @@ body.locked{overflow:hidden}
 
   /* ---------- address search, direct from the browser ---------- */
   var last = {ms:null, prov:null, n:0}, keyRefused = false;
-  function provider(){ return lsGet(TTK) && !keyRefused ? 'TomTom' : 'OpenStreetMap'; }
+  function provider(){ return gKey() ? 'Google Maps' : lsGet(TTK) && !keyRefused ? 'TomTom' : 'OpenStreetMap'; }
   window.__addrProvider = provider;
   function q(o){ return Object.keys(o).filter(function(k){ return o[k] !== undefined && o[k] !== null && o[k] !== ''; }).map(function(k){ return encodeURIComponent(k) + '=' + encodeURIComponent(o[k]); }).join('&'); }
   var inflight = {}, cache = {}, cacheKeys = [], photonTry = 0;
@@ -507,8 +507,89 @@ body.locked{overflow:hidden}
     if (tool === 'tomtom-reverse-geocode') return key ? ttReverse(input, key, sig) : phReverse(input, sig);
     return key ? tomtom(input, key, sig) : photon(input, sig);
   }
-  var mcp = Object.freeze({callTool:function(server, tool, input){
+  /* ---------- Google Maps: suggestions as you type (Places API New, through Google's own script) ---------- */
+  var GK = 'gm.web.gkey', gRefused = false, gLoad = null, gLib = null, gToken = null, gPreds = {}, gOrder = [], gSeq = 0;
+  function gKey(){ return !gRefused ? lsGet(GK) : null; }
+  window.__addrNoPostalList = function(){ return !!gKey(); };
+  function gDenied(e){ return /denied|api ?key|apinotactivated|not been used|disabled|billing|permission|referer|invalidkey|missingkey|refus/i.test(String(e && (e.message || e) || '')); }
+  function gRefusedNow(){
+    gRefused = true;
+    bar('Google refuse la clé. Dans Google Cloud, vérifie : facturation active, « Places API (New) » et « Maps JavaScript API » activées, et la clé permise pour ce site. En attendant : ' + provider() + '.');
+  }
+  function gEnsure(){
+    if (gLib) return Promise.resolve(gLib);
+    if (gLoad) return gLoad;
+    gLoad = new Promise(function(ok, ko){
+      window.__gmReady = function(){
+        try { google.maps.importLibrary('places').then(function(lib){ gLib = lib; ok(lib); }, ko); } catch(e){ ko(e); }
+      };
+      window.gm_authFailure = function(){ gRefusedNow(); };
+      var s = document.createElement('script');
+      s.src = 'https://maps.googleapis.com/maps/api/js?' + q({key:lsGet(GK), v:'weekly', loading:'async', language:'fr', region:'CA', callback:'__gmReady'});
+      s.async = true;
+      s.onerror = function(){ gLoad = null; ko(new Error('Google Maps ne se charge pas')); };
+      document.head.appendChild(s);
+    });
+    return gLoad;
+  }
+  var GPROV = /\s*,?\s+(QC|ON|NB|NS|MB|AB|BC|SK|NL|PE|YT|NT|NU)\b\s*,?\s*([A-Z]\d[A-Z] ?\d[A-Z]\d)?\s*$/i;
+  function gClean(t){
+    t = String(t || '').replace(/\s*,\s*(Canada|CA)\s*$/i, '').trim();
+    return t.replace(/\s*,\s*(QC|ON|NB|NS|MB|AB|BC|SK|NL|PE|YT|NT|NU)\b\s*,?\s*([A-Z]\d[A-Z] ?\d[A-Z]\d)?\s*$/i, function(m, p, pc){ return ' ' + p.toUpperCase() + (pc ? ' ' + pc.toUpperCase().replace(/^(\w{3})\s?(\w{3})$/, '$1 $2') : ''); }).replace(/\s+,/g, ',').trim();
+  }
+  function gFeature(text, types, ref, d){
+    var t = gClean(text), parts = t.split(','), first = (parts[0] || '').trim(), m = first.match(/^((?:\d+[A-Za-z]?-)?\d+[A-Za-z]?)\s+(.+)$/);
+    var isAddr = !!m, isRoute = !isAddr && types.indexOf('route') >= 0;
+    if (!isAddr && !isRoute) return null;
+    var pm = t.match(GPROV), city = (parts[1] || '').replace(GPROV, '').trim();
+    var a = {streetNumber:isAddr ? m[1].replace(/^.*-/, '') : '', streetName:isAddr ? m[2] : first, municipality:city, countrySubdivision:pm ? pm[1].toUpperCase() : '', freeformAddress:t};
+    return {type:'Feature', geometry:d && isFinite(d.lat) && isFinite(d.lon) ? {type:'Point', coordinates:[d.lon, d.lat]} : null, properties:{type:isAddr ? 'Point Address' : 'Street', ref:ref, nostore:true, address:a}};
+  }
+  function gKeep(pp){ var ref = 'g' + (++gSeq); gPreds[ref] = pp; gOrder.push(ref); if (gOrder.length > 300) delete gPreds[gOrder.shift()]; return ref; }
+  function gDetails(ref){
+    var pp = gPreds[ref]; if (!pp) return Promise.resolve(null);
+    return gEnsure().then(function(){
+      var place = pp.toPlace();
+      return place.fetchFields({fields:['formattedAddress', 'location']}).then(function(){
+        gToken = null; /* the details call closes this search session (Google bills the session once) */
+        var loc = place.location, lat = loc ? (typeof loc.lat === 'function' ? loc.lat() : loc.lat) : NaN, lon = loc ? (typeof loc.lng === 'function' ? loc.lng() : loc.lng) : NaN;
+        return {text:gClean(place.formattedAddress), lat:+lat, lon:+lon};
+      });
+    });
+  }
+  function gSearch(input){
+    return gEnsure().then(function(lib){
+      if (!gToken) gToken = new lib.AutocompleteSessionToken();
+      var pos = input.position || [], req = {input:String(input.query || ''), includedRegionCodes:['ca'], language:'fr-CA', region:'ca', sessionToken:gToken,
+        includedPrimaryTypes:input.idxSet === 'Str' ? ['route'] : ['street_address', 'premise', 'subpremise', 'route']};
+      if (isFinite(pos[0]) && isFinite(pos[1])){ req.origin = {lat:+pos[1], lng:+pos[0]}; req.locationBias = {center:{lat:+pos[1], lng:+pos[0]}, radius:50000}; }
+      return lib.AutocompleteSuggestion.fetchAutocompleteSuggestions(req).catch(function(e){
+        if (gDenied(e)) throw e;
+        /* an option this version of Google does not take: ask again with the bare minimum */
+        return lib.AutocompleteSuggestion.fetchAutocompleteSuggestions({input:req.input, includedRegionCodes:['ca'], language:'fr-CA', sessionToken:gToken});
+      }).then(function(res){
+        var feats = ((res && res.suggestions) || []).map(function(sg){ var pp = sg && sg.placePrediction; return pp ? gFeature(String(pp.text), pp.types || [], gKeep(pp), null) : null; }).filter(Boolean);
+        if (input.typeahead !== false) return {type:'FeatureCollection', features:feats};
+        /* checking an address typed by hand: full address (postal code, position) of the best match */
+        var best = feats.filter(function(f){ return f.properties.type === 'Point Address'; })[0];
+        if (!best) return {type:'FeatureCollection', features:[]};
+        return gDetails(best.properties.ref).then(function(d){ var f = d && d.text ? gFeature(d.text, ['street_address'], null, d) : null; return {type:'FeatureCollection', features:f ? [f] : []}; });
+      });
+    });
+  }
+  var mcp = Object.freeze({resolvePlace:function(ref){ return String(ref || '').charAt(0) === 'g' && gKey() ? gDetails(ref) : Promise.resolve(null); }, callTool:function(server, tool, input){
     input = input || {};
+    if (gKey() && tool === 'tomtom-fuzzy-search'){
+      var g0 = (window.performance || Date).now();
+      return gSearch(input).then(function(payload){
+        last = {ms:Math.round((window.performance || Date).now() - g0), prov:provider(), n:last.n + 1}; bar();
+        return {content:[{type:'text', text:JSON.stringify(payload)}], payload:payload};
+      }, function(e){
+        if (gDenied(e) || gRefused){ if (!gRefused) gRefusedNow(); return mcp.callTool(server, tool, input); }
+        bar('Google Maps ne répond pas (' + (e && e.message || 'réseau') + ').');
+        return Promise.reject({code:'server_unavailable', retryable:true, message:String(e && e.message || e)});
+      });
+    }
     var t0 = (window.performance || Date).now(), key = lsGet(TTK), useTT = !!(key && !keyRefused), ck = (useTT ? 'tt|' : 'osm|') + tool + '|' + JSON.stringify(input);
     if (cache[ck]){ last = {ms:0, prov:provider(), n:last.n + 1, cached:true}; bar(); return Promise.resolve({content:[], payload:cache[ck]}); }
     /* typing fast: the previous unfinished search is cancelled, only the latest one counts */
@@ -537,7 +618,7 @@ body.locked{overflow:hidden}
   function bar(msg){
     if (msg !== undefined) note = msg;
     var el = document.getElementById('demo-bar'); if (!el) return;
-    document.getElementById('db-prov').textContent = provider() === 'TomTom' ? 'TomTom en direct' : 'OpenStreetMap';
+    document.getElementById('db-prov').textContent = provider() === 'OpenStreetMap' ? 'OpenStreetMap' : provider() + ' en direct';
     document.getElementById('db-ms').textContent = last.ms == null ? 'aucune recherche encore' : last.cached ? 'dernière recherche : instantanée (déjà en mémoire)' : 'dernière recherche : ' + last.ms + ' ms';
     var n = document.getElementById('db-note'); n.textContent = !persistOk ? 'Ce navigateur bloque le stockage : les données seront perdues en fermant.' : note; n.hidden = !n.textContent;
   }
@@ -556,11 +637,23 @@ body.locked{overflow:hidden}
       '<p class="db-note" id="db-note" aria-live="polite" hidden></p>' +
       '<div class="db-panel" id="db-panel" hidden><p>Cette copie tourne hors de claude.ai pour sentir la vraie vitesse. <b>Les données restent dans ce navigateur, sur cet appareil</b> : elles ne sont pas partagées avec tes partenaires.</p>' +
       '<label for="db-key">Clé TomTom (optionnelle)</label><div class="db-row"><input id="db-key" type="password" autocomplete="off" spellcheck="false" placeholder="Colle ta clé de developer.tomtom.com"><button type="button" id="db-save">Enregistrer</button><button type="button" id="db-unkey">Retirer</button></div>' +
-      '<p class="db-small">La clé reste dans ce navigateur. Sans clé, les adresses viennent d\'OpenStreetMap (gratuit, parfois sans code postal).</p>' +
+      '<label for="db-gkey">Clé Google Maps (optionnelle)</label><div class="db-row"><input id="db-gkey" type="password" autocomplete="off" spellcheck="false" placeholder="Colle ta clé de console.cloud.google.com"><button type="button" id="db-gsave">Enregistrer</button><button type="button" id="db-gunkey">Retirer</button></div>' +
+      '<p class="db-small">Les clés restent dans ce navigateur. Ordre utilisé : Google Maps (suggestions comme dans Google Maps, sans la liste par code postal), sinon TomTom, sinon OpenStreetMap (gratuit, parfois sans code postal).</p>' +
       '<div class="db-row"><button type="button" id="db-reset" class="danger">Effacer les données d\'essai</button></div></div>';
     document.body.insertBefore(el, document.body.firstChild);
     var panel = document.getElementById('db-panel'), open = document.getElementById('db-open'), reset = document.getElementById('db-reset'), armed = false;
-    open.addEventListener('click', function(){ panel.hidden = !panel.hidden; open.setAttribute('aria-expanded', String(!panel.hidden)); if (!panel.hidden) document.getElementById('db-key').value = lsGet(TTK) ? '••••••••' : ''; });
+    open.addEventListener('click', function(){ panel.hidden = !panel.hidden; open.setAttribute('aria-expanded', String(!panel.hidden)); if (!panel.hidden){ document.getElementById('db-key').value = lsGet(TTK) ? '••••••••' : ''; document.getElementById('db-gkey').value = lsGet(GK) ? '••••••••' : ''; } });
+    document.getElementById('db-gsave').addEventListener('click', function(){
+      var v = document.getElementById('db-gkey').value.trim(); if (!v || /^•+$/.test(v)){ bar('Colle d\'abord ta clé Google Maps.'); return; }
+      lsSet(GK, v); document.getElementById('db-gkey').value = '••••••••';
+      if (gLoad){ bar('Clé Google enregistrée : la page se recharge…'); setTimeout(function(){ location.reload(); }, 700); return; }
+      gRefused = false; bar('Clé Google enregistrée : les suggestions viennent maintenant de Google Maps.');
+    });
+    document.getElementById('db-gunkey').addEventListener('click', function(){
+      lsSet(GK, null); document.getElementById('db-gkey').value = '';
+      if (gLoad){ bar('Clé Google retirée : la page se recharge…'); setTimeout(function(){ location.reload(); }, 700); return; }
+      gRefused = false; bar('Clé Google retirée : retour à ' + provider() + '.');
+    });
     document.getElementById('db-save').addEventListener('click', function(){ var v = document.getElementById('db-key').value.trim(); if (!v || /^•+$/.test(v)){ bar('Colle d\'abord ta clé TomTom.'); return; } lsSet(TTK, v); keyRefused = false; document.getElementById('db-key').value = '••••••••'; bar('Clé TomTom enregistrée : les adresses viennent maintenant de TomTom en direct.'); });
     document.getElementById('db-unkey').addEventListener('click', function(){ lsSet(TTK, null); keyRefused = false; document.getElementById('db-key').value = ''; bar('Clé retirée : retour à OpenStreetMap.'); });
     reset.addEventListener('click', function(){ if (!armed){ armed = true; reset.textContent = 'Toucher encore pour tout effacer'; setTimeout(function(){ armed = false; reset.textContent = 'Effacer les données d\'essai'; }, 4000); return; } store = {}; persist(); notifyAll(); armed = false; reset.textContent = 'Effacer les données d\'essai'; bar('Données d\'essai effacées.'); });
@@ -1218,7 +1311,7 @@ function clientDraftPath(){ return (S.db && S.uid) ? 'data/users/' + S.uid + '/d
 function clientDraftSave(){
   clearTimeout(cdT); cdT = null;
   var path = clientDraftPath(); if (!path || S.cformEdit || S.linkJob || !$('#clientform')) return Promise.resolve();
-  var d = {firstName:val('c-first'), lastName:val('c-last'), phone:val('c-phone'), address:val('c-addr'), email:val('c-email'), geo:addrGeo()};
+  var d = {firstName:val('c-first'), lastName:val('c-last'), phone:val('c-phone'), address:val('c-addr'), email:val('c-email'), geo:addrGeoKeep()};
   var any = d.firstName || d.lastName || d.phone || d.address || d.email;
   return serial(path, function(){ return any ? S.db.doc(path).set(Object.assign(d, {savedAt:Date.now()})) : S.db.doc(path).delete(); }).catch(function(){});
 }
@@ -1278,7 +1371,7 @@ function renderAddrMsg(){
   renderSameAddr();
   if (!a){ box.className = 'hint'; box.textContent = ttOn() ? 'Tape comme ça vient : « 8255 mountain », « 180-8255 mountain sights », « 8255 H4P 2B5 »… ' + PROV() + ' complète.' : 'Une seule ligne : numéro, rue, ville et code postal.'; return; }
   var pc = findPostal(a), z = pc ? ptOf(pc) : null, pq = splitUnit(a);
-  if (pc && isPostalOnly(pq.q)){ box.className = ttOn() ? 'hint' : 'hint warn'; box.textContent = 'Code postal ' + pc + (z ? ' (' + z.name + ')' : '') + (ttOn() ? ' : choisis l\'adresse dans la liste, ou ajoute le numéro civique devant (ex. « 8255 ' + pc + ' »).' : ' : ajoute le numéro civique devant, ex. « 8255 ' + pc + ' ».'); return; }
+  if (pc && isPostalOnly(pq.q)){ box.className = pcListOn() ? 'hint' : 'hint warn'; box.textContent = 'Code postal ' + pc + (z ? ' (' + z.name + ')' : '') + (pcListOn() ? ' : choisis l\'adresse dans la liste, ou ajoute le numéro civique devant (ex. « 8255 ' + pc + ' »).' : ' : ajoute le numéro civique devant, ex. « 8255 ' + pc + ' ».'); return; }
   if (!civicOf(pq.q) && /[A-Za-zÀ-ÿ]{2,}/.test(pq.q)){ box.className = 'hint warn'; box.textContent = 'Ajoute le numéro civique au début de l\'adresse.'; return; }
   if (!pc){ var tip = ttOn() && !(TT.picked && normAddr(a) === normAddr(TT.picked.text)); box.className = tip ? 'hint' : 'hint warn'; box.textContent = tip ? "Choisis l'adresse proposée, ou ajoute le code postal à la fin (ex. H4P 2B5)." : 'Ajoute le code postal à la fin, ex. H4P 2B5.'; return; }
   var g = addrGeo();
@@ -1302,7 +1395,7 @@ function stripCivic(q){ return String(q || '').replace(/^\s*\d{1,6}[A-Za-z]?(?=[
 var STREET_TYPES = ['rue','avenue','av','ave','boulevard','boul','bd','blvd','chemin','ch','rang','route','rte','place','pl','cote','montee','croissant','cr','terrasse','impasse','allee','promenade','street','road','rd','drive','dr','de','du','des','la','le','les','qc','montreal'];
 function streetWords(t){ return norm(String(t || '').replace(PC_ANY, ' ')).replace(/\bst\b/g, 'saint').replace(/\bste\b/g, 'sainte').split(/[^a-z0-9]+/).filter(function(w){ return w.length > 1 && !/^\d+[a-z]?$/.test(w) && STREET_TYPES.indexOf(w) < 0; }); }
 function streetMatch(typed, street){ var tw = streetWords(typed), sw = streetWords(street); return sw.length > 0 && sw.every(function(w){ return tw.some(function(x){ return x === w || (x.length >= 3 && (w.indexOf(x) === 0 || x.indexOf(w) === 0)); }); }); }
-function withUnit(text, unit){ return unit && /^\d/.test(text) ? unit + '-' + text : text; }
+function withUnit(text, unit){ return unit && /^\d/.test(text) && String(text).toUpperCase().indexOf(String(unit).toUpperCase() + '-') !== 0 ? unit + '-' + text : text; }
 function addrKey(a){ var pq = splitUnit(a), pc = findPostal(a), civ = civicOf(pq.q); return pc && civ ? civ + '|' + pc.replace(/\s/g, '') : ''; }
 /* replace a box's content only when it changes, so a button being tapped is not swapped out under the finger */
 function setHTML(el, html){ if (el._h === html) return; el._h = html; el.innerHTML = html; }
@@ -1320,7 +1413,10 @@ function renderSameAddr(){
 /* address suggestions from the viewer's TomTom Maps connector (optional) */
 function PROV(){ return (typeof window.__addrProvider === 'function' && window.__addrProvider()) || 'TomTom'; }
 function ttOn(){ return !!TT.mcp && TT.state === 'ready'; }
-function addrGeo(){ var p = TT.picked, a = val('c-addr'); return p && a && normAddr(a) === normAddr(p.text) ? {lat:p.lat, lon:p.lon} : null; }
+function addrGeo(){ var p = TT.picked, a = val('c-addr'); return p && a && normAddr(a) === normAddr(p.text) && isFinite(p.lat) && isFinite(p.lon) ? {lat:p.lat, lon:p.lon} : null; }
+function addrGeoKeep(){ return TT.picked && TT.picked.nostore ? null : addrGeo(); }
+/* the postal-code address list needs TomTom (or OpenStreetMap); a provider can switch it off */
+function pcListOn(){ return ttOn() && !(typeof window.__addrNoPostalList === 'function' && window.__addrNoPostalList()); }
 function ttNote(text, btn){
   var n = $('#c-ttnote'); if (!n) return;
   n.innerHTML = text ? '<span>' + esc(text) + '</span>' + (btn ? '<button type="button" class="btn sm" data-act="tt-allow">' + esc(btn) + '</button>' : '') : '';
@@ -1340,7 +1436,7 @@ function ttParse(p){
     if (street) text = text.replace(/\s*[A-Za-z]\d[A-Za-z](?: ?\d[A-Za-z]\d)?\s*$/, '').replace(/[,\s]+$/, '');
     if (!text || seen[text]) return; seen[text] = 1;
     var km = home && isFinite(lat) && isFinite(lon) ? Math.round(hav(home, {lat:lat, lon:lon}) * 1.3) : null;
-    out.push({text:text, kind:street ? 'street' : 'addr', num:a.streetNumber || '', street:a.streetName || '', pc:findPostal(a.freeformAddress), sub:[a.neighbourhood || a.municipalitySubdivision, a.municipality].filter(Boolean).join(' · '),
+    out.push({text:text, kind:street ? 'street' : 'addr', ref:pr.ref || null, nostore:!!pr.nostore, num:a.streetNumber || '', street:a.streetName || '', pc:findPostal(a.freeformAddress), sub:[a.neighbourhood || a.municipalitySubdivision, a.municipality].filter(Boolean).join(' · '),
       km:km, outQC:!!(a.countrySubdivision && a.countrySubdivision !== 'QC' && !/qu[ée]bec/i.test(a.countrySubdivision)), lat:lat, lon:lon});
   });
   return out.slice(0, 5);
@@ -1581,10 +1677,21 @@ function addrPick(i){
     return;
   }
   inp.value = o.text;
-  TT.picked = isFinite(o.lat) && isFinite(o.lon) ? {text:o.text, lat:o.lat, lon:o.lon, local:!!o.local} : null;
-  if (TT.picked) rememberAddr(o.text, o.lat, o.lon);
+  TT.picked = isFinite(o.lat) && isFinite(o.lon) ? {text:o.text, lat:o.lat, lon:o.lon, local:!!o.local, nostore:!!o.nostore} : null;
+  if (TT.picked && !o.nostore) rememberAddr(o.text, o.lat, o.lon);
   renderAddrMsg(); clientDraftChanged();
   try { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); } catch(x){}
+  if (o.ref && TT.mcp && typeof TT.mcp.resolvePlace === 'function'){
+    var shown = inp.value, my = ++TT.vseq, box = $('#c-addrmsg');
+    if (box && !findPostal(shown)){ box.className = 'hint'; box.textContent = 'Recherche du code postal…'; }
+    TT.mcp.resolvePlace(o.ref).then(function(r){
+      if (my !== TT.vseq || !$('#c-addr') || val('c-addr') !== shown || !r || !r.text) return;
+      var full = withUnit(r.text, o.unit);
+      $('#c-addr').value = full;
+      TT.picked = {text:full, lat:+r.lat, lon:+r.lon, nostore:!!o.nostore};
+      renderAddrMsg(); clientDraftChanged();
+    }, function(){ if (my === TT.vseq) renderAddrMsg(); });
+  }
 }
 /* a typed (not picked) address is checked against TomTom: missing or wrong postal code, unknown number */
 function renderAddrFix(r, typedPc){
@@ -1605,14 +1712,14 @@ function ttVerify(){
     var good = same.filter(function(o){ return streetMatch(pq.q, o.street); }), hit = good[0] || same[0];
     if (!hit){ renderAddrFix({none:true}); return; }
     if (!hit.pc){ renderAddrFix(null); return; }
-    if (good.length && typedPc && hit.pc === typedPc){ TT.picked = {text:raw, lat:hit.lat, lon:hit.lon, verified:true}; renderAddrFix(null); renderAddrMsg(); clientDraftChanged(); return; }
+    if (good.length && typedPc && hit.pc === typedPc){ TT.picked = {text:raw, lat:hit.lat, lon:hit.lon, verified:true, nostore:!!hit.nostore}; renderAddrFix(null); renderAddrMsg(); clientDraftChanged(); return; }
     hit.text = withUnit(hit.text, pq.unit); renderAddrFix(hit, typedPc);
   }, function(e){ if (my === TT.vseq && e && ['server_unavailable', 'upstream_error', 'rate_limited', 'tool_error', 'cancelled', 'bad_request'].indexOf(e.code) < 0) ttFail(e); });
 }
 function addrFix(){
   var r = TT.fix, inp = $('#c-addr'); if (!r || !inp) return;
-  inp.value = r.text; TT.picked = isFinite(r.lat) && isFinite(r.lon) ? {text:r.text, lat:r.lat, lon:r.lon} : null;
-  if (TT.picked) rememberAddr(r.text, r.lat, r.lon);
+  inp.value = r.text; TT.picked = isFinite(r.lat) && isFinite(r.lon) ? {text:r.text, lat:r.lat, lon:r.lon, nostore:!!r.nostore} : null;
+  if (TT.picked && !r.nostore) rememberAddr(r.text, r.lat, r.lon);
   renderAddrFix(null); renderAddrMsg(); clientDraftChanged();
   var e = $('#c-err'); if (e && !e.hidden) e.hidden = true;
 }
@@ -1621,11 +1728,11 @@ function bindAddr(){
   ['pointerdown', 'mousedown'].forEach(function(ev){ box.addEventListener(ev, function(e){ e.preventDefault(); }); });
   inp.addEventListener('input', function(){
     renderAddrMsg(); renderAddrFix(null); clearTimeout(TT.timer); TT.seq++; TT.vseq++;
-    var raw = inp.value, q = splitUnit(raw).q.trim(), pcMode = ttOn() && isPostalOnly(q), go = ttOn() && (pcMode || (ttWorth(q) && !isPostalPartial(q)));
+    var raw = inp.value, q = splitUnit(raw).q.trim(), pcMode = pcListOn() && isPostalOnly(q), go = ttOn() && (pcMode || (ttWorth(q) && !(pcListOn() && isPostalPartial(q))));
     TT.local = localAddrs(raw);
     /* keep what was already found while the next answer comes, narrowed to what is typed now */
     TT.opts = q ? TT.opts.filter(function(o){ return wordsFit(q, o.kind === 'street' ? o.text : o.text.replace(/^[0-9A-Za-z]{1,6}-(?=\d)/, ''), o.kind === 'street'); }) : [];
-    TT.hint = !ttOn() || !q || go ? '' : isPostalPartial(q) ? 'Continue le code postal : les adresses de ce code vont s\'afficher…' : /^\d+[A-Za-z]?$/.test(q) ? 'Continue avec le nom de la rue… ou tape seulement le code postal' : 'Continue à taper…';
+    TT.hint = !ttOn() || !q || go ? '' : pcListOn() && isPostalPartial(q) ? 'Continue le code postal : les adresses de ce code vont s\'afficher…' : /^\d+[A-Za-z]?$/.test(q) ? (pcListOn() ? 'Continue avec le nom de la rue… ou tape seulement le code postal' : 'Continue avec le nom de la rue…') : 'Continue à taper…';
     TT.waitText = pcMode ? 'Recherche des adresses de ' + findPostal(q) + '…' : ''; TT.tip = '';
     TT.loading = go; TT.active = -1;
     renderAddrOpts(true);
@@ -1665,7 +1772,7 @@ function saveClient(e){
   var other = dupCheck();
   if (other && S.dupOk !== digits(phone)){ S.dupOk = digits(phone); return fail('Ce numéro existe déjà. Utilise la fiche existante, ou appuie encore sur le bouton pour créer une autre fiche avec ce numéro.'); }
   $('#c-phone').value = phone; $('#c-addr').value = addr;
-  var data = {firstName:first, lastName:last, phone:phone, email:email, address:addr, postal:pc, geo:addrGeo(), updatedAt:Date.now()}, btn = $('#c-save'); btn.disabled = true;
+  var data = {firstName:first, lastName:last, phone:phone, email:email, address:addr, postal:pc, geo:addrGeoKeep(), updatedAt:Date.now()}, btn = $('#c-save'); btn.disabled = true;
   var id = S.cformId, ref = id ? S.db.doc('clients/' + id) : S.db.collection('clients').doc();
   if (!id){ id = ref.id; data.createdAt = Date.now(); data.notes = []; }
   write('clients/' + id, function(){ return S.cformEdit ? ref.update(data) : ref.set(data); }, S.cformEdit ? 'Fiche mise à jour' : (S.cformMode === 'sheet' ? '' : 'Fiche créée')).then(function(ok){
