@@ -12,6 +12,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
     "deno": "^2.5.6",
+    "jose": "^5.9.6",
     "jsonwebtoken": "^9.0.3",
     "leaflet": "^1.9.4",
     "pg": "^8.23.1"

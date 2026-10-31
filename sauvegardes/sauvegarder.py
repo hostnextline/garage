@@ -3,22 +3,33 @@
   sauvegarde/AAAA-MM-JJ.json  le carnet du jour (jobs, clients, factures, réglages, horaire, dépenses, fiches techniques, équipe)
   recus/<id>.json             une photo de reçu par fichier (écrit une seule fois : l'historique git garde tout)
 
-Variables : SUPABASE_URL, SUPABASE_ANON (clé publique), BACKUP_KEY (secret du dépôt). Sortie 1 = la sauvegarde a échoué.
+Aucun mot de passe : GitHub signe chaque exécution (jeton OIDC, valable quelques minutes) et le serveur du garage
+n'accepte que ce dépôt privé. Variables : SUPABASE_URL, SUPABASE_ANON (clé publique). Sortie ≠ 0 = la sauvegarde a échoué
+(GitHub envoie alors un courriel).
 """
 import datetime, glob, json, os, sys, time, urllib.error, urllib.request
 
 URL = os.environ.get('SUPABASE_URL', '').rstrip('/')
 ANON = os.environ.get('SUPABASE_ANON', '')
-KEY = os.environ.get('BACKUP_KEY', '')
 HERE = os.environ.get('SAUVEGARDE_DIR') or os.path.dirname(os.path.abspath(__file__))
 KEEP_DAYS = int(os.environ.get('KEEP_DAYS', '90'))   # fichiers du jour gardés ; les plus vieux restent dans l'historique git
 
 
+def github_token():
+    """Jeton signé par GitHub pour cette exécution (on en redemande un à chaque appel : il expire vite)."""
+    u, t = os.environ.get('ACTIONS_ID_TOKEN_REQUEST_URL'), os.environ.get('ACTIONS_ID_TOKEN_REQUEST_TOKEN')
+    if not (u and t):
+        sys.exit('Pas de jeton GitHub : ce script tourne seulement dans GitHub Actions (permissions: id-token: write).')
+    req = urllib.request.Request(u + ('&' if '?' in u else '?') + 'audience=garage-sauvegarde', headers={'Authorization': 'bearer ' + t})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return json.loads(r.read().decode())['value']
+
+
 def call(after):
-    req = urllib.request.Request(URL + '/functions/v1/backup', data=json.dumps({'after': after}).encode(), method='POST',
-                                 headers={'Content-Type': 'application/json', 'apikey': ANON, 'Authorization': 'Bearer ' + ANON, 'x-backup-key': KEY})
     for attempt in range(4):
         try:
+            req = urllib.request.Request(URL + '/functions/v1/backup', data=json.dumps({'after': after}).encode(), method='POST',
+                                         headers={'Content-Type': 'application/json', 'apikey': ANON, 'Authorization': 'Bearer ' + ANON, 'x-gh-oidc': github_token()})
             with urllib.request.urlopen(req, timeout=60) as r:
                 return json.loads(r.read().decode())
         except urllib.error.HTTPError as e:
@@ -42,8 +53,8 @@ def download():
 
 
 def main():
-    if not (URL and KEY):
-        sys.exit('SUPABASE_URL et BACKUP_KEY sont requis.')
+    if not URL:
+        sys.exit('SUPABASE_URL est requis.')
     for tries in range(2):   # quelqu'un peut écrire pendant la copie : on recommence une fois si les comptes ne collent pas
         rows, counts, members, at = download()
         got = {}

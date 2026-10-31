@@ -1,10 +1,14 @@
 name: Sauvegarde de la nuit
 on:
   schedule:
-    - cron: '17 7 * * *'     # chaque nuit vers 3 h 17 (heure de Montréal, 2 h 17 en hiver)
+    - cron: '17 7 * * *'     # chaque nuit à 2 h 17 (heure de Montréal ; 3 h 17 en été)
   workflow_dispatch: {}       # bouton « Run workflow » pour une copie tout de suite
+  push:                       # et une copie dès qu’on change la façon de sauvegarder
+    branches: [main]
+    paths: ['sauvegarder.py', '.github/workflows/sauvegarde.yml']
 permissions:
   contents: write
+  id-token: write        # GitHub signe l'exécution : le serveur du garage n'accepte que ce dépôt
 concurrency:
   group: sauvegarde
 jobs:
@@ -16,8 +20,7 @@ jobs:
       - name: Copier le carnet
         env:
           SUPABASE_URL: https://vaddqzejagdvexlmjelr.supabase.co
-          SUPABASE_ANON: ${{ secrets.SUPABASE_ANON }}
-          BACKUP_KEY: ${{ secrets.BACKUP_KEY }}
+          SUPABASE_ANON: sb_publishable_9yyQBkNVH7_3hp5Ctw6hjw_ouQQZf93     # clé publique (la même que sur le site) : elle n'ouvre rien seule
         run: python3 sauvegarder.py
       - name: Garder la copie
         run: |

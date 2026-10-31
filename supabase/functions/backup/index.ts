@@ -1,39 +1,44 @@
 // Sauvegarde automatique : lit tout le carnet (sauf brouillons, positions GPS et clés) pour la copie de chaque nuit.
-// Seule la clé de sauvegarde ouvre la porte : on garde seulement son empreinte SHA-256 (app_secrets.BACKUP_KEY_SHA256).
-// POST { after?: string }  en-tête x-backup-key
+// Aucun mot de passe : GitHub signe chaque exécution de la sauvegarde (jeton OIDC), et on accepte seulement
+// le dépôt privé hostnextline/garage-sauvegardes (vérifié par son numéro, qui ne change jamais), branche main.
+// POST { after?: string }  en-tête x-gh-oidc: <jeton GitHub>
 //   -> { ok, at, rows: [{ path, data, updated_at }], next: string | null, counts?, members? }
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0';
+import { createRemoteJWKSet, jwtVerify } from 'npm:jose@5.9.6';
 
 const SB_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const ISSUER = Deno.env.get('GH_OIDC_ISSUER') || 'https://token.actions.githubusercontent.com';
+const REPO = 'hostnextline/garage-sauvegardes';
+const REPO_ID = '1441054755';
+const OWNER_ID = '243496564';
+const AUDIENCE = 'garage-sauvegarde';
+const JWKS = createRemoteJWKSet(new URL(ISSUER + '/.well-known/jwks'));
 const admin = createClient(SB_URL, SERVICE, { auth: { persistSession: false, autoRefreshToken: false } });
 const cors = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-backup-key',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-gh-oidc',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 const PAGE = 25;   // les photos de reçus pèsent jusqu'à ~330 ko : 25 par page au plus
 
-async function sha256(s: string) {
-  const b = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)));
-  return Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
-}
-function same(a: string, b: string) {   // comparaison en temps constant
-  if (a.length !== b.length) return false;
-  let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return d === 0;
+async function fromOurRepo(tok: string) {
+  if (!tok) return false;
+  try {
+    const { payload: p } = await jwtVerify(tok, JWKS, { issuer: ISSUER, audience: AUDIENCE, algorithms: ['RS256'], clockTolerance: 30 });
+    return p.repository === REPO && String(p.repository_id) === REPO_ID && String(p.repository_owner_id) === OWNER_ID && p.ref === 'refs/heads/main';
+  } catch (_e) {
+    return false;
+  }
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'method' }, 405);
   try {
-    const key = req.headers.get('x-backup-key') || '';
-    const { data: s } = await admin.from('app_secrets').select('value').eq('name', 'BACKUP_KEY_SHA256').maybeSingle();
-    if (!s?.value || key.length < 32 || !same(await sha256(key), s.value)) {
-      await new Promise((r) => setTimeout(r, 400));
-      return json({ error: 'not_allowed', message: 'Clé de sauvegarde absente ou mauvaise.' }, 401);
+    if (!(await fromOurRepo(req.headers.get('x-gh-oidc') || ''))) {
+      return json({ error: 'not_allowed', message: 'Seule la sauvegarde du dépôt privé du garage peut lire le carnet.' }, 401);
     }
     const body = await req.json().catch(() => ({}));
     const after = typeof body.after === 'string' ? body.after : '';
