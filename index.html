@@ -852,6 +852,10 @@ details.adv[open] > summary{margin-bottom:8px}
 .inst .inst-b h3{margin:0 0 6px;font-size:17px}
 .inst ol{margin:0;padding-left:22px;display:grid;gap:8px;font-size:16px;line-height:1.4}
 .inst .ish{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--surface);border:1px solid var(--line);vertical-align:middle;color:#0a6cff}
+.inst .ish-t{width:auto;padding:0 6px;font-weight:700;color:var(--ink)}
+.inst-icon{display:flex;align-items:center;gap:12px;background:var(--sunk);border-radius:16px;padding:10px 12px}
+.inst-icon img{border-radius:12px;flex:none}
+.inst-icon p{margin:0}
 .qrbox{width:200px;height:200px;padding:10px;border-radius:14px;background:#fff;justify-self:center;border:1px solid var(--line)}
 .qrbox svg{width:100%;height:100%;display:block}
 .inst-url{text-align:center;font-size:19px;font-weight:700;word-break:break-all;letter-spacing:.01em}
@@ -1136,12 +1140,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       '#demo-bar .db-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;max-width:1100px;margin:0 auto}' +
       '#demo-bar .db-tag{font-weight:700;color:var(--steel)}#demo-bar .db-info{color:var(--muted)}#demo-bar .db-info b{color:var(--ink);font-weight:600}' +
       '#demo-bar button{font:inherit;font-weight:600;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);border-radius:8px;padding:6px 10px;cursor:pointer;min-height:36px}' +
-      '#demo-bar #db-open{margin-left:auto}#demo-bar .db-panel{max-width:1100px;margin:8px auto 2px;display:grid;gap:8px}#demo-bar .db-panel p{margin:0}' +
+      '#demo-bar .db-real{margin-left:auto;font-weight:700;color:var(--steel)}#demo-bar #db-open{margin-left:0}#demo-bar .db-panel{max-width:1100px;margin:8px auto 2px;display:grid;gap:8px}#demo-bar .db-panel p{margin:0}' +
       '#demo-bar .db-row{display:flex;flex-wrap:wrap;gap:8px}#demo-bar input{flex:1 1 220px;min-width:0;font:inherit;padding:8px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink)}' +
       '#demo-bar label{font-weight:600}#demo-bar .db-small{color:var(--muted);font-size:12.5px}#demo-bar .db-note{color:var(--warn);font-weight:600;max-width:1100px;margin:4px auto 0}#demo-bar .danger{color:var(--bad)}';
     document.head.appendChild(css);
     var el = document.createElement('div'); el.id = 'demo-bar'; el.setAttribute('role', 'region'); el.setAttribute('aria-label', 'Version rapide');
-    el.innerHTML = '<div class="db-top"><span class="db-tag">⚡ Version rapide · essai</span><span class="db-info">Adresses : <b id="db-prov"></b> · <span id="db-ms"></span></span><button type="button" id="db-open" aria-expanded="false" aria-controls="db-panel">Réglages de l\'essai</button></div>' +
+    el.innerHTML = '<div class="db-top"><span class="db-tag">⚡ Version rapide · essai</span><span class="db-info">Adresses : <b id="db-prov"></b> · <span id="db-ms"></span></span><a class="db-real" href="equipe/">L\'app du garage (avec ton compte) →</a><button type="button" id="db-open" aria-expanded="false" aria-controls="db-panel">Réglages de l\'essai</button></div>' +
       '<p class="db-note" id="db-note" aria-live="polite" hidden></p>' +
       '<div class="db-panel" id="db-panel" hidden><p>Cette copie tourne hors de claude.ai pour sentir la vraie vitesse. <b>Les données restent dans ce navigateur, sur cet appareil</b> : elles ne sont pas partagées avec tes partenaires.</p>' +
       '<label for="db-key">Clé TomTom (optionnelle)</label><div class="db-row"><input id="db-key" type="password" autocomplete="off" spellcheck="false" placeholder="Colle ta clé de developer.tomtom.com"><button type="button" id="db-save">Enregistrer</button><button type="button" id="db-unkey">Retirer</button></div>' +
@@ -1804,7 +1808,7 @@ function renderNav(){
   document.body.classList.toggle('nav-off', hide);
   document.body.setAttribute('data-w', !S.screen && ['reglages','heures','dispos','plus','jour','equipe'].indexOf(S.tab) < 0 ? 'wide' : 'narrow');
   $('#tabbar').setAttribute('data-brand', bizName());
-  var nf = ext() && typeof ext().navFoot === 'function' && !phone() ? ext().navFoot() : '', nfb = $('#navfoot');
+  var nf = (window.__webDownloads && !phone() && !isStandalone() ? '<div class="navfoot nf-app"><button type="button" class="linkbtn" data-act="app-install">📱 Mettre l\'app sur ton téléphone</button></div>' : '') + (ext() && typeof ext().navFoot === 'function' && !phone() ? ext().navFoot() : ''), nfb = $('#navfoot');
   if (!nfb && nf){ $('#tabbar').insertAdjacentHTML('beforeend', '<div id="navfoot"></div>'); nfb = $('#navfoot'); }
   if (nfb && nfb.innerHTML !== nf) nfb.innerHTML = nf;
   $$('.tab[data-t]').forEach(function(b){ b.hidden = !(tabShown(b.dataset.t) && tabOk(b.dataset.t)); });
@@ -4044,6 +4048,7 @@ document.addEventListener('click', function(e){
     case 'ui-phone': setUiOverride(null); S.tab = defTab(); if (location.hash) location.hash = S.tab; render(); window.scrollTo(0, 0); break;
     case 'ph-install': installApp(); break;
     case 'app-install': installSheet(); break;
+    case 'inst-copy': { var iu = realAppUrl(); if (navigator.clipboard) navigator.clipboard.writeText(iu).then(function(){ toast('Adresse copiée : colle-la dans Safari ou Chrome'); }, function(){ toast(iu); }); else toast(iu); break; }
     case 'app-done': appInstMark('manuel'); closeSheet(); toast('Bravo ! L\'app est sur ton téléphone.'); render(); break;
     case 'inst-later': try { localStorage.setItem('gm.inst.later', '1'); } catch(x){} render(); break;
     case 'dash-mech': S.mech = truckMode() ? (truckOfMech(today(), v) || '') : (v || ''); lsSet('gm.mech', S.mech); S.day = today(); if (location.hash !== '#agenda') location.hash = 'agenda'; else { S.tab = 'agenda'; render(); } break;
@@ -4258,18 +4263,46 @@ function qrInto(el, text){
   var s = document.createElement('script'); s.src = QR_LIB; s.onload = draw; s.onerror = function(){ el.hidden = true; }; document.head.appendChild(s);
 }
 var SHARE_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>';
+/* the real app (team version); the trial version points people there */
+function realAppUrl(){ return window.__GARAGE_TEAM ? appUrl() : new URL('equipe/', location.href.split('#')[0].replace(/[^\/]*$/, '')).href; }
+function browserKind(){
+  var ua = navigator.userAgent || '', p = devicePlat();
+  if (/FBAN|FBAV|Instagram|Line\/|Snapchat|MicroMessenger|GSA\/|; wv\)/i.test(ua)) return 'inapp';
+  if (p === 'ios') return /CriOS/i.test(ua) ? 'ios-chrome' : 'ios-safari';
+  if (p === 'android') return /SamsungBrowser/i.test(ua) ? 'samsung' : 'android-chrome';
+  return p;
+}
+var DOTS = '<span class="ish ish-t" aria-hidden="true">•••</span>';
+function instSteps(){
+  var sh = ' <span class="ish" aria-hidden="true">' + SHARE_ICON + '</span>', last = 'Ouvre l\'app avec la nouvelle icône <b>Garage</b> sur ton écran d\'accueil.';
+  return {
+    'ios-safari':['Sur un iPhone (Safari)', ['Touche le bouton <b>Partager</b>' + sh + '. Sur les iPhone récents, il est caché : touche d\'abord ' + DOTS + ' (à côté de l\'adresse), puis <b>Partager</b>.',
+      'Descends et touche <b>« Sur l\'écran d\'accueil »</b>.', 'Si tu vois <b>« Ouvrir en tant qu\'app web »</b>, laisse-le activé. Touche <b>« Ajouter »</b>.', last]],
+    'ios-chrome':['Sur un iPhone (Chrome)', ['Touche le bouton <b>Partager</b>' + sh + ' en haut à droite, dans la barre d\'adresse.',
+      'Touche <b>« Ajouter à l\'écran d\'accueil »</b> (descends si tu ne le vois pas).', 'Touche <b>« Ajouter »</b>.', last]],
+    'android-chrome':['Sur un Android (Chrome)', ['Touche le menu <b>⋮</b> en haut à droite.', 'Touche <b>« Ajouter à l\'écran d\'accueil »</b> ou <b>« Installer l\'application »</b>.',
+      'Choisis <b>« Installer »</b> (pas « Créer un raccourci »), puis confirme.', last]],
+    'samsung':['Sur un Samsung (Samsung Internet)', ['Touche le menu <b>≡</b> en bas à droite.', 'Touche <b>« Ajouter la page à »</b>, puis <b>« Écran d\'accueil »</b>.', 'Touche <b>« Ajouter »</b>.', last]]
+  };
+}
+function instBlock(k){ var x = instSteps()[k]; return '<section class="inst-b" data-p="' + k + '"><h3>' + x[0] + '</h3><ol>' + x[1].map(function(t){ return '<li>' + t.replace(/« /g, '«\u00a0').replace(/ »/g, '\u00a0»') + '</li>'; }).join('') + '</ol></section>'; }
 function installSheet(){
-  var plat = devicePlat(), url = appUrl();
-  var ios = '<li>Ouvre l\'app dans <b>Safari</b> (pas dans Chrome).</li><li>Touche le bouton <b>Partager</b> <span class="ish" aria-hidden="true">' + SHARE_ICON + '</span> (en bas de l\'écran).</li><li>Descends et touche <b>« Sur l\'écran d\'accueil »</b>.</li><li>Touche <b>« Ajouter »</b>. L\'icône du garage apparaît avec tes autres apps.</li>';
-  var andr = '<li>Ouvre l\'app dans <b>Chrome</b>.</li><li>Touche le menu <b>⋮</b> (en haut à droite).</li><li>Touche <b>« Installer l\'application »</b> (ou « Ajouter à l\'écran d\'accueil »).</li><li>Touche <b>« Installer »</b>. L\'icône du garage apparaît avec tes autres apps.</li>';
+  var plat = devicePlat(), kind = browserKind(), url = realAppUrl(), team = !!window.__GARAGE_TEAM;
   var h = '<div class="stack inst">';
-  if (window.__bip) h += '<button type="button" class="btn primary block" data-act="ph-install">Installer l\'app maintenant</button><p class="small muted">Ou fais-le à la main :</p>';
-  if (plat === 'pc') h += '<p><b>Sur l\'ordinateur, il n\'y a rien à installer.</b> Pour ton téléphone : ouvre l\'appareil photo du téléphone et vise ce code (sur l\'écran de l\'ordinateur), puis touche le lien qui apparaît. Ou écris cette adresse dans le navigateur du téléphone :</p><div class="qrbox" id="inst-qr" role="img" aria-label="Code QR de l\'adresse de l\'app" hidden></div><p class="sel inst-url" id="inst-url">' + esc(url.replace(/^https?:\/\//, '')) + '</p>';
-  var blocks = [['Sur un iPhone', ios, 'ios'], ['Sur un Android (Samsung, Pixel…)', andr, 'android']];
-  if (plat === 'android') blocks.reverse();
-  h += blocks.map(function(x){ return '<section class="inst-b" data-p="' + x[2] + '"><h3>' + x[0] + '</h3><ol>' + x[1] + '</ol></section>'; }).join('');
-  h += '<p class="small muted">Ensuite, ouvre toujours l\'app avec cette icône. La première fois, connecte-toi : elle se souvient de toi.</p>' +
-    '<button type="button" class="btn block" data-act="app-done">C\'est fait</button></div>';
+  if (!team) h += '<div class="banner"><p>Ceci est la <b>version d\'essai</b>. L\'app du garage, avec ton compte, est à cette adresse :</p>' + (plat !== 'pc' ? '<a class="btn primary block" href="' + esc(url) + '">Ouvrir l\'app du garage</a><p class="small">Fais ensuite les étapes ci-dessous sur cette page-là.</p>' : '') + '</div>';
+  if (plat === 'pc'){
+    h += '<p><b>Sur l\'ordinateur, il n\'y a rien à installer.</b> Pour ton téléphone : ouvre l\'appareil photo du téléphone et vise ce code (sur l\'écran de l\'ordinateur), puis touche le lien qui apparaît. Ou écris cette adresse dans Safari (iPhone) ou Chrome (Android) :</p>' +
+      '<div class="qrbox" id="inst-qr" role="img" aria-label="Code QR de l\'adresse de l\'app" hidden></div><p class="sel inst-url" id="inst-url">' + esc(url.replace(/^https?:\/\//, '')) + '</p>' +
+      '<p class="small">Une fois la page ouverte sur le téléphone, connecte-toi, puis fais les étapes de ton téléphone :</p>' + instBlock('ios-safari') + instBlock('android-chrome') +
+      '<details class="small eq-more"><summary>Un Samsung ou Chrome sur iPhone ?</summary>' + instBlock('samsung') + instBlock('ios-chrome') + '</details>';
+  } else {
+    if (kind === 'inapp') h += '<div class="banner warn"><p><b>Cette page est ouverte à l\'intérieur d\'une autre app</b> (courriel, Facebook…) : d\'ici, on ne peut pas installer l\'app. Touche ' + DOTS + ' ou <b>⋮</b>, puis <b>« Ouvrir dans Safari »</b> (iPhone) ou <b>« Ouvrir dans Chrome »</b> (Android).</p><button type="button" class="btn sm" data-act="inst-copy">Copier l\'adresse</button></div>';
+    if (window.__bip && team) h += '<button type="button" class="btn primary block" data-act="ph-install">Installer l\'app maintenant</button><p class="small muted">Ou fais-le à la main :</p>';
+    var first = kind === 'inapp' ? (plat === 'android' ? 'android-chrome' : 'ios-safari') : (instSteps()[kind] ? kind : (plat === 'android' ? 'android-chrome' : 'ios-safari'));
+    h += instBlock(first) + '<details class="small eq-more"><summary>Un autre téléphone ?</summary>' + ['ios-safari', 'ios-chrome', 'android-chrome', 'samsung'].filter(function(k){ return k !== first; }).map(instBlock).join('') + '</details>';
+  }
+  if (window.__webDownloads) h += '<div class="inst-icon"><img src="icons/icon-192.png" alt="" width="52" height="52"><p class="small">L\'icône <b>Garage</b> ressemble à ça. La première fois que tu ouvres l\'app avec elle, connecte-toi avec ton courriel et ton mot de passe : ensuite, elle se souvient de toi.</p></div>';
+  h += '<button type="button" class="btn block" data-act="app-done">C\'est fait</button></div>';
   openSheet('Mettre l\'app sur ton téléphone', 'Elle s\'ouvre comme une vraie app', h);
   if (plat === 'pc'){ var el = $('#inst-qr'); if (el) qrInto(el, url); }
 }
