@@ -126,8 +126,8 @@ main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .ticket.s-route .stub{background:var(--info-bg)}
 .ticket.s-place .stub{background:var(--warn-bg)}
 .ticket.s-termine .stub{background:var(--ok-bg)}
-.ticket.s-annule{opacity:.62}
-.ticket.s-annule .tk-name{text-decoration:line-through}
+.ticket.s-annule,.ticket.s-noshow{opacity:.62}
+.ticket.s-annule .tk-name,.ticket.s-noshow .tk-name{text-decoration:line-through}
 .tk{padding:12px 14px;display:grid;gap:2px;min-width:0}
 .tk-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
 .tk-name{font-weight:600;font-size:17px;overflow-wrap:anywhere;min-width:0}
@@ -140,7 +140,7 @@ main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .pill.route{background:var(--info-bg);color:var(--info)}
 .pill.place{background:var(--warn-bg);color:var(--warn)}
 .pill.termine,.pill.paid{background:var(--ok-bg);color:var(--ok)}
-.pill.annule{background:var(--bad-bg);color:var(--bad)}
+.pill.annule,.pill.noshow{background:var(--bad-bg);color:var(--bad)}
 .pill.unpaid{background:var(--warn-bg);color:var(--warn)}
 
 .empty-card{background:var(--surface);border:2px dashed var(--line-strong);border-radius:14px;padding:22px 18px;display:grid;gap:12px;justify-items:start}
@@ -613,7 +613,7 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
 /* ===================== Téléphone ===================== */
 .ui-phone{font-size:17px}
 .ui-phone .top-in{padding-block:12px 10px;gap:10px}
-.ui-phone .tab[data-t="jour"]{order:1}.ui-phone .tab[data-t="clients"]{order:2}.ui-phone .tab-new{order:3}.ui-phone .tab[data-t="factures"]{order:4}.ui-phone .tab[data-t="plus"]{order:5}
+.ui-phone .tab[data-t="jour"],.ui-phone .tab[data-t="tresor"]{order:1}.ui-phone .tab[data-t="clients"]{order:2}.ui-phone .tab-new{order:3}.ui-phone .tab[data-t="factures"]{order:4}.ui-phone .tab[data-t="plus"]{order:5}
 .tab-new{display:grid;place-items:center;background:none!important;box-shadow:none!important}
 .tab-new .tn-plus{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:var(--paper);font:400 32px/1 var(--f-body);box-shadow:0 8px 20px rgba(30,20,12,.28);margin-top:-14px}
 .dayhead{display:grid;grid-template-columns:48px minmax(0,1fr) 48px;align-items:center;gap:6px}
@@ -627,8 +627,29 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
 .ph-list{display:grid;gap:10px}
 .ph-job,.ph-gap{display:grid;grid-template-columns:62px minmax(0,1fr) auto;gap:4px 12px;align-items:center;width:100%;min-height:76px;text-align:left;padding:12px 14px;border-radius:20px;color:var(--ink);cursor:pointer;font:inherit}
 .ph-job{background:var(--card);border:1px solid var(--glass-edge);border-left:5px solid var(--signal);box-shadow:var(--card-shadow)}
-.ph-job.s-route{border-left-color:var(--info)}.ph-job.s-place{border-left-color:var(--warn)}.ph-job.s-termine{border-left-color:var(--ok)}.ph-job.s-annule{opacity:.55;border-left-color:var(--line-strong)}
-.ph-job.s-annule b{text-decoration:line-through}
+.ph-job.s-route{border-left-color:var(--info)}.ph-job.s-place{border-left-color:var(--warn)}.ph-job.s-termine{border-left-color:var(--ok)}.ph-job.s-annule,.ph-job.s-noshow{opacity:.55;border-left-color:var(--line-strong)}
+.ph-job.s-annule b,.ph-job.s-noshow b{text-decoration:line-through}
+.offrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.colh.coloff{opacity:.7}.colh.coloff small{color:var(--bad)}.colh .linkbtn{display:block;margin:2px auto 0;font-size:12px}
+.crewbox{display:grid;gap:6px;margin:8px 0}.crew{display:flex;flex-wrap:wrap;gap:8px}.crew-f{display:grid;gap:3px;min-width:150px;flex:1 1 150px;max-width:280px}.crew-f span{font-size:12px;font-weight:600;color:var(--muted)}.crew-f small{font-size:12px}
+.fold .crew{padding-top:8px}
+.chips.trucks{margin-top:8px}
+.trbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:4px 0 10px}.trbar b{font-size:17px;min-width:140px;text-align:center}.trbar .chips{margin-left:auto}
+.xrow{display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;width:100%;text-align:left;padding:12px 14px;border-radius:14px;border:1px solid var(--glass-edge,var(--line));background:var(--card,var(--surface));color:var(--ink);font:inherit;cursor:pointer}
+.xrow .x-d{font-size:13px;font-weight:600;color:var(--muted)}.xrow .x-m{display:grid;min-width:0}.xrow .x-m span{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.xrow .x-a{display:grid;justify-items:end;gap:2px}.xrow .x-a small{font-size:12px}
+.ok-t{color:var(--ok)}.neg{color:var(--bad)}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:end}.grid3 .lbl{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+table.rep{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}table.rep th,table.rep td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;font-weight:500}table.rep td.num,table.rep th.num{text-align:right}table.rep thead th{font-size:12px;color:var(--muted);font-weight:600}table.rep tr.rtot th,table.rep tr.rtot td{font-weight:700;border-bottom:none}
+.rcthumb{max-width:120px;max-height:120px;border-radius:8px;border:1px solid var(--line);display:block;margin:6px 0}.rcimg{width:100%;height:auto;border-radius:10px;border:1px solid var(--line)}.x-prev{display:grid;gap:4px}
+@media (max-width:420px){.xrow{grid-template-columns:52px 1fr auto;padding:10px 12px}.trbar .chips{margin-left:0}table.rep{font-size:13.5px}table.rep th,table.rep td{padding:7px 3px}#tr-sum .stat b{font-size:16px}#tr-sum .stat span{font-size:12px}}
+.repwrap{overflow-x:auto}table.rep td.num{white-space:nowrap}
+.tk-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;padding:10px;border-radius:12px;border:1px solid var(--line)}
+@media (max-width:560px){.tk-row{grid-template-columns:1fr 1fr}.tk-row .check{grid-column:1/-1}}
+.cx-list{display:grid;gap:6px}.cx-row input{width:22px;height:22px;min-height:0;flex:none;padding:0;accent-color:var(--signal)}.cx-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--card);border:1px solid var(--line)}.cx-row span{flex:1;min-width:0}.cx-row .num{flex:none;font-variant-numeric:tabular-nums}
+.cx-amt{display:flex;align-items:center;gap:6px}.cx-amt b{font-size:22px;color:var(--bad)}.cx-amt input{font-size:20px;font-weight:600;max-width:180px}
+.lossline{margin:6px 0 0;font-size:13px;color:var(--muted)}.lossline b{color:var(--bad)}
+.noshow-warn{border-left:4px solid var(--bad)}
+.done-amt{margin:4px 0 0}
 .pj-t{font:700 17px/1.1 var(--f-display);letter-spacing:-.02em;white-space:nowrap}
 .pj-t small{display:block;font:500 12.5px/1.3 var(--f-body);color:var(--muted);letter-spacing:0}
 .pj-m{display:grid;gap:1px;min-width:0}
@@ -1063,6 +1084,7 @@ form:not(.ph-sets) .ph-secback{display:none}
     <button type="button" class="tab" data-act="tab" data-t="agenda"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Agenda</span></button>
     <button type="button" class="tab" data-act="tab" data-t="clients"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20c1.3-3.7 4-5.6 7.2-5.6s5.9 1.9 7.2 5.6"/></svg><span>Clients</span></button>
     <button type="button" class="tab" data-act="tab" data-t="factures"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg><span>Factures</span></button>
+    <button type="button" class="tab" data-act="tab" data-t="tresor" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/><path d="M16 14.5h2"/><path d="M7 6V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1"/></svg><span>Trésorerie</span></button>
     <button type="button" class="tab" data-act="tab" data-t="reglages"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.3 5.2L3.8 17.1a1.6 1.6 0 0 0 2.3 2.3l5.6-5.6a4 4 0 0 0 5.2-5.3l-2.4 2.4-2.3-.5-.5-2.3z"/></svg><span>Réglages</span></button>
   </div>
 </nav>
@@ -1079,7 +1101,10 @@ form:not(.ph-sets) .ph-secback{display:none}
 (function(){
 'use strict';
 var TPS = 0.05, TVQ = 0.09975;
-var ST = {planifie:'Planifié', route:'En route', place:'Sur place', termine:'Terminé', annule:'Annulé'};
+var ST = {planifie:'Planifié', route:'En route', place:'Sur place', termine:'Terminé', annule:'Annulé', noshow:'No-show'};
+/* cancelled or no-show: the job does not happen (not counted, its time is free again) */
+function isOffSt(st){ return st === 'annule' || st === 'noshow'; }
+function isOff(j){ return isOffSt(j && j.status); }
 var ST_FLOW = ['planifie','route','place','termine'];
 var LT = {piece:'Pièce', mo:"Main-d'œuvre", forfait:'Forfait', frais:'Frais', rabais:'Rabais'};
 var PAY = ['Comptant','Débit','Crédit','Virement Interac'];
@@ -1155,12 +1180,36 @@ var TT = {mcp:null, state:'off', seq:0, vseq:0, opts:[], local:[], list:[], load
 var S = {
   db:null, dl:null, uid:null, noDb:false, clients:[], clientId:null, clientTab:'suivi', formClient:null, bookCtx:null, cq:'', backTo:null, dupOk:null, loaded:false, loadErr:false, canWrite:null, isAdmin:false, userUnknown:true,
   jobs:[], cfg:{}, tab:'agenda', screen:null, jobId:null, editId:null, quick:false,
-  day:today(), mech:lsGet('gm.mech') || '', view:['grid','week','list'].indexOf(lsGet('gm.view')) >= 0 ? lsGet('gm.view') : 'grid', days:{}, hoursEdit:false, sheet:false, invFilter:'unpaid', inv:null, invJob:null, confirmDel:false, settingsDirty:false
+  day:today(), mech:lsGet('gm.mech') || '', view:['grid','week','list'].indexOf(lsGet('gm.view')) >= 0 ? lsGet('gm.view') : 'grid', days:{}, avail:{}, hoursEdit:false, sheet:false, invFilter:'unpaid', inv:null, invJob:null, confirmDel:false, settingsDirty:false
 };
 function cfg(){ return S.cfg || {}; }
 function biz(){ return cfg().biz || {}; }
 function bizName(){ return biz().name || 'Garage mobile'; }
 function mechanics(){ return (Array.isArray(cfg().mechanics) ? cfg().mechanics : []).filter(Boolean); }
+/* the columns of the schedule (« routes ») are the trucks; a closed truck stays visible but cannot be booked.
+   With no truck at all (trucks: []), there is one column per mechanic, like before. */
+var DEF_TRUCKS = [{id:'c1', name:'Camion 1', on:true, mech:''}, {id:'c2', name:'Camion 2', on:false, mech:''}, {id:'c3', name:'Camion 3', on:false, mech:''}];
+function trucks(){ var t = cfg().trucks; return (Array.isArray(t) ? t : DEF_TRUCKS).filter(function(x){ return x && x.id; }); }
+function truckMode(){ return trucks().length > 0; }
+function truckById(id){ return trucks().filter(function(t){ return t.id === id; })[0] || null; }
+function routeCols(){ return truckMode() ? trucks().map(function(t){ return t.id; }) : mechanics(); }
+function colName(k){ if (k === '_all') return 'Rendez-vous'; if (k === '_none') return 'À assigner'; var t = truckMode() ? truckById(k) : null; return t ? (t.name || 'Camion') : k; }
+function colsWord(){ return truckMode() ? 'camions' : 'mécanos'; }
+function crewOf(date){ return (S.days[date] || {}).crew || {}; }
+/* who drives a truck that day: the change made for that day, otherwise the usual mechanic of the truck */
+function driverOf(date, k){
+  if (!truckMode()) return (k === '_all' || k === '_none') ? '' : k;
+  var c = crewOf(date); if (Object.prototype.hasOwnProperty.call(c, k)) return c[k] || '';
+  var t = truckById(k); return (t && t.mech) || '';
+}
+function truckOfMech(date, m){ if (!truckMode() || !m) return ''; var t = trucks().filter(function(x){ return x.on !== false && norm(driverOf(date, x.id)) === norm(m); })[0]; return t ? t.id : ''; }
+function firstTruck(){ var t = trucks().filter(function(x){ return x.on !== false; })[0] || trucks()[0]; return t ? t.id : ''; }
+function jobCol(j){ if (!truckMode()) return colKeyFor(j.mechanic); if (j.truck && truckById(j.truck)) return j.truck; return truckOfMech(j.date, j.mechanic) || firstTruck() || '_none'; }
+function colLabel(k, date){ var n = colName(k), d = truckMode() ? driverOf(date, k) : ''; return n + (d ? ' · ' + d : ''); }
+/* each mechanic chooses the days and hours he works (it applies right away); days off too */
+function slug(m){ return norm(m).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x'; }
+function availOf(m){ return m ? (S.avail[slug(m)] || null) : null; }
+function availOn(m, date){ var a = availOf(m); if (!a || !a.week) return undefined; if ((a.off || []).indexOf(date) >= 0) return null; var w = a.week[String(parseISO(date).getDay())]; return w && w.on ? {start:w.start || '08:00', end:w.end || '17:00'} : null; }
 function services(){ return (Array.isArray(cfg().services) ? cfg().services : []).filter(function(s){ return s && s.name; }); }
 /* promos: package deals at one price; until they are saved in Réglages, the current promo is offered by default */
 var DEFAULT_PROMOS = [{name:'Promo : pneus non montés + huile + inspection + top up liquides', price:200, on:true,
@@ -1169,22 +1218,25 @@ function allPromos(){ return (Array.isArray(cfg().promos) ? cfg().promos : DEFAU
 function promos(){ return allPromos().filter(function(p){ return p.on !== false; }); }
 function promoByName(name){ var n = norm(name); return allPromos().filter(function(p){ return norm(p.name) === n; })[0] || null; }
 function prefix(){ return typeof cfg().prefix === 'string' ? cfg().prefix : 'F-'; }
-function canWrite(){ return !!S.db && S.canWrite !== false; }
+function canWrite(){ return !!S.db && S.canWrite !== false && allow('jobs'); }
 function canAdmin(){ return !!S.db && (S.isAdmin || S.userUnknown); }
 /* team version (hosted with logins): an optional extension adds tabs, roles and the « en route » tools; inside Claude it is absent */
 function ext(){ return window.__garageExt || null; }
 function allow(what){ var e = ext(); return !(e && typeof e.can === 'function' && e.can(what) === false); }
 function canBook(){ return canWrite() && allow('book'); }
+/* the treasurer's screen (expenses, report, taxes): the owner, and the treasurer in the team version */
+function canTresor(){ var e = ext(); if (!S.db) return false; return e && typeof e.can === 'function' ? e.can('tab:tresor') === true : canAdmin(); }
+function canExpense(){ var e = ext(); if (!S.db || S.canWrite === false) return false; return e && typeof e.can === 'function' ? e.can('expenses') === true : canAdmin(); }
 function canHours(){ var e = ext(); return canAdmin() || (canWrite() && !!(e && typeof e.can === 'function' && e.can('hours') === true)); }
 function lockedMech(){ var e = ext(), m = e && typeof e.myMechanic === 'function' ? e.myMechanic() : null; if (!m) return null; return mechanics().filter(function(x){ return norm(x) === norm(m); })[0] || m; }
 function extTabs(){ var e = ext(); return e && Array.isArray(e.tabs) ? e.tabs : []; }
 function extTab(k){ return extTabs().filter(function(t){ return t.key === k; })[0] || null; }
-function tabOk(k){ return (['accueil','agenda','clients','factures','reglages','jour','plus','heures'].indexOf(k) >= 0 || !!extTab(k)) && allow('tab:' + k); }
+function tabOk(k){ if (k === 'tresor') return canTresor(); return (['accueil','agenda','clients','factures','reglages','jour','plus','heures','dispos'].indexOf(k) >= 0 || !!extTab(k)) && allow('tab:' + k); }
 /* phone: a simpler set of screens (Aujourd'hui, Clients, Factures, Plus); bigger screens keep everything */
 var MQ = window.matchMedia ? window.matchMedia('(max-width: 699px)') : null;
 function phone(){ var o = lsGet('gm.ui'); if (o === 'full') return false; if (o === 'phone') return true; return !!(MQ && MQ.matches); }
-function defTab(){ return phone() ? 'jour' : 'accueil'; }
-function tabShown(k){ if (phone()) return ['jour','clients','factures','plus'].indexOf(k) >= 0; if (['jour','plus','heures'].indexOf(k) >= 0) return false; return ['accueil','agenda','clients','factures','reglages'].indexOf(k) >= 0 || (!!extTab(k) && !extTab(k).hidden); }
+function defTab(){ var e = ext(), h = e && typeof e.homeTab === 'function' ? e.homeTab() : null; if (h && tabOk(h)) return h; return phone() ? 'jour' : 'accueil'; }
+function tabShown(k){ if (phone()){ if (k === 'tresor') return !tabOk('jour'); return ['jour','clients','factures','plus'].indexOf(k) >= 0; } if (['jour','plus','heures','dispos'].indexOf(k) >= 0) return false; return ['accueil','agenda','clients','factures','reglages','tresor'].indexOf(k) >= 0 || (!!extTab(k) && !extTab(k).hidden); }
 function fitTab(){
   if (phone()){ if (S.tab === 'agenda') S.tab = 'jour'; }
   else if (S.tab === 'jour' || S.tab === 'heures') S.tab = 'agenda'; else if (S.tab === 'plus') S.tab = 'accueil';
@@ -1195,9 +1247,9 @@ function jobPt(j){ return ptOf(jobPostal(j)); }
 function zoneTag(j){ var f = fsaOf(jobPostal(j)); return f ? f + ' · ' : ''; }
 function zoneSvc(j){ return [fsaOf(jobPostal(j)), jobServices(j).join(' · ')].filter(Boolean).join(' · '); }
 function addrFull(c){ var a = c.address || '', pc = c.postal || ''; return pc && a.toUpperCase().replace(/\s/g, '').indexOf(pc.replace(/\s/g, '')) < 0 ? (a ? a + ', ' : '') + pc : a; }
-function routeJobs(date, mech, excludeId){
-  var ms = mechanics();
-  return S.jobs.filter(function(j){ return j.id !== excludeId && j.date === date && j.status !== 'annule' && j.time && (!ms.length || (mech ? j.mechanic === mech : false)); })
+function routeJobs(date, col, excludeId){
+  var cs = routeCols();
+  return S.jobs.filter(function(j){ return j.id !== excludeId && j.date === date && !isOff(j) && j.time && (!cs.length || (col ? jobCol(j) === col : false)); })
     .map(function(j){ var s0 = toMin(j.time); return {j:j, s:s0, e:s0 + (+j.durationMin || 60), pt:jobPt(j)}; })
     .sort(function(a, b){ return a.s - b.s; });
 }
@@ -1218,7 +1270,7 @@ function costFor(p, nb, home){
 function who(o){ return (cl(o.j).name || 'un client') + (o.pt ? ' (' + o.pt.fsa + ')' : ''); }
 function suggestSlots(pc, dmin, excludeId){
   var p = ptOf(pc); if (!p) return [];
-  var home = ptOf(cfg().homePostal), ms = mechanics(), cols = ms.length ? ms : [''], sm = slotMin(), t0 = today(), now = new Date(), nowM = now.getHours() * 60 + now.getMinutes(), out = [];
+  var home = ptOf(cfg().homePostal), ms = routeCols(), cols = ms.length ? ms : [''], sm = slotMin(), t0 = today(), now = new Date(), nowM = now.getHours() * 60 + now.getMinutes(), out = [];
   for (var dd = 0; dd < 14; dd++){
     var date = addDays(t0, dd), info = dayInfo(date);
     cols.forEach(function(m){
@@ -1242,21 +1294,21 @@ function suggestSlots(pc, dmin, excludeId){
 }
 function sugWhy(sg, p, home){
   var nb = sg.nb;
-  if (sg.empty) return home ? 'Journée libre · ≈ ' + Math.round(km(home, p)) + ' km du point de départ' : 'Journée libre pour ce mécano';
+  if (sg.empty) return home ? 'Journée libre · ≈ ' + Math.round(km(home, p)) + ' km du point de départ' : 'Journée libre pour ce ' + (truckMode() ? 'camion' : 'mécano');
   if (nb.prev && nb.next) return 'Entre ' + who(nb.prev) + ' et ' + who(nb.next);
   if (nb.prev) return 'Après ' + who(nb.prev) + ', à ≈ ' + Math.round(legKm(nb.prev.pt, p)) + ' km';
   return 'Avant ' + who(nb.next) + ', à ≈ ' + Math.round(legKm(p, nb.next.pt)) + ' km';
 }
 function momentInfo(date, time, mech, pc, dmin, excludeId){
   if (!date || !time) return null;
-  var ms = mechanics(); if (ms.length && !mech) return null;
+  var ms = routeCols(); if (ms.length && !mech) return null;
   var s0 = toMin(time), e0 = s0 + dmin, items = routeJobs(date, mech, excludeId), nb = neighbours(items, s0, e0);
-  if (nb.clash) return {level:'bad', msg:'Chevauche le rendez-vous de ' + (cl(nb.clash.j).name || 'un client') + ' (' + hm(toHM(nb.clash.s)) + ' à ' + hm(toHM(nb.clash.e)) + ')' + (mech ? ' avec ' + mech : '') + '.'};
+  if (nb.clash) return {level:'bad', msg:'Chevauche le rendez-vous de ' + (cl(nb.clash.j).name || 'un client') + ' (' + hm(toHM(nb.clash.s)) + ' à ' + hm(toHM(nb.clash.e)) + ')' + (mech ? ' avec ' + colName(mech) : '') + '.'};
   var p = ptOf(pc); if (!p) return null;
   if (nb.prev){ var dv = driveMin(km(nb.prev.pt, p)); if (s0 < nb.prev.e + dv) return {level:'mid', msg:'Serré : ≈ ' + dv + ' min de route après ' + who(nb.prev) + ', qui finit à ' + hm(toHM(nb.prev.e)) + '.'}; }
   if (nb.next){ var dn = driveMin(km(p, nb.next.pt)); if (e0 + dn > nb.next.s) return {level:'mid', msg:'Serré : il faut ≈ ' + dn + ' min de route pour être chez ' + who(nb.next) + ' à ' + hm(toHM(nb.next.s)) + '.'}; }
   var c = costFor(p, nb, ptOf(cfg().homePostal)), k = kmClass(c);
-  return {level:k === 'good' ? 'ok' : k, msg:'Détour pour ce moment : ≈ ' + Math.round(c) + ' km' + (mech ? ' pour ' + mech : '') + (k === 'far' ? '. Regarde les meilleurs moments plus haut.' : '.')};
+  return {level:k === 'good' ? 'ok' : k, msg:'Détour pour ce moment : ≈ ' + Math.round(c) + ' km' + (mech ? ' pour ' + colName(mech) : '') + (k === 'far' ? '. Regarde les meilleurs moments plus haut.' : '.')};
 }
 function mapsDir(stops){
   var home = cfg().homePostal && ptOf(cfg().homePostal) ? cfg().homePostal : null;
@@ -1266,8 +1318,8 @@ function mapsDir(stops){
   return 'https://www.google.com/maps/dir/?api=1&origin=' + encodeURIComponent(home || stops[0]) + '&destination=' + encodeURIComponent(dest) + (wps.length ? '&waypoints=' + wps.map(encodeURIComponent).join('%7C') : '') + '&travelmode=driving';
 }
 function routesHTML(day){
-  var ms = mechanics(), home = ptOf(cfg().homePostal);
-  var groups = (ms.length ? (S.mech && ms.indexOf(S.mech) >= 0 ? [S.mech] : ms) : ['']).map(function(m){ return {label:m || 'Trajet', items:routeJobs(day, m, null)}; }).filter(function(g){ return g.items.length; });
+  var ms = routeCols(), home = ptOf(cfg().homePostal);
+  var groups = (ms.length ? (S.mech && ms.indexOf(S.mech) >= 0 ? [S.mech] : ms) : ['']).map(function(m){ return {label:m ? colLabel(m, day) : 'Trajet', items:routeJobs(day, m, null)}; }).filter(function(g){ return g.items.length; });
   if (!groups.length) return '';
   return '<section class="sect routes"><h3>Trajets du jour</h3>' + groups.map(function(g){
     var total = 0, prevPt = home, tight = [], stops = [];
@@ -1354,15 +1406,15 @@ function renderNav(){
   extTabs().forEach(function(t){ if (t.hidden || $('.tab[data-t="' + t.key + '"]')) return; var rb = $('.tab[data-t="reglages"]'); rb.insertAdjacentHTML('beforebegin', '<button type="button" class="tab" data-act="tab" data-t="' + esc(t.key) + '">' + (t.icon || '') + '<span>' + esc(t.label) + '</span></button>'); });
   document.body.classList.toggle('ui-phone', phone());
   $$('.tab[data-t]').forEach(function(b){ b.hidden = !(tabShown(b.dataset.t) && tabOk(b.dataset.t)); });
-  var nb = $('.tab-new'); if (nb) nb.hidden = !(phone() && canWrite());
+  var nb = $('.tab-new'); if (nb) nb.hidden = !(phone() && (canWrite() || canExpense()));
   var jl = $('.tab[data-t="jour"] span'); if (jl) jl.textContent = lockedMech() ? 'Ma journée' : 'Aujourd\'hui';
-  var cur = phone() && ['accueil','reglages','heures','equipe'].concat(extTabs().map(function(t){ return t.key; })).indexOf(S.tab) >= 0 ? 'plus' : S.tab;
+  var cur = phone() && tabOk('jour') && ['accueil','reglages','heures','equipe','dispos','tresor'].concat(extTabs().map(function(t){ return t.key; })).indexOf(S.tab) >= 0 ? 'plus' : S.tab;
   $$('.tab[data-t]').forEach(function(b){ if (b.dataset.t === cur) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
 }
 function render(){
   if (!tabOk(S.tab)) S.tab = defTab();
   fitTab();
-  var lm = lockedMech(); if (lm) S.mech = lm;
+  var lm = lockedMech(); if (lm) S.mech = truckMode() ? '' : lm;
   renderNav();
   if (S.screen === 'edit' || S.screen === 'invoice' || S.screen === 'cform') return;
   if (S.tab === 'reglages' && !S.screen && S.settingsDirty) return;
@@ -1373,6 +1425,8 @@ function render(){
   else if (S.tab === 'jour') v = viewDay();
   else if (S.tab === 'plus') v = viewPlus();
   else if (S.tab === 'heures') v = viewHours();
+  else if (S.tab === 'dispos') v = viewDispos();
+  else if (S.tab === 'tresor') v = viewTresor();
   else if (S.tab === 'accueil') v = viewDash();
   else if (S.tab === 'clients') v = viewClients();
   else if (S.tab === 'factures') v = viewInvoices();
@@ -1413,10 +1467,23 @@ function toHM(m){ return pad(Math.floor(m / 60)) + ':' + pad(m % 60); }
 function dayInfo(date){
   var d = S.days[date] || {}, wh = weekHours(parseISO(date).getDay());
   var open = d.closed === true ? false : d.closed === false ? true : !!wh.open;
-  return {open:open, start:d.start || wh.start, end:d.end || wh.end, opened:d.opened || [], blocked:d.blocked || [], doc:d, week:wh};
+  return {date:date, open:open, start:d.start || wh.start, end:d.end || wh.end, opened:d.opened || [], blocked:d.blocked || [], doc:d, week:wh};
 }
 function baseOpen(info, t){ return info.open && t >= info.start && t < info.end; }
-function slotOpen(info, col, t){ var k = col + '@' + t; if (info.blocked.indexOf(k) >= 0) return false; if (info.opened.indexOf(k) >= 0) return true; return baseOpen(info, t); }
+function slotOpen(info, col, t){
+  var k = col + '@' + t;
+  if (truckMode() && col !== '_all' && col !== '_none'){ var tr = truckById(col); if (!tr || tr.on === false) return false; }
+  if (info.blocked.indexOf(k) >= 0) return false;
+  if (info.opened.indexOf(k) >= 0) return true;
+  return colOpen(info, col, t);
+}
+/* without a change made in the grid: the hours chosen by the mechanic (of the truck), otherwise the garage's hours */
+function colOpen(info, col, t){
+  var who = driverOf(info.date, col);
+  if (who){ var av = availOn(who, info.date); if (av !== undefined){ if (!av || info.doc.closed === true) return false; return t >= av.start && t < av.end; } }
+  return baseOpen(info, t);
+}
+function dayAnyOpen(info){ var cs = routeCols().length ? routeCols() : ['_all'], sm = slotMin(); for (var m = 5 * 60; m < 23 * 60 + 30; m += sm){ var t = toHM(m); if (cs.some(function(c){ return slotOpen(info, c, t); })) return true; } return false; }
 function colKeyFor(mech){ var ms = mechanics(); if (!ms.length) return '_all'; return mech && ms.indexOf(mech) >= 0 ? mech : '_none'; }
 function timeOpts(sel){ var out = '', step = slotMin() < 30 ? slotMin() : 30; for (var m = 5 * 60; m <= 23 * 60 + 30; m += step){ var t = toHM(m); out += opt(t, hm(t), t === sel); } if (sel && out.indexOf('value="' + sel + '"') < 0) out = opt(sel, hm(sel), true) + out; return out; }
 function hoursText(info){ return info.open ? 'Ouvert de <b>' + esc(hm(info.start)) + '</b> à <b>' + esc(hm(info.end)) + '</b>' : '<b>Fermé</b> ce jour-là'; }
@@ -1425,6 +1492,7 @@ function saveDay(date, doc){
   if (doc.closed === true || doc.closed === false){ clean.closed = doc.closed; keep = true; }
   if (doc.start){ clean.start = doc.start; keep = true; }
   if (doc.end){ clean.end = doc.end; keep = true; }
+  if (doc.crew && Object.keys(doc.crew).length){ clean.crew = Object.assign({}, doc.crew); keep = true; }
   var path = 'days/' + date;
   if (keep) S.days[date] = clean; else delete S.days[date];
   render();
@@ -1434,16 +1502,17 @@ function resyncDays(){ if (!S.db) return; S.db.collection('days').get().then(fun
 function toggleSlot(date, col, t){
   var info = dayInfo(date), k = col + '@' + t, want = !slotOpen(info, col, t);
   var opened = info.opened.filter(function(x){ return x !== k; }), blocked = info.blocked.filter(function(x){ return x !== k; });
-  if (want !== baseOpen(info, t)) (want ? opened : blocked).push(k);
+  if (want !== colOpen(info, col, t)) (want ? opened : blocked).push(k);
   saveDay(date, Object.assign({}, info.doc, {opened:opened, blocked:blocked}));
 }
 
 /* ---------- agenda ---------- */
 function weekOf(iso){ var d = parseISO(iso); d.setDate(d.getDate() - ((d.getDay()+6) % 7)); var out = []; for (var i = 0; i < 7; i++){ out.push(isoDate(d)); d.setDate(d.getDate()+1); } return out; }
-function myJobs(){ return S.jobs.filter(function(j){ return !S.mech || j.mechanic === S.mech; }); }
+function myJobs(){ var lm = lockedMech(); return S.jobs.filter(function(j){ return (!S.mech || jobCol(j) === S.mech) && (!lm || norm(j.mechanic) === norm(lm)); }); }
 function ticket(j){
   var c = cl(j), st = j.status || 'planifie', is = invState(j);
   var foot = '';
+  if (truckMode()) foot += '<span class="pill">' + esc(colName(jobCol(j))) + '</span>';
   if (j.mechanic) foot += '<span class="pill">' + esc(j.mechanic) + '</span>';
   if (is !== 'none') foot += pill(is, 'Facture ' + INV_LBL[is].toLowerCase());
   return '<button type="button" class="ticket s-' + st + '" data-act="open" data-id="' + esc(j.id) + '">' +
@@ -1464,15 +1533,15 @@ function layoutCol(items){
 }
 function gridHTML(day, list){
   var info = dayInfo(day), sm = slotMin(), H = slotH(sm);
-  var live = list.filter(function(j){ return j.status !== 'annule' && j.time; });
+  var live = list.filter(function(j){ return !isOff(j) && j.time; });
   var startM = Math.min(toMin(info.start), 7 * 60), endM = Math.max(toMin(info.end), 19 * 60);
   if (S.hoursEdit){ startM = Math.min(startM, 6 * 60); endM = Math.max(endM, 22 * 60); }
   info.opened.forEach(function(k){ var t = toMin(k.split('@').pop()); startM = Math.min(startM, t); endM = Math.max(endM, t + sm); });
   live.forEach(function(j){ var st = toMin(j.time); startM = Math.min(startM, st); endM = Math.max(endM, st + (+j.durationMin || 60)); });
   startM = Math.floor(startM / 60) * 60; endM = Math.min(24 * 60, Math.ceil(endM / 60) * 60);
-  var n = Math.round((endM - startM) / sm), colH = n * H, ms = mechanics();
-  var cols = !ms.length ? [{key:'_all', label:'Rendez-vous'}] : (S.mech ? [S.mech] : ms).map(function(m){ return {key:m, label:m}; });
-  if (ms.length && !S.mech && live.some(function(j){ return colKeyFor(j.mechanic) === '_none'; })) cols.push({key:'_none', label:'À assigner'});
+  var n = Math.round((endM - startM) / sm), colH = n * H, ms = routeCols();
+  var cols = !ms.length ? [{key:'_all', label:'Rendez-vous'}] : (S.mech && ms.indexOf(S.mech) >= 0 ? [S.mech] : ms).map(function(m){ return {key:m, label:colName(m)}; });
+  if (ms.length && !S.mech && live.some(function(j){ return jobCol(j) === '_none'; })) cols.push({key:'_none', label:'À assigner'});
   var isToday = day === today(), now = new Date(), nowM = now.getHours() * 60 + now.getMinutes();
   var anchorM = info.open ? toMin(info.start) : 8 * 60; live.forEach(function(j){ anchorM = Math.min(anchorM, toMin(j.time)); });
   S._calAnchor = Math.max(0, (Math.max(anchorM, startM) - startM) / sm * H - 6);
@@ -1485,7 +1554,7 @@ function gridHTML(day, list){
       var t = toHM(startM + i * sm), op = slotOpen(info, col.key, t);
       h += '<button type="button" class="slot ' + (op ? 'open' : 'closed') + ((startM + i * sm) % 60 === 0 ? ' hr' : (startM + i * sm) % 30 === 0 ? ' half' : '') + '" style="height:' + H + 'px" data-act="slot" data-t="' + t + '" data-c="' + esc(col.key) + '" aria-label="' + esc(hm(t) + ' · ' + col.label + ' · ' + (op ? 'libre' : 'fermé')) + '"></button>';
     }
-    var items = live.filter(function(j){ return colKeyFor(j.mechanic) === col.key; }).map(function(j){ var st = toMin(j.time); return {j:j, s:st, e:st + (+j.durationMin || 60)}; });
+    var items = live.filter(function(j){ return jobCol(j) === col.key; }).map(function(j){ var st = toMin(j.time); return {j:j, s:st, e:st + (+j.durationMin || 60)}; });
     layoutCol(items).forEach(function(x){
       var j = x.j, top = (x.s - startM) / sm * H + 1, ht = Math.max(H - 3, (x.e - x.s) / sm * H - 3);
       h += '<button type="button" class="appt s-' + esc(j.status || 'planifie') + '" style="top:' + top + 'px;height:' + ht + 'px;left:calc(' + (x.lane / x.lanes * 100) + '% + 3px);width:calc(' + (100 / x.lanes) + '% - 6px)" data-act="open" data-id="' + esc(j.id) + '" aria-label="' + esc(hm(j.time) + ', ' + (cl(j).name || 'Client') + ', ' + ST[j.status || 'planifie']) + '">' +
@@ -1495,12 +1564,53 @@ function gridHTML(day, list){
     if (isToday && nowM >= startM && nowM < endM) h += '<div class="now" style="top:' + ((nowM - startM) / sm * H) + 'px"></div>';
     return h + '</div>';
   }).join('');
-  var head = '<div class="cal-head"><div></div>' + cols.map(function(c){ var cnt = live.filter(function(j){ return colKeyFor(j.mechanic) === c.key; }).length; return '<div class="colh">' + esc(c.label) + '<small>' + (cnt ? cnt + ' rendez-vous' : 'libre') + '</small></div>'; }).join('') + '</div>';
+  var head = '<div class="cal-head"><div></div>' + cols.map(function(c){ var cnt = live.filter(function(j){ return jobCol(j) === c.key; }).length; return colHead(c, day, cnt); }).join('') + '</div>';
   return '<div class="cal' + (S.hoursEdit ? ' editing' : '') + '" id="cal"><div class="cal-in" style="--n:' + cols.length + '">' + head + '<div class="cal-body">' + gut + body + '</div></div></div>' +
     '<div class="legend"><span><i></i>Libre : touche pour réserver</span><span><i class="cl"></i>Fermé</span></div>';
 }
+/* column title: the truck, who drives it that day, closed or not */
+function colHead(c, day, cnt){
+  var tr = truckMode() ? truckById(c.key) : null;
+  if (!tr) return '<div class="colh">' + esc(c.label) + '<small>' + (cnt ? cnt + ' rendez-vous' : 'libre') + '</small></div>';
+  var off = tr.on === false, d = driverOf(day, c.key), av = d ? availOn(d, day) : undefined;
+  var sub = off ? 'Fermé' : (d ? d + (av === null ? ' · congé' : '') : 'Mécano à choisir') + ' · ' + (cnt ? cnt + ' rdv' : 'libre');
+  return '<div class="colh' + (off ? ' coloff' : '') + '" data-truck="' + esc(c.key) + '">' + esc(c.label) + '<small>' + esc(sub) + '</small>' + (off && canAdmin() ? '<button type="button" class="linkbtn" data-act="truck-toggle" data-v="' + esc(c.key) + '">Ouvrir ce camion</button>' : '') + '</div>';
+}
+/* who leaves with which truck that day (office / owner); the planned jobs of that truck follow */
+function crewHTML(day, ph){
+  if (!truckMode() || !mechanics().length || !canHours()) return '';
+  var on = trucks().filter(function(t){ return t.on !== false; }); if (!on.length) return '';
+  var rows = on.map(function(t){
+    var dv = driverOf(day, t.id), av = dv ? availOn(dv, day) : undefined;
+    return '<label class="crew-f"><span>' + esc(t.name || 'Camion') + '</span><select data-crew="' + esc(t.id) + '" data-keep="no" aria-label="Qui part avec ' + esc(t.name || 'ce camion') + '">' + opt('', 'Personne', !dv) +
+      mechanics().map(function(m){ return opt(m, m + (availOn(m, day) === null ? ' (congé)' : ''), m === dv); }).join('') + (dv && mechanics().indexOf(dv) < 0 ? opt(dv, dv, true) : '') + '</select>' +
+      (av === null ? '<small class="tight">' + esc(dv) + ' est en congé ce jour-là</small>' : '') + '</label>';
+  }).join('');
+  var h = '<div class="crew" role="group" aria-label="Qui part avec quel camion">' + rows + '</div>';
+  return ph ? '<details class="sect fold" id="crew-fold"><summary>Qui part avec quel camion ?</summary>' + h + '</details>' : '<div class="crewbox" id="crewbox"><span class="lbl">Qui part avec quel camion ce jour-là</span>' + h + '</div>';
+}
+function setCrew(day, k, m){
+  if (!canHours()) return;
+  var moved = S.jobs.filter(function(j){ return j.date === day && (j.status || 'planifie') === 'planifie' && jobCol(j) === k && (j.mechanic || '') !== m; });
+  var info = dayInfo(day), crew = Object.assign({}, crewOf(day)); crew[k] = m;
+  saveDay(day, Object.assign({}, info.doc, {crew:crew}));
+  moved.forEach(function(j){ write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update({mechanic:m, truck:k, updatedAt:Date.now()}); }, ''); });
+  toast(colName(k) + ' : ' + (m || 'personne') + ' ce jour-là' + (moved.length ? ' · ' + moved.length + ' job' + (moved.length > 1 ? 's' : '') + ' suivent' : ''));
+}
+function saveTrucks(list, msg){
+  if (!canAdmin()) return Promise.resolve(false);
+  var data = Object.assign(clone(cfg()), {trucks:list, updatedAt:Date.now()});
+  S.cfg = data; render();
+  return write('config/main', function(){ return S.db.doc('config/main').set(data); }, msg || 'Camions mis à jour');
+}
+function toggleTruck(id){ var t = truckById(id); if (!t) return; var on = t.on === false; saveTrucks(trucks().map(function(x){ return x.id === id ? Object.assign({}, x, {on:on}) : x; }), (t.name || 'Camion') + (on ? ' ouvert' : ' fermé')); }
+function truckRow(t, dis){
+  return '<div class="tk-row" data-id="' + esc(t.id) + '"><div class="field"><label for="tk-n-' + esc(t.id) + '">Nom</label><input id="tk-n-' + esc(t.id) + '" data-f="name" value="' + esc(t.name || '') + '" autocomplete="off"' + dis + '></div>' +
+    '<div class="field"><label for="tk-m-' + esc(t.id) + '">Mécano habituel</label><select id="tk-m-' + esc(t.id) + '" data-f="mech"' + dis + '>' + opt('', 'Aucun', !t.mech) + mechanics().map(function(m){ return opt(m, m, m === t.mech); }).join('') + (t.mech && mechanics().indexOf(t.mech) < 0 ? opt(t.mech, t.mech, true) : '') + '</select></div>' +
+    '<label class="check"><input type="checkbox" data-f="on"' + (t.on !== false ? ' checked' : '') + dis + '> En service</label></div>';
+}
 function weekSlotOpen(info, t){
-  var ms = mechanics();
+  var ms = routeCols();
   if (!ms.length) return slotOpen(info, '_all', t);
   if (S.mech && ms.indexOf(S.mech) >= 0) return slotOpen(info, S.mech, t);
   return ms.some(function(m){ return slotOpen(info, m, t); });
@@ -1508,14 +1618,14 @@ function weekSlotOpen(info, t){
 var DDM = new Intl.DateTimeFormat('fr-CA', {day:'numeric', month:'long'});
 function weekTitle(day){ var w = weekOf(day); return 'Semaine du ' + DDM.format(parseISO(w[0])) + ' au ' + DDM.format(parseISO(w[6])); }
 function weekGridHTML(day){
-  var week = weekOf(day), sm = slotMin(), H = slotH(sm), t0 = today(), infos = {}, ms = mechanics();
+  var week = weekOf(day), sm = slotMin(), H = slotH(sm), t0 = today(), infos = {}, ms = routeCols();
   var startM = 7 * 60, endM = 19 * 60;
   week.forEach(function(d){
     var i = infos[d] = dayInfo(d);
     if (i.open){ startM = Math.min(startM, toMin(i.start)); endM = Math.max(endM, toMin(i.end)); }
     i.opened.forEach(function(k){ var m = toMin(k.split('@').pop()); startM = Math.min(startM, m); endM = Math.max(endM, m + sm); });
   });
-  var live = myJobs().filter(function(j){ return week.indexOf(j.date) >= 0 && j.status !== 'annule' && j.time; });
+  var live = myJobs().filter(function(j){ return week.indexOf(j.date) >= 0 && !isOff(j) && j.time; });
   live.forEach(function(j){ var st = toMin(j.time); startM = Math.min(startM, st); endM = Math.max(endM, st + (+j.durationMin || 60)); });
   startM = Math.floor(startM / 60) * 60; endM = Math.min(24 * 60, Math.ceil(endM / 60) * 60);
   var n = Math.round((endM - startM) / sm), colH = n * H, now = new Date(), nowM = now.getHours() * 60 + now.getMinutes();
@@ -1541,7 +1651,7 @@ function weekGridHTML(day){
       var j = x.j, top = (x.s - startM) / sm * H + 1, ht = Math.max(H - 3, (x.e - x.s) / sm * H - 3);
       h += '<button type="button" class="appt s-' + esc(j.status || 'planifie') + '" style="top:' + top + 'px;height:' + ht + 'px;left:calc(' + (x.lane / x.lanes * 100) + '% + 2px);width:calc(' + (100 / x.lanes) + '% - 4px)" data-act="open" data-id="' + esc(j.id) + '" aria-label="' + esc(cap(dayLong(d)) + ', ' + hm(j.time) + ', ' + (cl(j).name || 'Client') + (j.mechanic ? ', ' + j.mechanic : '') + ', ' + ST[j.status || 'planifie']) + '">' +
         '<b>' + esc(hm(j.time)) + ' ' + esc(cl(j).name || 'Client') + '</b>' +
-        (ms.length && !S.mech ? '<span>' + esc(j.mechanic || 'À assigner') + '</span>' : '') +
+        (ms.length && !S.mech ? '<span>' + esc(truckMode() ? colLabel(jobCol(j), j.date) : (j.mechanic || 'À assigner')) + '</span>' : '') +
         (zoneSvc(j) ? '<span>' + esc(zoneSvc(j)) + '</span>' : '') + '</button>';
     });
     if (d === t0 && nowM >= startM && nowM < endM) h += '<div class="now" style="top:' + ((nowM - startM) / sm * H) + 'px"></div>';
@@ -1551,14 +1661,14 @@ function weekGridHTML(day){
     '<div class="legend"><span><i></i>Libre : touche pour réserver</span><span><i class="cl"></i>Fermé</span><span>Touche un jour en haut pour le voir en détail</span></div>';
 }
 function periodRow(){
-  var ms = mechanics(), pd = S.period || {from:'12:00', to:'13:00', col:''};
+  var ms = routeCols(), pd = S.period || {from:'12:00', to:'13:00', col:''};
   return '<div class="prow"><select id="p-from" aria-label="Début de la période">' + timeOpts(pd.from) + '</select><span class="muted">à</span><select id="p-to" aria-label="Fin de la période">' + timeOpts(pd.to) + '</select>' +
-    (ms.length ? '<select id="p-col" aria-label="Pour quel mécano">' + opt('', 'Tous les mécanos', !pd.col) + ms.map(function(m){ return opt(m, m, pd.col === m); }).join('') + '</select>' : '') + '</div>';
+    (ms.length ? '<select id="p-col" aria-label="Pour quel ' + (truckMode() ? 'camion' : 'mécano') + '">' + opt('', 'Tous les ' + colsWord(), !pd.col) + ms.map(function(m){ return opt(m, colName(m), pd.col === m); }).join('') + '</select>' : '') + '</div>';
 }
 function weekHoursPanel(day){
   var week = weekOf(day), sel = S.periodDays && S.periodDays.week === week[0] ? S.periodDays.days : null, any = week.some(function(d){ return !!S.days[d]; });
   var dw = function(d){ return cap(DWK.format(parseISO(d)).replace('.', '')); };
-  return '<div class="hours-panel" id="hours-panel"><p><strong>Horaire de la ' + esc(weekTitle(day).toLowerCase()) + '</strong><br>Touche une case de la grille pour l\'ouvrir ou la fermer' + (S.mech ? ' pour ' + esc(S.mech) : ' pour tous les mécanos') + '. Pour ta semaine type, va dans Réglages.</p>' +
+  return '<div class="hours-panel" id="hours-panel"><p><strong>Horaire de la ' + esc(weekTitle(day).toLowerCase()) + '</strong><br>Touche une case de la grille pour l\'ouvrir ou la fermer' + (S.mech ? ' pour ' + esc(colName(S.mech)) : ' pour tous les ' + colsWord()) + '. Pour ta semaine type, va dans Réglages.</p>' +
     '<div class="lbl">Jours ouverts cette semaine</div><div class="chips">' + week.map(function(d){ var o = dayInfo(d).open; return '<button type="button" class="chip' + (o ? ' on' : '') + '" data-act="wday-toggle" data-v="' + d + '" aria-pressed="' + o + '">' + esc(dw(d) + ' ' + parseISO(d).getDate()) + ' · ' + (o ? 'ouvert' : 'fermé') + '</button>'; }).join('') + '</div>' +
     '<div class="period"><span class="lbl">Fermer ou ouvrir une période sur plusieurs jours</span>' + periodRow() +
       '<div class="dayboxes" role="group" aria-label="Jours visés">' + week.map(function(d){ var on = sel ? sel.indexOf(d) >= 0 : dayInfo(d).open; return '<label class="check daybox"><input type="checkbox" class="p-day" value="' + d + '"' + (on ? ' checked' : '') + '> ' + esc(dw(d)) + '</label>'; }).join('') + '</div>' +
@@ -1566,7 +1676,7 @@ function weekHoursPanel(day){
     '<div class="row2"><button type="button" class="btn sm" data-act="week-close">Fermer toute la semaine</button>' + (any ? '<button type="button" class="btn sm" data-act="week-reset">Revenir à l\'horaire normal pour la semaine</button>' : '') + '<button type="button" class="btn sm primary" data-act="hours-edit">Terminé</button></div></div>';
 }
 function toggleWeekSlot(date, t){
-  var info = dayInfo(date), ms = mechanics(), col = (S.mech && ms.indexOf(S.mech) >= 0) ? S.mech : '';
+  var info = dayInfo(date), ms = routeCols(), col = (S.mech && ms.indexOf(S.mech) >= 0) ? S.mech : '';
   var cur = !ms.length ? slotOpen(info, '_all', t) : col ? slotOpen(info, col, t) : ms.some(function(m){ return slotOpen(info, m, t); });
   return setPeriod(date, t, toHM(toMin(t) + slotMin()), col, !cur);
 }
@@ -1576,10 +1686,10 @@ function periodHTML(){
     '<div class="row2"><button type="button" class="btn sm" data-act="period" data-v="close">Fermer cette période</button><button type="button" class="btn sm" data-act="period" data-v="open">Ouvrir cette période</button></div></div>';
 }
 function setPeriod(date, from, to, col, open){
-  var info = dayInfo(date), ms = mechanics(), keys = ms.length ? (col ? [col] : ms) : ['_all'], sm = slotMin(), opened = info.opened.slice(), blocked = info.blocked.slice();
+  var info = dayInfo(date), ms = routeCols(), keys = ms.length ? (col ? [col] : ms) : ['_all'], sm = slotMin(), opened = info.opened.slice(), blocked = info.blocked.slice();
   for (var m = toMin(from); m < toMin(to); m += sm){
-    var t = toHM(m), base = baseOpen(info, t);
-    keys.forEach(function(k){ var key = k + '@' + t; opened = opened.filter(function(x){ return x !== key; }); blocked = blocked.filter(function(x){ return x !== key; }); if (open !== base) (open ? opened : blocked).push(key); });
+    var t = toHM(m);
+    keys.forEach(function(k){ var key = k + '@' + t, base = colOpen(info, k, t); opened = opened.filter(function(x){ return x !== key; }); blocked = blocked.filter(function(x){ return x !== key; }); if (open !== base) (open ? opened : blocked).push(key); });
   }
   return saveDay(date, Object.assign({}, info.doc, {opened:opened, blocked:blocked}));
 }
@@ -1594,7 +1704,7 @@ function hoursPanel(day){
 }
 function viewAgenda(){
   var t = today(), day = S.day, week = weekOf(day), js = myJobs(), count = {};
-  js.forEach(function(j){ if (j.status !== 'annule') count[j.date] = (count[j.date]||0) + 1; });
+  js.forEach(function(j){ if (!isOff(j)) count[j.date] = (count[j.date]||0) + 1; });
   var days = week.map(function(d){
     var nn = Math.min(count[d]||0, 4), dots = '', closed = !dayInfo(d).open; for (var i = 0; i < nn; i++) dots += '<i></i>';
     return '<button type="button" class="day' + (d === day ? ' on' : '') + (d === t ? ' today' : '') + '" data-act="day" data-v="' + d + '" aria-pressed="' + (d === day) + '" aria-label="' + esc(cap(dayLong(d))) + (closed ? ', fermé' : '') + (count[d] ? ', ' + count[d] + ' rendez-vous' : '') + '"' + (closed && d !== day ? ' style="opacity:.55"' : '') + '>' +
@@ -1610,7 +1720,7 @@ function viewAgenda(){
 
   var list = js.filter(function(j){ return j.date === day; }).sort(function(a,b){ return String(a.time||'').localeCompare(String(b.time||'')); });
   var isWeek = S.view === 'week';
-  var live = (isWeek ? js.filter(function(j){ return week.indexOf(j.date) >= 0; }) : list).filter(function(j){ return j.status !== 'annule'; });
+  var live = (isWeek ? js.filter(function(j){ return week.indexOf(j.date) >= 0; }) : list).filter(function(j){ return !isOff(j); });
   var done = live.filter(function(j){ return j.status === 'termine'; }).length, paid = 0, due = 0;
   live.forEach(function(j){ var s = invState(j); if (s === 'paid') paid += num(j.invoice.total); else if (s === 'unpaid') due += num(j.invoice.total); });
   var info = dayInfo(day);
@@ -1623,9 +1733,10 @@ function viewAgenda(){
   body += '<div class="toolbar"><span class="hoursline">' + (isWeek ? 'Toute la semaine' : hoursText(info)) + '</span>' +
     '<div class="chips" role="group" aria-label="Affichage">' + chip('view', 'grid', 'Jour', S.view === 'grid') + chip('view', 'week', 'Semaine', isWeek) + chip('view', 'list', 'Liste', S.view === 'list') + '</div></div>';
   if (canHours() && S.view !== 'list' && !S.hoursEdit) body += '<button type="button" class="btn sm" data-act="hours-edit">Ouvrir / fermer l\'horaire' + (isWeek ? ' de la semaine' : '') + '</button>';
-  if (mechanics().length && !lockedMech()){
-    body += '<div class="chips" role="group" aria-label="Mécano">' + chip('mech', '', 'Tous les mécanos', S.mech === '') + mechanics().map(function(m){ return chip('mech', m, m, S.mech === m); }).join('') + '</div>';
+  if (routeCols().length && !lockedMech()){
+    body += '<div class="chips" role="group" aria-label="' + (truckMode() ? 'Camion' : 'Mécano') + '">' + chip('mech', '', 'Tous les ' + colsWord(), S.mech === '') + routeCols().map(function(m){ return chip('mech', m, colName(m) + (truckMode() && truckById(m).on === false ? ' · fermé' : ''), S.mech === m); }).join('') + '</div>';
   }
+  if (!isWeek && S.view === 'grid') body += crewHTML(day);
   if (live.length){
     body += '<div class="sum"><div class="stat"><b>' + live.length + '</b><span>rendez-vous, ' + done + ' terminé' + (done > 1 ? 's' : '') + '</span></div>' +
       '<div class="stat"><b>' + esc(money(paid)) + '</b><span>encaissé</span></div><div class="stat"><b>' + esc(money(due)) + '</b><span>à recevoir</span></div></div>';
@@ -1646,7 +1757,7 @@ function viewAgenda(){
     body += '<div class="empty-card"><h3>Le carnet est vide</h3><p>Chaque appel devient une réservation : le client, son véhicule avec le VIN, l\'adresse et l\'heure. Le mécano voit ses jobs ici et fait la facture sur place, taxes calculées.</p>' +
       (canBook() ? '<button type="button" class="btn primary" data-act="new">Réserver la première job</button>' : '') + '</div>';
   } else if (S.loaded && !list.length){
-    body += '<div class="empty-card"><p>Aucun rendez-vous ' + (S.mech ? 'pour ' + esc(S.mech) + ' ' : '') + 'ce jour-là.</p>' + (canBook() ? '<button type="button" class="btn" data-act="new">Réserver le ' + esc(dayLong(day)) + '</button>' : '') + '</div>';
+    body += '<div class="empty-card"><p>Aucun rendez-vous ' + (S.mech ? 'pour ' + esc(colName(S.mech)) + ' ' : '') + 'ce jour-là.</p>' + (canBook() ? '<button type="button" class="btn" data-act="new">Réserver le ' + esc(dayLong(day)) + '</button>' : '') + '</div>';
   } else if (list.length){
     body += '<div class="list">' + list.map(ticket).join('') + '</div>' + routesHTML(day);
   }
@@ -1669,9 +1780,9 @@ function clientMatches(c, q){
 function byName(a, b){ return norm(clientName(a)).localeCompare(norm(clientName(b))); }
 function normAddr(a){ return String(a || '').replace(/\s+/g, ' ').trim().replace(/([abceghj-nprstvxy]\d[abceghj-nprstv-z]) ?(\d[abceghj-nprstv-z]\d)(?![a-z0-9])/i, function(m, x, y){ return x.toUpperCase() + ' ' + y.toUpperCase(); }); }
 function clientRow(c, act){
-  var due = clientDue(c.id), up = clientJobs(c.id).filter(function(j){ return j.date >= today() && j.status !== 'annule' && j.status !== 'termine'; }).length, p = ptOf(c.postal || findPostal(c.address));
+  var due = clientDue(c.id), up = clientJobs(c.id).filter(function(j){ return j.date >= today() && !isOff(j) && j.status !== 'termine'; }).length, p = ptOf(c.postal || findPostal(c.address));
   return '<button type="button" class="crow" data-act="' + act + '" data-id="' + esc(c.id) + '"><span class="crow-main"><b>' + esc(clientName(c)) + '</b><span class="muted small">' + esc(c.phone || '') + (p ? ' · zone ' + esc(p.fsa) : '') + '</span><span class="muted small">' + esc(c.address || '') + '</span></span>' +
-    '<span class="crow-side">' + (due > 0 ? pill('unpaid', money(due) + ' dû') : '') + (up ? pill('route', up + ' à venir') : '') + '</span></button>';
+    '<span class="crow-side">' + (noShowsOf(c.id).length ? pill('noshow', 'No-show') : '') + (due > 0 ? pill('unpaid', money(due) + ' dû') : '') + (up ? pill('route', up + ' à venir') : '') + '</span></button>';
 }
 function viewClients(){
   var list = S.clients.filter(function(c){ return clientMatches(c, S.cq); }).sort(byName), dueAll = r2(S.clients.reduce(function(s0, c){ return s0 + clientDue(c.id); }, 0));
@@ -1683,6 +1794,11 @@ function viewClients(){
   else if (!S.clients.length) body += '<div class="empty-card"><h3>Aucune fiche client</h3><p>Chaque client a sa fiche : prénom, nom, téléphone et adresse avec le code postal. De sa fiche, tu prends ses rendez-vous, tu fais ses factures, tu suis ses visites et ce qu\'il doit.</p>' + (canWrite() ? '<button type="button" class="btn primary" data-act="cl-new">Créer la première fiche</button>' : '') + '</div>';
   else body += '<div class="list" id="cl-list">' + (list.length ? list.map(function(c){ return clientRow(c, 'cl-open'); }).join('') : '<p class="muted">Aucun client ne correspond à « ' + esc(S.cq) + ' ».</p>') + '</div>';
   return {top:top, body:body};
+}
+function noShowBanner(c){
+  var ns = noShowsOf(c.id); if (!ns.length && !c.cardOnFile) return '';
+  return '<div class="banner' + (ns.length && !c.cardOnFile ? ' warn noshow-warn' : '') + '" id="ns-banner"><p>' + (ns.length ? '<b>No-show : ' + ns.length + ' fois</b> (' + esc(nsDates(ns)) + '). ' : '') +
+    (c.cardOnFile ? 'Carte au dossier depuis le ' + esc(dateMed(c.cardOnFile)) + '.' : 'Prends une carte au dossier avant de confirmer son prochain rendez-vous.') + '</p></div>';
 }
 function visitRow(j, act){
   var is = invState(j), st = j.status || 'planifie';
@@ -1696,9 +1812,9 @@ function viewClient(){
   if (!c) return {top:topBack('Fiche client'), body:'<div class="empty-card"><p>Cette fiche n\'existe plus.</p><button type="button" class="btn" data-act="back">Retour aux clients</button></div>'};
   var js = clientJobs(c.id), p = ptOf(c.postal || findPostal(c.address)), due = clientDue(c.id), w = canWrite(), tab = S.clientTab;
   var invs = js.filter(function(j){ return j.invoice; }), unpaid = js.filter(function(j){ return invState(j) === 'unpaid'; }), t0 = today();
-  var upcoming = js.filter(function(j){ return j.date >= t0 && j.status !== 'annule' && j.status !== 'termine'; }).sort(function(a, b){ return (a.date + a.time).localeCompare(b.date + b.time); });
+  var upcoming = js.filter(function(j){ return j.date >= t0 && !isOff(j) && j.status !== 'termine'; }).sort(function(a, b){ return (a.date + a.time).localeCompare(b.date + b.time); });
   var past = js.filter(function(j){ return upcoming.indexOf(j) < 0; }).sort(function(a, b){ return (b.date + b.time).localeCompare(a.date + a.time); });
-  var body = banners() + '<section class="sect"><dl class="kv">' +
+  var body = banners() + noShowBanner(c) + '<section class="sect"><dl class="kv">' +
     (c.phone ? '<div><dt>Téléphone</dt><dd><span class="mono sel">' + esc(c.phone) + '</span><div class="inline-actions"><a class="btn sm steel" href="' + esc(telHref(c.phone)) + '">Appeler</a><button type="button" class="btn sm" data-act="copy" data-v="' + esc(c.phone) + '">Copier</button></div></dd></div>' : '') +
     '<div><dt>Adresse</dt><dd><span class="sel">' + esc(c.address || '—') + '</span>' + (p ? '<br><span class="small muted">Zone ' + esc(p.fsa + ' · ' + p.name) + '</span>' : '') + (c.address ? '<div class="inline-actions"><a class="btn sm" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&amp;query=' + esc(encodeURIComponent(c.address)) + '">Itinéraire</a></div>' : '') + '</dd></div>' +
     (c.email ? '<div><dt>Courriel</dt><dd class="sel">' + esc(c.email) + '</dd></div>' : '') + '</dl>' +
@@ -1758,7 +1874,7 @@ function linkJobs(cid, c){
   var lj = S.linkJob, d = digits(c.phone); S.linkJob = null;
   var list = S.jobs.filter(function(j){ return !j.clientId && (j.id === lj || (d.length === 10 && digits(cl(j).phone) === d)); });
   list.forEach(function(j){
-    var live = j.status !== 'termine' && j.status !== 'annule' && (invState(j) === 'none' || invState(j) === 'draft'), up = {clientId:cid, updatedAt:Date.now()};
+    var live = j.status !== 'termine' && !isOff(j) && (invState(j) === 'none' || invState(j) === 'draft'), up = {clientId:cid, updatedAt:Date.now()};
     if (live) up.client = clientSnap(Object.assign({id:cid}, c));
     write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update(up); }, '');
   });
@@ -2211,7 +2327,7 @@ function saveClient(e){
     btn.disabled = false; if (!ok) return;
     var full = Object.assign({id:id}, findClient(id) || {}, data);
     if (S.cformEdit){
-      clientJobs(id).filter(function(j){ return j.status !== 'termine' && j.status !== 'annule' && (invState(j) === 'none' || invState(j) === 'draft'); }).forEach(function(j){
+      clientJobs(id).filter(function(j){ return j.status !== 'termine' && !isOff(j) && (invState(j) === 'none' || invState(j) === 'draft'); }).forEach(function(j){
         write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update({client:clientSnap(full), updatedAt:Date.now()}); }, '');
       });
     } else {
@@ -2225,7 +2341,8 @@ function saveClient(e){
 /* booking popup, step 1: who is the client? */
 function openClientStep(){
   var bc = S.bookCtx || {}, pr = bc.preset || {};
-  var sub = pr.date ? cap(dayLong(pr.date)) + (pr.time ? ' · ' + hm(pr.time) : '') + (pr.mechanic ? ' · ' + pr.mechanic : '') : (bc.quick ? 'Client sans réservation' : 'Au téléphone');
+  var pc = (pr.col && pr.col !== '_all' && pr.col !== '_none') ? (truckMode() ? colLabel(pr.col, pr.date) : pr.col) : (pr.mechanic || '');
+  var sub = pr.date ? cap(dayLong(pr.date)) + (pr.time ? ' · ' + hm(pr.time) : '') + (pc ? ' · ' + pc : '') : (bc.quick ? 'Client sans réservation' : 'Au téléphone');
   var html = '<div class="stack"><p>' + (bc.quick ? 'Pour facturer' : 'Pour réserver') + ', choisis le client ou crée sa fiche.</p>' +
     '<div class="field"><label for="cs-q">Chercher un client</label><input id="cs-q" type="search" autocomplete="off" placeholder="Nom, téléphone ou code postal"></div>' +
     '<div id="cs-results" class="list"></div>' +
@@ -2272,13 +2389,13 @@ function renderSug(){
   var box = $('#sugbox'); if (!box) return;
   var pc = formPostal(), p = ptOf(pc);
   if (!p){ box.hidden = true; box.innerHTML = ''; return; }
-  var dmin = formDur(), home = ptOf(cfg().homePostal), list = suggestSlots(pc, dmin, S.editId), cur = val('f-date') + '|' + val('f-time') + '|' + val('f-mech');
+  var dmin = formDur(), home = ptOf(cfg().homePostal), list = suggestSlots(pc, dmin, S.editId), cur = val('f-date') + '|' + val('f-time') + '|' + formColVal();
   box.hidden = false;
   box.innerHTML = '<div class="sug-head"><b>Meilleurs moments près de ' + esc(p.fsa) + '</b><span class="muted small">' + esc(p.name) + ' · ' + esc(unitsLabel(unitsOf(dmin)) + ' (' + dur(dmin) + ')') + ' · 14 prochains jours</span></div>' +
     (list.length ? '<div class="sugs">' + list.map(function(sg){
       var on = (sg.date + '|' + sg.time + '|' + sg.mech) === cur;
       return '<button type="button" class="sug' + (on ? ' on' : '') + '" data-act="sug" data-d="' + sg.date + '" data-t="' + sg.time + '" data-m="' + esc(sg.mech) + '" aria-pressed="' + on + '">' +
-        '<span class="sug-when"><span class="nw">' + esc(dShort(sg.date)) + '</span> · <span class="nw">' + esc(hm(sg.time)) + '</span>' + (sg.mech ? '<small>' + esc(sg.mech) + '</small>' : '') + '</span>' +
+        '<span class="sug-when"><span class="nw">' + esc(dShort(sg.date)) + '</span> · <span class="nw">' + esc(hm(sg.time)) + '</span>' + (sg.mech ? '<small>' + esc(colLabel(sg.mech, sg.date)) + '</small>' : '') + '</span>' +
         '<span class="km ' + kmClass(sg.cost) + '" title="Détour estimé">+' + Math.round(sg.cost) + ' km</span>' +
         '<span class="sug-why">' + esc(sugWhy(sg, p, home)) + '</span></button>';
     }).join('') + '</div>' : '<p class="muted small">Aucune place libre dans les 14 prochains jours pour cette durée.</p>') +
@@ -2287,20 +2404,30 @@ function renderSug(){
 }
 function updateMoment(){
   var box = $('#momentmsg'); if (!box) return;
-  var r = momentInfo(val('f-date'), val('f-time'), val('f-mech'), formPostal(), formDur(), S.editId);
+  var r = momentInfo(val('f-date'), val('f-time'), formColVal(), formPostal(), formDur(), S.editId);
   box.className = 'moment' + (r ? ' ' + r.level : ''); box.textContent = r ? r.msg : '';
 }
 function updateSheetSub(){
   if (!S.sheet) return;
-  var d = val('f-date'), t = val('f-time'), m = val('f-mech');
-  $('#sheet-sub').textContent = d ? cap(dayLong(d)) + (t ? ' · ' + hm(t) : '') + (m ? ' · ' + m : '') : 'Au téléphone';
+  var d = val('f-date'), t = val('f-time'), m = formColVal();
+  $('#sheet-sub').textContent = d ? cap(dayLong(d)) + (t ? ' · ' + hm(t) : '') + (m ? ' · ' + (truckMode() ? colLabel(m, d) : m) : '') : 'Au téléphone';
 }
 function checkHours(){
   var box = $('#hourmsg'); if (!box) return;
   var date = val('f-date'), time = val('f-time');
   if (!date || !time){ box.textContent = ''; return; }
   var sm = slotMin(), t = toHM(Math.floor(toMin(time) / sm) * sm);
-  box.textContent = slotOpen(dayInfo(date), colKeyFor(val('f-mech')), t) ? '' : 'Attention : ce moment est en dehors de l\'horaire d\'ouverture.';
+  box.textContent = slotOpen(dayInfo(date), formColKey(), t) ? '' : 'Attention : ce moment est en dehors de l\'horaire d\'ouverture' + (truckMode() && val('f-truck') && truckById(val('f-truck')) && truckById(val('f-truck')).on === false ? ' (ce camion est fermé)' : '') + '.';
+}
+/* the column chosen in the form: the truck, or the mechanic */
+function formColVal(){ return truckMode() ? val('f-truck') : val('f-mech'); }
+function formColKey(){ return truckMode() ? (val('f-truck') || '_none') : colKeyFor(val('f-mech')); }
+/* the mechanic follows the truck (who drives it that day) until someone picks another one */
+function syncMech(){
+  if (!truckMode() || S.mechTouched || lockedMech()) return;
+  var fm = $('#f-mech'), d = driverOf(val('f-date'), val('f-truck')); if (!fm) return;
+  if (fm.tagName === 'SELECT' && d && !Array.prototype.some.call(fm.options, function(o){ return o.value === d; })) fm.insertAdjacentHTML('beforeend', opt(d, d, false));
+  fm.value = d;
 }
 
 /* ---------- tableau de bord ---------- */
@@ -2322,19 +2449,29 @@ function ring(frac, big, small, label){
 }
 /* how much of this week's open time is already booked */
 function weekLoad(){
-  var wk = weekOf(today()), sm = slotMin(), cols = mechanics().length ? mechanics() : ['_all'], open = 0, booked = 0;
-  wk.forEach(function(d){ var info = dayInfo(d); if (!info.open && !info.opened.length) return; cols.forEach(function(c){ for (var m = 5 * 60; m < 23 * 60 + 30; m += sm){ if (slotOpen(info, c, toHM(m))) open += sm; } }); });
-  S.jobs.forEach(function(j){ if (wk.indexOf(j.date) >= 0 && j.status !== 'annule') booked += (+j.durationMin || 60); });
+  var wk = weekOf(today()), sm = slotMin(), cols = routeCols().length ? routeCols() : ['_all'], open = 0, booked = 0;
+  wk.forEach(function(d){ var info = dayInfo(d); cols.forEach(function(c){ for (var m = 5 * 60; m < 23 * 60 + 30; m += sm){ if (slotOpen(info, c, toHM(m))) open += sm; } }); });
+  S.jobs.forEach(function(j){ if (wk.indexOf(j.date) >= 0 && !isOff(j)) booked += (+j.durationMin || 60); });
   return {open:open, booked:booked, frac:open ? Math.min(1, booked / open) : 0};
+}
+/* cancellations of a month (amount lost, in negative) and no-shows */
+function monthLoss(jobs, mk){
+  var o = {sum:0, n:0, ns:0};
+  jobs.forEach(function(j){ if (String(j.date || '').slice(0, 7) !== mk) return; if (j.status === 'annule'){ o.n++; o.sum += num(j.lost && j.lost.amount); } else if (j.status === 'noshow') o.ns++; });
+  o.sum = r2(o.sum); return o;
+}
+function lossLine(jobs, mk){
+  var o = monthLoss(jobs, mk); if (!o.n && !o.ns) return '';
+  return '<p class="lossline" id="d-loss">' + (o.n ? 'Annulations : <b>' + esc(money(o.sum)) + '</b> (' + o.n + ' job' + (o.n > 1 ? 's' : '') + ')' : '') + (o.n && o.ns ? ' · ' : '') + (o.ns ? o.ns + ' no-show' + (o.ns > 1 ? 's' : '') : '') + '</p>';
 }
 function byWhen(a, b){ return String(a.date).localeCompare(String(b.date)) || String(a.time).localeCompare(String(b.time)); }
 function viewDash(){
   var t = today(), now = nowHM(), money_ = allow('money'), lm = lockedMech(), e = ext(), w = canWrite();
   var jobs = S.jobs.filter(function(j){ return !lm || norm(j.mechanic) === norm(lm); });
-  var todays = jobs.filter(function(j){ return j.date === t && j.status !== 'annule'; }).sort(byWhen);
+  var todays = jobs.filter(function(j){ return j.date === t && !isOff(j); }).sort(byWhen);
   var cnt = {planifie:0, route:0, place:0, termine:0};
   todays.forEach(function(j){ var k = j.status || 'planifie'; if (k in cnt) cnt[k]++; });
-  var upcoming = jobs.filter(function(j){ return j.status !== 'annule' && j.status !== 'termine' && (j.date > t || (j.date === t && (j.status === 'route' || j.status === 'place' || String(j.time || '') >= now))); }).sort(byWhen);
+  var upcoming = jobs.filter(function(j){ return !isOff(j) && j.status !== 'termine' && (j.date > t || (j.date === t && (j.status === 'route' || j.status === 'place' || String(j.time || '') >= now))); }).sort(byWhen);
   var name = e && typeof e.greetName === 'function' ? e.greetName() : '';
   var hr = new Date().getHours(), hello = hr >= 18 ? 'Bonsoir' : 'Bonjour';
   var top = '<div class="wrap top-in"><div class="brandrow"><div><div class="eyebrow">' + esc(bizName()) + ' · ' + esc(cap(dayLong(t))) + '</div><h1>' + esc(hello + (name ? ' ' + name : '')) + '</h1></div>' +
@@ -2346,6 +2483,8 @@ function viewDash(){
   if (w && allow('quick')) quick += '<button type="button" class="chip" data-act="quick">+ Facture sur place</button>';
   if (w && allow('newClient')) quick += '<button type="button" class="chip" data-act="cl-new">+ Nouveau client</button>';
   quick += '<button type="button" class="chip" data-act="tab" data-t="agenda">Ouvrir l\'agenda</button>';
+  if (lm) quick += '<button type="button" class="chip" data-act="tab" data-t="dispos">Mes disponibilités</button>';
+  else if (mechanics().length && canHours()) quick += '<button type="button" class="chip" data-act="tab" data-t="dispos">Disponibilités des mécanos</button>';
   if (lsGet('gm.ui') === 'full' && MQ && MQ.matches) quick += '<button type="button" class="chip" data-act="ui-phone">Version simple pour téléphone</button>';
   b += '<div class="dash"><div class="quick" role="group" aria-label="Raccourcis">' + quick + '</div>';
 
@@ -2368,7 +2507,7 @@ function viewDash(){
     var hero = '<section class="sect" aria-labelledby="d-rev"><div class="hero-in"><div><div class="eyebrow" id="d-rev">Revenus facturés en ' + esc(mName) + '</div><div class="kpi-big">' + esc(money(cur)) + '</div>' +
       '<div class="kpi-sub">' + (delta === null ? '<span class="delta flat">nouveau</span>' : '<span class="delta' + (delta < 0 ? ' down' : delta === 0 ? ' flat' : '') + '">' + (delta > 0 ? '+' : '') + delta + ' %</span>') + '<span>par rapport à ' + esc(DMONTH.format(parseISO(months[4] + '-01'))) + '</span></div>' +
       '<div class="pbar" aria-hidden="true"><i style="width:' + Math.round(Math.min(1, frac) * 100) + '%"></i></div>' +
-      '<p class="pbar-cap">' + (goal ? Math.round(frac * 100) + ' % de l\'objectif de ' + esc(money(goal)) : 'Payé : ' + esc(money(paid)) + ' sur ' + esc(money(cur)) + ' · ' + issuedN + ' facture' + (issuedN > 1 ? 's' : '')) + '</p></div>' +
+      '<p class="pbar-cap">' + (goal ? Math.round(frac * 100) + ' % de l\'objectif de ' + esc(money(goal)) : 'Payé : ' + esc(money(paid)) + ' sur ' + esc(money(cur)) + ' · ' + issuedN + ' facture' + (issuedN > 1 ? 's' : '')) + '</p>' + lossLine(jobs, months[5]) + '</div>' +
       '<div class="bars-wrap"><div class="eyebrow">6 derniers mois</div><div class="bars" role="img" aria-label="' + esc(months.map(function(m){ return DMONTH.format(parseISO(m + '-01')) + ' ' + money(sums[m]); }).join(', ')) + '">' +
       months.map(function(m, i){ var hgt = Math.max(4, Math.round(sums[m] / max * 100)); return '<div class="bar' + (i === 5 ? ' cur' : '') + '"><em>' + (sums[m] ? esc(kMoney(sums[m])) : '') + '</em><i style="height:' + hgt + '%"></i><small>' + esc(DMS.format(parseISO(m + '-01')).replace('.', '')) + '</small></div>'; }).join('') +
       '</div></div></div></section>';
@@ -2406,7 +2545,7 @@ function viewDash(){
     return '<button type="button" class="nrow" data-act="open" data-id="' + esc(j.id) + '"><span class="t">' + esc(hm(j.time)) + '<small>' + esc(j.date === t ? 'aujourd\'hui' : j.date === addDays(t, 1) ? 'demain' : dShort(j.date)) + '</small></span><span class="m"><b>' + esc(cl(j).name || 'Client') + '</b><span>' + esc([jobServices(j)[0], j.mechanic].filter(Boolean).join(' · ') || vehLabel(j)) + '</span></span>' + pill(j.status || 'planifie', ST[j.status || 'planifie']) + '</button>';
   }).join('');
   var since = addDays(t, -30), counts = {};
-  jobs.forEach(function(j){ if (j.status === 'annule' || j.date < since || j.date > t) return; jobServices(j).forEach(function(n){ var k = String(n).trim(); if (k) counts[k] = (counts[k] || 0) + 1; }); });
+  jobs.forEach(function(j){ if (isOff(j) || j.date < since || j.date > t) return; jobServices(j).forEach(function(n){ var k = String(n).trim(); if (k) counts[k] = (counts[k] || 0) + 1; }); });
   var topS = Object.keys(counts).sort(function(x, y){ return counts[y] - counts[x] || x.localeCompare(y, 'fr'); }).slice(0, 5), topMax = topS.length ? counts[topS[0]] : 1;
   b += '<div class="two"><section class="sect" aria-labelledby="d-next"><div class="sect-head"><h3 id="d-next">À venir</h3>' + (upcoming.length > 5 ? '<button type="button" class="linkbtn" data-act="tab" data-t="agenda">Tout voir</button>' : '') + '</div>' +
     (nextList ? '<div class="nextlist">' + nextList + '</div>' : '<p class="muted">Rien à l\'horaire pour l\'instant.</p>') + '</section>' +
@@ -2424,11 +2563,12 @@ function viewJob(){
   var c = cl(j), v = j.vehicle || {}, st = j.status || 'planifie', w = canWrite(), is = invState(j);
   var body = banners();
   body += '<section class="sect"><div class="sect-head"><div><div class="eyebrow">' + esc(cap(dayLong(j.date))) + '</div><div class="when">' + esc(hm(j.time)) + (j.durationMin ? ' · ' + esc(dur(j.durationMin)) + ' <small class="muted" style="font-size:15px">(' + esc(unitsLabel(unitsOf(j.durationMin))) + ')</small>' : '') + '</div></div>' + pill(st, ST[st]) + '</div>';
-  if (j.mechanic) body += '<p class="muted">Mécano : <strong style="color:var(--ink)">' + esc(j.mechanic) + '</strong></p>';
-  if (w && st !== 'annule'){
+  if (j.mechanic || truckMode()) body += '<p class="muted">' + (truckMode() ? 'Camion : <strong style="color:var(--ink)">' + esc(colName(jobCol(j))) + '</strong>' + (j.mechanic ? ' · ' : '') : '') + (j.mechanic ? 'Mécano : <strong style="color:var(--ink)">' + esc(j.mechanic) + '</strong>' : '') + '</p>';
+  if (w && !isOffSt(st)){
     body += '<div class="seg" role="group" aria-label="Statut de la job">' + ST_FLOW.map(function(k){ return '<button type="button" class="' + k + (k === st ? ' on' : '') + '" data-act="status" data-v="' + k + '" aria-pressed="' + (k === st) + '">' + ST[k] + '</button>'; }).join('') + '</div>';
+    if (st !== 'termine') body += offRow();
   }
-  if (w && st === 'annule') body += '<button type="button" class="btn" data-act="status" data-v="planifie">Remettre la job à l\'agenda</button>';
+  if (isOffSt(st)) body += offBanner(j) + (w ? '<button type="button" class="btn" data-act="status" data-v="planifie">Remettre la job à l\'agenda</button>' : '');
   body += '</section>';
   if (ext() && typeof ext().jobExtra === 'function') body += ext().jobExtra(j) || '';
 
@@ -2451,6 +2591,7 @@ function viewJob(){
     '<div><dt>' + (jobServices(j).length > 1 ? 'Services' : 'Service') + '</dt><dd>' + (jobServices(j).length ? '<div class="tags">' + jobServices(j).map(function(n){ return '<span class="tag">' + esc(n) + '</span>'; }).join('') + '</div>' : '—') + '</dd></div>' +
     (j.problem ? '<div><dt>Ce que le client décrit</dt><dd>' + esc(j.problem) + '</dd></div>' : '') +
     (j.notes ? '<div><dt>Notes pour le mécano</dt><dd>' + esc(j.notes) + '</dd></div>' : '') + '</dl></section>';
+  body += '<section class="sect"><h3>Travaux faits</h3>' + doneHTML(j, w) + '</section>';
 
   body += '<section class="sect"><h3>Facture</h3>';
   if (is === 'none'){
@@ -2463,7 +2604,6 @@ function viewJob(){
 
   if (w){
     body += '<div class="actions"><button type="button" class="btn block" data-act="edit" data-id="' + esc(j.id) + '">Modifier la réservation</button>';
-    if (st !== 'annule' && st !== 'termine') body += '<button type="button" class="btn ghost block" data-act="status" data-v="annule">Annuler la job (le client ne vient plus)</button>';
     if (is === 'unpaid' || is === 'paid'){
       body += '<p class="muted small">Cette job a une facture finalisée : elle reste au carnet pour ta comptabilité.</p>';
     } else if (!S.confirmDel){
@@ -2499,6 +2639,11 @@ function clientCardHTML(c, canChange){
   return '<div class="ccard"><div class="ccard-main"><b>' + esc(clientName(c)) + '</b><span>' + esc(c.phone || '') + '</span><span>' + esc(addrFull(c)) + '</span>' + (p ? '<span class="small muted">Zone ' + esc(p.fsa + ' · ' + p.name) + '</span>' : '') + '</div>' +
     (canChange ? '<button type="button" class="btn sm" data-act="cs-change">Changer</button>' : '') + '</div>';
 }
+function bookNoShow(j, draft){
+  var c = S.formClient || {}, ns = noShowsOf(c.id), full = c.id ? findClient(c.id) : null; if (!ns.length) return '';
+  var on = !!((j && j.cardOnFile) || (draft && draft.cardOnFile) || (full && full.cardOnFile));
+  return '<div class="banner warn noshow-warn" id="ns-box"><p><b>No-show : ' + ns.length + ' fois</b> (' + esc(nsDates(ns)) + '). Prends une carte au dossier avant de confirmer.</p><label class="check"><input type="checkbox" id="f-card"' + (on ? ' checked' : '') + '> Carte au dossier prise</label></div>';
+}
 function formPostal(){ var c = S.formClient; return c ? (c.postal || findPostal(c.address)) : ''; }
 function buildEdit(id, quick, draft, preset, inSheet, clientArg){
   var j = id ? findJob(id) : null;
@@ -2512,10 +2657,17 @@ function buildEdit(id, quick, draft, preset, inSheet, clientArg){
     if (!clientArg){ S.formClient = null; S.editId = null; S.quick = !!quick; return openClientStep(); }
   }
   S.formClient = j ? ((j.clientId && findClient(j.clientId)) ? clientSnap(findClient(j.clientId)) : clone(j.client || {})) : clientArg;
-  var d = j ? clone(j) : (draft || {client:{}, vehicle:{}, date:quick ? today() : (S.day || today()), time:quick ? nowHM() : '', durationMin:60, mechanic:S.mech || '', problem:'', notes:''});
+  var d = j ? clone(j) : (draft || {client:{}, vehicle:{}, date:quick ? today() : (S.day || today()), time:quick ? nowHM() : '', durationMin:60, mechanic:truckMode() ? '' : (S.mech || ''), truck:truckMode() ? ((S.mech && truckById(S.mech)) ? S.mech : firstTruck()) : '', problem:'', notes:''});
   d.client = d.client || {}; d.vehicle = d.vehicle || {};
   S.formCtx = {preset:preset || null, inSheet:!!inSheet};
-  if (preset && !j){ if (preset.date) d.date = preset.date; if (preset.time) d.time = preset.time; if (preset.mechanic != null) d.mechanic = preset.mechanic; }
+  if (preset && !j){
+    if (preset.date) d.date = preset.date; if (preset.time) d.time = preset.time;
+    if (preset.col != null && preset.col !== '_all' && preset.col !== '_none'){ if (truckMode()) d.truck = preset.col; else d.mechanic = preset.col; }
+    if (preset.mechanic != null) d.mechanic = preset.mechanic;
+  }
+  S.mechTouched = false;
+  if (truckMode() && !j){ if (!d.truck || !truckById(d.truck)) d.truck = firstTruck(); if (!d.mechanic && !lockedMech()) d.mechanic = driverOf(d.date, d.truck); }
+  if (truckMode() && j && !d.truck) d.truck = jobCol(j);
   if (!inSheet) S.screen = 'edit';
   S.editId = id || null; S.quick = !!quick; renderNav();
   draftExists = !!draft;
@@ -2527,7 +2679,7 @@ function buildEdit(id, quick, draft, preset, inSheet, clientArg){
   var body = '<form id="jobform" class="stack" novalidate>' +
     (draft ? '<div class="banner" id="draftbanner"><p>On a repris ton brouillon' + (draft.savedAt ? ' sauvegardé le ' + esc(dayLong(isoDate(new Date(draft.savedAt)))) + ' à ' + esc(hm(pad(new Date(draft.savedAt).getHours()) + ':' + pad(new Date(draft.savedAt).getMinutes()))) : '') + '.</p><button type="button" class="btn sm" data-act="draft-reset">Recommencer à zéro</button></div>' : '') +
     (auto ? '<p id="draftmsg" class="hint draftmsg' + (draft ? ' ok' : '') + '" aria-live="polite">' + (draft ? 'Brouillon sauvegardé' : 'Sauvegarde automatique : tout ce que tu tapes est gardé, même si tu fermes.') + '</p>' : '') +
-    '<section class="sect" data-step="1"><h3>Client</h3>' + clientCardHTML(S.formClient, !id) +
+    '<section class="sect" data-step="1"><h3>Client</h3>' + clientCardHTML(S.formClient, !id) + bookNoShow(j, draft) +
       '<div id="sugbox" class="sugbox" aria-live="polite" hidden></div>' +
     '</section>' +
     '<section class="sect" data-step="1"><h3>Véhicule</h3>' +
@@ -2548,6 +2700,7 @@ function buildEdit(id, quick, draft, preset, inSheet, clientArg){
       '<div class="grid2">' + inputF('f-date', 'Date', d.date, 'type="date" required') + inputF('f-time', 'Heure', d.time, 'type="time" step="' + (unitMin() * 60) + '" required') + '</div>' +
       '<div id="hourmsg" class="hint warn" aria-live="polite"></div>' +
       '<div id="momentmsg" class="moment" aria-live="polite"></div>' +
+      (truckMode() ? '<div class="field"><label for="f-truck">Camion</label><select id="f-truck">' + trucks().map(function(t){ return opt(t.id, (t.name || 'Camion') + (t.on === false ? ' (fermé)' : ''), d.truck === t.id); }).join('') + '</select></div>' : '') +
       '<div class="grid2 stack-sm"><div class="field"><label for="f-units">Durée · 1 unité = ' + unitMin() + ' min</label><div class="stepper"><button type="button" class="iconbtn" data-act="units" data-v="-1" aria-label="Une unité de moins">−</button><input id="f-units" inputmode="numeric" autocomplete="off" maxlength="2" aria-describedby="f-units-lbl" value="' + unitsOf(d.durationMin || 60) + '"><button type="button" class="iconbtn" data-act="units" data-v="1" aria-label="Une unité de plus">+</button></div><div id="f-units-lbl" class="hint"></div></div>' + mechField + '</div>' +
       '<div class="field"><label for="f-notes">Notes pour le mécano</label><textarea id="f-notes" placeholder="Code de porte, stationnement, pièce déjà commandée…">' + esc(d.notes) + '</textarea></div>' +
     '</section>' +
@@ -2633,7 +2786,7 @@ function renderPicked(){
   var hs = svcHours(PK.picked);
   box.innerHTML = PK.picked.map(function(n, i){ var p = catalogPrice(n), t = hs[i], tag = [p != null ? money(p) : '', t ? '≈ ' + hrsTxt(t.h) : ''].filter(Boolean).join(' · '); return '<span class="pchip">' + esc(n) + (tag ? ' <small>' + esc(tag) + '</small>' : '') + '<button type="button" data-act="unpick" data-v="' + i + '" aria-label="Retirer ' + esc(n) + '">✕</button></span>'; }).join('');
   var inp = $('#f-svc-in'); if (inp) inp.placeholder = PK.picked.length ? 'Ajouter un autre service…' : 'Tape pour chercher : huile, freins, alternateur…';
-  renderEstimate();
+  renderEstimate(); doneAmt();
 }
 /* service search: every typed word can be anywhere in the phrase (even inside a word), accents and apostrophes ignored */
 function svcFold(t){ return norm(String(t || '').replace(/['’`´\-–(),.\/]/g, ' ')).replace(/\s+/g, ' ').trim(); }
@@ -2708,11 +2861,14 @@ function bindPicker(){
 /* autosave of the form draft (private to the person filling it) */
 function setDraftMsg(t, cls){ var m = $('#draftmsg'); if (!m) return; m.textContent = t; m.className = 'hint draftmsg' + (cls ? ' ' + cls : ''); }
 function collectForm(){
-  return {
+  var out = {
     client:S.formClient ? clone(S.formClient) : {}, clientId:(S.formClient && S.formClient.id) || null,
     vehicle:{vin:val('f-vin').toUpperCase(), year:val('f-year'), make:val('f-make'), model:val('f-model'), plate:val('f-plate').toUpperCase(), km:val('f-km')},
     services:PK.picked.slice(), problem:val('f-prob'), date:val('f-date'), time:val('f-time'), durationMin:formDur(), mechanic:val('f-mech'), notes:val('f-notes')
   };
+  if ($('#f-card')) out.cardOnFile = $('#f-card').checked;
+  if ($('#f-truck')) out.truck = val('f-truck');
+  return out;
 }
 function hasContent(d){ var v = d.vehicle; return !!(d.clientId || v.vin || v.year || v.make || v.model || v.plate || v.km || d.services.length || d.problem || d.notes || val('f-svc-in')); }
 function formChanged(){
@@ -2754,8 +2910,10 @@ function bindForm(){
   f.addEventListener('input', formChanged);
   f.addEventListener('change', formChanged);
   f.addEventListener('submit', submitJob);
-  ['f-date', 'f-time', 'f-mech'].forEach(function(id){ var el = $('#' + id); if (el) el.addEventListener('change', checkHours); });
-  ['f-date', 'f-time', 'f-mech'].forEach(function(id){ var el = $('#' + id); if (el) el.addEventListener('change', function(){ renderSug(); updateMoment(); updateSheetSub(); }); });
+  ['f-date', 'f-truck'].forEach(function(id){ var el = $('#' + id); if (el) el.addEventListener('change', syncMech); });
+  var fmk = $('#f-mech'); if (fmk) fmk.addEventListener('change', function(){ S.mechTouched = true; });
+  ['f-date', 'f-time', 'f-mech', 'f-truck'].forEach(function(id){ var el = $('#' + id); if (el) el.addEventListener('change', checkHours); });
+  ['f-date', 'f-time', 'f-mech', 'f-truck'].forEach(function(id){ var el = $('#' + id); if (el) el.addEventListener('change', function(){ renderSug(); updateMoment(); updateSheetSub(); }); });
   $('#f-units').addEventListener('input', function(e){ var c = e.target.value.replace(/\D/g, '').slice(0, 2); if (c !== e.target.value) e.target.value = c; PK.durAuto = false; unitsChanged(); renderEstimate(); });
   $('#f-units').addEventListener('blur', function(e){ var u = parseInt(e.target.value, 10); e.target.value = u > 0 ? Math.min(u, 96) : unitsOf(60); unitsChanged(); });
   bindPicker();
@@ -2783,6 +2941,8 @@ function submitJob(e){
   p.then(function(ok){
     if (!ok){ btn.disabled = false; return; }
     deleteDraft(dpath);
+    var fc = data.cardOnFile && data.clientId ? findClient(data.clientId) : null;
+    if (fc && !fc.cardOnFile) write('clients/' + fc.id, function(){ return S.db.doc('clients/' + fc.id).update({cardOnFile:today(), updatedAt:Date.now()}); }, '');
     S.day = data.date; S.jobId = id; S.confirmDel = false;
     if (S.quick && !S.editId){ if (S.sheet) closeSheet(); S.quick = false; openInvoice(id, data); return; }
     if (S.sheet){ closeSheet(); return; }
@@ -2799,7 +2959,7 @@ function openInvoice(id, fresh){
   if (!base.lines.length){
     var rate = cfg().rate ? String(cfg().rate).replace('.', ',') : '';
     /* a service without a set price is billed like a dealership: estimated hours × hourly rate */
-    var js0 = jobServices(j), hs0 = svcHours(js0);
+    var js0 = jobWork(j), hs0 = svcHours(js0);
     js0.forEach(function(n, i){ var cp = catalogPrice(n), t = hs0[i], pr = promoByName(n); base.lines.push({type:pr ? 'forfait' : 'mo', desc:pr ? promoDesc(pr) : n, qty:cp == null && t ? fmtQty(t.h) : '1', price:cp != null ? String(cp).replace('.', ',') : rate}); });
     if (!base.lines.length) base.lines.push({type:'mo', desc:'', qty:'1', price:rate});
   }
@@ -2908,7 +3068,7 @@ function saveInvoice(finalize){
       paid:!!inv.paid, method:inv.paid ? inv.method : '', paidAt:inv.paid ? (inv.paidAt || today()) : null, note:inv.note,
       number:number, issuedAt:number ? (inv.issuedAt || today()) : null, updatedAt:Date.now()};
     var patch = {invoice:out, updatedAt:Date.now()};
-    if (finalize && j.status !== 'termine' && j.status !== 'annule') patch.status = 'termine';
+    if (finalize && j.status !== 'termine' && !isOff(j)) patch.status = 'termine';
     return write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update(patch); }, finalize ? 'Facture ' + number + ' enregistrée' : 'Brouillon gardé');
   }).then(function(ok){
     if (!ok){ bF.disabled = false; if (bD) bD.disabled = false; return; }
@@ -3141,7 +3301,9 @@ function viewSettings(){
       [1,2,3,4,5,6,0].map(function(dw){ var h = weekHours(dw); return '<div class="hrow"><label class="check"><input type="checkbox" id="h-' + dw + '-open"' + (h.open ? ' checked' : '') + dis + '> ' + DOW_FR[dw] + '</label><select id="h-' + dw + '-start" aria-label="Ouverture le ' + DOW_FR[dw].toLowerCase() + '"' + dis + '>' + timeOpts(h.start) + '</select><span class="muted">à</span><select id="h-' + dw + '-end" aria-label="Fermeture le ' + DOW_FR[dw].toLowerCase() + '"' + dis + '>' + timeOpts(h.end) + '</select></div>'; }).join('') +
       '<div class="field"><label for="s-slot">Durée d\'une unité (une case de l\'agenda)</label><select id="s-slot"' + dis + '>' + [10,15,30,60].map(function(m){ return opt(m, '1 unité = ' + dur(m), slotMin() === m); }).join('') + '</select></div>' +
     '</section>' +
-    '<section class="sect"><h3>Mécanos</h3><div class="field"><label for="s-mechs">Un nom par ligne</label><textarea id="s-mechs"' + dis + '>' + esc(mechanics().join('\n')) + '</textarea></div></section>' +
+    '<section class="sect"><h3>Mécanos</h3><div class="field"><label for="s-mechs">Un nom par ligne</label><textarea id="s-mechs"' + dis + '>' + esc(mechanics().join('\n')) + '</textarea></div>' + (mechanics().length ? '<a class="btn sm" href="#dispos">Disponibilités des mécanos</a>' : '') + '</section>' +
+    '<section class="sect"><h3>Camions</h3><p class="muted small">Chaque camion est une colonne de l\'horaire. Un camion fermé reste visible, mais on ne peut pas y réserver. Le mécano habituel part avec le camion, sauf si tu changes pour une journée dans l\'agenda.</p><div id="trucks-box" class="stack">' +
+      trucks().map(function(t){ return truckRow(t, dis); }).join('') + '</div>' + (adm ? '<button type="button" class="btn sm" data-act="addtruckrow">+ Ajouter un camion</button>' : '') + '</section>' +
     '<section class="sect"><h3>Factures</h3><div class="grid2">' + inputF('s-prefix', 'Préfixe du numéro', prefix(), 'class="mono" autocomplete="off" maxlength="8"' + dis) + inputF('s-start', 'Numéroter à partir de', c.startNo || 1, 'inputmode="numeric" autocomplete="off"' + dis) + '</div>' +
       '<div class="field"><label for="s-footer">Texte au bas de la facture</label><textarea id="s-footer" placeholder="Ex. Garantie de 12 mois sur les pièces et la main-d\'œuvre. Merci !"' + dis + '>' + esc(c.footer) + '</textarea></div></section>' +
     (adm ? '<div class="actions"><button type="submit" class="btn primary block" id="s-save">Enregistrer les réglages</button><button type="button" class="btn ghost block" data-act="setreset" id="s-reset" hidden>Annuler les changements</button></div>' : '') +
@@ -3172,6 +3334,9 @@ function saveSettings(e){
   [0,1,2,3,4,5,6].forEach(function(dw){ var st = $('#h-' + dw + '-start').value, en = $('#h-' + dw + '-end').value, op = $('#h-' + dw + '-open').checked; if (op && en <= st && !bad) bad = DOW_FR[dw]; hours[String(dw)] = {open:op, start:st, end:en}; });
   if (bad){ toast('Le ' + bad.toLowerCase() + ', la fermeture doit être après l\'ouverture.'); return; }
   data.hours = hours; data.slotMin = +$('#s-slot').value || 10;
+  var tks = $$('#trucks-box .tk-row').map(function(r){ return {id:r.dataset.id, name:r.querySelector('[data-f="name"]').value.trim() || 'Camion', on:r.querySelector('[data-f="on"]').checked, mech:r.querySelector('[data-f="mech"]').value}; });
+  data = Object.assign(clone(cfg()), data);
+  if ($('#trucks-box')) data.trucks = tks;
   data.homePostal = normPostal(val('s-home'));
   if (data.homePostal && !PC_RE.test(data.homePostal)){ toast('Le code postal du point de départ n\'est pas valide (ex. H4P 2B5).'); return; }
   if (data.homePostal && !ptOf(data.homePostal)){ toast('Zone ' + fsaOf(data.homePostal) + ' introuvable : les distances depuis le point de départ ne seront pas calculées.'); }
@@ -3259,7 +3424,7 @@ document.addEventListener('click', function(e){
       if (S.hoursEdit){ if (canHours()) toggleSlot(S.day, sc, stt); break; }
       if (!canBook()) break;
       if (!slotOpen(dayInfo(S.day), sc, stt)){ toast(canHours() ? "Case fermée. Touche « Ouvrir / fermer l'horaire » pour l'ouvrir." : 'Case fermée : on ne peut pas réserver à cette heure.'); break; }
-      openEdit(null, false, {date:S.day, time:stt, mechanic:(sc === '_all' || sc === '_none') ? '' : sc}, true);
+      openEdit(null, false, {date:S.day, time:stt, col:sc}, true);
       break;
     }
     case 'sheet-close': flushDraft(); flushClientDraft(); closeSheet(); break;
@@ -3278,7 +3443,8 @@ document.addEventListener('click', function(e){
       var fd = $('#f-date'), ft = $('#f-time'), fm = $('#f-mech'), mv = b.dataset.m || '';
       if (fd) fd.value = b.dataset.d;
       if (ft) ft.value = b.dataset.t;
-      if (fm){ if (fm.tagName === 'SELECT' && mv && !Array.prototype.some.call(fm.options, function(o){ return o.value === mv; })) fm.insertAdjacentHTML('beforeend', opt(mv, mv, false)); fm.value = mv; }
+      if (truckMode()){ var ftk = $('#f-truck'); if (ftk && mv) ftk.value = mv; syncMech(); }
+      else if (fm){ if (fm.tagName === 'SELECT' && mv && !Array.prototype.some.call(fm.options, function(o){ return o.value === mv; })) fm.insertAdjacentHTML('beforeend', opt(mv, mv, false)); fm.value = mv; }
       checkHours(); renderSug(); updateMoment(); updateSheetSub(); formChanged();
       var mm = $('#momentmsg'); if (mm && mm.scrollIntoView) mm.scrollIntoView({block:'nearest'});
       break;
@@ -3290,7 +3456,7 @@ document.addEventListener('click', function(e){
       if (S.hoursEdit){ if (canHours()) toggleWeekSlot(wd, wt); break; }
       if (!canBook()) break;
       if (!weekSlotOpen(dayInfo(wd), wt)){ toast(canHours() ? "Case fermée. Touche « Ouvrir / fermer l'horaire de la semaine » pour l'ouvrir." : 'Case fermée : on ne peut pas réserver à cette heure.'); break; }
-      openEdit(null, false, {date:wd, time:wt, mechanic:(S.mech && mechanics().indexOf(S.mech) >= 0) ? S.mech : ''}, true);
+      openEdit(null, false, {date:wd, time:wt, col:(S.mech && routeCols().indexOf(S.mech) >= 0) ? S.mech : ''}, true);
       break;
     }
     case 'hours-edit': S.hoursEdit = !S.hoursEdit && canHours(); render(); if (S.hoursEdit){ var hp = $('#hours-panel'); if (hp) hp.scrollIntoView({block:'nearest'}); } break;
@@ -3314,7 +3480,15 @@ document.addEventListener('click', function(e){
     case 'today': S.day = today(); render(); break;
     case 'mech': S.mech = v || ''; lsSet('gm.mech', S.mech); render(); break;
     case 'invf': S.invFilter = v; render(); break;
-    case 'status': changeStatus(v); break;
+    case 'status': statusAct(v); break;
+    case 'cancel': openCancel(findJob(S.jobId)); break;
+    case 'noshow': openNoShow(findJob(S.jobId)); break;
+    case 'cx-why': S.cxWhy = v; $$('[data-act="cx-why"]').forEach(function(x){ var on = x.dataset.v === v; x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on)); }); break;
+    case 'cx-yes': confirmCancel(); break;
+    case 'ns-yes': closeSheet(); changeStatus('noshow', {noshowAt:Date.now()}); break;
+    case 'done-edit': openDone(findJob(S.jobId), false); break;
+    case 'done-finish': openDone(findJob(S.jobId), true); break;
+    case 'done-save': saveDone(); break;
     case 'edit': openEdit(id, false); break;
     case 'del': S.confirmDel = true; render(); break;
     case 'del-no': S.confirmDel = false; render(); break;
@@ -3350,14 +3524,32 @@ document.addEventListener('click', function(e){
     case 'copytext': { var cj = findJob(S.jobId); if (cj) copyText(invoiceText(cj), 'Facture copiée'); break; }
     case 'copy': copyText(v, 'Copié'); break;
     case 'vinyear': { var y = $('#f-year'); if (y){ y.value = v; } updateVinMsg(); break; }
+    case 'truck-toggle': toggleTruck(v); break;
+    case 'addtruckrow': { var tb = $('#trucks-box'); if (tb){ var nn = $$('#trucks-box .tk-row').reduce(function(mx, r){ return Math.max(mx, parseInt(String(r.dataset.id).replace(/\D/g, ''), 10) || 0); }, 0) + 1; tb.insertAdjacentHTML('beforeend', truckRow({id:'c' + nn, name:'Camion ' + nn, on:false, mech:''}, '')); S.settingsDirty = true; var rr = $('#s-reset'); if (rr) rr.hidden = false; } break; }
     case 'addsvcrow': { var box = $('#svcs-box'); if (box){ box.insertAdjacentHTML('beforeend', svcRow({name:'', price:''}, svcSeq++, '')); S.settingsDirty = true; var r = $('#s-reset'); if (r) r.hidden = false; var inp = box.lastElementChild.querySelector('input'); if (inp) inp.focus(); } break; }
     case 'delsvc': { var row = b.closest('.svc-row'); if (row){ row.remove(); S.settingsDirty = true; var rr = $('#s-reset'); if (rr) rr.hidden = false; } break; }
     case 'setreset': S.settingsDirty = false; render(); break;
     case 'ph-day': S.day = addDays(S.day || today(), +v); render(); break;
     case 'ph-today': S.day = today(); render(); break;
-    case 'ph-book': openEdit(null, false, {date:S.day || today(), time:b.dataset.t, mechanic:b.dataset.m || ''}, false); break;
+    case 'ph-book': openEdit(null, false, {date:S.day || today(), time:b.dataset.t, col:b.dataset.m || ''}, false); break;
     case 'ph-new': openSheet('Ajouter', 'Que veux-tu faire ?', phoneNewMenu()); break;
-    case 'ph-go': { closeSheet(); if (v === 'new') openEdit(null, false, {date:S.tab === 'jour' ? (S.day || today()) : today()}, false); else if (v === 'quick') openEdit(null, true); else if (v === 'client') { S.linkJob = null; openClientNew('page'); } break; }
+    case 'ph-go': { closeSheet(); if (v === 'new') openEdit(null, false, {date:S.tab === 'jour' ? (S.day || today()) : today()}, false); else if (v === 'quick') openEdit(null, true); else if (v === 'client') { S.linkJob = null; openClientNew('page'); } else if (v === 'exp') openExpense(null); break; }
+    case 'av-mech': S.avMech = v; render(); break;
+    case 'tr-view': S.trView = v; render(); break;
+    case 'tr-kind': S.trP = {kind:v, key:trKey(v, trRange(trPeriod()).from)}; render(); break;
+    case 'tr-shift': S.trP = trShift(trPeriod(), +v); render(); break;
+    case 'tr-xlsx': exportXlsx(b); break;
+    case 'exp-new': openExpense(null); break;
+    case 'exp-open': openExpense(id); break;
+    case 'exp-receipt': showReceipt(id); break;
+    case 'exp-del': deleteExpense(); break;
+    case 'exp-del-no': { S.expDel = false; var xb = $('#x-delbox'); if (xb) xb.innerHTML = '<button type="button" class="btn ghost block danger-t" data-act="exp-del">Supprimer cette dépense</button>'; break; }
+    case 'x-pay': S.expPay = S.expPay === v ? '' : v; $$('[data-act="x-pay"]').forEach(function(x){ var on = x.dataset.v === S.expPay; x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on)); }); break;
+    case 'av-day': editAvail(function(cur){ var x = cur.week[v] || {on:false, start:'08:00', end:'17:00'}; x.on = !x.on; cur.week[v] = x; }); break;
+    case 'av-off-add': { var dd = val('av-off'); if (!dd){ toast('Choisis une date.'); break; } editAvail(function(cur){ if (cur.off.indexOf(dd) < 0) cur.off.push(dd); cur.off.sort(); }); break; }
+    case 'av-off-del': editAvail(function(cur){ cur.off = cur.off.filter(function(x){ return x !== v; }); }); break;
+    case 'av-reset': editAvail(function(cur){ cur.week = null; }); break;
+    case 'dispos-back': if (phone()){ if (location.hash !== '#plus') location.hash = 'plus'; else { S.tab = 'plus'; render(); } } else { S.tab = 'accueil'; if (location.hash) location.hash = 'accueil'; render(); } break;
     case 'ph-back': if (location.hash !== '#plus') location.hash = 'plus'; else { S.tab = 'plus'; render(); } break;
     case 'ph-sec': phoneSecShow(v); break;
     case 'wiz-next': wizNext(); break;
@@ -3365,7 +3557,7 @@ document.addEventListener('click', function(e){
     case 'ui-full': lsSet('gm.ui', 'full'); S.tab = 'accueil'; if (location.hash) location.hash = 'accueil'; render(); window.scrollTo(0, 0); break;
     case 'ui-phone': lsSet('gm.ui', null); S.tab = defTab(); if (location.hash) location.hash = S.tab; render(); window.scrollTo(0, 0); break;
     case 'ph-install': installApp(); break;
-    case 'dash-mech': S.mech = v || ''; lsSet('gm.mech', S.mech); S.day = today(); if (location.hash !== '#agenda') location.hash = 'agenda'; else { S.tab = 'agenda'; render(); } break;
+    case 'dash-mech': S.mech = truckMode() ? (truckOfMech(today(), v) || '') : (v || ''); lsSet('gm.mech', S.mech); S.day = today(); if (location.hash !== '#agenda') location.hash = 'agenda'; else { S.tab = 'agenda'; render(); } break;
     case 'dash-unpaid': S.invFilter = 'unpaid'; if (location.hash !== '#factures') location.hash = 'factures'; else { S.tab = 'factures'; render(); } break;
     default: if (ext() && typeof ext().onAction === 'function') ext().onAction(a, b);
   }
@@ -3412,6 +3604,7 @@ function boot(){
       db.doc('config/main').onSnapshot(function(snap){ S.cfg = snap.exists ? snap.data() : {}; render(); }, function(){});
       db.collection('clients').onSnapshot(function(snap){ S.clients = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); }); render(); if (S.sheet && $('#cs-results')) renderClientResults(); }, function(){});
       db.collection('days').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ m[d.id] = d.data(); }); S.days = m; render(); }, function(){});
+      db.collection('avail').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ var x = d.data(); if (x && x.mechanic) m[slug(x.mechanic)] = Object.assign({id:d.id}, x); }); S.avail = m; render(); }, function(){});
       render();
     });
   });
@@ -3422,9 +3615,9 @@ var DPH = new Intl.DateTimeFormat('fr-CA', {weekday:'long', day:'numeric', month
 function firstName(c){ return String((c && (c.firstName || c.name)) || '').trim().split(/\s+/)[0] || ''; }
 /* free time of one day: open slots where at least one mechanic has nothing booked */
 function dayGaps(d, info, sel){
-  var ms = mechanics(), sm = slotMin(), cols = sel ? [sel] : (ms.length ? ms : ['_all']), busy = {}, out = [], cur = null;
+  var ms = routeCols(), sm = slotMin(), cols = sel ? [sel] : (ms.length ? ms : ['_all']), busy = {}, out = [], cur = null;
   cols.forEach(function(c){ busy[c] = []; });
-  S.jobs.forEach(function(j){ if (j.date !== d || j.status === 'annule') return; var c = ms.length ? colKeyFor(j.mechanic) : '_all'; if (!busy[c]) return; var a = toMin(j.time); busy[c].push([a, a + (+j.durationMin || 60)]); });
+  S.jobs.forEach(function(j){ if (j.date !== d || isOff(j)) return; var c = ms.length ? jobCol(j) : '_all'; if (!busy[c]) return; var a = toMin(j.time); busy[c].push([a, a + (+j.durationMin || 60)]); });
   var nowM = d === today() ? toMin(nowHM()) : -1;
   for (var m = 5 * 60; m < 23 * 60 + 30; m += sm){
     var tt = toHM(m), free = m < nowM ? [] : cols.filter(function(c){ return slotOpen(info, c, tt) && !busy[c].some(function(b){ return m < b[1] && m + sm > b[0]; }); }), key = free.join('|');
@@ -3436,30 +3629,32 @@ function dayGaps(d, info, sel){
   return out.filter(function(g){ return g.end - g.start >= 30; }).map(function(g){ g.all = g.free.length === cols.length; return g; });
 }
 function viewDay(){
-  var d = S.day || today(), t = today(), info = dayInfo(d), ms = mechanics(), lm = lockedMech(), e = ext();
-  var sel = lm || (S.mech && ms.indexOf(S.mech) >= 0 ? S.mech : '');
-  var all = S.jobs.filter(function(j){ return j.date === d && (!sel || j.mechanic === sel); }).sort(byWhen);
-  var live = all.filter(function(j){ return j.status !== 'annule'; }), done = live.filter(function(j){ return j.status === 'termine'; }).length;
+  var d = S.day || today(), t = today(), info = dayInfo(d), ms = routeCols(), lm = lockedMech(), e = ext(), tm = truckMode();
+  var sel = (lm && !tm) ? lm : (S.mech && ms.indexOf(S.mech) >= 0 ? S.mech : '');
+  var all = S.jobs.filter(function(j){ return j.date === d && (!sel || jobCol(j) === sel) && (!lm || norm(j.mechanic) === norm(lm)); }).sort(byWhen);
+  var live = all.filter(function(j){ return !isOff(j); }), done = live.filter(function(j){ return j.status === 'termine'; }).length;
   var top = '<div class="wrap top-in"><div class="dayhead"><button type="button" class="iconbtn" data-act="ph-day" data-v="-1" aria-label="Jour précédent">‹</button>' +
     '<label class="daypick"><span class="dp-t">' + esc(cap(DPH.format(parseISO(d)).replace('.', ''))) + '</span><span class="dp-s">' + (d === t ? 'Aujourd\'hui · ' : '') + (live.length ? live.length + ' job' + (live.length > 1 ? 's' : '') + (done ? ' · ' + done + ' terminée' + (done > 1 ? 's' : '') : '') : 'Aucune job') + '</span>' +
     '<input type="date" id="ph-date" value="' + esc(d) + '" aria-label="Choisir une date"></label>' +
     '<button type="button" class="iconbtn" data-act="ph-day" data-v="1" aria-label="Jour suivant">›</button></div>' +
-    ((ms.length > 1 && !lm) || d !== t ? '<div class="dayopts">' + (ms.length > 1 && !lm ? '<select id="ph-mech" aria-label="Mécano"><option value="">Tous les mécanos</option>' + ms.map(function(m){ return '<option' + (m === sel ? ' selected' : '') + '>' + esc(m) + '</option>'; }).join('') + '</select>' : '') + (d !== t ? '<button type="button" class="chip" data-act="ph-today">Aujourd\'hui</button>' : '') + '</div>' : '') + '</div>';
+    ((!tm && ms.length > 1 && !lm) || d !== t ? '<div class="dayopts">' + (!tm && ms.length > 1 && !lm ? '<select id="ph-mech" aria-label="Mécano"><option value="">Tous les mécanos</option>' + ms.map(function(m){ return '<option' + (m === sel ? ' selected' : '') + '>' + esc(m) + '</option>'; }).join('') + '</select>' : '') + (d !== t ? '<button type="button" class="chip" data-act="ph-today">Aujourd\'hui</button>' : '') + '</div>' : '') +
+    (tm && !lm ? '<div class="chips trucks" role="group" aria-label="Camion">' + chip('mech', '', 'Tous', !sel) + ms.map(function(k){ var tr = truckById(k), dv = driverOf(d, k); return chip('mech', k, colName(k) + (tr.on === false ? ' · fermé' : dv ? ' · ' + dv : ''), sel === k); }).join('') + '</div>' : '') + '</div>';
   var b = banners();
   if (d === t && e && typeof e.phoneTop === 'function') b += e.phoneTop() || '';
   if (!S.loaded && !S.noDb) return {top:top, body:b + '<p class="muted">Ouverture du carnet…</p>'};
-  var closed = !info.open && !info.opened.length;
+  if (tm && !lm) b += crewHTML(d, true);
+  var closed = !dayAnyOpen(info);
   if (closed) b += '<div class="banner"><p><b>Fermé ce jour-là.</b></p>' + (canHours() ? '<button type="button" class="btn sm" data-act="day-open">Ouvrir cette journée</button>' : '') + '</div>';
   var rows = all.map(function(j, i){ return {at:toMin(j.time), job:j, i:i}; });
   if (canBook() && !closed) dayGaps(d, info, sel).forEach(function(g, i){ rows.push({at:g.start, gap:g, i:1000 + i}); });
   rows.sort(function(x, y){ return x.at - y.at || x.i - y.i; });
   var list = rows.map(function(r){
     if (r.gap){
-      var g = r.gap, who = (!g.all && g.free[0] !== '_all') ? ' · ' + g.free.join(', ') : '';
+      var g = r.gap, who = (!g.all && g.free[0] !== '_all') ? ' · ' + g.free.map(function(k){ return colLabel(k, d); }).join(', ') : '';
       return '<button type="button" class="ph-gap" data-act="ph-book" data-t="' + toHM(g.start) + '" data-m="' + esc(g.free.length === 1 && g.free[0] !== '_all' ? g.free[0] : sel) + '"><span class="pj-t">' + esc(hm(toHM(g.start))) + '</span><span class="pj-m">Libre jusqu\'à ' + esc(hm(toHM(g.end))) + esc(who) + '</span><span class="pg-add">+ Réserver</span></button>';
     }
     var j = r.job, c = cl(j), st = j.status || 'planifie';
-    return '<button type="button" class="ph-job s-' + st + '" data-act="open" data-id="' + esc(j.id) + '"><span class="pj-t">' + esc(hm(j.time)) + (j.durationMin ? '<small>' + esc(dur(j.durationMin)) + '</small>' : '') + '</span><span class="pj-m"><b>' + esc(c.name || 'Client') + '</b><span>' + esc([vehLabel(j), jobServices(j)[0]].filter(Boolean).join(' · ') || 'Service à préciser') + '</span>' + (!sel && ms.length > 1 && j.mechanic ? '<span>' + esc(j.mechanic) + '</span>' : '') + '</span>' + pill(st, ST[st]) + '</button>';
+    return '<button type="button" class="ph-job s-' + st + '" data-act="open" data-id="' + esc(j.id) + '"><span class="pj-t">' + esc(hm(j.time)) + (j.durationMin ? '<small>' + esc(dur(j.durationMin)) + '</small>' : '') + '</span><span class="pj-m"><b>' + esc(c.name || 'Client') + '</b><span>' + esc([vehLabel(j), jobServices(j)[0]].filter(Boolean).join(' · ') || 'Service à préciser') + '</span>' + (!sel && ms.length > 1 && (tm || j.mechanic) ? '<span>' + esc(tm ? colName(jobCol(j)) + (j.mechanic ? ' · ' + j.mechanic : '') : j.mechanic) + '</span>' : '') + '</span>' + pill(st, ST[st]) + '</button>';
   }).join('');
   if (list) b += '<div class="ph-list" aria-label="Horaire de la journée">' + list + '</div>';
   else if (!closed) b += '<div class="empty-card"><p>Aucune job ce jour-là.</p>' + (canBook() ? '<button type="button" class="btn primary" data-act="ph-book" data-t="" data-m="' + esc(sel) + '">+ Réserver</button>' : '') + '</div>';
@@ -3471,7 +3666,7 @@ function nextStep(j){
   var st = j.status || 'planifie', is = invState(j), who = firstName(cl(j)), e = ext();
   if (st === 'planifie') return {act:'status', v:'route', label:(e && e.tellsClient ? (typeof e.isMine === 'function' && !e.isMine(j) ? 'En route : aviser ' : 'Je pars : aviser ') + (who || 'le client') : 'Je pars')};
   if (st === 'route') return {act:'status', v:'place', label:'Je suis arrivé'};
-  if (st === 'place') return {act:'status', v:'termine', label:'Terminer la job'};
+  if (st === 'place') return {act:'done-finish', label:'Terminer la job'};
   if (st === 'termine') return is === 'none' || is === 'draft' ? {act:'invoice', id:j.id, label:is === 'draft' ? 'Continuer la facture' : 'Faire la facture'} : {act:'preview', id:j.id, label:'Voir la facture'};
   return null;
 }
@@ -3479,18 +3674,20 @@ function viewJobPhone(){
   var j = findJob(S.jobId);
   if (!j) return viewJob();
   var c = cl(j), v = j.vehicle || {}, st = j.status || 'planifie', w = canWrite(), is = invState(j), e = ext(), ph = String(c.phone || '').replace(/[^\d+]/g, ''), addr = addrFull(c);
-  var top = topBack(c.name || 'Client', 'back', cap(dShort(j.date)) + ' · ' + hm(j.time) + (j.mechanic ? ' · ' + j.mechanic : ''));
+  var top = topBack(c.name || 'Client', 'back', cap(dShort(j.date)) + ' · ' + hm(j.time) + (truckMode() ? ' · ' + colName(jobCol(j)) : '') + (j.mechanic ? ' · ' + j.mechanic : ''));
   var b = banners() + '<section class="sect pjob"><p class="pj-what"><b>' + esc(vehLabel(j) || 'Véhicule à préciser') + '</b><span>' + esc(jobServices(j).join(', ') || 'Service à préciser') + (j.durationMin ? ' · ' + esc(dur(j.durationMin)) : '') + '</span></p>' +
     '<div class="rounds">' +
       (ph ? '<a class="round" href="' + esc(telHref(c.phone)) + '"><span aria-hidden="true">' + RI.phone + '</span>Appeler</a><a class="round" href="sms:' + esc(ph) + '"><span aria-hidden="true">' + RI.sms + '</span>Texter</a>' : '') +
       (addr ? '<a class="round" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&amp;query=' + esc(encodeURIComponent(addr)) + '"><span aria-hidden="true">' + RI.pin + '</span>Itinéraire</a>' : '') +
     '</div>' +
-    (st !== 'annule' ? '<ol class="steps4" aria-label="Étapes">' + ST_FLOW.map(function(k, i){ var cur = ST_FLOW.indexOf(st); return '<li class="' + (i < cur ? 'past' : i === cur ? 'here' : '') + '"' + (i === cur ? ' aria-current="step"' : '') + '>' + ST[k] + '</li>'; }).join('') + '</ol>' : '<div class="banner warn"><p>Cette job est annulée.</p></div>') + '</section>';
+    (!isOffSt(st) ? '<ol class="steps4" aria-label="Étapes">' + ST_FLOW.map(function(k, i){ var cur = ST_FLOW.indexOf(st); return '<li class="' + (i < cur ? 'past' : i === cur ? 'here' : '') + '"' + (i === cur ? ' aria-current="step"' : '') + '>' + ST[k] + '</li>'; }).join('') + '</ol>' : offBanner(j)) + '</section>';
   if (e && typeof e.jobExtra === 'function') b += e.jobExtra(j) || '';
   var nx = w ? nextStep(j) : null;
   if (nx) b += '<button type="button" class="btn primary block nextbtn" data-act="' + nx.act + '"' + (nx.v ? ' data-v="' + nx.v + '"' : '') + (nx.id ? ' data-id="' + esc(nx.id) + '"' : '') + '>' + esc(nx.label) + '</button>';
-  if (w && st === 'annule') b += '<button type="button" class="btn primary block nextbtn" data-act="status" data-v="planifie">Remettre la job à l\'agenda</button>';
-  if (w) b += '<div class="field ph-st"><label for="ph-st">Corriger le statut</label><select id="ph-st">' + ['planifie','route','place','termine','annule'].map(function(k){ return '<option value="' + k + '"' + (k === st ? ' selected' : '') + '>' + ST[k] + '</option>'; }).join('') + '</select></div>';
+  if (w && isOffSt(st)) b += '<button type="button" class="btn primary block nextbtn" data-act="status" data-v="planifie">Remettre la job à l\'agenda</button>';
+  if (w && !isOffSt(st) && st !== 'termine') b += offRow();
+  if (st === 'place' || st === 'termine' || Array.isArray(j.done)) b += '<details class="sect fold"' + (st === 'place' ? ' open' : '') + '><summary>Travaux faits</summary>' + doneHTML(j, w) + '</details>';
+  if (w) b += '<div class="field ph-st"><label for="ph-st">Corriger le statut</label><select id="ph-st" data-keep="no">' + ['planifie','route','place','termine','annule','noshow'].map(function(k){ return '<option value="' + k + '"' + (k === st ? ' selected' : '') + '>' + ST[k] + '</option>'; }).join('') + '</select></div>';
   b += '<details class="sect fold"><summary>Client</summary><dl class="kv">' + (c.phone ? '<div><dt>Téléphone</dt><dd class="mono sel">' + esc(c.phone) + '</dd></div>' : '') + (addr ? '<div><dt>Adresse</dt><dd class="sel">' + esc(addr) + '</dd></div>' : '') + (c.email ? '<div><dt>Courriel</dt><dd class="sel">' + esc(c.email) + '</dd></div>' : '') + '</dl>' +
     (j.clientId && findClient(j.clientId) ? '<button type="button" class="btn sm" data-act="cl-open" data-id="' + esc(j.clientId) + '">Voir la fiche client</button>' : (w ? '<button type="button" class="btn sm" data-act="cl-link">Créer sa fiche client</button>' : '')) + '</details>';
   b += '<details class="sect fold"><summary>Véhicule</summary><dl class="kv"><div><dt>Modèle</dt><dd>' + esc(vehLabel(j) || '—') + '</dd></div>' + (v.vin ? '<div><dt>VIN</dt><dd class="vin sel">' + esc(v.vin) + '</dd></div>' : '') + (v.plate ? '<div><dt>Plaque</dt><dd class="mono">' + esc(v.plate) + '</dd></div>' : '') + (v.km ? '<div><dt>Kilométrage</dt><dd>' + esc(v.km) + ' km</dd></div>' : '') + '</dl></details>';
@@ -3515,14 +3712,18 @@ function phoneNewMenu(){
   if (canBook()) h += '<button type="button" class="ph-row big" data-act="ph-go" data-v="new"><b>Nouvelle réservation</b><span>Client, service, moment</span></button>';
   if (canWrite() && allow('quick')) h += '<button type="button" class="ph-row big" data-act="ph-go" data-v="quick"><b>Facture sur place</b><span>Client sans rendez-vous</span></button>';
   if (canWrite() && allow('newClient')) h += '<button type="button" class="ph-row big" data-act="ph-go" data-v="client"><b>Nouveau client</b><span>Créer sa fiche</span></button>';
+  if (canExpense()) h += '<button type="button" class="ph-row big" data-act="ph-go" data-v="exp"><b>Nouvelle dépense</b><span>Reçu, essence, pièces</span></button>';
   return h + '</div>';
 }
 /* everything else, tidied in one list */
 function viewPlus(){
   var e = ext(), items = [];
-  items.push({href:'#accueil', label:'Tableau de bord', sub:'Revenus, semaine, mécanos'});
+  if (tabOk('accueil')) items.push({href:'#accueil', label:'Tableau de bord', sub:'Revenus, semaine, mécanos'});
   if (e && typeof e.plusItems === 'function') items = items.concat(e.plusItems() || []);
-  if (canHours()) items.push({href:'#heures', label:'Heures d\'ouverture', sub:'Ouvrir ou fermer une journée'});
+  if (canHours()) items.push({href:'#heures', label:'Heures d\'ouverture', sub:truckMode() ? 'Camions, journées ouvertes ou fermées' : 'Ouvrir ou fermer une journée'});
+  if (lockedMech()) items.push({href:'#dispos', label:'Mes disponibilités', sub:'Mes jours, mes heures, mes congés'});
+  else if (mechanics().length && canHours()) items.push({href:'#dispos', label:'Disponibilités des mécanos', sub:'Leurs jours, leurs heures, leurs congés'});
+  if (canTresor() && tabOk('jour')) items.push({href:'#tresor', label:'Trésorerie', sub:'Dépenses, reçus, rapport, taxes'});
   if (tabOk('reglages')) items.push({href:'#reglages', label:'Réglages', sub:'Garage, prix, taxes, services, mécanos'});
   var top = '<div class="wrap top-in"><div class="brandrow"><div><div class="eyebrow">' + esc(bizName()) + '</div><h1>Plus</h1></div></div></div>';
   var b = banners() + '<nav class="ph-menu" aria-label="Plus">' + items.map(function(it){ return '<a class="ph-row" href="' + esc(it.href) + '"><span><b>' + esc(it.label) + '</b>' + (it.sub ? '<span>' + esc(it.sub) + '</span>' : '') + '</span>' + RI.chev + '</a>'; }).join('') + '</nav>';
@@ -3545,10 +3746,260 @@ function viewHours(){
   }
   var wk = [1,2,3,4,5,6,0].map(function(dw){ var h = weekHours(dw); return '<div class="hz-w"><span>' + DOW_FR[dw] + '</span><b>' + (h.open ? esc(hm(h.start)) + ' à ' + esc(hm(h.end)) : 'Fermé') + '</b></div>'; }).join('');
   var top = topBack('Heures d\'ouverture', 'ph-back', 'Plus');
-  var b = banners() + '<section class="sect"><h3>Les 2 prochaines semaines</h3><p class="muted small">Touche l\'interrupteur pour ouvrir ou fermer une journée.</p><div class="hzs">' + rows + '</div></section>' +
+  var tk = truckMode() ? '<section class="sect" id="hz-trucks"><h3>Camions</h3><p class="muted small">Un camion fermé reste dans l\'horaire, mais on ne peut pas y réserver.</p><div class="hzs">' + trucks().map(function(t){ var on = t.on !== false; return '<div class="hz' + (on ? '' : ' off') + '"><div class="hz-d"><b>' + esc(t.name || 'Camion') + '</b><span>' + (on ? 'Ouvert' + (t.mech ? ' · ' + esc(t.mech) : '') : 'Fermé') + '</span></div><button type="button" class="switch" role="switch" aria-checked="' + on + '" aria-label="' + esc(t.name || 'Camion') + ' en service" data-act="truck-toggle" data-v="' + esc(t.id) + '"' + (canAdmin() ? '' : ' disabled') + '><i></i></button></div>'; }).join('') + '</div></section>' : '';
+  var b = banners() + tk + '<section class="sect"><h3>Les 2 prochaines semaines</h3><p class="muted small">Touche l\'interrupteur pour ouvrir ou fermer une journée.</p><div class="hzs">' + rows + '</div></section>' +
     '<section class="sect"><h3>Horaire habituel</h3><div class="hzw">' + wk + '</div>' + (canAdmin() ? '<a class="btn block" href="#reglages" data-sec="Horaire">Modifier l\'horaire habituel</a>' : '') + '</section>';
   return {top:top, body:b};
 }
+/* ===================== Trésorerie : dépenses, reçus, rapport, taxes ===================== */
+var EXP_CATS = [['pieces','Pièces'],['fourn','Huile, filtres et liquides'],['essence','Essence'],['camion','Entretien des camions'],['outils','Outils et équipement'],['assur','Assurances'],['immat','Immatriculation et permis'],['tel','Téléphone et logiciels'],['pub','Publicité et cartes'],['salaires','Salaires et sous-traitants'],['banque','Frais bancaires et de paiement'],['loyer','Loyer et entrepôt'],['repas','Repas'],['autre','Autre']];
+var EXP_PAY = ['Débit', 'Crédit', 'Comptant', 'Virement', 'Chèque'];
+var TRM = new Intl.DateTimeFormat('fr-CA', {month:'long', year:'numeric'});
+function catLabel(k){ return (EXP_CATS.filter(function(c){ return c[0] === k; })[0] || ['', 'Autre'])[1]; }
+function findExp(id){ return (S.exps || []).filter(function(x){ return x.id === id; })[0] || null; }
+function ensureExps(){
+  if (S.expL || !S.db) return; S.expL = true;
+  S.db.collection('expenses').onSnapshot(function(snap){ S.exps = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); }); S.expLoaded = true; if (S.tab === 'tresor' && !S.sheet) render(); }, function(){ S.expLoaded = true; });
+}
+function lastDay(y, m){ return y + '-' + pad(m) + '-' + pad(new Date(+y, m, 0).getDate()); }
+function trKey(kind, iso){ var y = iso.slice(0, 4), m = +iso.slice(5, 7); return kind === 'year' ? y : kind === 'quarter' ? y + '-T' + (Math.floor((m - 1) / 3) + 1) : iso.slice(0, 7); }
+function trPeriod(){ return S.trP || {kind:'month', key:today().slice(0, 7)}; }
+function trRange(p){
+  var y = p.key.slice(0, 4);
+  if (p.kind === 'year') return {from:y + '-01-01', to:y + '-12-31', label:'Année ' + y};
+  if (p.kind === 'quarter'){ var q = +p.key.slice(-1), m0 = (q - 1) * 3 + 1; return {from:y + '-' + pad(m0) + '-01', to:lastDay(y, m0 + 2), label:(q === 1 ? '1er' : q + 'e') + ' trimestre ' + y}; }
+  return {from:p.key + '-01', to:lastDay(y, +p.key.slice(5, 7)), label:cap(TRM.format(parseISO(p.key + '-01')))};
+}
+function trShift(p, n){
+  var y = +p.key.slice(0, 4);
+  if (p.kind === 'year') return {kind:'year', key:String(y + n)};
+  if (p.kind === 'quarter'){ var q = +p.key.slice(-1) - 1 + n, yy = y + Math.floor(q / 4); q = ((q % 4) + 4) % 4; return {kind:'quarter', key:yy + '-T' + (q + 1)}; }
+  var d = new Date(y, +p.key.slice(5, 7) - 1 + n, 1); return {kind:'month', key:d.getFullYear() + '-' + pad(d.getMonth() + 1)};
+}
+/* everything for one period: revenue (invoices issued), expenses, profit, taxes to remit, per truck, cancellations */
+function trCalc(r){
+  var inR = function(d){ d = String(d || '').slice(0, 10); return d >= r.from && d <= r.to; };
+  var rev = {sub:0, tps:0, tvq:0, total:0, paid:0, n:0, list:[]}, exp = {sub:0, tps:0, tvq:0, total:0, n:0, byCat:{}, list:[]}, loss = {sum:0, n:0, ns:0, list:[]}, byTruck = {};
+  function tk(k){ return byTruck[k] || (byTruck[k] = {rev:0, exp:0}); }
+  S.jobs.forEach(function(j){
+    var v = j.invoice;
+    if (v && v.number && inR(v.issuedAt || j.date)){ rev.n++; rev.sub += num(v.sub); rev.tps += num(v.tps); rev.tvq += num(v.tvq); rev.total += num(v.total); if (v.paid) rev.paid += num(v.total); rev.list.push(j); if (truckMode()) tk(jobCol(j)).rev += num(v.sub); }
+    if (inR(j.date)){ if (j.status === 'annule'){ loss.n++; loss.sum += num(j.lost && j.lost.amount); loss.list.push(j); } else if (j.status === 'noshow') loss.ns++; }
+  });
+  (S.exps || []).forEach(function(x){ if (!inR(x.date)) return; exp.n++; exp.sub += num(x.sub); exp.tps += num(x.tps); exp.tvq += num(x.tvq); exp.total += num(x.total); var k = x.cat || 'autre'; exp.byCat[k] = (exp.byCat[k] || 0) + num(x.sub); if (x.truck) tk(x.truck).exp += num(x.sub); exp.list.push(x); });
+  ['sub','tps','tvq','total','paid'].forEach(function(k){ rev[k] = r2(rev[k]); }); ['sub','tps','tvq','total'].forEach(function(k){ exp[k] = r2(exp[k]); }); loss.sum = r2(loss.sum);
+  var taxed = cfg().taxesOn !== false;
+  return {rev:rev, exp:exp, loss:loss, byTruck:byTruck, taxed:taxed, profit:taxed ? r2(rev.sub - exp.sub) : r2(rev.total - exp.total), tpsDue:r2(rev.tps - exp.tps), tvqDue:r2(rev.tvq - exp.tvq)};
+}
+function viewTresor(){
+  ensureExps();
+  var v = S.trView === 'rap' ? 'rap' : 'dep', p = trPeriod(), r = trRange(p), c = trCalc(r), w = canExpense();
+  var top = '<div class="wrap top-in"><div class="brandrow"><div><div class="eyebrow">' + esc(bizName()) + '</div><h1>Trésorerie</h1></div>' + (w ? '<button type="button" class="btn primary sm" data-act="exp-new">+ Dépense</button>' : '') + '</div>' +
+    '<div class="chips" role="group" aria-label="Affichage">' + chip('tr-view', 'dep', 'Dépenses', v === 'dep') + chip('tr-view', 'rap', 'Rapport et taxes', v === 'rap') + '</div></div>';
+  var b = banners() + '<div class="trbar"><button type="button" class="iconbtn" data-act="tr-shift" data-v="-1" aria-label="Période précédente">‹</button><b id="tr-label">' + esc(r.label) + '</b><button type="button" class="iconbtn" data-act="tr-shift" data-v="1" aria-label="Période suivante">›</button>' +
+    '<div class="chips" role="group" aria-label="Période">' + chip('tr-kind', 'month', 'Mois', p.kind === 'month') + chip('tr-kind', 'quarter', 'Trimestre', p.kind === 'quarter') + chip('tr-kind', 'year', 'Année', p.kind === 'year') + '</div></div>';
+  b += '<div class="sum" id="tr-sum"><div class="stat"><b>' + esc(money(c.taxed ? c.rev.sub : c.rev.total)) + '</b><span>revenus' + (c.taxed ? ' avant taxes' : '') + '</span></div><div class="stat"><b>' + esc(money(c.taxed ? c.exp.sub : c.exp.total)) + '</b><span>dépenses' + (c.taxed ? ' avant taxes' : '') + '</span></div><div class="stat"><b class="' + (c.profit < 0 ? 'neg' : '') + '">' + esc(money(c.profit)) + '</b><span>profit</span></div></div>';
+  if (!S.expLoaded && S.db) b += '<p class="muted">Ouverture des dépenses…</p>';
+  else if (v === 'dep') b += expListHTML(c, w);
+  else b += reportHTML(c, r);
+  return {top:top, body:b};
+}
+function expListHTML(c, w){
+  var list = c.exp.list.slice().sort(function(a, b){ return String(b.date).localeCompare(String(a.date)) || (b.createdAt || 0) - (a.createdAt || 0); });
+  if (!list.length) return '<div class="empty-card"><p>Aucune dépense pour cette période.</p>' + (w ? '<button type="button" class="btn primary" data-act="exp-new">+ Ajouter une dépense</button>' : '') + '</div>';
+  var noRc = list.filter(function(x){ return !x.receipt; }).length;
+  return '<p class="muted small" id="tr-count">' + list.length + ' dépense' + (list.length > 1 ? 's' : '') + ' · ' + esc(money(c.exp.total)) + ' payés' + (c.taxed ? ' (TPS ' + esc(money(c.exp.tps)) + ', TVQ ' + esc(money(c.exp.tvq)) + ')' : '') + (noRc ? ' · <span class="tight">' + noRc + ' sans reçu</span>' : '') + '</p>' +
+    '<div class="list" id="exp-list">' + list.map(function(x){
+      return '<button type="button" class="xrow" data-act="exp-open" data-id="' + esc(x.id) + '"><span class="x-d">' + esc(dShort(x.date)) + '</span><span class="x-m"><b>' + esc(x.vendor || catLabel(x.cat)) + '</b><span>' + esc([catLabel(x.cat), x.truck && truckById(x.truck) ? colName(x.truck) : '', x.desc].filter(Boolean).join(' · ')) + '</span></span>' +
+        '<span class="x-a"><b class="num">' + esc(money(x.total)) + '</b><small class="' + (x.receipt ? 'ok-t' : 'tight') + '">' + (x.receipt ? 'Reçu ✓' : 'Pas de reçu') + '</small></span></button>';
+    }).join('') + '</div>';
+}
+function reportHTML(c, r){
+  var h = '', cats = Object.keys(c.exp.byCat).sort(function(a, b){ return c.exp.byCat[b] - c.exp.byCat[a]; }), mx = cats.length ? c.exp.byCat[cats[0]] : 1;
+  h += '<section class="sect" id="rep-res"><h3>Résultat</h3><table class="rep"><tbody>' +
+    '<tr><th>Revenus (' + c.rev.n + ' facture' + (c.rev.n > 1 ? 's' : '') + ')</th><td class="num">' + esc(money(c.taxed ? c.rev.sub : c.rev.total)) + '</td></tr>' +
+    '<tr><th>Dépenses (' + c.exp.n + ')</th><td class="num">−' + esc(money(c.taxed ? c.exp.sub : c.exp.total)) + '</td></tr>' +
+    '<tr class="rtot"><th>Profit</th><td class="num' + (c.profit < 0 ? ' neg' : '') + '">' + esc(money(c.profit)) + '</td></tr></tbody></table>' +
+    '<p class="muted small">' + (c.taxed ? 'Montants avant taxes : les taxes vont dans « Taxes à remettre ». ' : '') + 'Encaissé sur ces factures : ' + esc(money(c.rev.paid)) + '.</p></section>';
+  h += '<section class="sect" id="rep-cat"><h3>Dépenses par catégorie</h3>' + (cats.length ? '<div class="hbars">' + cats.map(function(k){ return '<div class="hbar"><div class="hl2"><span>' + esc(catLabel(k)) + '</span><b>' + esc(money(c.exp.byCat[k])) + '</b></div><div class="trk2"><i style="width:' + Math.max(2, Math.round(c.exp.byCat[k] / mx * 100)) + '%"></i></div></div>'; }).join('') + '</div>' : '<p class="muted">Aucune dépense.</p>') + '</section>';
+  if (truckMode()){
+    h += '<section class="sect" id="rep-truck"><h3>Par camion</h3><div class="repwrap"><table class="rep"><thead><tr><th></th><th class="num">Revenus</th><th class="num">Dépenses</th><th class="num">Profit</th></tr></thead><tbody>' +
+      trucks().concat(c.byTruck._none ? [{id:'_none', name:'Sans camion'}] : []).map(function(t){ var x = c.byTruck[t.id] || {rev:0, exp:0}; return '<tr><th>' + esc(t.name || colName(t.id)) + '</th><td class="num">' + esc(money(x.rev)) + '</td><td class="num">' + esc(money(x.exp)) + '</td><td class="num' + (x.rev - x.exp < 0 ? ' neg' : '') + '">' + esc(money(r2(x.rev - x.exp))) + '</td></tr>'; }).join('') +
+      '</tbody></table></div><p class="muted small">Les dépenses générales (sans camion) ne sont pas réparties.</p></section>';
+  }
+  if (c.taxed){
+    h += '<section class="sect" id="rep-tax"><h3>Taxes à remettre</h3><table class="rep"><thead><tr><th></th><th class="num">TPS</th><th class="num">TVQ</th></tr></thead><tbody>' +
+      '<tr><th>Perçues sur les factures</th><td class="num">' + esc(money(c.rev.tps)) + '</td><td class="num">' + esc(money(c.rev.tvq)) + '</td></tr>' +
+      '<tr><th>Payées sur les dépenses</th><td class="num">−' + esc(money(c.exp.tps)) + '</td><td class="num">−' + esc(money(c.exp.tvq)) + '</td></tr>' +
+      '<tr class="rtot"><th>' + (c.tpsDue < 0 || c.tvqDue < 0 ? 'À remettre (négatif = remboursement)' : 'À remettre') + '</th><td class="num">' + esc(money(c.tpsDue)) + '</td><td class="num">' + esc(money(c.tvqDue)) + '</td></tr></tbody></table>' +
+      '<p class="muted small">Estimation pour ta déclaration (Revenu Québec gère la TPS et la TVQ). Garde les reçus : ils servent de preuve pour les taxes payées.</p></section>';
+  }
+  var due = 0, nDue = 0; S.jobs.forEach(function(j){ if (invState(j) === 'unpaid'){ due += num(j.invoice.total); nDue++; } });
+  h += '<section class="sect" id="rep-other"><h3>Aussi</h3><dl class="kv"><div><dt>Annulations</dt><dd>' + (c.loss.n ? '<b class="neg">' + esc(money(c.loss.sum)) + '</b> · ' + c.loss.n + ' job' + (c.loss.n > 1 ? 's' : '') : 'Aucune') + (c.loss.ns ? ' · ' + c.loss.ns + ' no-show' + (c.loss.ns > 1 ? 's' : '') : '') + '</dd></div>' +
+    '<div><dt>À recevoir (toutes périodes)</dt><dd>' + esc(money(r2(due))) + ' · ' + nDue + ' facture' + (nDue > 1 ? 's' : '') + ' non payée' + (nDue > 1 ? 's' : '') + '</dd></div></dl></section>';
+  h += (S.dl ? '<button type="button" class="btn primary block" data-act="tr-xlsx">Télécharger en Excel (pour le comptable)</button>' : '<p class="muted small">Le téléchargement Excel n\'est pas offert ici.</p>');
+  return h;
+}
+/* ---------- one expense ---------- */
+function openExpense(id){
+  if (!canExpense() && !id) return;
+  var x = id ? findExp(id) : null, w = canExpense(), dis = w ? '' : ' disabled';
+  S.expId = x ? x.id : null; S.expImg = null; S.expPay = x ? (x.method || '') : ''; S.taxEdited = false; S.expDel = false;
+  var vendors = {}; (S.exps || []).forEach(function(e){ if (e.vendor) vendors[e.vendor] = 1; });
+  var h = '<form id="expform" class="stack" novalidate>' +
+    '<div class="grid2">' + inputF('x-date', 'Date', x ? x.date : today(), 'type="date"' + dis) + inputF('x-total', 'Total payé ($)', x ? amtTxt(x.total) : '', 'inputmode="decimal" autocomplete="off" placeholder="0,00"' + dis) + '</div>' +
+    inputF('x-vendor', 'Fournisseur', x ? x.vendor : '', 'list="x-vendors" autocomplete="off" placeholder="Ex. NAPA, Canadian Tire, Esso"' + dis) + '<datalist id="x-vendors">' + Object.keys(vendors).sort().map(function(v){ return '<option value="' + esc(v) + '">'; }).join('') + '</datalist>' +
+    '<div class="grid2"><div class="field"><label for="x-cat">Catégorie</label><select id="x-cat"' + dis + '>' + EXP_CATS.map(function(cc){ return opt(cc[0], cc[1], (x ? x.cat : 'pieces') === cc[0]); }).join('') + '</select></div>' +
+    (truckMode() ? '<div class="field"><label for="x-truck">Camion</label><select id="x-truck"' + dis + '>' + opt('', 'Aucun (général)', !(x && x.truck)) + trucks().map(function(t){ return opt(t.id, t.name || 'Camion', !!x && x.truck === t.id); }).join('') + '</select></div>' : '') + '</div>' +
+    '<label class="check"><input type="checkbox" id="x-taxin"' + (!x || x.taxIncl !== false ? ' checked' : '') + dis + '> TPS et TVQ incluses dans le total</label>' +
+    '<div class="grid3" id="x-taxes">' + inputF('x-tps', 'TPS', x ? amtTxt(x.tps) : '', 'inputmode="decimal" autocomplete="off"' + dis) + inputF('x-tvq', 'TVQ', x ? amtTxt(x.tvq) : '', 'inputmode="decimal" autocomplete="off"' + dis) + '<div class="field"><span class="lbl">Avant taxes</span><b id="x-sub" class="num">—</b></div></div>' +
+    '<div class="field"><span class="lbl">Payé par</span><div class="chips" role="group" aria-label="Payé par">' + EXP_PAY.map(function(m){ return chip('x-pay', m, m, S.expPay === m); }).join('') + '</div></div>' +
+    inputF('x-desc', 'Note (optionnel)', x ? x.desc : '', 'autocomplete="off" placeholder="Ex. plaquettes pour la job de M. Roy"' + dis) +
+    '<div class="field"><span class="lbl">Reçu</span><div id="x-rc" class="inline-actions">' + (x && x.receipt ? '<button type="button" class="btn sm" data-act="exp-receipt" data-id="' + esc(x.id) + '">Voir le reçu</button>' : '') +
+      (w ? '<label class="btn sm" for="x-file">' + (x && x.receipt ? 'Remplacer la photo' : 'Photo du reçu') + '</label>' : '') + '</div><input type="file" id="x-file" accept="image/*" capture="environment" class="sr-only"' + dis + '><div id="x-prev" class="x-prev"></div></div>' +
+    '<div id="x-err" class="err" role="alert" hidden></div>' +
+    (w ? '<div class="actions"><button type="submit" class="btn primary block" id="x-save">Enregistrer la dépense</button>' + (x ? '<div id="x-delbox"><button type="button" class="btn ghost block danger-t" data-act="exp-del">Supprimer cette dépense</button></div>' : '') + '</div>' : '') + '</form>';
+  openSheet(x ? 'Dépense' : 'Nouvelle dépense', x ? cap(dateMed(x.date)) + ' · ' + money(x.total) : 'Garde la photo du reçu', h);
+  var f = $('#expform');
+  f.addEventListener('submit', saveExpense);
+  $('#x-total').addEventListener('input', expTaxes);
+  $('#x-taxin').addEventListener('change', function(){ S.taxEdited = false; expTaxes(); });
+  ['x-tps', 'x-tvq'].forEach(function(i){ $('#' + i).addEventListener('input', function(){ S.taxEdited = true; expSub(); }); });
+  $('#x-file').addEventListener('change', function(ev){
+    var fl = ev.target.files && ev.target.files[0]; if (!fl) return;
+    var pv = $('#x-prev'); pv.textContent = 'Préparation de la photo…';
+    shrinkImage(fl).then(function(u){ S.expImg = u; pv.innerHTML = '<img src="' + u + '" alt="Aperçu du reçu" class="rcthumb"><span class="small ok-t">Photo prête (' + Math.round(u.length * 0.75 / 1024) + ' Ko)</span>'; },
+      function(){ S.expImg = null; pv.innerHTML = '<span class="small tight">Cette photo n\'a pas pu être lue. Essaie une autre photo (JPEG ou PNG).</span>'; });
+  });
+  if (x){ $('#x-taxes').hidden = x.taxIncl === false; expSub(); } else expTaxes();
+}
+function expTaxes(){
+  var inc = $('#x-taxin') && $('#x-taxin').checked, tt = r2(num(val('x-total'))), bx = $('#x-taxes'); if (!bx) return;
+  bx.hidden = !inc;
+  if (inc && !S.taxEdited){ var sub = r2(tt / (1 + TPS + TVQ)), tp = r2(sub * TPS), tq = r2(sub * TVQ); $('#x-tps').value = tt ? amtTxt(tp) : ''; $('#x-tvq').value = tt ? amtTxt(tq) : ''; }
+  expSub();
+}
+function expSub(){ var el = $('#x-sub'); if (!el) return; var tt = r2(num(val('x-total'))), inc = $('#x-taxin').checked, sub = inc ? r2(tt - num(val('x-tps')) - num(val('x-tvq'))) : tt; el.textContent = tt ? money(sub) : '—'; }
+function shrinkImage(file){
+  return new Promise(function(res, rej){
+    var fr = new FileReader();
+    fr.onerror = function(){ rej(new Error('read')); };
+    fr.onload = function(){
+      var im = new Image();
+      im.onerror = function(){ rej(new Error('img')); };
+      im.onload = function(){
+        var w0 = im.naturalWidth, h0 = im.naturalHeight, k = Math.min(1, 1280 / Math.max(w0, h0, 1)), q = 0.7, out = '', cv = document.createElement('canvas');
+        for (var i = 0; i < 7; i++){
+          cv.width = Math.max(1, Math.round(w0 * k)); cv.height = Math.max(1, Math.round(h0 * k));
+          var cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); cx.drawImage(im, 0, 0, cv.width, cv.height);
+          out = cv.toDataURL('image/jpeg', q); if (out.length < 230000) break; k *= 0.8; q = Math.max(0.45, q - 0.07);
+        }
+        if (!out || out.length > 330000) rej(new Error('big')); else res(out);
+      };
+      im.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+function expErr(t){ var e = $('#x-err'); if (!e) return; e.textContent = t; e.hidden = false; }
+function saveExpense(ev){
+  ev.preventDefault();
+  if (!canExpense()) return;
+  var tt = r2(num(val('x-total'))); if (!(tt > 0)){ expErr('Entre le total payé.'); $('#x-total').focus(); return; }
+  var inc = $('#x-taxin').checked, tp = inc ? r2(num(val('x-tps'))) : 0, tq = inc ? r2(num(val('x-tvq'))) : 0;
+  if (tp < 0 || tq < 0 || tp + tq >= tt){ expErr('Les taxes doivent être plus petites que le total.'); return; }
+  var old = S.expId ? findExp(S.expId) : null, id = old ? old.id : S.db.collection('expenses').doc().id, img = S.expImg;
+  var doc = {date:val('x-date') || today(), vendor:val('x-vendor'), cat:val('x-cat') || 'autre', truck:$('#x-truck') ? val('x-truck') : '', desc:val('x-desc'),
+    total:tt, taxIncl:inc, tps:tp, tvq:tq, sub:r2(tt - tp - tq), method:S.expPay || '', receipt:img ? 'receipts/' + id : ((old && old.receipt) || null), createdAt:old && old.createdAt ? old.createdAt : Date.now(), updatedAt:Date.now()};
+  var btn = $('#x-save'); btn.disabled = true; btn.textContent = img ? 'Envoi de la photo…' : 'Enregistrement…';
+  var first = img ? write('receipts/' + id, function(){ return S.db.doc('receipts/' + id).set({img:img, expenseId:id, at:Date.now()}); }, '') : Promise.resolve(true);
+  first.then(function(ok){
+    if (!ok){ btn.disabled = false; btn.textContent = 'Enregistrer la dépense'; expErr('La photo n\'a pas passé. Réessaie, ou enregistre sans photo.'); return; }
+    return write('expenses/' + id, function(){ return S.db.doc('expenses/' + id).set(doc); }, old ? 'Dépense mise à jour' : 'Dépense enregistrée').then(function(ok2){
+      if (!ok2){ btn.disabled = false; btn.textContent = 'Enregistrer la dépense'; return; }
+      var i = (S.exps || []).map(function(e){ return e.id; }).indexOf(id), mine = Object.assign({id:id}, doc);
+      if (i >= 0) S.exps[i] = mine; else (S.exps = S.exps || []).push(mine);
+      closeSheet();
+    });
+  });
+}
+function deleteExpense(){
+  var x = findExp(S.expId); if (!x || !canExpense()) return;
+  if (!S.expDel){ S.expDel = true; var bx = $('#x-delbox'); if (bx) bx.innerHTML = '<div class="banner warn"><p>Supprimer cette dépense' + (x.receipt ? ' et la photo du reçu' : '') + ' ?</p></div><div class="grid2"><button type="button" class="btn" data-act="exp-del-no">Garder</button><button type="button" class="btn danger solid" data-act="exp-del">Supprimer</button></div>'; return; }
+  write('expenses/' + x.id, function(){ return S.db.doc('expenses/' + x.id).delete(); }, 'Dépense supprimée').then(function(ok){
+    if (!ok) return;
+    if (x.receipt) write(x.receipt, function(){ return S.db.doc(x.receipt).delete(); }, '');
+    S.exps = (S.exps || []).filter(function(e){ return e.id !== x.id; }); closeSheet();
+  });
+}
+function showReceipt(id){
+  var x = findExp(id); if (!x || !x.receipt) return;
+  openSheet('Reçu', [x.vendor, cap(dateMed(x.date)), money(x.total)].filter(Boolean).join(' · '), '<p class="muted">Ouverture de la photo…</p>');
+  S.db.doc(x.receipt).get().then(function(sn){
+    var d = sn.exists ? sn.data() : null, bd = $('#sheet-body'); if (!bd || !S.sheet) return;
+    bd.innerHTML = (d && d.img ? '<img src="' + d.img + '" alt="Photo du reçu" class="rcimg" id="rc-img">' : '<p class="muted">La photo n\'est plus là.</p>') + '<button type="button" class="btn block" data-act="exp-open" data-id="' + esc(x.id) + '">Retour à la dépense</button>';
+  }, function(){ var bd = $('#sheet-body'); if (bd) bd.innerHTML = '<p class="muted">La photo n\'a pas pu s\'ouvrir. Vérifie ta connexion.</p>'; });
+}
+/* ---------- Excel for the accountant ---------- */
+var xlsxP = null;
+function loadXlsx(){
+  if (window.XLSX && window.XLSX.utils) return Promise.resolve();
+  if (xlsxP) return xlsxP;
+  xlsxP = new Promise(function(res, rej){ var sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; sc.onload = function(){ res(); }; sc.onerror = function(){ xlsxP = null; rej(new Error('load')); }; document.head.appendChild(sc); });
+  return xlsxP;
+}
+function exportXlsx(btn){
+  if (!S.dl){ toast('Le téléchargement n\'est pas offert ici.'); return; }
+  var r = trRange(trPeriod()), c = trCalc(r), old = btn.textContent; btn.disabled = true; btn.textContent = 'Préparation du fichier…';
+  loadXlsx().then(function(){
+    var X = window.XLSX, wb = X.utils.book_new(), sh = function(rows, name, widths){ var ws = X.utils.aoa_to_sheet(rows); ws['!cols'] = widths.map(function(w0){ return {wch:w0}; }); X.utils.book_append_sheet(wb, ws, name); };
+    sh([['Garage', bizName()], ['Période', r.label], ['Du', r.from], ['Au', r.to], [], ['', 'Avant taxes', 'TPS', 'TVQ', 'Total'],
+      ['Revenus (factures émises)', c.rev.sub, c.rev.tps, c.rev.tvq, c.rev.total], ['Dépenses', c.exp.sub, c.exp.tps, c.exp.tvq, c.exp.total], [],
+      ['Profit (avant impôts)', c.profit], ['TPS à remettre', c.tpsDue], ['TVQ à remettre', c.tvqDue], [],
+      ['Annulations (perte)', c.loss.sum, c.loss.n + ' job(s)'], ['No-shows', c.loss.ns]], 'Résumé', [28, 14, 12, 12, 14]);
+    sh([['Date', 'Facture', 'Client', 'Camion', 'Mécano', 'Avant taxes', 'TPS', 'TVQ', 'Total', 'Payée', 'Mode']].concat(c.rev.list.slice().sort(function(a, b){ return String(a.invoice.issuedAt || a.date).localeCompare(String(b.invoice.issuedAt || b.date)); }).map(function(j){ var v = j.invoice; return [String(v.issuedAt || j.date).slice(0, 10), v.number, cl(j).name || '', truckMode() ? colName(jobCol(j)) : '', j.mechanic || '', num(v.sub), num(v.tps), num(v.tvq), num(v.total), v.paid ? 'oui' : 'non', v.method || '']; })), 'Revenus', [11, 10, 22, 12, 12, 12, 10, 10, 12, 7, 10]);
+    sh([['Date', 'Fournisseur', 'Catégorie', 'Camion', 'Note', 'Avant taxes', 'TPS', 'TVQ', 'Total', 'Payé par', 'Reçu']].concat(c.exp.list.slice().sort(function(a, b){ return String(a.date).localeCompare(String(b.date)); }).map(function(x){ return [x.date, x.vendor || '', catLabel(x.cat), x.truck && truckById(x.truck) ? colName(x.truck) : '', x.desc || '', num(x.sub), num(x.tps), num(x.tvq), num(x.total), x.method || '', x.receipt ? 'oui' : 'non']; })), 'Dépenses', [11, 20, 24, 12, 26, 12, 10, 10, 12, 10, 7]);
+    sh([['Date', 'Client', 'Montant perdu', 'Raison', 'Note']].concat(c.loss.list.map(function(j){ var L = j.lost || {}; return [j.date, cl(j).name || '', num(L.amount), ((WHY.filter(function(w0){ return w0[0] === L.reason; })[0] || [])[1]) || '', L.note || '']; })), 'Annulations', [11, 22, 14, 22, 30]);
+    var out = X.write(wb, {bookType:'xlsx', type:'array'});
+    return S.dl.save({filename:'Trésorerie ' + safeName(r.label) + '.xlsx', data:new Blob([out], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})});
+  }).then(function(){ toast('Fichier Excel enregistré'); }, function(e){
+    var cd = e && e.code; if (cd === 'declined') return;
+    toast(e && e.message === 'load' ? 'Le fichier n\'a pas pu se préparer. Vérifie ta connexion et réessaie.' : 'Le fichier n\'a pas pu se télécharger. Réessaie.');
+  }).then(function(){ btn.disabled = false; btn.textContent = old; });
+}
+
+/* ---------- the mechanics' availability ---------- */
+function availDefault(){ var w = {}; [0,1,2,3,4,5,6].forEach(function(dw){ var h = weekHours(dw); w[String(dw)] = {on:!!h.open, start:h.start, end:h.end}; }); return w; }
+function dispoMech(){ var lm = lockedMech(), ms = mechanics(); return lm || (S.avMech && ms.indexOf(S.avMech) >= 0 ? S.avMech : ms[0] || ''); }
+function canEditAvail(m){ var lm = lockedMech(); return !!m && canWrite() && (lm ? norm(lm) === norm(m) : canHours()); }
+function viewDispos(){
+  var lm = lockedMech(), ms = mechanics(), m = dispoMech(), a = availOf(m), ed = canEditAvail(m), w = (a && a.week) || availDefault(), t0 = today();
+  var top = topBack(lm ? 'Mes disponibilités' : 'Disponibilités des mécanos', 'dispos-back', phone() ? 'Plus' : 'Accueil');
+  var b = banners();
+  if (!m) return {top:top, body:b + '<div class="empty-card"><p>Ajoute tes mécanos dans Réglages pour choisir leurs disponibilités.</p></div>'};
+  if (!lm && ms.length > 1) b += '<div class="chips" role="group" aria-label="Mécano">' + ms.map(function(x){ return chip('av-mech', x, x, x === m); }).join('') + '</div>';
+  var dis = ed ? '' : ' disabled';
+  b += '<section class="sect" id="av-week"><h3>' + (lm ? 'Ma semaine' : 'La semaine de ' + esc(m)) + '</h3><p class="muted small">Les jours et les heures ' + (lm ? 'où tu travailles' : 'où ' + esc(m) + ' travaille') + '. Ça s\'applique tout de suite à l\'horaire' + (truckMode() ? ' du camion' : '') + '.</p>' +
+    (a && a.week ? '' : '<p class="small">Pas encore choisi : c\'est l\'horaire du garage qui compte.</p>') +
+    '<div class="hzs">' + [1,2,3,4,5,6,0].map(function(dw){
+      var x = w[String(dw)] || {on:false, start:'08:00', end:'17:00'}, dl = DOW_FR[dw].toLowerCase();
+      return '<div class="hz' + (x.on ? '' : ' off') + '" data-dw="' + dw + '"><div class="hz-d"><b>' + DOW_FR[dw] + '</b><span>' + (x.on ? esc(hm(x.start)) + ' à ' + esc(hm(x.end)) : 'Congé') + '</span></div>' +
+        '<button type="button" class="switch" role="switch" aria-checked="' + !!x.on + '" aria-label="Travaille le ' + dl + '" data-act="av-day" data-v="' + dw + '"' + dis + '><i></i></button>' +
+        (x.on ? '<div class="hz-t"><select data-av="start" data-dw="' + dw + '" data-keep="no" aria-label="Début le ' + dl + '"' + dis + '>' + timeOpts(x.start) + '</select><span aria-hidden="true">à</span><select data-av="end" data-dw="' + dw + '" data-keep="no" aria-label="Fin le ' + dl + '"' + dis + '>' + timeOpts(x.end) + '</select></div>' : '') + '</div>';
+    }).join('') + '</div></section>';
+  var off = ((a && a.off) || []).filter(function(dd){ return dd >= t0; }).sort();
+  b += '<section class="sect" id="av-off-box"><h3>Congés</h3><p class="muted small">Un jour de congé ferme ' + (truckMode() ? 'son camion ce jour-là, sauf si un autre mécano part avec.' : 'sa colonne ce jour-là.') + '</p>' +
+    (ed ? '<div class="grid2"><div class="field"><label for="av-off">Date</label><input type="date" id="av-off" min="' + t0 + '"></div><div class="field" style="align-content:end"><button type="button" class="btn" data-act="av-off-add">Ajouter le congé</button></div></div>' : '') +
+    (off.length ? '<div class="list">' + off.map(function(dd){ return '<div class="note"><div><p>' + esc(cap(dayLong(dd))) + '</p></div>' + (ed ? '<button type="button" class="iconbtn" data-act="av-off-del" data-v="' + dd + '" aria-label="Enlever le congé du ' + esc(dayLong(dd)) + '">✕</button>' : '') + '</div>'; }).join('') + '</div>' : '<p class="muted small">Aucun congé prévu.</p>') + '</section>';
+  if (a && a.week && ed) b += '<button type="button" class="btn ghost block" data-act="av-reset">Revenir à l\'horaire du garage</button>';
+  return {top:top, body:b};
+}
+function saveAvail(m, a){
+  var path = 'avail/' + slug(m), doc = {mechanic:m, week:a.week || null, off:(a.off || []).slice(), updatedAt:Date.now()};
+  S.avail[slug(m)] = doc; render();
+  return write(path, function(){ return S.db.doc(path).set(doc); }, 'Disponibilités enregistrées');
+}
+function editAvail(fn){ var m = dispoMech(); if (!canEditAvail(m)) return; var a = availOf(m), cur = {week:clone((a && a.week) || availDefault()), off:((a && a.off) || []).slice()}; if (fn(cur) === false) return; saveAvail(m, cur); }
 /* booking: three small steps */
 var WIZ = ['Client et auto', 'Service', 'Moment'];
 function wizInit(quick){
@@ -3613,7 +4064,9 @@ function phoneInvoice(){
     var el = ev.target;
     if (el.id === 'ph-date' && el.value){ S.day = el.value; render(); }
     else if (el.id === 'ph-mech'){ S.mech = el.value; lsSet('gm.mech', S.mech); render(); }
-    else if (el.id === 'ph-st'){ changeStatus(el.value); }
+    else if (el.id === 'ph-st'){ statusAct(el.value); }
+    else if (el.dataset && el.dataset.crew){ setCrew(S.day || today(), el.dataset.crew, el.value); }
+    else if (el.dataset && el.dataset.av){ var dwv = el.dataset.dw, fld = el.dataset.av, vv = el.value; editAvail(function(cur){ var x = cur.week[dwv] || {on:true, start:'08:00', end:'17:00'}; x[fld] = vv; cur.week[dwv] = x; if (x.end <= x.start){ toast('La fin doit être après le début.'); render(); return false; } }); }
     else if (el.dataset && el.dataset.hz){
       var d = el.dataset.d, info = dayInfo(d), nd = Object.assign({}, info.doc), other = $('select[data-hz="' + (el.dataset.hz === 'start' ? 'end' : 'start') + '"][data-d="' + d + '"]');
       nd[el.dataset.hz] = el.value; nd[el.dataset.hz === 'start' ? 'end' : 'start'] = other ? other.value : (el.dataset.hz === 'start' ? info.end : info.start);
@@ -3625,11 +4078,83 @@ function phoneInvoice(){
   document.addEventListener('click', function(ev){ var a = ev.target.closest('a[data-sec]'); if (a) S.setSecName = a.dataset.sec; });
   if (MQ){ var onMq = function(){ if (!lsGet('gm.ui')){ fitTab(); render(); } }; if (MQ.addEventListener) MQ.addEventListener('change', onMq); else if (MQ.addListener) MQ.addListener(onMq); }
 })();
-function changeStatus(v){
-  var j = findJob(S.jobId); if (!j || j.status === v || !ST[v]) return;
+function changeStatus(v, extra){
+  var j = findJob(S.jobId); if (!j || !ST[v] || (j.status === v && !extra)) return Promise.resolve(false);
   var was = j.status || 'planifie', ex = ext();
-  if (ex && typeof ex.beforeStatus === 'function' && ex.beforeStatus(j, v, was) === false) return;
-  write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update({status:v, updatedAt:Date.now()}); }, ex && typeof ex.onStatus === 'function' ? '' : ST[v]).then(function(ok){ if (ok && ex && typeof ex.onStatus === 'function') ex.onStatus(j, v, was); });
+  if (ex && typeof ex.beforeStatus === 'function' && ex.beforeStatus(j, v, was) === false) return Promise.resolve(false);
+  var patch = Object.assign({status:v, updatedAt:Date.now()}, extra || {});
+  if (!isOffSt(v) && (j.lost || j.noshowAt)){ patch.lost = null; patch.noshowAt = null; }
+  return write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update(patch); }, ex && typeof ex.onStatus === 'function' ? '' : ST[v]).then(function(ok){ if (ok && ex && typeof ex.onStatus === 'function') ex.onStatus(j, v, was); return ok; });
+}
+/* cancelling asks for the amount lost; no-show asks to confirm */
+function statusAct(v){ var j = findJob(S.jobId); if (!j) return; if (v === 'annule') openCancel(j); else if (v === 'noshow') openNoShow(j); else changeStatus(v); }
+
+/* ---------- cancel (amount lost, in negative), no-show (trace for next time), work done ---------- */
+var WHY = [['client', 'Le client a annulé'], ['garage', 'Le garage a annulé'], ['meteo', 'Météo'], ['autre', 'Autre']];
+function svcAmt(n){ var cp = catalogPrice(n); if (cp != null) return cp; var t = svcHours([n])[0], rate = num(cfg().rate); return t && rate ? r2(t.h * rate) : 0; }
+function amtTxt(x){ return r2(x).toFixed(2).replace('.', ','); }
+function jobWork(j){ return Array.isArray(j.done) ? j.done.filter(Boolean) : jobServices(j); }
+function noShowsOf(cid){ return cid ? S.jobs.filter(function(j){ return j.clientId === cid && j.status === 'noshow'; }).sort(byWhen) : []; }
+function nsDates(list){ return list.map(function(j){ return dShort(j.date); }).join(', '); }
+function offRow(){ return '<div class="offrow"><button type="button" class="btn ghost" data-act="cancel">Annuler la job</button><button type="button" class="btn ghost" data-act="noshow">No-show</button></div>'; }
+function offBanner(j){
+  if (j.status === 'noshow') return '<div class="banner warn"><p><b>No-show</b> : le client n\'était pas là. Aucun montant compté. Ça reste dans sa fiche : la prochaine fois, prends une carte au dossier.</p></div>';
+  var L = j.lost || {}, why = (WHY.filter(function(w){ return w[0] === L.reason; })[0] || [])[1];
+  return '<div class="banner warn"><p><b>Annulée</b>' + (why ? ' · ' + esc(why.toLowerCase()) : '') + (L.amount ? ' · perte de <b>' + esc(money(L.amount)) + '</b>' : '') + (L.note ? '<br><span class="small">' + esc(L.note) + '</span>' : '') + '</p></div>';
+}
+function openCancel(j){
+  if (!j) return; S.jobId = j.id; S.cxWhy = (j.lost && j.lost.reason) || ''; S.cxEdited = false;
+  var names = jobWork(j), tot = r2(names.reduce(function(s0, n){ return s0 + svcAmt(n); }, 0));
+  var rows = names.map(function(n, i){ var a = svcAmt(n); return '<label class="cx-row"><input type="checkbox" class="cx-svc" value="' + i + '" data-amt="' + a + '" checked><span>' + esc(n) + '</span><b class="num">' + esc(money(a)) + '</b></label>'; }).join('');
+  var h = '<div class="stack"><p>Le montant prévu est noté en <b>perte</b> (en négatif) dans tes chiffres. Décoche ce qui ne compte pas ou change le montant.</p>' +
+    (rows ? '<div class="cx-list" role="group" aria-label="Services prévus">' + rows + '</div>' : '') +
+    '<div class="field"><label for="cx-amt">Montant perdu</label><div class="cx-amt"><b aria-hidden="true">−</b><input id="cx-amt" inputmode="decimal" autocomplete="off" value="' + amtTxt(tot) + '"><span aria-hidden="true">$</span></div></div>' +
+    '<div class="field"><span class="lbl">Pourquoi ?</span><div class="chips" role="group" aria-label="Raison">' + WHY.map(function(w){ return chip('cx-why', w[0], w[1], S.cxWhy === w[0]); }).join('') + '</div></div>' +
+    '<div class="field"><label for="cx-note">Note (optionnel)</label><input id="cx-note" autocomplete="off" placeholder="Ex. a trouvé un autre garage"></div>' +
+    '<div class="grid2"><button type="button" class="btn" data-act="sheet-close">Garder la job</button><button type="button" class="btn danger solid" data-act="cx-yes">Annuler la job</button></div></div>';
+  openSheet('Annuler la job', (cl(j).name || 'Client') + ' · ' + cap(dShort(j.date)) + ' · ' + hm(j.time), h);
+  $('#cx-amt').addEventListener('input', function(){ S.cxEdited = true; });
+  $$('.cx-svc').forEach(function(cb){ cb.addEventListener('change', function(){ if (S.cxEdited) return; var t0 = 0; $$('.cx-svc').forEach(function(x){ if (x.checked) t0 += num(x.dataset.amt); }); $('#cx-amt').value = amtTxt(t0); }); });
+}
+function confirmCancel(){
+  var j = findJob(S.jobId); if (!j){ closeSheet(); return; }
+  var names = jobWork(j), picked = $$('.cx-svc').filter(function(x){ return x.checked; }).map(function(x){ return names[+x.value]; });
+  var lost = {amount:-Math.abs(r2(num(val('cx-amt')))), services:picked, reason:S.cxWhy || '', note:val('cx-note'), at:Date.now()};
+  closeSheet();
+  changeStatus('annule', {lost:lost});
+}
+function openNoShow(j){
+  if (!j) return; S.jobId = j.id;
+  var prev = noShowsOf(j.clientId).filter(function(x){ return x.id !== j.id; }).length;
+  openSheet('No-show', (cl(j).name || 'Client') + ' · ' + cap(dShort(j.date)) + ' · ' + hm(j.time),
+    '<div class="stack"><p>Le client n\'était pas là ? La job est marquée <b>No-show</b>. Aucun montant n\'est compté.</p>' +
+    '<p>' + (j.clientId ? 'Ça reste noté dans sa fiche' + (prev ? ' (' + (prev + 1) + '<sup>e</sup> fois)' : '') + ' : la prochaine fois, prends une <b>carte au dossier</b> avant de confirmer.' : 'Ce client n\'a pas de fiche : crée-la pour garder la trace.') + '</p>' +
+    '<div class="grid2"><button type="button" class="btn" data-act="sheet-close">Retour</button><button type="button" class="btn danger solid" data-act="ns-yes">Marquer no-show</button></div></div>');
+}
+function doneHTML(j, w){
+  var has = Array.isArray(j.done), list = jobWork(j);
+  return (list.length ? '<div class="tags">' + list.map(function(n){ return '<span class="tag">' + esc(n) + '</span>'; }).join('') + '</div>' : '<p class="muted">Aucun travail indiqué.</p>') +
+    (has ? '' : '<p class="muted small">Pas encore confirmé par le mécano : c\'est ce qui était réservé.</p>') +
+    (w && !isOff(j) ? '<button type="button" class="btn' + (has ? ' sm' : '') + '" data-act="done-edit">' + (has ? 'Modifier les travaux faits' : 'Indiquer les travaux faits') + '</button>' : '');
+}
+function openDone(j, finish){
+  if (!j) return; S.jobId = j.id; S.doneFinish = !!finish;
+  PK.picked = jobWork(j).slice(); PK.active = -1;
+  var h = '<div class="stack"><p class="small">' + (finish ? 'Avant de terminer : garde ce que tu as fait, retire le reste, ajoute ce qui manque. Ça remplit la facture.' : 'Ce que tu as vraiment fait. Ça remplit la facture.') + '</p>' +
+    '<div class="field"><label for="f-svc-in">Travaux faits</label><div class="picker" id="svc-picker"><div class="picked" id="svc-picked"></div><input id="f-svc-in" role="combobox" aria-expanded="false" aria-controls="svc-opts" aria-autocomplete="list" autocomplete="off" enterkeyhint="done"></div>' +
+    '<div class="opts" id="svc-opts" role="listbox" aria-label="Choix de services" hidden></div><div class="hint">Tape pour chercher ou ajouter un travail ; le ✕ le retire.</div><p class="muted small done-amt" id="done-amt" aria-live="polite"></p></div>' +
+    '<div class="grid2"><button type="button" class="btn" data-act="sheet-close">Annuler</button><button type="button" class="btn primary" data-act="done-save">' + (finish ? 'Terminer la job' : 'Enregistrer') + '</button></div></div>';
+  openSheet('Travaux faits', [vehLabel(j), cl(j).name].filter(Boolean).join(' · '), h);
+  bindPicker(); renderPicked();
+}
+function doneAmt(){ var el = $('#done-amt'); if (!el) return; var t0 = r2(PK.picked.reduce(function(s0, n){ return s0 + svcAmt(n); }, 0)); el.textContent = PK.picked.length ? 'Montant prévu : ' + money(t0) + ' avant taxes' : 'Aucun travail : ajoute au moins une ligne.'; }
+function saveDone(){
+  var j = findJob(S.jobId); if (!j){ closeSheet(); return; }
+  var left = val('f-svc-in'); if (left && !PK.picked.some(function(n){ return norm(n) === norm(left); })) PK.picked.push(left);
+  var done = PK.picked.slice(), fin = S.doneFinish;
+  closeSheet();
+  if (fin && j.status !== 'termine') changeStatus('termine', {done:done, doneAt:Date.now()});
+  else write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update({done:done, doneAt:Date.now(), updatedAt:Date.now()}); }, 'Travaux faits enregistrés');
 }
 /* what the team version may use (absent extension = nothing happens) */
 window.__garageApi = Object.freeze({S:S, render:render, toast:toast, findJob:findJob, findClient:findClient, cfg:cfg, mechanics:mechanics, esc:esc, hm:hm, money:money,
