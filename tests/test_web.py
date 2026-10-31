@@ -60,7 +60,7 @@ def new_client(pg):
 with sync_playwright() as p:
     br = p.chromium.launch()
     ctx, pg, errs, net = new_page(br)
-    check('H1. Hosted page opens alone (no claude.ai): title, "Version rapide" strip, OpenStreetMap by default', pg.title() == 'Carnet du garage mobile' and pg.is_visible('#demo-bar') and 'OpenStreetMap' in pg.inner_text('#db-prov') and pg.locator('.tab:not([hidden])').count() == 5 and not errs, errs[:3])
+    check('H1. Hosted page opens alone (no claude.ai): title, "Version rapide" strip, OpenStreetMap by default', pg.title() == 'Carnet du garage mobile' and pg.is_visible('#demo-bar') and 'OpenStreetMap' in pg.inner_text('#db-prov') and pg.locator('.tab:not([hidden])').count() == 6 and not errs, errs[:3])
     check('H1b. Owner tools available (hours button, + Réservation)', pg.locator('#top [data-act="new"]').count() == 1 and pg.locator('[data-act="hours-edit"]').count() == 1)
     new_client(pg)
     check('H2. Address field in fast mode invites to type', 'OpenStreetMap complète' in pg.inner_text('#c-addrmsg'))

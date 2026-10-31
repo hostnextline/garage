@@ -5,7 +5,7 @@
   function A(){ return window.__garageApi; }
   var me = null;
   var X = {tracks:{}, trackLoading:{}, busy:{}, live:[], members:[], active:[], mapSel:null, showPath:{}, paths:{}, eq:{list:null, err:'', created:null, secrets:null, confirm:null, editing:null}, enRoute:null, near:false, warnedNear:false};
-  var ROLE = {owner:'Propriétaire', bureau:'Bureau', mecano:'Mécano'};
+  var ROLE = {owner:'Propriétaire', bureau:'Bureau', mecano:'Mécano', tresorier:'Trésorier'};
 
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function norm(s){ return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); }
@@ -199,7 +199,7 @@
     if (!me || !A().canWrite()) return '';
     var st = j.status || 'planifie', t = X.tracks[j.id];
     if (t === undefined) fetchTrack(j.id);
-    if (st === 'annule' || st === 'termine') return '';
+    if (st === 'annule' || st === 'noshow' || st === 'termine') return '';
     var c = A().cl(j), who = first(c.firstName || c.name) || 'le client', phone = c.phone || '', mine = mineJob(j), busy = X.busy[j.id];
     var h = '<section class="sect er" aria-labelledby="er-h"><h3 id="er-h">' + (st === 'route' ? 'En route vers ' + esc(who) : st === 'place' ? 'Sur place' : 'Départ vers le client') + '</h3>';
     if (st === 'planifie'){
@@ -235,7 +235,7 @@
   function onStatus(j, v, was){
     var ST = A().ST;
     if (v === 'route') return startEnRoute(j);
-    if (was === 'route') endTrack(j, v === 'annule' ? 'cancelled' : 'arrived');
+    if (was === 'route') endTrack(j, (v === 'annule' || v === 'noshow') ? 'cancelled' : 'arrived');
     toast(ST[v]);
   }
 
@@ -300,7 +300,7 @@
     var order = {route:0, shift:1, stale:2, off:3};
     return out.sort(function(a, b){ return order[mechState(a.l)] - order[mechState(b.l)] || String(a.m.name).localeCompare(b.m.name, 'fr'); });
   }
-  function todaysJobs(){ var a = A(), d = a.today(); return a.S.jobs.filter(function(j){ return j.date === d && j.status !== 'annule'; }).sort(function(x, y){ return String(x.time).localeCompare(String(y.time)); }); }
+  function todaysJobs(){ var a = A(), d = a.today(); return a.S.jobs.filter(function(j){ return j.date === d && j.status !== 'annule' && j.status !== 'noshow'; }).sort(function(x, y){ return String(x.time).localeCompare(String(y.time)); }); }
   function ensureMap(){
     if (M.map || !window.L) return !!M.map;
     M.el = document.createElement('div'); M.el.id = 'gm-map'; M.el.className = 'gm-map'; M.el.setAttribute('role', 'region'); M.el.setAttribute('aria-label', 'Carte des mécanos');
@@ -402,7 +402,7 @@
       X.eq.loading = false; X.eq.list = r[0].members; X.eq.secrets = r[1]; X.eq.err = ''; render();
     }, function(e){ X.eq.loading = false; X.eq.err = e.message; render(); });
   }
-  function roleSelect(id, val){ return '<select id="' + id + '">' + ['mecano', 'bureau', 'owner'].map(function(r){ return '<option value="' + r + '"' + (r === val ? ' selected' : '') + '>' + ROLE[r] + '</option>'; }).join('') + '</select>'; }
+  function roleSelect(id, val){ return '<select id="' + id + '">' + ['mecano', 'bureau', 'tresorier', 'owner'].map(function(r){ return '<option value="' + r + '"' + (r === val ? ' selected' : '') + '>' + ROLE[r] + '</option>'; }).join('') + '</select>'; }
   function mechSelect(id, val){
     var ms = A().mechanics(), opts = '<option value="">' + (ms.length ? 'Aucun' : 'Ajoute les mécanos dans Réglages') + '</option>' + ms.map(function(m){ return '<option' + (norm(m) === norm(val) ? ' selected' : '') + '>' + esc(m) + '</option>'; }).join('');
     if (val && !ms.some(function(m){ return norm(m) === norm(val); })) opts += '<option selected>' + esc(val) + '</option>';
@@ -445,7 +445,7 @@
       '<div class="field"><label for="nw-name">Nom</label><input id="nw-name" autocomplete="off"></div>' +
       '<div class="field"><label for="nw-email">Courriel</label><input id="nw-email" type="email" inputmode="email" autocapitalize="off" spellcheck="false" autocomplete="off"></div>' +
       '<div class="grid2"><div class="field"><label for="nw-role">Rôle</label>' + roleSelect('nw-role', 'mecano') + '</div><div class="field"><label for="nw-mech">Nom dans l\'agenda</label>' + mechSelect('nw-mech', '') + '</div></div>' +
-      '<ul class="roles small"><li><b>Mécano</b> : seulement ses jobs, le bouton « En route », la facture sur place. Sa position est partagée pendant sa journée.</li><li><b>Bureau</b> : agenda, clients, factures et carte des mécanos. Pas les réglages.</li><li><b>Propriétaire</b> : tout, y compris les accès.</li></ul>' +
+      '<ul class="roles small"><li><b>Mécano</b> : seulement ses jobs, le bouton « En route », la facture sur place. Sa position est partagée pendant sa journée.</li><li><b>Bureau</b> : agenda, clients, factures et carte des mécanos. Pas les réglages.</li><li><b>Trésorier</b> : son propre écran, la trésorerie (dépenses avec photo des reçus, rapport, taxes à remettre, Excel). Il voit les clients et les factures, sans rien y changer.</li><li><b>Propriétaire</b> : tout, y compris les accès.</li></ul>' +
       '<p class="formerr" id="nw-err" role="alert" hidden></p><button type="button" class="btn primary block" data-act="eq-add">Créer le compte</button>' +
       '<p class="muted small">Un mot de passe temporaire est créé : tu l\'envoies à la personne.</p></section>';
     var s = X.eq.secrets || {};
@@ -587,6 +587,9 @@
     can:function(w){
       if (!me) return undefined;
       var r = me.role;
+      /* the treasurer: his own screen; sees clients and invoices, changes nothing else */
+      if (r === 'tresorier') return w === 'tab:tresor' || w === 'expenses' || w === 'money' || w === 'tab:clients' || w === 'tab:factures' || w === 'tab:plus';
+      if (w === 'tab:tresor' || w === 'expenses') return r === 'owner';
       if (w === 'tab:reglages') return r === 'owner';
       if (w === 'tab:carte') return r !== 'mecano';
       if (w === 'tab:equipe') return r === 'owner';
@@ -594,6 +597,7 @@
       return undefined;
     },
     myMechanic:function(){ return me && me.role === 'mecano' ? me.mechanic : null; },
+    homeTab:function(){ return me && me.role === 'tresorier' ? 'tresor' : null; },
     greetName:function(){ return me ? first(me.name) : ''; },
     tellsClient:true, isMine:mineJob,
     phoneTop:function(){ return me ? shiftCard() : ''; },

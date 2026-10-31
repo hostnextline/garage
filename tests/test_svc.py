@@ -2,7 +2,7 @@ exec(open('test_carnet.py').read().split("with sync_playwright() as p:")[0])
 import datetime
 td = datetime.date.today().isoformat()
 prices = [{'name': n, 'price': p} for n, p in [("Plaquettes de frein avant", 189), ("Plaquettes de frein arrière", 179), ("Disques de frein avant", 249), ("Liquide de frein (purge)", 89), ("Étrier de frein", 229), ("Câble de frein à main", 129), ("Inspection des freins", 49), ("Changement d'huile synthétique", 109.99), ("Remplacement de l'alternateur", 399)]]
-seed = {'config/main': {'biz': {'name': 'Garage Test'}, 'mechanics': ['Ali'], 'services': prices},
+seed = {'config/main': {'biz': {'name': 'Garage Test'}, 'trucks': [], 'mechanics': ['Ali'], 'services': prices},
         'clients/c1': {'firstName': 'Jean', 'lastName': 'Test', 'phone': '(514) 555-0000', 'address': '1 rue Test, Montréal H4P 2B5', 'postal': 'H4P 2B5', 'notes': []},
         'jobs/j1': {'client': {'name': 'Jean Test', 'postal': 'H4P 2B5'}, 'clientId': 'c1', 'vehicle': {}, 'services': ['Flushing des freins (client)'], 'date': td, 'time': '09:00', 'durationMin': 60, 'mechanic': 'Ali', 'status': 'termine'}}
 def rows(pg): return [r.inner_text().split('\n')[0] for r in pg.locator('#svc-opts .opt:not(.new)').all()]

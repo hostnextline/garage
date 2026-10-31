@@ -13,7 +13,7 @@ const cors = {
 };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 const fail = (message: string, status = 400, error = 'bad_request') => json({ error, message }, status);
-const ROLES = ['owner', 'bureau', 'mecano'];
+const ROLES = ['owner', 'bureau', 'mecano', 'tresorier'];
 const clean = (s: unknown, n = 60) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, n);
 const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
 

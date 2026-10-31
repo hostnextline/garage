@@ -6,4 +6,7 @@
 - Téléphone (< 700 px) : version simple automatique (Aujourd'hui, Clients, +, Factures, Plus) ; « Version complète » dans Plus. `web/pwa.json` + `web/icons/` (`mkicons.py`) = icône sur l'écran d'accueil.
 - `tests/` : tests navigateur (Playwright, `bash tests/regress.sh` les lance tous) et `tests/stack/` = copie locale de Supabase pour tester
   (Postgres 16 + PostgREST 12.2.3 + Supabase Auth v2.180.0 + Deno, GoHighLevel et itinéraires simulés).
-  `node keys.js > keys.json`, appliquer base.sql puis la migration, lancer Auth/PostgREST, puis `bash up.sh`.
+  `node keys.js > keys.json`, appliquer base.sql puis les migrations dans l'ordre (supabase/migrations/), lancer Auth/PostgREST, puis `bash up.sh`.
+- Camions = colonnes de l'horaire (`config.trucks`, 3 par défaut dont 2 fermés), équipe du jour dans `days/<date>.crew`, dispos des mécanos dans `avail/<mécano>`.
+- Trésorerie : `expenses/<id>` (dépenses) et `receipts/<id>` (photo du reçu, chargée seulement quand on l'ouvre). Rôle « tresorier » dans la base.
+- Pour test_tresor / test_team (fichier Excel) : `cd tests && npm i xlsx@0.18.5 --prefix xlsxlib` et une photo `recu_test.jpg` (n'importe quelle grande photo JPEG).

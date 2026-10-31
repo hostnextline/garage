@@ -63,7 +63,7 @@ with sync_playwright() as p:
     br = p.chromium.launch()
 
     # ---------- main flow ----------
-    ctx, pg, errs = new_page(br, {})
+    ctx, pg, errs = new_page(br, {'seed': {'config/main': {'trucks': []}}})
     check('1. Empty agenda shows the day grid with a "touch a free case" hint', pg.locator('text=Touche une case libre').count() == 1 and pg.locator('.cal').count() == 1)
     check('1b. No horizontal scroll at 390px (agenda)', no_hscroll(pg))
     pg.screenshot(path=os.path.join(SC, 'shot_empty.png'), full_page=True)
@@ -184,7 +184,7 @@ with sync_playwright() as p:
     check('A6. Draft deleted once the booking is saved', 'data/users/u_test/draft-booking' not in store(pg))
     check('G0. Popup closes after saving; appointment block shows in Ali\'s column', not pg.is_visible('#sheet') and pg.locator('.col[data-col="Ali"] .appt', has_text='Jean Tremblay').count() == 1)
     pg.locator('.appt', has_text='Jean Tremblay').click(); pg.wait_for_timeout(80)
-    check('7e. Detail shows the 3 services as tags', pg.locator('.tags .tag').count() == 3)
+    check('7e. Detail shows the 3 services as tags', pg.locator('section:has(h3:text("Travail demandé")) .tags .tag').count() == 3)
     check('7b. Job detail screen opened', pg.locator('#top h1').inner_text() == 'Jean Tremblay')
     check('7c. Detail shows VIN check result', pg.locator('text=Chiffre de contrôle correct').count() + pg.locator('text=À vérifier').count() >= 1)
     check('7d. No horizontal scroll (job detail)', no_hscroll(pg))
@@ -432,7 +432,7 @@ with sync_playwright() as p:
     # ---------- dark mode look (seeded) ----------
     import datetime
     td = datetime.date.today().isoformat()
-    seed = {'config/main': {'biz': {'name': 'Garage Mobile Test', 'phone': '(514) 555-0000'}, 'taxesOn': True, 'tpsNo': '123456789 RT0001', 'tvqNo': '1234567890 TQ0001', 'rate': 95, 'mechanics': ['Ali', 'Marc'], 'services': [{'name': "Changement d'huile", 'price': 89.99}]},
+    seed = {'config/main': {'biz': {'name': 'Garage Mobile Test', 'phone': '(514) 555-0000'}, 'taxesOn': True, 'tpsNo': '123456789 RT0001', 'tvqNo': '1234567890 TQ0001', 'rate': 95, 'trucks': [], 'mechanics': ['Ali', 'Marc'], 'services': [{'name': "Changement d'huile", 'price': 89.99}]},
             'jobs/a1': {'client': {'name': 'Jean Tremblay', 'phone': '(514) 555-1234', 'address': '4500 boul. Décarie, Montréal'}, 'vehicle': {'year': '2018', 'make': 'Honda', 'model': 'Civic', 'vin': '2HGFC2F59JH542376', 'km': '142000'},
                         'service': "Changer l'alternateur", 'date': td, 'time': '09:30', 'durationMin': 90, 'mechanic': 'Ali', 'status': 'place',
                         'invoice': {'lines': [{'type': 'piece', 'desc': 'Batterie', 'qty': 1, 'price': 180}], 'taxesOn': True, 'sub': 180, 'tps': 9, 'tvq': 17.96, 'total': 206.96, 'paid': False, 'method': '', 'paidAt': None, 'note': '', 'number': 'F-0009', 'issuedAt': td}},

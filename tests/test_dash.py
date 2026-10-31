@@ -10,7 +10,7 @@ def mo(k):
     d = T.replace(day=1)
     for _ in range(k): d = (d - datetime.timedelta(days=1)).replace(day=1)
     return d
-seed = {'config/main': {'biz': {'name': 'Garage NextLine'}, 'mechanics': ['Saleh', 'Ali'], 'rate': 120, 'taxesOn': True, 'goal': 20000, 'prefix': 'F-', 'startNo': 1}}
+seed = {'config/main': {'biz': {'name': 'Garage NextLine'}, 'trucks': [], 'mechanics': ['Saleh', 'Ali'], 'rate': 120, 'taxesOn': True, 'goal': 20000, 'prefix': 'F-', 'startNo': 1}}
 cl = lambda n, p: {'name': n, 'firstName': n.split()[0], 'lastName': n.split()[1], 'phone': p, 'address': '4520 rue Saint-Denis, Montréal', 'postal': 'H2J 2L3'}
 jobs = [
   ('a1', iso(T), '08:30', 'Saleh', 'termine', cl('Marie Tremblay', '5145550101'), ["Changement d'huile et filtre"], {'number': 'F-0012', 'total': 189.5, 'paid': True, 'issuedAt': iso(T)}),
@@ -51,7 +51,7 @@ with sync_playwright() as p:
     br = p.chromium.launch()
     ctx, pg, errs = open_page(br, {'seed': seed})
     check('opens on Accueil', pg.locator('.tab[data-t="accueil"][aria-current="page"]').count() == 1)
-    check('tabs: Accueil Agenda Clients Factures Réglages', pg.evaluate("[...document.querySelectorAll('.tab')].filter(b=>!b.hidden).map(b=>b.textContent.trim())") == ['Accueil', 'Agenda', 'Clients', 'Factures', 'Réglages'])
+    check('tabs: Accueil Agenda Clients Factures Trésorerie Réglages', pg.evaluate("[...document.querySelectorAll('.tab')].filter(b=>!b.hidden).map(b=>b.textContent.trim())") == ['Accueil', 'Agenda', 'Clients', 'Factures', 'Trésorerie', 'Réglages'])
     check('greeting', re.match(r'^(Bonjour|Bonsoir)$', txt(pg, 'h1')) is not None, txt(pg, 'h1'))
     check('month revenue = issued invoices of the month', txt(pg, '.kpi-big').replace('\u202f', ' ').replace('\xa0', ' ') == '3 809,50 $', txt(pg, '.kpi-big'))
     check('change vs last month', txt(pg, '.delta').replace('\xa0', ' ') == '-46 %', txt(pg, '.delta'))

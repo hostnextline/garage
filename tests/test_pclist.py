@@ -14,7 +14,7 @@ cx, cy = U[0]*20, U[1]*20
 CENTER = [C0[0] + cx/KX, C0[1] + cy/111320]
 GEO = {'type': 'FeatureCollection', 'features': [{'type': 'Feature', 'geometry': {'type': 'Point', 'coordinates': CENTER}, 'properties': {'type': 'Street', 'address': {'streetName': 'Rue Saint-Essai', 'municipality': 'Montréal', 'postalCode': 'H2J', 'countryCode': 'CA', 'freeformAddress': 'Rue Saint-Essai, Montréal QC H2J'}}}]}
 MP = {'mode': 'ok', 'fixture': EMPTY, 'geocode': {'H2J 2L3': GEO}, 'houses': houses, 'revDelay': 40}
-seedP = {'config/main': {'biz': {'name': 'Garage Mobile Test'}, 'mechanics': ['Ali'], 'homePostal': 'J7Y 1A1'}}
+seedP = {'config/main': {'biz': {'name': 'Garage Mobile Test'}, 'trucks': [], 'mechanics': ['Ali'], 'homePostal': 'J7Y 1A1'}}
 def revcalls(pg): return [c for c in calls(pg) if c['tool'] == 'tomtom-reverse-geocode']
 with sync_playwright() as p:
     br = p.chromium.launch()

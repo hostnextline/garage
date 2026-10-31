@@ -12,7 +12,7 @@ FIX = {'type': 'FeatureCollection', 'properties': {'numResults': 3}, 'features':
 ]}
 FIX['features'].append(json.loads(json.dumps(FIX['features'][0])))  # duplicate, must be shown once
 T1 = '1200 Rue Essai-Sud, Montréal QC H4P 2B5'; T2 = '1200 Avenue Exemple, Montréal QC H2X 3K8'
-seed = {'config/main': {'biz': {'name': 'Garage Mobile Test'}, 'mechanics': ['Ali', 'Marc'], 'homePostal': 'J7Y 1A1'}}
+seed = {'config/main': {'biz': {'name': 'Garage Mobile Test'}, 'trucks': [], 'mechanics': ['Ali', 'Marc'], 'homePostal': 'J7Y 1A1'}}
 def C(pg): return {k: v for k, v in store(pg).items() if k.startswith('clients/')}
 def calls(pg): return pg.evaluate('JSON.parse(JSON.stringify(window.__mcpCalls))')
 def new_client_page(pg):

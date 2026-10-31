@@ -13,7 +13,7 @@ veh = {'year': '2015', 'make': 'Honda', 'model': 'Civic', 'vin': ''}
 def inv(no, issued, total, paid):
     return {'lines': [{'type': 'piece', 'desc': 'Batterie', 'qty': 1, 'price': 180}], 'taxesOn': True, 'sub': 180, 'tps': 9, 'tvq': 17.96, 'total': total, 'paid': paid, 'method': 'Débit' if paid else '', 'paidAt': issued if paid else None, 'note': '', 'number': no, 'issuedAt': issued}
 seed = {
-    'config/main': {'biz': {'name': 'Garage Mobile Test', 'phone': '(514) 555-0000'}, 'taxesOn': True, 'rate': 95, 'mechanics': ['Ali', 'Marc'], 'hours': hours, 'homePostal': 'J7Y 1A1',
+    'config/main': {'biz': {'name': 'Garage Mobile Test', 'phone': '(514) 555-0000'}, 'taxesOn': True, 'rate': 95, 'trucks': [], 'mechanics': ['Ali', 'Marc'], 'hours': hours, 'homePostal': 'J7Y 1A1',
                     'services': [{'name': "Changement d'huile", 'price': 89.99}]},
     'meta/invoices': {'next': 4},
     'clients/jean': jean, 'clients/sophie': sophie,
@@ -28,7 +28,7 @@ with sync_playwright() as p:
     br = p.chromium.launch()
     # ---------- empty carnet ----------
     ctx, pg, errs = new_page(br, {})
-    check('K0. Tab bar has 5 tabs (Accueil first) including Clients', pg.locator('.tab:not([hidden])').count() == 5 and pg.locator('.tab:not([hidden])').first.get_attribute('data-t') == 'accueil' and pg.locator('.tab[data-t="clients"]').count() == 1)
+    check('K0. Tab bar has 6 tabs (Accueil first, Trésorerie for the owner) including Clients', pg.locator('.tab:not([hidden])').count() == 6 and pg.locator('.tab:not([hidden])').first.get_attribute('data-t') == 'accueil' and pg.locator('.tab[data-t="clients"]').count() == 1)
     pg.click('.tab[data-t="clients"]'); pg.wait_for_timeout(100)
     check('K0b. Empty Clients tab explains the fiche and offers to create the first one', 'Aucune fiche client' in pg.inner_text('main') and pg.locator('main [data-act="cl-new"]').count() == 1)
     ctx.close()

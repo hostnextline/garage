@@ -2,7 +2,7 @@ exec(open('test_carnet.py').read().split("with sync_playwright() as p:")[0])
 import datetime
 td = datetime.date.today().isoformat()
 hours = {str(d): {'open': True, 'start': '07:00', 'end': '20:00'} for d in range(7)}
-cfgm = {'biz': {'name': 'Garage Test'}, 'mechanics': ['Ali'], 'hours': hours, 'rate': 95, 'taxesOn': False, 'services': [{'name': "Changement d'huile et filtre", 'price': 89.99}]}
+cfgm = {'biz': {'name': 'Garage Test'}, 'trucks': [], 'mechanics': ['Ali'], 'hours': hours, 'rate': 95, 'taxesOn': False, 'services': [{'name': "Changement d'huile et filtre", 'price': 89.99}]}
 seed = {'config/main': cfgm,
         'clients/c1': {'firstName': 'Jean', 'lastName': 'Test', 'phone': '(514) 555-0000', 'address': '1 rue Test, Montréal H4P 2B5', 'postal': 'H4P 2B5', 'notes': []},
         'jobs/old': {'client': {'name': 'Jean Test', 'postal': 'H4P 2B5'}, 'clientId': 'c1', 'vehicle': {}, 'services': ["Remplacement de l'alternateur"], 'date': td, 'time': '08:00', 'durationMin': 60, 'mechanic': 'Ali', 'status': 'planifie'}}

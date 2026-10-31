@@ -10,7 +10,7 @@ def km(a, b): return 2 if a[2] == b[2] else round(hav(a, b)*1.3*10)/10
 def drive(k): return math.ceil(k/35*60 + 5)
 td = datetime.date.today(); D1 = (td + datetime.timedelta(days=1)).isoformat(); D2 = (td + datetime.timedelta(days=2)).isoformat()
 hours = {str(d): {'open': True, 'start': '08:00', 'end': '17:00'} for d in range(7)}
-base_cfg = {'biz': {'name': 'Garage Mobile Test'}, 'mechanics': ['Ali', 'Marc'], 'hours': hours, 'rate': 95}
+base_cfg = {'biz': {'name': 'Garage Mobile Test'}, 'trucks': [], 'mechanics': ['Ali', 'Marc'], 'hours': hours, 'rate': 95}
 def job(d, t, m, name, pc, dur=60): return {'client': {'name': name, 'phone': '(514) 555-0000', 'address': '1 rue Test', 'postal': pc}, 'vehicle': {}, 'services': ['Diagnostic (lecture des codes)'], 'date': d, 'time': t, 'durationMin': dur, 'mechanic': m, 'status': 'planifie'}
 seed = {'config/main': dict(base_cfg, homePostal='J7Y 1A1'),
         'jobs/a1': job(D1, '09:00', 'Ali', 'Luc Gagnon', 'H4N 1B2'), 'jobs/a2': job(D1, '09:00', 'Marc', 'Marie Côté', 'J4K 1A1'),

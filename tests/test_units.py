@@ -2,7 +2,7 @@ exec(open('test_carnet.py').read().split("with sync_playwright() as p:")[0])
 import datetime
 td = datetime.date.today().isoformat()
 hours = {str(d): {'open': True, 'start': '08:00', 'end': '17:00'} for d in range(7)}
-seed = {'config/main': {'biz': {'name': 'Garage Mobile Test'}, 'mechanics': ['Ali', 'Marc'], 'hours': hours}}
+seed = {'config/main': {'biz': {'name': 'Garage Mobile Test'}, 'trucks': [], 'mechanics': ['Ali', 'Marc'], 'hours': hours}}
 with sync_playwright() as p:
     br = p.chromium.launch()
     ctx, pg, errs = new_page(br, {'seed': seed})

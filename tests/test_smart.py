@@ -16,7 +16,7 @@ AT = '1200 Rue Essai-Sud, Montréal QC H4P 2B5'
 MCP = {'mode': 'ok', 'fixture': EMPTY,
        'byQuery': {'1200 essai|PAD,Addr': F(ESSAI, ONT), 'rue essai|Str': STR, '1200 Rue Essai-Sud, Montréal QC|PAD,Addr': F(ESSAI), '99999 rue essai|PAD,Addr': EMPTY, '1200 H4P 2B5|PAD,Addr': F(ESSAI)},
        'verify': {'1200 rue essai-sud montreal': F(DECOY, ESSAI), '1200 rue essai-sud, montréal H2X 3K8': F(ESSAI), '1200 rue essai-sud, montréal H4P 2B5': F(ESSAI), '77 rue essai-sud, montréal': EMPTY}}
-seedS = {'config/main': {'biz': {'name': 'Garage Mobile Test'}, 'mechanics': ['Ali'], 'homePostal': 'J7Y 1A1'},
+seedS = {'config/main': {'biz': {'name': 'Garage Mobile Test'}, 'trucks': [], 'mechanics': ['Ali'], 'homePostal': 'J7Y 1A1'},
          'clients/jean': {'firstName': 'Jean', 'lastName': 'Tremblay', 'phone': '(514) 555-1234', 'email': '', 'address': AT, 'postal': 'H4P 2B5', 'notes': [], 'createdAt': 1, 'updatedAt': 1}}
 def hav(a, b):
     r = math.pi/180; dla = (b[0]-a[0])*r; dlo = (b[1]-a[1])*r

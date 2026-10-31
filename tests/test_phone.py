@@ -9,7 +9,7 @@ RESET = 'html{color-scheme:light}:root{padding-top:env(safe-area-inset-top,0px);
 T = datetime.date.today(); iso = lambda d: d.isoformat()
 W = T + datetime.timedelta(days=3)
 while W.weekday() != 2: W += datetime.timedelta(days=1)   # a Wednesday, 3+ days ahead (open 8 h - 17 h by default)
-seed = {'config/main': {'biz': {'name': 'Garage NextLine'}, 'mechanics': ['Saleh', 'Ali'], 'rate': 120, 'taxesOn': True, 'goal': 20000, 'prefix': 'F-', 'startNo': 1}}
+seed = {'config/main': {'biz': {'name': 'Garage NextLine'}, 'trucks': [], 'mechanics': ['Saleh', 'Ali'], 'rate': 120, 'taxesOn': True, 'goal': 20000, 'prefix': 'F-', 'startNo': 1}}
 cl = lambda n, p: {'name': n, 'firstName': n.split()[0], 'lastName': n.split()[1], 'phone': p, 'address': '4520 rue Saint-Denis, Montréal', 'postal': 'H2J 2L3'}
 seed['clients/c1'] = {'firstName': 'Marie', 'lastName': 'Tremblay', 'phone': '5145550101', 'address': '4520 rue Saint-Denis, Montréal', 'postal': 'H2J 2L3'}
 seed['clients/c9'] = {'firstName': 'Nadia', 'lastName': 'Haddad', 'phone': '5145550505', 'address': '100 rue Ontario Est, Montréal', 'postal': 'H2X 1H1'}
@@ -131,12 +131,19 @@ with sync_playwright() as p:
     check('4. notes open, other details folded', pg.locator('details.fold[open]').count() == 1 and 'Bruit en freinant' in txt(pg, 'details.fold[open]') and pg.locator('details.fold').count() == 4)
     check('4. no sideways scroll (job)', no_hscroll(pg))
     flow = []
-    for want in ('route', 'place', 'termine'):
+    for want in ('route', 'place'):
         lab = txt(pg, '.nextbtn'); pg.click('.nextbtn'); wait(pg, 400); flow.append((lab, (store(pg, 'jobs/a4') or {}).get('status')))
+    check('4. on site: « Travaux faits » open on the job', pg.locator('details.fold[open] summary', has_text='Travaux faits').count() == 1)
+    lab = txt(pg, '.nextbtn'); pg.click('.nextbtn'); wait(pg, 400)
+    check('4. « Terminer la job » first asks what was done (booked services pre-checked)', pg.locator('#sheet').is_visible() and pg.locator('#svc-picked .pchip').count() == 2 and 'Montant prévu' in txt(pg, '#done-amt'), txt(pg, '#done-amt'))
+    pg.fill('#f-svc-in', 'Purge des freins'); pg.keyboard.press('Enter'); wait(pg, 150); pg.keyboard.press('Escape')
+    pg.click('[data-act="done-save"]'); wait(pg, 500); flow.append((lab, (store(pg, 'jobs/a4') or {}).get('status')))
     check('4. Je pars → Je suis arrivé → Terminer la job', [f[0] for f in flow] == ['Je pars', 'Je suis arrivé', 'Terminer la job'] and [f[1] for f in flow] == ['route', 'place', 'termine'], flow)
+    check('4. work done saved on the job (3 lines)', (store(pg, 'jobs/a4') or {}).get('done') == ["Changement d'huile et filtre", 'Inspection multipoints', 'Purge des freins'], (store(pg, 'jobs/a4') or {}).get('done'))
     check('4. steps follow (3 done, Terminée current)', pg.locator('.steps4 li.past').count() == 3)
     check('4. then: Faire la facture', txt(pg, '.nextbtn') == 'Faire la facture')
     pg.click('.nextbtn'); wait(pg, 500)
+    check('4. invoice starts from the work done (3 lines)', pg.locator('#lines .line, .iline').count() >= 3 or pg.evaluate("window.__garageApi.S.inv.lines.length") == 3, pg.evaluate("window.__garageApi.S.inv.lines.map(l => l.desc)"))
     check('4. invoice: payment as big buttons', pg.locator('.paybtns [data-pay]').count() == 4 and pg.evaluate("[...document.querySelectorAll('.paybtns [data-pay]')].map(b=>b.textContent)") == ['Comptant', 'Débit', 'Crédit', 'Virement'])
     check('4. no sideways scroll (invoice)', no_hscroll(pg))
     pg.click('.paybtns [data-pay="Débit"]'); wait(pg, 150)
@@ -150,10 +157,13 @@ with sync_playwright() as p:
         pg.evaluate("window.__garageApi.S.screen = 'job'; window.__garageApi.S.jobId = 'a4'; window.__garageApi.render()"); wait(pg)
     check('4. then: Voir la facture', txt(pg, '.nextbtn') == 'Voir la facture', txt(pg, '.nextbtn'))
     pg.select_option('#ph-st', 'annule'); wait(pg, 400)
-    check('4. status menu: cancel', (store(pg, 'jobs/a4') or {}).get('status') == 'annule' and 'annulée' in txt(pg, '.pjob'))
+    check('4. status menu « Annulé » asks for the amount lost first', pg.locator('#cx-amt').is_visible() and (store(pg, 'jobs/a4') or {}).get('status') == 'termine')
+    pg.click('[data-act="cx-why"][data-v="client"]'); pg.click('[data-act="cx-yes"]'); wait(pg, 500)
+    lo = (store(pg, 'jobs/a4') or {}).get('lost') or {}
+    check('4. status menu: cancel', (store(pg, 'jobs/a4') or {}).get('status') == 'annule' and 'Annulée' in txt(pg, '.pjob') and lo.get('amount', 0) < 0 and lo.get('reason') == 'client', lo)
     check('4. cancelled job offers to put it back', txt(pg, '.nextbtn') == 'Remettre la job à l\'agenda')
     pg.click('.nextbtn'); wait(pg, 400)
-    check('4. back to Planifiée', (store(pg, 'jobs/a4') or {}).get('status') == 'planifie')
+    check('4. back to Planifiée (amount lost removed)', (store(pg, 'jobs/a4') or {}).get('status') == 'planifie' and not (store(pg, 'jobs/a4') or {}).get('lost'))
     pg.click('[data-act="back"]'); wait(pg)
     # delete the job booked in step 3 (asks first)
     pg.evaluate("w => { const i = document.getElementById('ph-date'); i.value = w; i.dispatchEvent(new Event('change', {bubbles: true})); }", iso(W)); wait(pg)
@@ -166,7 +176,7 @@ with sync_playwright() as p:
     check('4. « Supprimer » removes it (back to the original state)', store(pg, 'jobs/' + newid) is None and 'job:' + newid not in rows(pg), rows(pg))
     # ---------- 5. « + » menu ----------
     pg.click('.tab-new'); wait(pg, 400)
-    check('5. « + » offers 3 choices', pg.evaluate("[...document.querySelectorAll('#sheet .ph-row b')].map(b=>b.textContent)") == ['Nouvelle réservation', 'Facture sur place', 'Nouveau client'])
+    check('5. « + » offers 4 choices', pg.evaluate("[...document.querySelectorAll('#sheet .ph-row b')].map(b=>b.textContent)") == ['Nouvelle réservation', 'Facture sur place', 'Nouveau client', 'Nouvelle dépense'])
     pg.click('[data-act="ph-go"][data-v="quick"]'); wait(pg, 500)
     pg.fill('#cs-q', 'Marie'); wait(pg); pg.locator('#cs-results .crow').first.click(); wait(pg, 600)
     check('5. on-the-spot invoice: 3 steps, last one is « Confirmer »', 'Confirmer' in pg.evaluate("document.getElementById('wiz').textContent"))
@@ -187,7 +197,7 @@ with sync_playwright() as p:
     # ---------- 6. Plus ----------
     pg.click('.tab[data-t="plus"]'); wait(pg)
     pl = pg.evaluate("[...document.querySelectorAll('nav.ph-menu .ph-row b')].map(b=>b.textContent)")
-    check('6. Plus: Tableau de bord, Heures d\'ouverture, Réglages', pl == ['Tableau de bord', 'Heures d\'ouverture', 'Réglages'], pl)
+    check('6. Plus: Tableau de bord, Heures d\'ouverture, Disponibilités des mécanos, Réglages', pl == ['Tableau de bord', 'Heures d\'ouverture', 'Disponibilités des mécanos', 'Trésorerie', 'Réglages'], pl)
     check('6. Plus: « Version complète » row', pg.locator('[data-act="ui-full"]').count() == 1)
     check('6. no sideways scroll (Plus)', no_hscroll(pg))
     pg.click('a[href="#accueil"]'); wait(pg, 400)
@@ -231,7 +241,7 @@ with sync_playwright() as p:
     check('6. put back to 20 000 (original)', (store(pg, 'config/main') or {}).get('goal') == 20000)
     # full <-> simple
     pg.click('.tab[data-t="plus"]'); wait(pg); pg.click('[data-act="ui-full"]'); wait(pg, 500)
-    check('7. « Version complète »: all tabs, opens Accueil', tabs(pg) == ['accueil', 'agenda', 'clients', 'factures', 'reglages'] and not pg.evaluate("document.body.classList.contains('ui-phone')"), tabs(pg))
+    check('7. « Version complète »: all tabs, opens Accueil', tabs(pg) == ['accueil', 'agenda', 'clients', 'factures', 'tresor', 'reglages'] and not pg.evaluate("document.body.classList.contains('ui-phone')"), tabs(pg))
     check('7. choice remembered', pg.evaluate("localStorage.getItem('gm.ui')") == 'full')
     check('7. dashboard offers to go back to the simple version', pg.locator('[data-act="ui-phone"]').count() == 1)
     pg.click('[data-act="ui-phone"]'); wait(pg, 500)
@@ -250,7 +260,7 @@ with sync_playwright() as p:
 
     # ---------- 9. big screens stay the full version ----------
     ctx, pg, errs = open_page(br, {'seed': seed}, width=1280, touch=False)
-    check('9. computer (1280): full version, opens Accueil', not pg.evaluate("document.body.classList.contains('ui-phone')") and pg.locator('.tab[data-t="accueil"][aria-current="page"]').count() == 1 and tabs(pg) == ['accueil', 'agenda', 'clients', 'factures', 'reglages'], tabs(pg))
+    check('9. computer (1280): full version, opens Accueil', not pg.evaluate("document.body.classList.contains('ui-phone')") and pg.locator('.tab[data-t="accueil"][aria-current="page"]').count() == 1 and tabs(pg) == ['accueil', 'agenda', 'clients', 'factures', 'tresor', 'reglages'], tabs(pg))
     check('9. no « Version simple » chip on a computer', pg.locator('[data-act="ui-phone"]').count() == 0)
     pg.set_viewport_size({'width': 390, 'height': 844}); wait(pg, 500)
     check('9. shrinking the window switches to the simple version', pg.evaluate("document.body.classList.contains('ui-phone')") and tabs(pg) == ['jour', 'clients', '+', 'factures', 'plus'])
