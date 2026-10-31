@@ -1,0 +1,29 @@
+name: Sauvegarde de la nuit
+on:
+  schedule:
+    - cron: '17 7 * * *'     # chaque nuit vers 3 h 17 (heure de Montréal, 2 h 17 en hiver)
+  workflow_dispatch: {}       # bouton « Run workflow » pour une copie tout de suite
+permissions:
+  contents: write
+concurrency:
+  group: sauvegarde
+jobs:
+  copie:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Copier le carnet
+        env:
+          SUPABASE_URL: https://vaddqzejagdvexlmjelr.supabase.co
+          SUPABASE_ANON: ${{ secrets.SUPABASE_ANON }}
+          BACKUP_KEY: ${{ secrets.BACKUP_KEY }}
+        run: python3 sauvegarder.py
+      - name: Garder la copie
+        run: |
+          git config user.name "Sauvegarde du garage"
+          git config user.email "host.nextline@gmail.com"
+          git add -A sauvegarde recus
+          if git diff --cached --quiet; then echo "Rien de nouveau"; exit 0; fi
+          git commit -q -m "Sauvegarde $(date -u +%Y-%m-%d)"
+          git push
