@@ -4,10 +4,11 @@ from playwright.sync_api import sync_playwright
 QRJS = open(os.path.join(SC, 'qrlib/node_modules/qrcode-generator/qrcode.js'), encoding='utf8').read()
 ANDROID = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Mobile Safari/537.36'
 def ghl_log(): return http('GET', 'http://127.0.0.1:9200/__log') or []
+QR_REQ = []
 def mk(b, phone=False, ua=None, standalone=False):
     c = ctx(b, phone=phone)
     if ua: c = b.new_context(viewport={'width': 412, 'height': 900}, timezone_id='America/Toronto', locale='fr-CA', has_touch=True, user_agent=ua, is_mobile=True)
-    c.route('https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js', lambda r: r.fulfill(status=200, content_type='application/javascript', body=QRJS, headers={'Access-Control-Allow-Origin': '*'}))
+    c.route('https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js', lambda r: (QR_REQ.append(r.request.url), r.abort()))
     c.route('https://tile.openstreetmap.org/**', lambda r: r.fulfill(status=200, content_type='image/png', body=b''))
     c.route('https://fonts.**', lambda r: r.abort())
     if standalone: c.add_init_script("Object.defineProperty(navigator, 'standalone', {get: () => true})")
@@ -92,6 +93,13 @@ with sync_playwright() as pl:
     item.locator('button').click(); op.wait_for_timeout(600)
     check('computer: nothing to install here, a code to scan with the phone + the address', 'rien à installer' in txt(op, '.inst') and op.locator('#inst-qr svg').count() == 1 and op.is_visible('#inst-qr') and '127.0.0.1:8088/' in txt(op, '.inst-url'))
     check('both phones explained (iPhone, Android)', op.locator('.inst .inst-b').count() == 2 and 'Android' in txt(op, '.inst') and '⋮' in txt(op, '.inst'))
+    check('the QR library is inside the app (no outside download)', op.evaluate("typeof qrcode === 'function'") and not any('qrcode' in r for r in QR_REQ), QR_REQ)
+    import cv2, numpy as np
+    shot = op.locator('#inst-qr').screenshot()
+    val = cv2.QRCodeDetector().detectAndDecode(cv2.imdecode(np.frombuffer(shot, np.uint8), cv2.IMREAD_COLOR))[0]
+    check('a phone camera reads the code: it gives the app address', val == BASE, val)
+    big = cv2.resize(cv2.imdecode(np.frombuffer(shot, np.uint8), cv2.IMREAD_COLOR), None, fx=0.6, fy=0.6)
+    check('still readable when smaller (from farther away)', cv2.QRCodeDetector().detectAndDecode(big)[0] == BASE)
     op.click('[data-act="app-done"]'); op.wait_for_timeout(600)
     check('« C\'est fait » → the guide step is checked', op.locator('#guide li.ok', has_text='Mettre l\'app sur ton téléphone').count() == 1 or op.locator('#guide').count() == 0)
     oc.close()

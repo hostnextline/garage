@@ -40,6 +40,7 @@ out = ('<!doctype html><html lang="fr-CA"><head><meta charset="utf-8">'
        '<style>' + reset + '</style>\n' + head + '\n'
        '<script>window.__GARAGE_TEAM = true;</script>\n'
        '<script src="config.js"></script>\n<script src="vendor/supabase.js"></script>\n<script src="vendor/leaflet.js"></script>\n'
+       '<script>\n' + read('qrcode.min.js') + '\n</script>\n'   # QR code of the app address (no outside CDN)
        '<script>\n' + read('shim.js') + '\n</script>\n<script>\n' + read('supa.js') + '\n</script>\n<script>\n' + read('equipe.js') + '\n</script>\n'
        '</head><body>\n' + body + '\n</body></html>\n')
 open(os.path.join(a.out, 'index.html'), 'w', encoding='utf8').write(out)

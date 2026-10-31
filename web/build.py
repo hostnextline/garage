@@ -23,7 +23,7 @@ out = ('<!doctype html><html lang="fr-CA"><head><meta charset="utf-8">'
        '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
        '<meta name="robots" content="noindex,nofollow">' + PWA_TAGS + '<meta name="apple-mobile-web-app-title" content="Garage essai">'
               '<link rel="preconnect" href="https://photon.komoot.io" crossorigin><link rel="preconnect" href="https://api.tomtom.com" crossorigin><link rel="preconnect" href="https://maps.googleapis.com">'
-       '<style>' + reset + '</style>\n' + head + '\n<script>\n' + shim + '\n</script>\n</head><body>\n' + body + '\n</body></html>\n')
+       '<style>' + reset + '</style>\n' + head + '\n<script>\n' + open(os.path.join(D, 'qrcode.min.js'), encoding='utf8').read() + '\n</script>\n<script>\n' + shim + '\n</script>\n</head><body>\n' + body + '\n</body></html>\n')
 assert out.count('<script>') >= 2
 pwa(D, 'Carnet du garage (essai)', 'Garage essai', 'garage-essai')
 open(os.path.join(D, 'index.html'), 'w', encoding='utf8').write(out)

@@ -854,7 +854,7 @@ details.adv[open] > summary{margin-bottom:8px}
 .inst .ish{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--surface);border:1px solid var(--line);vertical-align:middle;color:#0a6cff}
 .qrbox{width:200px;height:200px;padding:10px;border-radius:14px;background:#fff;justify-self:center;border:1px solid var(--line)}
 .qrbox svg{width:100%;height:100%;display:block}
-.inst-url{text-align:center;font-size:15px;word-break:break-all}
+.inst-url{text-align:center;font-size:19px;font-weight:700;word-break:break-all;letter-spacing:.01em}
 .guide{display:grid;gap:10px}
 .guide ol{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .guide li a,.guide li button.g-go{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:10px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);color:var(--ink);text-decoration:none;font:inherit;font-weight:600;text-align:left;cursor:pointer}
@@ -3978,7 +3978,7 @@ function installSheet(){
   var andr = '<li>Ouvre l\'app dans <b>Chrome</b>.</li><li>Touche le menu <b>⋮</b> (en haut à droite).</li><li>Touche <b>« Installer l\'application »</b> (ou « Ajouter à l\'écran d\'accueil »).</li><li>Touche <b>« Installer »</b>. L\'icône du garage apparaît avec tes autres apps.</li>';
   var h = '<div class="stack inst">';
   if (window.__bip) h += '<button type="button" class="btn primary block" data-act="ph-install">Installer l\'app maintenant</button><p class="small muted">Ou fais-le à la main :</p>';
-  if (plat === 'pc') h += '<p><b>Sur l\'ordinateur, il n\'y a rien à installer.</b> Pour ton téléphone : ouvre l\'appareil photo et vise ce code, ou écris l\'adresse dans le navigateur du téléphone.</p><div class="qrbox" id="inst-qr" role="img" aria-label="Code QR de l\'adresse de l\'app" hidden></div><p class="mono sel inst-url">' + esc(url.replace(/^https?:\/\//, '')) + '</p>';
+  if (plat === 'pc') h += '<p><b>Sur l\'ordinateur, il n\'y a rien à installer.</b> Pour ton téléphone : ouvre l\'appareil photo du téléphone et vise ce code (sur l\'écran de l\'ordinateur), puis touche le lien qui apparaît. Ou écris cette adresse dans le navigateur du téléphone :</p><div class="qrbox" id="inst-qr" role="img" aria-label="Code QR de l\'adresse de l\'app" hidden></div><p class="sel inst-url" id="inst-url">' + esc(url.replace(/^https?:\/\//, '')) + '</p>';
   var blocks = [['Sur un iPhone', ios, 'ios'], ['Sur un Android (Samsung, Pixel…)', andr, 'android']];
   if (plat === 'android') blocks.reverse();
   h += blocks.map(function(x){ return '<section class="inst-b" data-p="' + x[2] + '"><h3>' + x[0] + '</h3><ol>' + x[1] + '</ol></section>'; }).join('');
