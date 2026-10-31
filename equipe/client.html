@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#1E1915">
+<title>Votre dossier · garage mobile</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231E1915'/%3E%3Cpath d='M18 44l8-8m10-10l10-10M26 36a8 8 0 1 0 10-10' stroke='%23EE6A2F' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root{
+  --paper:#F7F1EA; --surface:#FFFFFF; --sunk:#F1EAE2; --ink:#1E1915; --muted:#6B5E55; --line:#E6DCD2; --line-strong:#CFC2B5;
+  --signal:#EE6A2F; --on-signal:#FFFFFF; --ok:#1C7A4B; --ok-bg:#DFF2E6; --warn:#9E4F06; --warn-bg:#FCEBD3; --bad:#B3261E; --bad-bg:#FBE1DE;
+  --f-display:"Inter Tight","Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --f-body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --paper:#15110E; --surface:#201A16; --sunk:#2A231E; --ink:#F5EFE9; --muted:#B8AA9F; --line:#3A302A; --line-strong:#52463E; --ok:#62D59C; --ok-bg:#173326; --warn:#F7B45E; --warn-bg:#3A2A12; --bad:#FF8C7C; --bad-bg:#3D1C18; color-scheme:dark; }
+}
+:root[data-theme="dark"]{ --paper:#15110E; --surface:#201A16; --sunk:#2A231E; --ink:#F5EFE9; --muted:#B8AA9F; --line:#3A302A; --line-strong:#52463E; --ok:#62D59C; --ok-bg:#173326; --warn:#F7B45E; --warn-bg:#3A2A12; --bad:#FF8C7C; --bad-bg:#3D1C18; color-scheme:dark; }
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 var(--f-body)}
+.in{max-width:620px;margin:0 auto;padding:0 16px}
+header{padding:max(18px,env(safe-area-inset-top)) 0 6px}
+.eyebrow{font-size:13.5px;font-weight:600;color:var(--muted)}
+h1{font:700 28px/1.1 var(--f-display);letter-spacing:-.02em;margin:4px 0 0;text-wrap:balance}
+h2{font:700 19px/1.2 var(--f-display);letter-spacing:-.01em;margin:0}
+main{display:grid;gap:14px;padding:14px 0 28px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;display:grid;gap:12px}
+.lines{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.lines li{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.lines li span:first-child{min-width:0;overflow-wrap:anywhere}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.tot{border-top:1px solid var(--line);padding-top:10px;display:grid;gap:4px}
+.tot div{display:flex;justify-content:space-between;color:var(--muted)}
+.tot .grand{color:var(--ink);font:700 24px/1.2 var(--f-display);margin-top:4px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font:600 17px/1.2 var(--f-body);cursor:pointer;padding:0 20px;text-decoration:none;width:100%}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.btn.pay{background:var(--signal);border-color:var(--signal);color:var(--on-signal)}
+.btn[disabled]{opacity:.55;cursor:wait}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-weight:600;font-size:14px;background:var(--sunk);color:var(--muted)}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.warn{background:var(--warn-bg);color:var(--warn)}.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.head-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.muted{color:var(--muted)}.small{font-size:14.5px}
+.note{background:var(--sunk);border-radius:12px;padding:10px 12px}
+.msg{border-radius:14px;padding:14px 16px;font-weight:600}
+.msg.ok{background:var(--ok-bg);color:var(--ok)}.msg.bad{background:var(--bad-bg);color:var(--bad)}
+.foot{color:var(--muted);font-size:14px;text-align:center;padding:0 0 max(20px,env(safe-area-inset-bottom))}
+.foot a{color:inherit}
+:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+@media print{ .btn,.foot,.noprint{display:none!important} body{background:#fff;color:#000} .card{border:0;padding:0} }
+</style>
+</head>
+<body>
+<div class="in">
+  <header><div class="eyebrow" id="garage">Garage mobile</div><h1 id="title">Chargement…</h1></header>
+  <main id="main" aria-live="polite"></main>
+  <p class="foot" id="foot"></p>
+</div>
+<script src="config.js"></script>
+<script>
+(function(){
+  var CFG = window.GARAGE_CFG || {}, m = location.hash.match(/t=([A-Za-z0-9_-]{20,64})/), token = m ? m[1] : '', back = /retour=paye/.test(location.hash), D = null, busy = false;
+  var $ = function(s){ return document.querySelector(s); };
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  var CUR = new Intl.NumberFormat('fr-CA', {style:'currency', currency:'CAD'});
+  function money(n){ return CUR.format(Math.round((+n || 0) * 100) / 100); }
+  var DF = new Intl.DateTimeFormat('fr-CA', {day:'numeric', month:'long', year:'numeric'});
+  function day(iso){ if (!iso) return ''; var p = String(iso).slice(0, 10).split('-'); return DF.format(new Date(+p[0], +p[1] - 1, +p[2])); }
+  function call(body){
+    var h = {'Content-Type':'application/json', apikey:CFG.key, Authorization:'Bearer ' + CFG.key};
+    return fetch(CFG.url + '/functions/v1/client', {method:'POST', headers:h, body:JSON.stringify(Object.assign({token:token}, body)), cache:'no-store'}).then(function(r){
+      return r.json().catch(function(){ return {}; }).then(function(j){ if (!r.ok) throw new Error(j.message || 'Le serveur ne répond pas. Réessayez dans un moment.'); return j; });
+    }, function(){ throw new Error('Pas de connexion Internet. Réessayez dans un moment.'); });
+  }
+  function fail(t){ $('#title').textContent = 'Lien indisponible'; $('#main').innerHTML = '<div class="msg bad" role="alert">' + esc(t) + '</div>'; }
+  function render(flash){
+    var g = D.garage, inv = D.invoice, xs = D.extras || [], wait = xs.filter(function(x){ return x.status === 'attente'; });
+    document.title = (inv ? 'Facture ' + inv.number : 'Votre dossier') + ' · ' + g.name;
+    $('#garage').textContent = g.name;
+    $('#title').textContent = 'Bonjour' + (D.client.first ? ' ' + D.client.first : '') + (D.job.vehicle ? ' · ' + D.job.vehicle : '');
+    var h = flash ? '<div class="msg ' + (flash.bad ? 'bad' : 'ok') + '" role="status">' + esc(flash.text) + '</div>' : '';
+    /* work the mechanic proposes: waiting ones first, the invoice, then the ones already answered */
+    function xcard(x){
+      var st = x.status;
+      return '<section class="card" aria-labelledby="x-' + esc(x.id) + '"><div class="head-row"><h2 id="x-' + esc(x.id) + '">Travaux proposés' + (D.job.mechanic ? ' par ' + esc(D.job.mechanic) : '') + '</h2>' +
+        (st === 'accepte' ? '<span class="pill ok">Acceptés</span>' : st === 'refuse' ? '<span class="pill bad">Refusés</span>' : '<span class="pill warn">Votre réponse</span>') + '</div>' +
+        (x.note ? '<p class="note">' + esc(x.note) + '</p>' : '') +
+        '<ul class="lines">' + x.items.map(function(i){ return '<li><span>' + esc(i.desc) + (i.qty > 1 ? ' × ' + esc(i.qty) : '') + '</span><span class="num">' + esc(money(i.price * (i.qty || 1))) + '</span></li>'; }).join('') + '</ul>' +
+        '<div class="tot"><div class="grand"><span>Total</span><span class="num">' + esc(money(x.total)) + '</span></div><div><span>avant taxes</span><span class="num">' + esc(money(x.total * 1.14975)) + ' taxes incluses</span></div></div>' +
+        (st === 'attente' ? '<div class="row2"><button type="button" class="btn" data-ans="0" data-id="' + esc(x.id) + '">Je refuse</button><button type="button" class="btn primary" data-ans="1" data-id="' + esc(x.id) + '">J\'accepte</button></div>' +
+          '<p class="muted small">Le mécano est avisé tout de suite. Rien n\'est fait sans votre accord.</p>' : '') + '</section>';
+    }
+    function xdone(x){
+      return '<li><span>' + esc(x.items.map(function(i){ return i.desc; }).join(', ')) + '</span><span class="num">' + esc(money(x.total)) + ' <span class="pill ' + (x.status === 'accepte' ? 'ok' : 'bad') + '">' + (x.status === 'accepte' ? 'Acceptés' : 'Refusés') + '</span></span></li>';
+    }
+    wait.forEach(function(x){ h += xcard(x); });
+    /* the invoice */
+    if (inv){
+      h += '<section class="card" aria-labelledby="inv-h"><div class="head-row"><h2 id="inv-h">Facture ' + esc(inv.number) + '</h2>' + (inv.paid ? '<span class="pill ok">Payée</span>' : '<span class="pill warn">À payer</span>') + '</div>' +
+        '<p class="muted small">' + esc(day(inv.issuedAt)) + '</p>' +
+        '<ul class="lines">' + inv.lines.map(function(l){ var q = +l.qty || 1; return '<li><span>' + esc(l.desc) + (q !== 1 ? ' × ' + esc(String(q).replace('.', ',')) : '') + '</span><span class="num">' + esc(money(q * l.price * (l.type === 'rabais' ? -1 : 1))) + '</span></li>'; }).join('') + '</ul>' +
+        '<div class="tot"><div><span>Sous-total</span><span class="num">' + esc(money(inv.sub)) + '</span></div>' +
+        (inv.taxesOn ? '<div><span>TPS (5 %)</span><span class="num">' + esc(money(inv.tps)) + '</span></div><div><span>TVQ (9,975 %)</span><span class="num">' + esc(money(inv.tvq)) + '</span></div>' : '') +
+        '<div class="grand"><span>Total</span><span class="num">' + esc(money(inv.total)) + '</span></div></div>' +
+        (inv.paid ? '<p class="small">Payée' + (inv.method ? ' · ' + esc(inv.method) : '') + (inv.paidAt ? ' · ' + esc(day(inv.paidAt)) : '') + '. Merci !</p>' : '') +
+        (inv.online && inv.online.short ? '<p class="msg bad">Paiement reçu (' + esc(money(inv.online.amount)) + '), mais il ne correspond pas au total. Le garage vous contactera.</p>' : '') +
+        (!inv.paid && D.pay ? '<button type="button" class="btn pay" id="pay">Payer ' + esc(money(inv.total)) + ' par carte</button><p class="muted small">Paiement sécurisé par Stripe (carte, Apple Pay, Google Pay). Le garage ne voit jamais votre numéro de carte.</p>' : '') +
+        (inv.note ? '<p class="note small">' + esc(inv.note) + '</p>' : '') +
+        (g.taxIds ? '<p class="muted small">' + esc(g.taxIds) + '</p>' : '') + (g.footer ? '<p class="muted small">' + esc(g.footer) + '</p>' : '') +
+        '<button type="button" class="btn noprint" id="print">Imprimer ou enregistrer en PDF</button></section>';
+    }
+    var done = xs.filter(function(x){ return x.status !== 'attente'; });
+    if (done.length) h += '<section class="card" aria-labelledby="xd-h"><h2 id="xd-h">Travaux proposés' + (D.job.mechanic ? ' par ' + esc(D.job.mechanic) : '') + '</h2><ul class="lines">' + done.map(xdone).join('') + '</ul><p class="muted small">Montants avant taxes. Les travaux acceptés sont sur la facture.</p></section>';
+    if (!inv && !xs.length) h += '<section class="card"><p>Rien à voir pour l\'instant : le garage vous enverra votre facture ici.</p></section>';
+    $('#main').innerHTML = h;
+    $('#foot').innerHTML = esc(g.name) + (g.phone ? ' · <a href="tel:' + esc(String(g.phone).replace(/[^\d+]/g, '')) + '">' + esc(g.phone) + '</a>' : '') + (g.email ? ' · <a href="mailto:' + esc(g.email) + '">' + esc(g.email) + '</a>' : '');
+  }
+  document.addEventListener('click', function(ev){
+    var b = ev.target.closest('button'); if (!b || busy) return;
+    if (b.id === 'print'){ window.print(); return; }
+    if (b.id === 'pay'){
+      busy = true; b.disabled = true; b.textContent = 'Ouverture du paiement…';
+      call({action:'pay'}).then(function(r){ if (r.paid){ busy = false; return load(); } location.href = r.url; }, function(e){ busy = false; render({bad:true, text:e.message}); });
+      return;
+    }
+    if (b.dataset.ans){
+      var yes = b.dataset.ans === '1'; busy = true; b.disabled = true;
+      call({action:'answer', extraId:b.dataset.id, accept:yes}).then(function(r){ busy = false; D = r; render({text:yes ? 'Merci ! Le mécano est avisé : il peut faire les travaux.' : 'C\'est noté : les travaux ne seront pas faits.'}); },
+        function(e){ busy = false; b.disabled = false; render({bad:true, text:e.message}); });
+    }
+  });
+  function load(){
+    if (!token || !CFG.url){ fail('Ce lien est incomplet. Demandez au garage de vous le renvoyer.'); return; }
+    call({action:back ? 'check' : 'view'}).then(function(r){
+      D = r; var paidNow = back && r.invoice && r.invoice.paid;
+      if (back) history.replaceState(null, '', location.pathname + '#t=' + token);
+      render(back ? (paidNow ? {text:'Paiement reçu. Merci !'} : {bad:true, text:'Le paiement n\'est pas encore confirmé. Rechargez la page dans un instant.'}) : null);
+      back = false;
+    }, function(e){ fail(e.message); });
+  }
+  load();
+})();
+</script>
+</body>
+</html>

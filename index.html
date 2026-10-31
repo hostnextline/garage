@@ -630,6 +630,33 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
 .ph-job.s-route{border-left-color:var(--info)}.ph-job.s-place{border-left-color:var(--warn)}.ph-job.s-termine{border-left-color:var(--ok)}.ph-job.s-annule,.ph-job.s-noshow{opacity:.55;border-left-color:var(--line-strong)}
 .ph-job.s-annule b,.ph-job.s-noshow b{text-decoration:line-through}
 .offrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.pthumb{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;border:1px solid var(--glass-edge,var(--line));background:var(--sunk);padding:0;cursor:pointer}
+.pthumb img{width:100%;height:100%;object-fit:cover;display:block}.pkind{position:absolute;left:6px;bottom:6px;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(0,0,0,.6);color:#fff}
+.pkind.ap{background:var(--ok);color:#fff}.pload{display:block;width:100%;height:100%;background:linear-gradient(90deg,var(--sunk),var(--line),var(--sunk));background-size:200% 100%}
+@media (prefers-reduced-motion:no-preference){.pload{animation:gmshim 1.2s linear infinite}@keyframes gmshim{to{background-position:-200% 0}}}
+.pbig img{width:100%;max-height:70vh;object-fit:contain;border-radius:12px;background:#000}
+.sigbox{display:grid;gap:4px;padding:10px 12px;border-radius:14px;background:#fff;color:#111;border:1px solid var(--line)}.sigbox img{max-height:110px;max-width:100%;object-fit:contain;justify-self:start}.sigbox .muted{color:#555}
+.sigpad-wrap{position:relative;border-radius:14px;background:#fff;border:2px dashed var(--line-strong);height:190px}
+#sigpad{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair;border-radius:12px}
+.sigline{position:absolute;left:16px;right:16px;bottom:34px;border-bottom:1px solid #bbb;color:#999;font-size:12px;pointer-events:none;padding-bottom:2px}
+.sigtext{font-weight:600}
+.xprop{display:grid;gap:6px;padding:12px 14px;border-radius:14px;background:var(--card);border:1px solid var(--glass-edge,var(--line))}
+.xprop.attente{border-left:4px solid var(--warn)}.xprop.accepte{border-left:4px solid var(--ok)}.xprop.refuse{opacity:.7}
+.xprop-h{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.xitems{list-style:none;margin:0;padding:0;display:grid;gap:4px}.xitems li{display:flex;justify-content:space-between;gap:10px}.xitems li span:first-child{min-width:0;overflow-wrap:anywhere}
+.xp-own{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:8px;align-items:end}.xp-own .btn{grid-column:1/-1;justify-self:start}
+.xp-tot{font-size:15px}.iconbtn.sm{width:30px;height:30px;font-size:14px}
+.sendrow{display:grid;gap:6px;margin-top:6px}
+.pprow{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 56px;gap:6px;align-items:center;padding:8px;border-radius:12px;background:var(--sunk)}
+.pprow .pp-svc{grid-column:1/3}.pprow .iconbtn{justify-self:end}
+.bring{display:grid;gap:6px;border-top:1px solid var(--line);padding-top:8px}.bring .xitems li{flex-direction:column;align-items:flex-start;gap:0}
+.usebox{display:grid;gap:6px}.usebox:empty{display:none}
+.userow{display:grid;grid-template-columns:minmax(0,1fr) 70px;gap:4px 8px;align-items:center}.userow .small{grid-column:1/-1;margin-top:-4px}.userow .check{min-height:36px}
+.stkrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;width:100%;text-align:left;padding:12px 14px;border-radius:14px;background:var(--card);border:1px solid var(--glass-edge,var(--line));cursor:pointer;color:var(--ink)}
+.stkrow[disabled]{cursor:default}.stkrow.low{border-left:4px solid var(--warn)}.stkrow .small{grid-column:1/-1}.stk-q{font-weight:700;white-space:nowrap}
+.stk-big{font-size:18px}.stk-big b{font-size:26px}
+.banner.net{align-items:center}.banner.net p{flex:1 1 200px}
 .vinlab{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .scanbox{position:relative;border-radius:16px;overflow:hidden;background:#000;aspect-ratio:4/3;max-height:52vh}
 .scanbox video{width:100%;height:100%;object-fit:cover;display:block}
@@ -763,7 +790,7 @@ form:not(.ph-sets) .ph-secback{display:none}
 .qrow span{font-size:13px;color:var(--muted)}
 .qnum{font:700 22px/1 var(--f-display);letter-spacing:-.02em;font-variant-numeric:tabular-nums;min-width:28px;text-align:right}
 .dot-route{color:var(--info)} .dot-place{color:var(--warn)} .dot-done{color:var(--ok)}
-.rings{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px}
+.rings{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:12px}
 .ringcard{display:grid;justify-items:center;align-content:start;gap:8px;text-align:center;padding:16px 12px;min-width:0}
 .ringcard h3{font-size:15px;font-weight:650}
 .ringcard p{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
@@ -800,6 +827,26 @@ form:not(.ph-sets) .ph-secback{display:none}
 .two{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
 @media (min-width:760px){.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 .money-due{font:700 30px/1 var(--f-display);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+
+/* ===================== Ordinateur =====================
+   A computer gets its own frame: the sections in a menu on the left, and the page uses the width of the screen.
+   Below 900 px (a small window) it keeps the bar at the bottom. */
+@media (min-width:900px){
+  .ui-pc{padding-left:248px;padding-bottom:40px}
+  .ui-pc.nav-off{padding-left:0}
+  .ui-pc .wrap{max-width:1240px}
+  .ui-pc[data-w="narrow"] #main,.ui-pc[data-w="narrow"] .top-in{max-width:900px}
+  .ui-pc .top{margin:12px 14px 0 0}
+  .ui-pc.nav-off .top{margin:12px 14px 0}
+  .ui-pc .tabbar{left:12px;right:auto;top:12px;bottom:12px;transform:none;width:224px;padding:16px 10px;border-radius:24px;display:flex;flex-direction:column;overflow-y:auto}
+  .ui-pc .tabbar::before{content:attr(data-brand);display:block;font:700 18px/1.2 var(--f-display);letter-spacing:-.015em;color:var(--ink);padding:4px 12px 16px;overflow-wrap:anywhere}
+  .ui-pc .tabbar .wrap{max-width:none;margin:0;padding:0}
+  .ui-pc .tabs{display:flex;flex-direction:column;gap:4px;padding:0}
+  .ui-pc .tab{display:flex;align-items:center;justify-content:flex-start;gap:12px;width:100%;min-height:46px;padding:0 14px;border-radius:14px;font-size:15px;text-align:left}
+  .ui-pc .tab:hover:not([aria-current="page"]){background:var(--sunk);color:var(--ink)}
+  .ui-pc .toast{left:calc(50% + 124px);bottom:24px}
+  .ui-pc.nav-off .toast{left:50%}
+}
 </style>
 <script>
 /* Version rapide du carnet, hors claude.ai.
@@ -1239,7 +1286,8 @@ function specCardHTML(v, canEdit, jid){
     (s && s.oilL ? '<p class="spec-oil">' + esc(oilLine(s)) + '</p>' : '<p class="muted">' + (s ? 'Huile pas encore indiquée.' : 'Pas encore dans la fiche du garage.') + '</p>') +
     (f && !f.exact ? '<p class="small tight">D\'après une ' + esc(s.year) + ' (même moteur) : à confirmer.</p>' : '') +
     (rows.length ? '<dl class="kv spec-kv">' + rows.map(function(x){ return '<div><dt>' + esc(x[1]) + '</dt><dd>' + esc(s[x[0]]) + '</dd></div>'; }).join('') + '</dl>' : '') +
-    (s && s.by ? '<p class="muted small">Confirmé par ' + esc(s.by) + (s.updatedAt ? ' le ' + esc(dateMed(isoDate(new Date(s.updatedAt)))) : '') + '</p>' : '') +
+    (jid && findJob(jid) ? bringHTML(findJob(jid)) : '') +
+    (s && s.by ? '<p class="muted small">Confirmé par ' + esc(s.by) + (s.updatedAt > 1e12 ? ' le ' + esc(dateMed(isoDate(new Date(s.updatedAt)))) : '') + '</p>' : '') +
     (canEdit ? '<button type="button" class="btn sm" data-act="spec-edit" data-id="' + esc(jid || '') + '">' + (s && f.exact ? 'Modifier la fiche' : s ? 'Confirmer pour ce moteur' : 'Remplir la fiche (une seule fois)') + '</button>' : '') + '</div>';
 }
 function jobVeh(j){ var v = Object.assign({}, j.vehicle || {}); if (!v.engine) v.engine = engineLabel(v); return v; }
@@ -1255,6 +1303,8 @@ function openSpec(jid){
       return '<div class="field"><label for="' + id + '">' + esc(x[1]) + '</label><input id="' + id + '" autocomplete="off"' + (x[2] === 'decimal' ? ' inputmode="decimal" placeholder="Ex. 4,4"' : '') + ' value="' + esc(val0) + '">' +
         (x[2] === 'visc' ? '<div class="chips">' + VISC.map(function(c){ return '<button type="button" class="chip" data-act="sp-visc" data-v="' + c + '">' + c + '</button>'; }).join('') + '</div>' : '') + '</div>';
     }).join('') +
+    '<div class="field"><span class="lbl">Pièces de ce moteur</span><p class="muted small">Ce qu\'il faut apporter pour chaque service. Le numéro sert à trouver la pièce dans le stock du camion.</p><div id="pp-rows" class="stack">' +
+      (Array.isArray(s.parts) ? s.parts : []).map(partRowHTML).join('') + '</div><button type="button" class="btn sm" data-act="pp-add">+ Pièce</button></div>' +
     '<div class="actions"><button type="submit" class="btn primary block" id="sp-save">Enregistrer la fiche</button></div></form>';
   openSheet('Fiche technique', [v.year, v.make, v.model, engineLabel(v)].filter(Boolean).join(' '), h);
   $('#specform').addEventListener('submit', saveSpec);
@@ -1266,6 +1316,9 @@ function saveSpec(ev){
   var doc = {key:sf.key, year:String(v.year || ''), make:v.make, model:v.model, displL:v.displL || '', cyl:v.cyl || '', engine:engineLabel(v), by:who, updatedAt:Date.now()};
   SPEC_F.forEach(function(x){ var t = val('sp-' + x[0]); if (x[2] === 'decimal') doc[x[0]] = t ? r2(num(t)) : ''; else doc[x[0]] = t; });
   if (doc.oilL !== '' && !(doc.oilL > 0 && doc.oilL < 30)){ toast('La quantité d\'huile doit être en litres (ex. 4,4).'); return; }
+  doc.parts = Array.prototype.map.call(document.querySelectorAll('#pp-rows .pprow'), function(r){
+    return {name:r.querySelector('.pp-name').value.trim(), ref:r.querySelector('.pp-ref').value.trim(), qty:r2(num(r.querySelector('.pp-qty').value)) || 1, svc:r.querySelector('.pp-svc').value};
+  }).filter(function(p){ return p.name || p.ref; });
   var b = $('#sp-save'); b.disabled = true;
   write('specs/' + sf.key, function(){ return S.db.doc('specs/' + sf.key).set(doc); }, 'Fiche technique enregistrée').then(function(ok){ b.disabled = false; if (ok){ S.specs[sf.key] = Object.assign({id:sf.key}, doc); closeSheet(); } });
 }
@@ -1418,7 +1471,7 @@ var TT = {mcp:null, state:'off', seq:0, vseq:0, opts:[], local:[], list:[], load
 var S = {
   db:null, dl:null, uid:null, noDb:false, clients:[], clientId:null, clientTab:'suivi', formClient:null, bookCtx:null, cq:'', backTo:null, dupOk:null, loaded:false, loadErr:false, canWrite:null, isAdmin:false, userUnknown:true,
   jobs:[], cfg:{}, tab:'agenda', screen:null, jobId:null, editId:null, quick:false,
-  day:today(), mech:lsGet('gm.mech') || '', view:['grid','week','list'].indexOf(lsGet('gm.view')) >= 0 ? lsGet('gm.view') : 'grid', days:{}, avail:{}, specs:{}, hoursEdit:false, sheet:false, invFilter:'unpaid', inv:null, invJob:null, confirmDel:false, settingsDirty:false
+  day:today(), mech:lsGet('gm.mech') || '', view:['grid','week','list'].indexOf(lsGet('gm.view')) >= 0 ? lsGet('gm.view') : 'grid', days:{}, avail:{}, specs:{}, stock:{}, hoursEdit:false, sheet:false, invFilter:'unpaid', inv:null, invJob:null, confirmDel:false, settingsDirty:false
 };
 function cfg(){ return S.cfg || {}; }
 function biz(){ return cfg().biz || {}; }
@@ -1469,7 +1522,7 @@ function canHours(){ var e = ext(); return canAdmin() || (canWrite() && !!(e && 
 function lockedMech(){ var e = ext(), m = e && typeof e.myMechanic === 'function' ? e.myMechanic() : null; if (!m) return null; return mechanics().filter(function(x){ return norm(x) === norm(m); })[0] || m; }
 function extTabs(){ var e = ext(); return e && Array.isArray(e.tabs) ? e.tabs : []; }
 function extTab(k){ return extTabs().filter(function(t){ return t.key === k; })[0] || null; }
-function tabOk(k){ if (k === 'tresor') return canTresor(); return (['accueil','agenda','clients','factures','reglages','jour','plus','heures','dispos'].indexOf(k) >= 0 || !!extTab(k)) && allow('tab:' + k); }
+function tabOk(k){ if (k === 'tresor') return canTresor(); if (k === 'stock') return !!S.db && allow('tab:stock'); return (['accueil','agenda','clients','factures','reglages','jour','plus','heures','dispos'].indexOf(k) >= 0 || !!extTab(k)) && allow('tab:' + k); }
 /* phone: a simpler set of screens (Aujourd'hui, Clients, Factures, Plus); bigger screens keep everything */
 /* the device decides, not the window: a phone gets the phone screens, a computer (or a tablet) the full ones,
    even in a narrow window. « Version complète » on a phone only lasts for this visit. */
@@ -1489,7 +1542,7 @@ function setUiOverride(v){ try { if (v) sessionStorage.setItem('gm.ui', v); else
 try { localStorage.removeItem('gm.ui'); } catch(e){}   /* an old « always full » choice no longer sticks */
 function phone(){ var o = uiOverride(); if (o) return o === 'phone'; return PHONE_DEV; }
 function defTab(){ var e = ext(), h = e && typeof e.homeTab === 'function' ? e.homeTab() : null; if (h && tabOk(h)) return h; return phone() ? 'jour' : 'accueil'; }
-function tabShown(k){ if (phone()){ if (k === 'tresor') return !tabOk('jour'); return ['jour','clients','factures','plus'].indexOf(k) >= 0; } if (['jour','plus','heures','dispos'].indexOf(k) >= 0) return false; return ['accueil','agenda','clients','factures','reglages','tresor'].indexOf(k) >= 0 || (!!extTab(k) && !extTab(k).hidden); }
+function tabShown(k){ if (k === 'stock') return false; if (phone()){ if (k === 'tresor') return !tabOk('jour'); return ['jour','clients','factures','plus'].indexOf(k) >= 0; } if (['jour','plus','heures','dispos'].indexOf(k) >= 0) return false; return ['accueil','agenda','clients','factures','reglages','tresor'].indexOf(k) >= 0 || (!!extTab(k) && !extTab(k).hidden); }
 function fitTab(){
   if (phone()){ if (S.tab === 'agenda') S.tab = 'jour'; }
   else if (S.tab === 'jour' || S.tab === 'heures') S.tab = 'agenda'; else if (S.tab === 'plus') S.tab = 'accueil';
@@ -1627,7 +1680,7 @@ function serial(path, fn){ var prev = chains[path] || Promise.resolve(); var p =
 function attempt(fn){ return Promise.resolve().then(fn).catch(function(e){ if (e && e.code === 'unavailable') return new Promise(function(r){ setTimeout(r, 400 + Math.random()*500); }).then(fn); throw e; }); }
 function write(path, fn, okMsg){
   if (!S.db){ toast("Le carnet n'est pas branché sur cette page."); return Promise.resolve(false); }
-  return serial(path, function(){ return attempt(fn); }).then(function(){ toast(okMsg); return true; }, function(e){ writeError(e, path); return false; });
+  return serial(path, function(){ return attempt(fn); }).then(function(r){ toast(okMsg && r && r.queued ? okMsg + ' (sur le téléphone, envoyé au retour du signal)' : okMsg); return true; }, function(e){ writeError(e, path); return false; });
 }
 function writeError(e, path){
   var c = e && e.code;
@@ -1647,7 +1700,8 @@ function topBack(title, act, sub){
 function chip(act, val, label, on){ return '<button type="button" class="chip' + (on ? ' on' : '') + '" data-act="' + act + '" data-v="' + esc(val) + '" aria-pressed="' + (on ? 'true' : 'false') + '">' + esc(label) + '</button>'; }
 function pill(cls, label){ return '<span class="pill ' + cls + '">' + esc(label) + '</span>'; }
 function banners(){
-  var h = '';
+  var h = '', e = ext();
+  if (e && typeof e.netBanner === 'function') h += e.netBanner();
   if (S.noDb) h += '<div class="banner warn"><p>Ouvre cette page dans Claude, connecté à ton compte, pour voir et ajouter les réservations.</p></div>';
   else if (S.loadErr) h += '<div class="banner warn"><p>Le carnet ne répond pas. Recharge la page.</p></div>';
   else if (S.canWrite === false) h += '<div class="banner"><p>Tu consultes le carnet en lecture seule. Pour réserver ou facturer, demande au propriétaire l\'accès Contributeur.</p></div>';
@@ -1658,10 +1712,14 @@ function renderNav(){
   $('#tabbar').hidden = hide;
   extTabs().forEach(function(t){ if (t.hidden || $('.tab[data-t="' + t.key + '"]')) return; var rb = $('.tab[data-t="reglages"]'); rb.insertAdjacentHTML('beforebegin', '<button type="button" class="tab" data-act="tab" data-t="' + esc(t.key) + '">' + (t.icon || '') + '<span>' + esc(t.label) + '</span></button>'); });
   document.body.classList.toggle('ui-phone', phone());
+  document.body.classList.toggle('ui-pc', !phone());
+  document.body.classList.toggle('nav-off', hide);
+  document.body.setAttribute('data-w', !S.screen && ['reglages','heures','dispos','plus','jour','equipe'].indexOf(S.tab) < 0 ? 'wide' : 'narrow');
+  $('#tabbar').setAttribute('data-brand', bizName());
   $$('.tab[data-t]').forEach(function(b){ b.hidden = !(tabShown(b.dataset.t) && tabOk(b.dataset.t)); });
   var nb = $('.tab-new'); if (nb) nb.hidden = !(phone() && (canWrite() || canExpense()));
   var jl = $('.tab[data-t="jour"] span'); if (jl) jl.textContent = lockedMech() ? 'Ma journée' : 'Aujourd\'hui';
-  var cur = phone() && tabOk('jour') && ['accueil','reglages','heures','equipe','dispos','tresor'].concat(extTabs().map(function(t){ return t.key; })).indexOf(S.tab) >= 0 ? 'plus' : S.tab;
+  var cur = phone() && tabOk('jour') && ['accueil','reglages','heures','equipe','dispos','tresor','stock'].concat(extTabs().map(function(t){ return t.key; })).indexOf(S.tab) >= 0 ? 'plus' : S.tab;
   $$('.tab[data-t]').forEach(function(b){ if (b.dataset.t === cur) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
 }
 function render(){
@@ -1680,6 +1738,7 @@ function render(){
   else if (S.tab === 'heures') v = viewHours();
   else if (S.tab === 'dispos') v = viewDispos();
   else if (S.tab === 'tresor') v = viewTresor();
+  else if (S.tab === 'stock') v = viewStock();
   else if (S.tab === 'accueil') v = viewDash();
   else if (S.tab === 'clients') v = viewClients();
   else if (S.tab === 'factures') v = viewInvoices();
@@ -2730,7 +2789,7 @@ function viewDash(){
   var hr = new Date().getHours(), hello = hr >= 18 ? 'Bonsoir' : 'Bonjour';
   var top = '<div class="wrap top-in"><div class="brandrow"><div><div class="eyebrow">' + esc(bizName()) + ' · ' + esc(cap(dayLong(t))) + '</div><h1>' + esc(hello + (name ? ' ' + name : '')) + '</h1></div>' +
     (canBook() ? '<button type="button" class="btn primary sm" data-act="new">+ Réservation</button>' : '') + '</div></div>';
-  var b = banners();
+  var b = banners() + (tabOk('stock') && lowStock().length ? '<div class="banner warn"><p><b>' + lowStock().length + ' article' + (lowStock().length > 1 ? 's' : '') + ' à racheter</b> dans les camions.</p><a class="btn sm" href="#stock">Voir le stock</a></div>' : '');
   if (!S.loaded && !S.noDb){ b += '<p class="muted">Ouverture du carnet…</p>'; return {top:top, body:b}; }
   if (e && typeof e.dashTop === 'function') b += e.dashTop() || '';
   var quick = '';
@@ -2846,13 +2905,15 @@ function viewJob(){
     (j.problem ? '<div><dt>Ce que le client décrit</dt><dd>' + esc(j.problem) + '</dd></div>' : '') +
     (j.notes ? '<div><dt>Notes pour le mécano</dt><dd>' + esc(j.notes) + '</dd></div>' : '') + '</dl></section>';
   body += '<section class="sect"><h3>Travaux faits</h3>' + doneHTML(j, w) + '</section>';
+  body += '<section class="sect" id="xp-sect"><h3>Travaux supplémentaires</h3>' + extrasHTML(j, w) + '</section>';
+  body += '<section class="sect" id="ph-sect"><h3>Photos et signature</h3>' + photosHTML(j) + '</section>';
 
   body += '<section class="sect"><h3>Facture</h3>';
   if (is === 'none'){
     body += '<p class="muted">Pas encore facturée.</p>' + (w ? '<button type="button" class="btn primary block" data-act="invoice" data-id="' + esc(j.id) + '">Faire la facture</button>' : '');
   } else {
     body += '<div class="invbox"><div><div class="eyebrow">' + (j.invoice.number ? 'Facture ' + esc(j.invoice.number) : 'Brouillon') + '</div><b>' + esc(money(j.invoice.total)) + '</b></div>' + pill(is, INV_LBL[is]) + '</div>' +
-      '<div class="actions">' + (is === 'draft' ? (w ? '<button type="button" class="btn primary block" data-act="invoice" data-id="' + esc(j.id) + '">Continuer la facture</button>' : '') : '<button type="button" class="btn primary block" data-act="preview" data-id="' + esc(j.id) + '">Voir la facture</button>' + (w ? '<button type="button" class="btn block" data-act="invoice" data-id="' + esc(j.id) + '">Modifier la facture</button>' : '')) + '</div>';
+      '<div class="actions">' + (is === 'draft' ? (w ? '<button type="button" class="btn primary block" data-act="invoice" data-id="' + esc(j.id) + '">Continuer la facture</button>' : '') : '<button type="button" class="btn primary block" data-act="preview" data-id="' + esc(j.id) + '">Voir la facture</button>' + (w ? '<button type="button" class="btn block" data-act="invoice" data-id="' + esc(j.id) + '">Modifier la facture</button>' : '')) + '</div>' + invoiceSendHTML(j);
   }
   body += '</section>';
 
@@ -3040,7 +3101,7 @@ function renderPicked(){
   var hs = svcHours(PK.picked);
   box.innerHTML = PK.picked.map(function(n, i){ var p = catalogPrice(n), t = hs[i], tag = [p != null ? money(p) : '', t ? '≈ ' + hrsTxt(t.h) : ''].filter(Boolean).join(' · '); return '<span class="pchip">' + esc(n) + (tag ? ' <small>' + esc(tag) + '</small>' : '') + '<button type="button" data-act="unpick" data-v="' + i + '" aria-label="Retirer ' + esc(n) + '">✕</button></span>'; }).join('');
   var inp = $('#f-svc-in'); if (inp) inp.placeholder = PK.picked.length ? 'Ajouter un autre service…' : 'Tape pour chercher : huile, freins, alternateur…';
-  renderEstimate(); doneAmt();
+  renderEstimate(); doneAmt(); if ($('#use-box')){ USE.fresh = USE.fresh || !!USE.started; USE.started = true; renderUse(); }
 }
 /* service search: every typed word can be anywhere in the phrase (even inside a word), accents and apostrophes ignored */
 function svcFold(t){ return norm(String(t || '').replace(/['’`´\-–(),.\/]/g, ' ')).replace(/\s+/g, ' ').trim(); }
@@ -3221,7 +3282,9 @@ function openInvoice(id, fresh){
     var rate = cfg().rate ? String(cfg().rate).replace('.', ',') : '';
     /* a service without a set price is billed like a dealership: estimated hours × hourly rate */
     var js0 = jobWork(j), hs0 = svcHours(js0);
-    js0.forEach(function(n, i){ var cp = catalogPrice(n), t = hs0[i], pr = promoByName(n); base.lines.push({type:pr ? 'forfait' : 'mo', desc:pr ? promoDesc(pr) : n, qty:cp == null && t ? fmtQty(t.h) : '1', price:cp != null ? String(cp).replace('.', ',') : rate}); });
+    acceptedExtraItems(j).forEach(function(it){ if (!js0.some(function(n){ return norm(n) === norm(it.desc); })){ js0.push(it.desc); hs0.push(null); } });
+    js0.forEach(function(n, i){ var xi = extraItemFor(j, n); if (xi){ base.lines.push({type:xi.type || 'mo', desc:xi.desc, qty:fmtQty(xi.qty || 1), price:String(r2(num(xi.price))).replace('.', ',')}); return; }
+      var cp = catalogPrice(n), t = hs0[i], pr = promoByName(n); base.lines.push({type:pr ? 'forfait' : 'mo', desc:pr ? promoDesc(pr) : n, qty:cp == null && t ? fmtQty(t.h) : '1', price:cp != null ? String(cp).replace('.', ',') : rate}); });
     if (!base.lines.length) base.lines.push({type:'mo', desc:'', qty:'1', price:rate});
   }
   S.inv = base; S.invJob = id; S.screen = 'invoice'; renderNav();
@@ -3237,7 +3300,7 @@ function openInvoice(id, fresh){
     '<section class="sect"><h3>Paiement</h3><div class="radio2" role="radiogroup" aria-label="Paiement">' +
       '<label><input type="radio" name="i-paid" id="i-paid-0" value="0"' + (!base.paid ? ' checked' : '') + '> Pas encore payée</label>' +
       '<label><input type="radio" name="i-paid" id="i-paid-1" value="1"' + (base.paid ? ' checked' : '') + '> Payée</label></div>' +
-      '<div class="field"><label for="i-method">Mode de paiement</label><select id="i-method">' + opt('', 'Choisir…', !base.method) + PAY.map(function(p){ return opt(p, p, base.method === p); }).join('') + '</select></div>' +
+      '<div class="field"><label for="i-method">Mode de paiement</label><select id="i-method">' + opt('', 'Choisir…', !base.method) + (base.method && PAY.indexOf(base.method) < 0 ? PAY.concat([base.method]) : PAY).map(function(p){ return opt(p, p, base.method === p); }).join('') + '</select></div>' +
       '<div class="field"><label for="i-note">Note sur la facture (optionnel)</label><textarea id="i-note" placeholder="Ex. Pièce garantie 1 an">' + esc(base.note) + '</textarea></div>' +
     '</section>' +
     '<div id="inverr" class="err" role="alert" hidden></div>' +
@@ -3357,6 +3420,7 @@ function viewPreview(){
     '<div class="stamp ' + (v.paid ? 'ok' : 'warn') + '">' + (v.paid ? 'Payée · ' + esc(v.method) + ' · ' + esc(dateMed(v.paidAt)) : 'Montant dû : ' + esc(money(v.total))) + '</div>' +
     (taxIds ? '<p class="muted small">' + esc(taxIds) + '</p>' : '') +
     (v.note ? '<p>' + esc(v.note) + '</p>' : '') + (cf.footer ? '<p class="muted small">' + esc(cf.footer) + '</p>' : '') +
+    (j.signature ? '<div class="sigbox paper-sig">' + (photoSrc(j.signature.id) ? '<img src="' + photoSrc(j.signature.id) + '" alt="Signature">' : '') + '<p class="small">Signé par <b>' + esc(j.signature.name || 'le client') + '</b> le ' + esc(whenTxt(j.signature.at)) + '</p></div>' : '') +
     '</article>';
   body += '<div class="actions">';
   if (is === 'unpaid' && w) body += '<section class="sect"><h3>Le client paie maintenant ?</h3><div class="payrow"><select id="p-method" aria-label="Mode de paiement">' + opt('', 'Payé par…', true) + PAY.map(function(p){ return opt(p, p, false); }).join('') + '</select><button type="button" class="btn steel" data-act="markpaid">Marquer payée</button></div></section>';
@@ -3478,6 +3542,12 @@ function buildPdf(j){
     var ids = [cf.tpsNo ? 'No TPS : ' + cf.tpsNo : '', cf.tvqNo ? 'No TVQ : ' + cf.tvqNo : ''].filter(Boolean).join('     ');
     if (ids){ T(ids, M, y); y += 16; }
     [v.note, cf.footer].filter(Boolean).forEach(function(p){ doc.splitTextToSize(pdfSafe(p), R - M).forEach(function(t){ if (y > H - 50){ doc.addPage(); y = 64; } T(t, M, y); y += 13; }); y += 6; });
+    var sg = j.signature, sgi = sg && PHOTO.cache[sg.id];
+    if (sg && sgi){
+      if (y > H - 150){ doc.addPage(); y = 64; }
+      try { doc.addImage(sgi, /^data:image\/png/.test(sgi) ? 'PNG' : 'JPEG', M, y, 180, 60); } catch(e){}
+      y += 72; T(pdfSafe('Signé par ' + (sg.name || 'le client') + ' le ' + whenTxt(sg.at)), M, y); y += 14;
+    }
     return doc.output('blob');
   });
 }
@@ -3784,6 +3854,28 @@ document.addEventListener('click', function(e){
     case 'pdf': downloadPdf(b); break;
     case 'copytext': { var cj = findJob(S.jobId); if (cj) copyText(invoiceText(cj), 'Facture copiée'); break; }
     case 'copy': copyText(v, 'Copié'); break;
+    case 'pp-add': { var rows = $('#pp-rows'); if (rows){ rows.insertAdjacentHTML('beforeend', partRowHTML({})); var last = rows.lastElementChild.querySelector('.pp-name'); if (last) last.focus(); } break; }
+    case 'pp-del': { var pr0 = b.closest('.pprow'); if (pr0) pr0.remove(); break; }
+    case 'stk-new': openStockItem(null); break;
+    case 'stk-open': openStockItem(id); break;
+    case 'stk-mode': S.stkMode = v; Array.prototype.forEach.call(document.querySelectorAll('[data-act="stk-mode"]'), function(c){ c.classList.toggle('on', c.dataset.v === v); c.setAttribute('aria-pressed', c.dataset.v === v); }); var nl = $('#stk-nl'); if (nl) nl.textContent = v === 'set' ? 'Quantité comptée dans le camion' : v === 'out' ? 'Quantité sortie' : 'Quantité reçue'; break;
+    case 'stk-save': saveStockItem(); break;
+    case 'stk-del': delStockItem(); break;
+    case 'photo-open': openPhoto(id); break;
+    case 'photo-del': delPhoto(id); break;
+    case 'sig-open': openSign(null); break;
+    case 'sig-clear': clearSign(); break;
+    case 'sig-save': saveSign(); break;
+    case 'xp-new': openExtra(); break;
+    case 'xp-svc': { var sv0 = services()[+v]; if (sv0){ XP.items.push({desc:sv0.name, price:r2(num(sv0.price)), qty:1, type:'mo'}); renderExtraList(); } break; }
+    case 'xp-add': { var xd = val('xp-desc'), xpz = val('xp-price'); if (!xd || !(num(xpz) > 0)){ var xe = $('#xp-err'); if (xe){ xe.textContent = 'Écris le travail et son prix.'; xe.hidden = false; } break; } XP.items.push({desc:xd, price:r2(num(xpz)), qty:1, type:'mo'}); $('#xp-desc').value = ''; $('#xp-price').value = ''; var xe2 = $('#xp-err'); if (xe2) xe2.hidden = true; renderExtraList(); break; }
+    case 'xp-del': XP.items.splice(+v, 1); renderExtraList(); break;
+    case 'xp-save': saveExtra(); break;
+    case 'xp-sign': openSign(id); break;
+    case 'xp-yes': answerExtra(id, true); break;
+    case 'xp-no': answerExtra(id, false); break;
+    case 'xp-send': { var jx = findJob(S.jobId); if (jx) clientSend(jx, 'travaux', id); break; }
+    case 'inv-send': { var ji = findJob(id || S.jobId); if (ji) clientSend(ji, 'facture'); break; }
     case 'scan-vin': openScanForm(); break;
     case 'scan-close': closeScanForm(); break;
     case 'scan-job': openScanJob(id || S.jobId); break;
@@ -3874,6 +3966,7 @@ function boot(){
       db.doc('config/main').onSnapshot(function(snap){ S.cfg = snap.exists ? snap.data() : {}; render(); }, function(){});
       db.collection('clients').onSnapshot(function(snap){ S.clients = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); }); render(); if (S.sheet && $('#cs-results')) renderClientResults(); }, function(){});
       db.collection('days').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ m[d.id] = d.data(); }); S.days = m; render(); }, function(){});
+      db.collection('stock').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ m[d.id] = Object.assign({id:d.id}, d.data()); }); S.stock = m; render(); }, function(){});
       db.collection('specs').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ m[d.id] = Object.assign({id:d.id}, d.data()); }); S.specs = m; render(); }, function(){});
       db.collection('avail').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ var x = d.data(); if (x && x.mechanic) m[slug(x.mechanic)] = Object.assign({id:d.id}, x); }); S.avail = m; render(); }, function(){});
       render();
@@ -3960,13 +4053,16 @@ function viewJobPhone(){
   if (w && !isOffSt(st) && st !== 'termine') b += offRow();
   if (st === 'place' || st === 'termine' || Array.isArray(j.done)) b += '<details class="sect fold"' + (st === 'place' ? ' open' : '') + '><summary>Travaux faits</summary>' + doneHTML(j, w) + '</details>';
   if (w) b += '<div class="field ph-st"><label for="ph-st">Corriger le statut</label><select id="ph-st" data-keep="no">' + ['planifie','route','place','termine','annule','noshow'].map(function(k){ return '<option value="' + k + '"' + (k === st ? ' selected' : '') + '>' + ST[k] + '</option>'; }).join('') + '</select></div>';
+  var xpN = jobExtras(j).filter(function(x){ return (x.status || 'attente') === 'attente'; }).length;
+  if (w && !isOff(j) || jobExtras(j).length) b += '<details class="sect fold" id="xp-fold"' + (xpN ? ' open' : '') + '><summary><span>Travaux supplémentaires' + (xpN ? ' <span class="small muted">· ' + xpN + ' en attente du client</span>' : '') + '</span></summary><div class="stack">' + extrasHTML(j, w) + '</div></details>';
+  if (canPhotos(j) || jobPhotos(j).length || j.signature) b += '<details class="sect fold" id="ph-fold"><summary><span>Photos et signature' + (photoSummary(j) ? ' <span class="small muted">· ' + esc(photoSummary(j)) + '</span>' : '') + '</span></summary><div class="stack">' + photosHTML(j) + '</div></details>';
   b += '<details class="sect fold"><summary>Client</summary><dl class="kv">' + (c.phone ? '<div><dt>Téléphone</dt><dd class="mono sel">' + esc(c.phone) + '</dd></div>' : '') + (addr ? '<div><dt>Adresse</dt><dd class="sel">' + esc(addr) + '</dd></div>' : '') + (c.email ? '<div><dt>Courriel</dt><dd class="sel">' + esc(c.email) + '</dd></div>' : '') + '</dl>' +
     (j.clientId && findClient(j.clientId) ? '<button type="button" class="btn sm" data-act="cl-open" data-id="' + esc(j.clientId) + '">Voir la fiche client</button>' : (w ? '<button type="button" class="btn sm" data-act="cl-link">Créer sa fiche client</button>' : '')) + '</details>';
   b += '<details class="sect fold" id="veh-fold"><summary><span>Véhicule et fiche technique' + (!v.vin && w && !isOff(j) ? ' <span class="small muted">· VIN à scanner</span>' : '') + '</span></summary><div class="stack">' + (w && !isOff(j) ? '<button type="button" class="btn block" data-act="scan-job" data-id="' + esc(j.id) + '">' + (v.vin ? 'Rescanner le VIN' : 'Scanner le VIN') + '</button>' : '') +
     '<dl class="kv"><div><dt>Modèle</dt><dd>' + esc(vehLabel(j) || '—') + (jobVeh(j).engine || v.trim ? '<br><span class="small muted">' + esc([v.trim, jobVeh(j).engine, v.drive].filter(Boolean).join(' · ')) + '</span>' : '') + '</dd></div>' + (v.vin ? '<div><dt>VIN</dt><dd class="vin sel">' + esc(v.vin) + '</dd></div>' : '') + (v.plate ? '<div><dt>Plaque</dt><dd class="mono">' + esc(v.plate) + '</dd></div>' : '') + (v.km ? '<div><dt>Kilométrage</dt><dd>' + esc(v.km) + ' km</dd></div>' : '') + '</dl>' + specCardHTML(jobVeh(j), w, j.id) + '</div></details>';
   if (j.problem || j.notes) b += '<details class="sect fold" open><summary>Notes</summary><dl class="kv">' + (j.problem ? '<div><dt>Ce que le client décrit</dt><dd>' + esc(j.problem) + '</dd></div>' : '') + (j.notes ? '<div><dt>Notes pour le mécano</dt><dd>' + esc(j.notes) + '</dd></div>' : '') + '</dl></details>';
   b += '<details class="sect fold"><summary>Facture <span class="muted small">' + (is === 'none' ? 'pas encore' : esc(INV_LBL[is]) + (j.invoice && j.invoice.total ? ' · ' + esc(money(j.invoice.total)) : '')) + '</span></summary>' +
-    (is === 'none' ? (w ? '<button type="button" class="btn block" data-act="invoice" data-id="' + esc(j.id) + '">Faire la facture</button>' : '<p class="muted">Pas encore facturée.</p>') : '<button type="button" class="btn block" data-act="' + (is === 'draft' && w ? 'invoice' : 'preview') + '" data-id="' + esc(j.id) + '">' + (is === 'draft' ? 'Continuer la facture' : 'Voir la facture') + '</button>') + '</details>';
+    (is === 'none' ? (w ? '<button type="button" class="btn block" data-act="invoice" data-id="' + esc(j.id) + '">Faire la facture</button>' : '<p class="muted">Pas encore facturée.</p>') : '<button type="button" class="btn block" data-act="' + (is === 'draft' && w ? 'invoice' : 'preview') + '" data-id="' + esc(j.id) + '">' + (is === 'draft' ? 'Continuer la facture' : 'Voir la facture') + '</button>' + invoiceSendHTML(j)) + '</details>';
   if (w){
     b += '<div class="actions"><button type="button" class="btn block" data-act="edit" data-id="' + esc(j.id) + '">Modifier la réservation</button>';
     if (is !== 'unpaid' && is !== 'paid' && allow('deleteJob')) b += S.confirmDel ? '<div class="banner warn"><p>Supprimer cette job pour de bon ?</p></div><div class="grid2"><button type="button" class="btn" data-act="del-no">Garder</button><button type="button" class="btn danger solid" data-act="del-yes">Supprimer</button></div>' : '<button type="button" class="btn ghost block danger-t" data-act="del">Supprimer la job</button>';
@@ -3997,6 +4093,7 @@ function viewPlus(){
   if (lockedMech()) items.push({href:'#dispos', label:'Mes disponibilités', sub:'Mes jours, mes heures, mes congés'});
   else if (mechanics().length && canHours()) items.push({href:'#dispos', label:'Disponibilités des mécanos', sub:'Leurs jours, leurs heures, leurs congés'});
   if (canTresor() && tabOk('jour')) items.push({href:'#tresor', label:'Trésorerie', sub:'Dépenses, reçus, rapport, taxes'});
+  if (tabOk('stock')){ var lw = lowStock().length; items.push({href:'#stock', label:'Stock des camions', sub:lw ? lw + ' article' + (lw > 1 ? 's' : '') + ' à racheter' : 'Huile, filtres, pièces dans chaque camion'}); }
   if (tabOk('reglages')) items.push({href:'#reglages', label:'Réglages', sub:'Garage, prix, taxes, services, mécanos'});
   var top = '<div class="wrap top-in"><div class="brandrow"><div><div class="eyebrow">' + esc(bizName()) + '</div><h1>Plus</h1></div></div></div>';
   var b = banners() + '<nav class="ph-menu" aria-label="Plus">' + items.map(function(it){ return '<a class="ph-row" href="' + esc(it.href) + '"><span><b>' + esc(it.label) + '</b>' + (it.sub ? '<span>' + esc(it.sub) + '</span>' : '') + '</span>' + RI.chev + '</a>'; }).join('') + '</nav>';
@@ -4068,7 +4165,7 @@ function viewTresor(){
   ensureExps();
   var v = S.trView === 'rap' ? 'rap' : 'dep', p = trPeriod(), r = trRange(p), c = trCalc(r), w = canExpense();
   var top = '<div class="wrap top-in"><div class="brandrow"><div><div class="eyebrow">' + esc(bizName()) + '</div><h1>Trésorerie</h1></div>' + (w ? '<button type="button" class="btn primary sm" data-act="exp-new">+ Dépense</button>' : '') + '</div>' +
-    '<div class="chips" role="group" aria-label="Affichage">' + chip('tr-view', 'dep', 'Dépenses', v === 'dep') + chip('tr-view', 'rap', 'Rapport et taxes', v === 'rap') + '</div></div>';
+    '<div class="chips" role="group" aria-label="Affichage">' + chip('tr-view', 'dep', 'Dépenses', v === 'dep') + chip('tr-view', 'rap', 'Rapport et taxes', v === 'rap') + (tabOk('stock') ? '<a class="chip" href="#stock">Stock des camions' + (lowStock().length ? ' · ' + lowStock().length + ' à racheter' : '') + '</a>' : '') + '</div></div>';
   var b = banners() + '<div class="trbar"><button type="button" class="iconbtn" data-act="tr-shift" data-v="-1" aria-label="Période précédente">‹</button><b id="tr-label">' + esc(r.label) + '</b><button type="button" class="iconbtn" data-act="tr-shift" data-v="1" aria-label="Période suivante">›</button>' +
     '<div class="chips" role="group" aria-label="Période">' + chip('tr-kind', 'month', 'Mois', p.kind === 'month') + chip('tr-kind', 'quarter', 'Trimestre', p.kind === 'quarter') + chip('tr-kind', 'year', 'Année', p.kind === 'year') + '</div></div>';
   b += '<div class="sum" id="tr-sum"><div class="stat"><b>' + esc(money(c.taxed ? c.rev.sub : c.rev.total)) + '</b><span>revenus' + (c.taxed ? ' avant taxes' : '') + '</span></div><div class="stat"><b>' + esc(money(c.taxed ? c.exp.sub : c.exp.total)) + '</b><span>dépenses' + (c.taxed ? ' avant taxes' : '') + '</span></div><div class="stat"><b class="' + (c.profit < 0 ? 'neg' : '') + '">' + esc(money(c.profit)) + '</b><span>profit</span></div></div>';
@@ -4338,6 +4435,8 @@ function phoneInvoice(){
     if (el.id === 'ph-date' && el.value){ S.day = el.value; render(); }
     else if (el.id === 'ph-mech'){ S.mech = el.value; lsSet('gm.mech', S.mech); render(); }
     else if (el.id === 'ph-st'){ statusAct(el.value); }
+    else if (el.classList && el.classList.contains('pin')){ addPhotos(el); }
+    else if (el.dataset && (el.dataset.use !== undefined || el.dataset.useq !== undefined)){ readUse(); USE.touched = true; }
     else if (el.dataset && el.dataset.crew){ setCrew(S.day || today(), el.dataset.crew, el.value); }
     else if (el.dataset && el.dataset.av){ var dwv = el.dataset.dw, fld = el.dataset.av, vv = el.value; editAvail(function(cur){ var x = cur.week[dwv] || {on:true, start:'08:00', end:'17:00'}; x[fld] = vv; cur.week[dwv] = x; if (x.end <= x.start){ toast('La fin doit être après le début.'); render(); return false; } }); }
     else if (el.dataset && el.dataset.hz){
@@ -4365,7 +4464,12 @@ function statusAct(v){ var j = findJob(S.jobId); if (!j) return; if (v === 'annu
 var WHY = [['client', 'Le client a annulé'], ['garage', 'Le garage a annulé'], ['meteo', 'Météo'], ['autre', 'Autre']];
 function svcAmt(n){ var cp = catalogPrice(n); if (cp != null) return cp; var t = svcHours([n])[0], rate = num(cfg().rate); return t && rate ? r2(t.h * rate) : 0; }
 function amtTxt(x){ return r2(x).toFixed(2).replace('.', ','); }
-function jobWork(j){ return Array.isArray(j.done) ? j.done.filter(Boolean) : jobServices(j); }
+function jobWork(j){
+  if (Array.isArray(j.done)) return j.done.filter(Boolean);
+  var l = jobServices(j).slice();
+  (typeof acceptedExtraItems === 'function' ? acceptedExtraItems(j) : []).forEach(function(i){ if (!l.some(function(n){ return norm(n) === norm(i.desc); })) l.push(i.desc); });
+  return l;
+}
 function noShowsOf(cid){ return cid ? S.jobs.filter(function(j){ return j.clientId === cid && j.status === 'noshow'; }).sort(byWhen) : []; }
 function nsDates(list){ return list.map(function(j){ return dShort(j.date); }).join(', '); }
 function offRow(){ return '<div class="offrow"><button type="button" class="btn ghost" data-act="cancel">Annuler la job</button><button type="button" class="btn ghost" data-act="noshow">No-show</button></div>'; }
@@ -4404,8 +4508,8 @@ function openNoShow(j){
     '<div class="grid2"><button type="button" class="btn" data-act="sheet-close">Retour</button><button type="button" class="btn danger solid" data-act="ns-yes">Marquer no-show</button></div></div>');
 }
 function doneHTML(j, w){
-  var has = Array.isArray(j.done), list = jobWork(j);
-  return (list.length ? '<div class="tags">' + list.map(function(n){ return '<span class="tag">' + esc(n) + '</span>'; }).join('') + '</div>' : '<p class="muted">Aucun travail indiqué.</p>') +
+  var has = Array.isArray(j.done), list = jobWork(j), used = Array.isArray(j.used) ? j.used : [];
+  return (used.length ? '<p class="small muted">Pièces utilisées : ' + esc(used.map(function(u){ return u.name + ' × ' + qtyTxt(u.qty, u.unit); }).join(', ')) + '</p>' : '') + (list.length ? '<div class="tags">' + list.map(function(n){ return '<span class="tag">' + esc(n) + '</span>'; }).join('') + '</div>' : '<p class="muted">Aucun travail indiqué.</p>') +
     (has ? '' : '<p class="muted small">Pas encore confirmé par le mécano : c\'est ce qui était réservé.</p>') +
     (w && !isOff(j) ? '<button type="button" class="btn' + (has ? ' sm' : '') + '" data-act="done-edit">' + (has ? 'Modifier les travaux faits' : 'Indiquer les travaux faits') + '</button>' : '');
 }
@@ -4414,20 +4518,369 @@ function openDone(j, finish){
   PK.picked = jobWork(j).slice(); PK.active = -1;
   var h = '<div class="stack"><p class="small">' + (finish ? 'Avant de terminer : garde ce que tu as fait, retire le reste, ajoute ce qui manque. Ça remplit la facture.' : 'Ce que tu as vraiment fait. Ça remplit la facture.') + '</p>' +
     '<div class="field"><label for="f-svc-in">Travaux faits</label><div class="picker" id="svc-picker"><div class="picked" id="svc-picked"></div><input id="f-svc-in" role="combobox" aria-expanded="false" aria-controls="svc-opts" aria-autocomplete="list" autocomplete="off" enterkeyhint="done"></div>' +
-    '<div class="opts" id="svc-opts" role="listbox" aria-label="Choix de services" hidden></div><div class="hint">Tape pour chercher ou ajouter un travail ; le ✕ le retire.</div><p class="muted small done-amt" id="done-amt" aria-live="polite"></p></div>' +
+    '<div class="opts" id="svc-opts" role="listbox" aria-label="Choix de services" hidden></div><div class="hint">Tape pour chercher ou ajouter un travail ; le ✕ le retire.</div><p class="muted small done-amt" id="done-amt" aria-live="polite"></p><div id="use-box" class="usebox"></div></div>' +
     '<div class="grid2"><button type="button" class="btn" data-act="sheet-close">Annuler</button><button type="button" class="btn primary" data-act="done-save">' + (finish ? 'Terminer la job' : 'Enregistrer') + '</button></div></div>';
   openSheet('Travaux faits', [vehLabel(j), cl(j).name].filter(Boolean).join(' · '), h);
-  bindPicker(); renderPicked();
+  USE = {rows:[], touched:false, fresh:false}; bindPicker(); renderPicked();
 }
 function doneAmt(){ var el = $('#done-amt'); if (!el) return; var t0 = r2(PK.picked.reduce(function(s0, n){ return s0 + svcAmt(n); }, 0)); el.textContent = PK.picked.length ? 'Montant prévu : ' + money(t0) + ' avant taxes' : 'Aucun travail : ajoute au moins une ligne.'; }
 function saveDone(){
   var j = findJob(S.jobId); if (!j){ closeSheet(); return; }
   var left = val('f-svc-in'); if (left && !PK.picked.some(function(n){ return norm(n) === norm(left); })) PK.picked.push(left);
-  var done = PK.picked.slice(), fin = S.doneFinish;
+  var done = PK.picked.slice(), fin = S.doneFinish, used = readUse();
   closeSheet();
-  if (fin && j.status !== 'termine') changeStatus('termine', {done:done, doneAt:Date.now()});
-  else write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update({done:done, doneAt:Date.now(), updatedAt:Date.now()}); }, 'Travaux faits enregistrés');
+  var after = function(ok){ if (ok !== false) applyUse(j, used); };
+  if (fin && j.status !== 'termine'){ changeStatus('termine', {done:done, doneAt:Date.now(), used:used}); after(true); }
+  else write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update({done:done, doneAt:Date.now(), used:used, updatedAt:Date.now()}); }, 'Travaux faits enregistrés').then(after);
 }
+/* ---------- pièces par moteur + stock des camions ---------- */
+function partRowHTML(p){
+  p = p || {};
+  return '<div class="pprow"><input class="pp-name" aria-label="Pièce" placeholder="Ex. Plaquettes avant" autocomplete="off" value="' + esc(p.name || '') + '">' +
+    '<input class="pp-ref" aria-label="Numéro de pièce" placeholder="Numéro" autocomplete="off" value="' + esc(p.ref || '') + '">' +
+    '<input class="pp-qty" aria-label="Quantité" inputmode="decimal" value="' + esc(String(p.qty || 1).replace('.', ',')) + '">' +
+    '<select class="pp-svc" aria-label="Pour quel service">' + opt('', 'Toutes les jobs', !p.svc) + services().map(function(sv){ return opt(sv.name, sv.name, p.svc === sv.name); }).join('') + (p.svc && !services().some(function(sv){ return sv.name === p.svc; }) ? opt(p.svc, p.svc, true) : '') + '</select>' +
+    '<button type="button" class="iconbtn sm" data-act="pp-del" aria-label="Retirer cette pièce">✕</button></div>';
+}
+var OIL_RE = /huile|vidange|oil/i;
+/* what to bring for this job: oil and filter from the engine sheet, then the parts of its services */
+function partsFor(j, work){
+  var sp = findSpec(jobVeh(j)), s = sp ? sp.s : null, w = work || jobWork(j), out = [];
+  if (!s) return out;
+  if (w.some(function(n){ return OIL_RE.test(n); })){
+    if (num(s.oilL) > 0) out.push({name:'Huile ' + (s.oilVisc || 'moteur'), ref:s.oilVisc || '', qty:r2(num(s.oilL)), unit:'L'});
+    if (s.oilFilter) out.push({name:'Filtre à huile', ref:s.oilFilter, qty:1, unit:'unité'});
+  }
+  (Array.isArray(s.parts) ? s.parts : []).forEach(function(p){
+    if (!p.svc || w.some(function(n){ return norm(n) === norm(p.svc); })) out.push({name:p.name || p.ref, ref:p.ref || '', qty:r2(num(p.qty)) || 1, unit:'unité'});
+  });
+  return out;
+}
+function stockList(truck){ return Object.keys(S.stock).map(function(k){ return S.stock[k]; }).filter(function(x){ return !truck || x.truck === truck; }).sort(function(a, b){ return String(a.name).localeCompare(String(b.name), 'fr'); }); }
+function stockMatch(truck, p){
+  var list = stockList(truck), r = norm(p.ref), n = norm(p.name);
+  return (r && list.filter(function(x){ return norm(x.ref) === r || norm(x.name).indexOf(r) >= 0; })[0]) || (n && list.filter(function(x){ return norm(x.name) === n; })[0]) || null;
+}
+function stockLow(x){ return num(x.min) > 0 ? num(x.qty) <= num(x.min) : num(x.qty) <= 0; }
+function lowStock(){ return stockList().filter(stockLow); }
+function unitTxt(u, q){ return u === 'L' ? 'L' : (num(q) > 1 ? 'unités' : 'unité'); }
+function qtyTxt(q, u){ return fmtQty(q) + ' ' + unitTxt(u, q); }
+function jobTruck(j){ var c = j.truck || (typeof jobCol === 'function' ? jobCol(j) : ''); return trucks().some(function(t){ return t.id === c; }) ? c : ''; }
+function truckName(id){ var t = trucks().filter(function(x){ return x.id === id; })[0]; return t ? t.name : id; }
+function canStock(){ return canWrite() && allow('stock') || canExpense(); }
+function bringHTML(j){
+  var ps = partsFor(j), tk = jobTruck(j);
+  if (!ps.length) return '';
+  return '<div class="bring"><b>À apporter pour cette job</b><ul class="xitems">' + ps.map(function(p){
+    var m = tk ? stockMatch(tk, p) : null;
+    return '<li><span>' + esc(p.name) + (p.ref && p.ref !== p.name && p.name.indexOf(p.ref) < 0 ? ' <span class="muted small">' + esc(p.ref) + '</span>' : '') + ' × ' + esc(qtyTxt(p.qty, p.unit)) + '</span>' +
+      (tk ? (m ? '<span class="small ' + (num(m.qty) >= p.qty ? 'ok-t' : 'tight') + '">' + (num(m.qty) >= p.qty ? '✓ ' : '⚠ ') + esc(qtyTxt(m.qty, m.unit)) + ' au camion</span>' : '<span class="small muted">pas au stock</span>') : '') + '</li>';
+  }).join('') + '</ul></div>';
+}
+/* ---- the pieces used, taken off the truck's stock when the work is saved ---- */
+var USE = {rows:[]};
+function useRows(j, work){
+  var tk = jobTruck(j), prev = Array.isArray(j.used) ? j.used : null;
+  if (prev && !work) return prev.map(function(u){ return Object.assign({on:true}, u); });
+  return partsFor(j, work).map(function(p){ var m = tk ? stockMatch(tk, p) : null; return {on:true, sid:m ? m.id : '', name:p.name, ref:p.ref, qty:p.qty, unit:m ? m.unit : p.unit}; });
+}
+function renderUse(){
+  var box = $('#use-box'), j = findJob(S.jobId); if (!box || !j) return;
+  var tk = jobTruck(j);
+  if (!USE.touched) USE.rows = useRows(j, Array.isArray(j.used) && !USE.fresh ? null : PK.picked.slice());
+  box.innerHTML = USE.rows.length ? '<span class="lbl">Pièces utilisées' + (tk ? ' · enlevées du stock du ' + esc(truckName(tk)) : '') + '</span>' + USE.rows.map(function(u, i){
+      var m = u.sid ? S.stock[u.sid] : null;
+      return '<div class="userow"><label class="check"><input type="checkbox" data-use="' + i + '"' + (u.on ? ' checked' : '') + '> ' + esc(u.name) + '</label><input class="use-q" data-useq="' + i + '" inputmode="decimal" aria-label="Quantité de ' + esc(u.name) + '" value="' + esc(fmtQty(u.qty)) + '"><span class="small muted">' + esc(unitTxt(u.unit, u.qty)) + (m ? ' · ' + esc(qtyTxt(m.qty, m.unit)) + ' au camion' : tk ? ' · pas au stock' : '') + '</span></div>';
+    }).join('') : '';
+}
+function readUse(){
+  Array.prototype.forEach.call(document.querySelectorAll('[data-use]'), function(c){ var u = USE.rows[+c.dataset.use]; if (u) u.on = c.checked; });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-useq]'), function(c){ var u = USE.rows[+c.dataset.useq]; if (u) u.qty = r2(num(c.value)); });
+  return USE.rows.filter(function(u){ return u.on && u.qty > 0; }).map(function(u){ return {sid:u.sid || '', name:u.name, ref:u.ref || '', qty:u.qty, unit:u.unit}; });
+}
+/* takes the difference off the stock (saving twice never removes twice) */
+function applyUse(j, used){
+  var before = {}, after = {};
+  (Array.isArray(j.used) ? j.used : []).forEach(function(u){ if (u.sid) before[u.sid] = r2((before[u.sid] || 0) + num(u.qty)); });
+  used.forEach(function(u){ if (u.sid) after[u.sid] = r2((after[u.sid] || 0) + num(u.qty)); });
+  var ids = Object.keys(before).concat(Object.keys(after)).filter(function(k, i, a){ return a.indexOf(k) === i; });
+  return ids.reduce(function(p, sid){
+    var d = r2((after[sid] || 0) - (before[sid] || 0)), x = S.stock[sid];
+    if (!d || !x) return p;
+    return p.then(function(){ return write('stock/' + sid, function(){ return S.db.doc('stock/' + sid).update({qty:r2(num(x.qty) - d), updatedAt:Date.now()}); }, ''); });
+  }, Promise.resolve());
+}
+/* ---- the stock screen ---- */
+function viewStock(){
+  var w = canStock(), lm = lockedMech(), tks = trucks().filter(function(t){ return t.on !== false || stockList(t.id).length; });
+  if (lm) tks.sort(function(a, b){ return (norm(b.mech) === norm(lm)) - (norm(a.mech) === norm(lm)); });
+  var low = lowStock();
+  var top = phone() ? topBack('Stock des camions', 'ph-back', 'Plus') : '<div class="wrap top-in"><div class="brandrow"><div><div class="eyebrow">' + esc(bizName()) + '</div><h1>Stock des camions</h1></div>' + (w ? '<button type="button" class="btn primary sm" data-act="stk-new">+ Article</button>' : '') + '</div></div>';
+  var b = banners() + (low.length ? '<div class="banner warn"><p><b>' + low.length + ' article' + (low.length > 1 ? 's' : '') + ' à racheter :</b> ' + esc(low.map(function(x){ return x.name + ' (' + truckName(x.truck) + ')'; }).join(', ')) + '</p></div>' : '');
+  if (phone() && w) b += '<button type="button" class="btn primary block" data-act="stk-new">+ Article</button>';
+  if (!tks.length) b += '<div class="empty-card"><p>Ajoute d\'abord tes camions dans Réglages.</p></div>';
+  tks.forEach(function(t){
+    var list = stockList(t.id);
+    b += '<section class="sect"><div class="sect-head"><h3>' + esc(t.name) + '</h3><span class="muted small">' + (t.mech ? esc(t.mech) : '') + '</span></div>' +
+      (list.length ? '<div class="list">' + list.map(function(x){
+        var lowx = stockLow(x);
+        return '<button type="button" class="stkrow' + (lowx ? ' low' : '') + '" data-act="stk-open" data-id="' + esc(x.id) + '"' + (w ? '' : ' disabled') + '><span><b>' + esc(x.name) + '</b>' + (x.ref ? '<span class="muted small"> ' + esc(x.ref) + '</span>' : '') + '</span><span class="num stk-q">' + esc(qtyTxt(x.qty, x.unit)) + '</span>' +
+          (num(x.min) > 0 ? '<span class="small ' + (lowx ? 'tight' : 'muted') + '">' + (lowx ? 'À racheter · ' : '') + 'minimum ' + esc(qtyTxt(x.min, x.unit)) + '</span>' : '') + '</button>';
+      }).join('') + '</div>' : '<p class="muted small">Rien au stock de ce camion.</p>') + '</section>';
+  });
+  b += '<p class="muted small">Le stock baisse tout seul quand le mécano enregistre les « Travaux faits » (huile, filtre, pièces de la fiche technique).</p>';
+  return {top:top, body:b};
+}
+function openStockItem(id){
+  var x = id ? S.stock[id] : null, tk = x ? x.truck : ((trucks().filter(function(t){ return lockedMech() && norm(t.mech) === norm(lockedMech()); })[0] || trucks()[0] || {}).id || '');
+  S.stkId = id || null;
+  var h = '<div class="stack">' + (x ? '<p class="stk-big"><b>' + esc(qtyTxt(x.qty, x.unit)) + '</b> au ' + esc(truckName(x.truck)) + '</p>' +
+      '<div class="chips" role="group" aria-label="Mouvement">' + chip('stk-mode', 'in', 'Entrée (+)', true) + chip('stk-mode', 'out', 'Sortie (−)', false) + chip('stk-mode', 'set', 'Compter (=)', false) + '</div>' +
+      '<div class="field"><label for="stk-n" id="stk-nl">Quantité reçue</label><input id="stk-n" inputmode="decimal" autocomplete="off"></div>' : '') +
+    '<details' + (x ? '' : ' open') + ' class="small"><summary>' + (x ? 'Modifier l\'article' : 'Nouvel article') + '</summary><div class="stack" style="margin-top:10px">' +
+      '<div class="field"><label for="stk-truck">Camion</label><select id="stk-truck">' + trucks().map(function(t){ return opt(t.id, t.name, t.id === tk); }).join('') + '</select></div>' +
+      '<div class="field"><label for="stk-name">Article</label><input id="stk-name" autocomplete="off" placeholder="Ex. Huile 0W-20" value="' + esc(x ? x.name : '') + '"></div>' +
+      '<div class="grid2"><div class="field"><label for="stk-ref">Numéro (optionnel)</label><input id="stk-ref" autocomplete="off" placeholder="Ex. PH7317" value="' + esc(x ? x.ref || '' : '') + '"></div>' +
+      '<div class="field"><label for="stk-unit">Unité</label><select id="stk-unit">' + opt('unité', 'À l\'unité', !x || x.unit !== 'L') + opt('L', 'Litres', x && x.unit === 'L') + '</select></div></div>' +
+      '<div class="grid2">' + (x ? '' : '<div class="field"><label for="stk-q0">Quantité au camion</label><input id="stk-q0" inputmode="decimal" autocomplete="off"></div>') +
+      '<div class="field"><label for="stk-min">Racheter sous</label><input id="stk-min" inputmode="decimal" autocomplete="off" placeholder="Ex. 10" value="' + esc(x && x.min ? fmtQty(x.min) : '') + '"></div></div></div></details>' +
+    '<p class="formerr" id="stk-err" role="alert" hidden></p><button type="button" class="btn primary block" data-act="stk-save">Enregistrer</button>' +
+    (x ? '<button type="button" class="btn danger block" data-act="stk-del">Retirer cet article</button>' : '') + '</div>';
+  S.stkMode = 'in';
+  openSheet(x ? x.name : 'Nouvel article', x ? (x.ref || '') : 'Stock d\'un camion', h);
+}
+function saveStockItem(){
+  var x = S.stkId ? S.stock[S.stkId] : null, err = $('#stk-err');
+  function bad(t){ err.textContent = t; err.hidden = false; }
+  var name = val('stk-name'), tk = val('stk-truck'), unit = val('stk-unit') === 'L' ? 'L' : 'unité', ref = val('stk-ref'), min = val('stk-min') ? r2(num(val('stk-min'))) : 0;
+  if (!name) return bad('Écris le nom de l\'article.');
+  if (!tk) return bad('Choisis le camion.');
+  var who = (ext() && typeof ext().greetName === 'function' ? ext().greetName() : '') || '';
+  var qty = x ? num(x.qty) : r2(num(val('stk-q0')));
+  if (x && val('stk-n')){
+    var n = r2(num(val('stk-n')));
+    if (!(n >= 0)) return bad('Quantité invalide.');
+    qty = S.stkMode === 'set' ? n : S.stkMode === 'out' ? r2(qty - n) : r2(qty + n);
+  }
+  var id = x && x.truck === tk ? x.id : tk + '__' + slug(name + (ref ? ' ' + ref : '')).slice(0, 60);
+  if (!x && S.stock[id]) return bad('Cet article existe déjà dans ce camion : touche-le dans la liste pour en ajouter.');
+  var data = {truck:tk, name:name, ref:ref, unit:unit, qty:qty, min:min, updatedAt:Date.now(), by:who};
+  closeSheet();
+  write('stock/' + id, function(){ return S.db.doc('stock/' + id).set(data); }, x ? 'Stock mis à jour : ' + qtyTxt(qty, unit) : 'Article ajouté au stock').then(function(ok){
+    if (ok && x && x.id !== id) S.db.doc('stock/' + x.id).delete().catch(function(){});
+  });
+}
+function delStockItem(){
+  var x = S.stkId ? S.stock[S.stkId] : null; if (!x) return;
+  if (!S.stkDel){ S.stkDel = true; var b = $('[data-act="stk-del"]'); if (b) b.textContent = 'Touche encore pour retirer'; setTimeout(function(){ S.stkDel = false; }, 5000); return; }
+  S.stkDel = false; closeSheet();
+  write('stock/' + x.id, function(){ return S.db.doc('stock/' + x.id).delete(); }, 'Article retiré du stock');
+}
+
+/* ---------- photos avant / après, signature du client ---------- */
+var PHOTO = {cache:{}, loading:{}};
+function jobPhotos(j){ return Array.isArray(j.photos) ? j.photos.filter(function(p){ return p && p.id; }) : []; }
+function newPhotoId(j, tag){ return j.id + '__' + (tag || '') + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+/* the picture itself is a document of its own (photos/<id>), read only when shown */
+function photoSrc(id){
+  if (!id) return null;
+  if (PHOTO.cache[id] !== undefined) return PHOTO.cache[id];
+  if (!PHOTO.loading[id] && S.db){
+    PHOTO.loading[id] = S.db.doc('photos/' + id).get().then(function(s){ PHOTO.cache[id] = s.exists ? (s.data().img || '') : ''; PHOTO.loading[id] = null; render(); },
+      function(){ setTimeout(function(){ PHOTO.loading[id] = null; }, 15000); });
+  }
+  return null;
+}
+function whenTxt(at){ var d = new Date(at); return dateMed(isoDate(d)) + ' à ' + hm(pad(d.getHours()) + ':' + pad(d.getMinutes())); }
+function canPhotos(j){ return canWrite() && allow('photos') && !isOff(j); }
+function photosHTML(j){
+  var ps = jobPhotos(j), sig = j.signature, can = canPhotos(j);
+  var h = ps.length ? '<div class="pgrid">' + ps.map(function(p){
+      var src = photoSrc(p.id);
+      return '<button type="button" class="pthumb" data-act="photo-open" data-id="' + esc(p.id) + '" aria-label="Photo ' + (p.kind === 'avant' ? 'avant' : 'après') + ', ' + esc(whenTxt(p.at)) + '">' +
+        (src ? '<img src="' + src + '" alt="">' : '<span class="pload" aria-hidden="true"></span>') + '<span class="pkind ' + (p.kind === 'avant' ? 'av' : 'ap') + '">' + (p.kind === 'avant' ? 'Avant' : 'Après') + '</span></button>';
+    }).join('') + '</div>' : '<p class="muted small">Aucune photo. Une photo avant de commencer et une après, c\'est ta preuve si le client conteste.</p>';
+  if (sig){
+    var ss = photoSrc(sig.id);
+    h += '<div class="sigbox">' + (ss ? '<img src="' + ss + '" alt="Signature de ' + esc(sig.name || 'client') + '">' : '<span class="pload" aria-hidden="true"></span>') +
+      '<p class="small">Signé par <b>' + esc(sig.name || 'le client') + '</b> le ' + esc(whenTxt(sig.at)) + (sig.total ? ' · ' + esc(money(sig.total)) : '') + '</p>' + (sig.text ? '<p class="muted small">« ' + esc(sig.text) + ' »</p>' : '') + '</div>';
+  }
+  if (can){
+    h += '<div class="grid2"><label class="btn" for="pin-av">Photo avant</label><label class="btn" for="pin-ap">Photo après</label></div>' +
+      '<input type="file" id="pin-av" data-kind="avant" accept="image/*" capture="environment" multiple class="sr-only pin">' +
+      '<input type="file" id="pin-ap" data-kind="apres" accept="image/*" capture="environment" multiple class="sr-only pin">' +
+      '<button type="button" class="btn block" data-act="sig-open">' + (sig ? 'Faire signer de nouveau' : 'Faire signer le client') + '</button>';
+  }
+  return h;
+}
+function photoSummary(j){ var n = jobPhotos(j).length; return [n ? n + ' photo' + (n > 1 ? 's' : '') : '', j.signature ? 'signé' : ''].filter(Boolean).join(' · '); }
+function addPhotos(input){
+  var j = findJob(S.jobId), kind = input.dataset.kind === 'avant' ? 'avant' : 'apres', files = Array.prototype.slice.call(input.files || [], 0, 6);
+  input.value = '';
+  if (!j || !files.length) return;
+  toast(files.length > 1 ? 'Préparation des ' + files.length + ' photos…' : 'Préparation de la photo…');
+  var who = (ext() && typeof ext().greetName === 'function' ? ext().greetName() : '') || '', added = [];
+  files.reduce(function(p, f){
+    return p.then(function(){ return shrinkImage(f); }).then(function(img){
+      var id = newPhotoId(j), at = Date.now();
+      PHOTO.cache[id] = img;
+      return write('photos/' + id, function(){ return S.db.doc('photos/' + id).set({jobId:j.id, kind:kind, img:img, at:at, by:who}); }, '').then(function(ok){ if (ok) added.push({id:id, kind:kind, at:at, by:who}); });
+    }, function(){ toast('Une photo n\'a pas pu être lue (trop grosse ?). Reprends-la.'); });
+  }, Promise.resolve()).then(function(){
+    if (!added.length) return;
+    var cur = findJob(j.id) || j;
+    write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update({photos:jobPhotos(cur).concat(added), updatedAt:Date.now()}); }, added.length > 1 ? added.length + ' photos ajoutées' : 'Photo ajoutée');
+  });
+}
+function openPhoto(id){
+  var j = findJob(S.jobId); if (!j) return;
+  var p = jobPhotos(j).filter(function(x){ return x.id === id; })[0]; if (!p) return;
+  var src = photoSrc(id);
+  openSheet(p.kind === 'avant' ? 'Photo avant' : 'Photo après', whenTxt(p.at) + (p.by ? ' · ' + p.by : ''),
+    '<div class="stack"><div class="pbig">' + (src ? '<img src="' + src + '" alt="Photo ' + (p.kind === 'avant' ? 'avant' : 'après') + ' du travail">' : '<p class="muted">Chargement de la photo…</p>') + '</div>' +
+    (canPhotos(j) ? '<button type="button" class="btn danger block" data-act="photo-del" data-id="' + esc(id) + '">Supprimer cette photo</button>' : '') + '</div>');
+}
+function delPhoto(id){
+  var j = findJob(S.jobId); if (!j) return;
+  if (S.photoDel !== id){ S.photoDel = id; var b = $('[data-act="photo-del"]'); if (b) b.textContent = 'Touche encore pour supprimer'; setTimeout(function(){ if (S.photoDel === id) S.photoDel = null; }, 5000); return; }
+  S.photoDel = null; closeSheet();
+  write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update({photos:jobPhotos(j).filter(function(x){ return x.id !== id; }), updatedAt:Date.now()}); }, 'Photo retirée').then(function(ok){
+    if (ok) S.db.doc('photos/' + id).delete().catch(function(){});   /* a mechanic may not erase it on the server: it stays only in the archive */
+  });
+}
+/* signature: on the phone screen, with the finger */
+var SIG = {strokes:0, drawing:false, last:null, extra:null};
+function sigText(j, extraId){
+  var x = extraId ? (j.extras || []).filter(function(e){ return e.id === extraId; })[0] : null;
+  if (x) return 'J\'accepte les travaux supplémentaires proposés : ' + x.items.map(function(i){ return i.desc; }).join(', ') + ' (' + money(x.total) + ' avant taxes).';
+  var inv = j.invoice && j.invoice.number ? j.invoice : null;
+  return 'Je confirme que les travaux ont été faits' + (inv ? ' et j\'accepte la facture ' + inv.number + ' de ' + money(inv.total) : '') + '.';
+}
+function openSign(extraId){
+  var j = findJob(S.jobId); if (!j) return;
+  SIG = {strokes:0, drawing:false, last:null, extra:extraId || null};
+  var c = cl(j), txt = sigText(j, extraId);
+  openSheet('Signature du client', [c.name, vehLabel(j)].filter(Boolean).join(' · '),
+    '<div class="stack"><p class="sigtext">' + esc(txt) + '</p>' +
+    '<div class="sigpad-wrap"><canvas id="sigpad" aria-label="Zone de signature : signe avec le doigt"></canvas><span class="sigline" aria-hidden="true">Signe ici</span></div>' +
+    '<div class="grid2"><button type="button" class="btn" data-act="sig-clear">Effacer</button><div></div></div>' +
+    '<div class="field"><label for="sig-name">Nom de la personne qui signe</label><input id="sig-name" autocomplete="off" value="' + esc(c.name || '') + '"></div>' +
+    '<button type="button" class="btn primary block" data-act="sig-save" id="sig-save" disabled>Enregistrer la signature</button></div>');
+  var cv = $('#sigpad'); if (!cv) return;
+  var r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+  var cx = cv.getContext('2d'); cx.scale(dpr, dpr); cx.lineWidth = 2.6; cx.lineCap = 'round'; cx.lineJoin = 'round'; cx.strokeStyle = '#111';
+  function pt(ev){ var b = cv.getBoundingClientRect(); return {x:ev.clientX - b.left, y:ev.clientY - b.top}; }
+  cv.addEventListener('pointerdown', function(ev){ ev.preventDefault(); try { cv.setPointerCapture(ev.pointerId); } catch(e){} SIG.drawing = true; SIG.last = pt(ev); cx.beginPath(); cx.arc(SIG.last.x, SIG.last.y, 1.2, 0, 7); cx.fillStyle = '#111'; cx.fill(); });
+  cv.addEventListener('pointermove', function(ev){ if (!SIG.drawing) return; ev.preventDefault(); var q = pt(ev); cx.beginPath(); cx.moveTo(SIG.last.x, SIG.last.y); cx.lineTo(q.x, q.y); cx.stroke(); SIG.last = q; });
+  function end(){ if (!SIG.drawing) return; SIG.drawing = false; SIG.strokes++; var b = $('#sig-save'); if (b) b.disabled = false; }
+  cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end); cv.addEventListener('pointerleave', end);
+}
+function clearSign(){ var cv = $('#sigpad'); if (!cv) return; cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); SIG.strokes = 0; var b = $('#sig-save'); if (b) b.disabled = true; }
+function saveSign(){
+  var j = findJob(S.jobId), cv = $('#sigpad'); if (!j || !cv) return;
+  if (!SIG.strokes){ toast('Le client doit signer dans le cadre.'); return; }
+  var name = val('sig-name'); if (!name){ toast('Écris le nom de la personne qui signe.'); return; }
+  /* on white, small: the signature goes on the invoice */
+  var out = document.createElement('canvas'), k = Math.min(1, 700 / cv.width); out.width = Math.round(cv.width * k); out.height = Math.round(cv.height * k);
+  var ox = out.getContext('2d'); ox.fillStyle = '#fff'; ox.fillRect(0, 0, out.width, out.height); ox.drawImage(cv, 0, 0, out.width, out.height);
+  var img = out.toDataURL('image/png'); if (img.length > 120000) img = out.toDataURL('image/jpeg', 0.8);
+  var id = newPhotoId(j, 'sig'), at = Date.now(), extraId = SIG.extra, text = sigText(j, extraId);
+  PHOTO.cache[id] = img; closeSheet();
+  write('photos/' + id, function(){ return S.db.doc('photos/' + id).set({jobId:j.id, kind:'signature', img:img, name:name, text:text, at:at}); }, '').then(function(ok){
+    if (!ok) return;
+    var cur = findJob(j.id) || j, patch = {updatedAt:Date.now()};
+    if (extraId){
+      patch.extras = (cur.extras || []).map(function(x){ return x.id === extraId ? Object.assign({}, x, {status:'accepte', answeredAt:at, answeredBy:'signature', signer:name, sigId:id}) : x; });
+    } else patch.signature = {id:id, name:name, at:at, text:text, total:cur.invoice && cur.invoice.number ? cur.invoice.total : null};
+    write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update(patch); }, extraId ? 'Travaux acceptés (signature gardée)' : 'Signature enregistrée');
+  });
+}
+
+/* ---------- travaux supplémentaires : le mécano propose, le client accepte (signature ou texto) ---------- */
+var XP = {items:[], note:''};
+var EXTRA_LBL = {attente:'En attente du client', accepte:'Accepté', refuse:'Refusé'};
+function jobExtras(j){ return Array.isArray(j.extras) ? j.extras : []; }
+function acceptedExtraItems(j){ var out = []; jobExtras(j).forEach(function(x){ if (x.status === 'accepte') (x.items || []).forEach(function(i){ out.push(i); }); }); return out; }
+function extraItemFor(j, name){ var n = norm(name); return acceptedExtraItems(j).filter(function(i){ return norm(i.desc) === n; })[0] || null; }
+function extrasHTML(j, w){
+  var xs = jobExtras(j), e = ext(), can = w && !isOff(j) && allow('extras');
+  var h = xs.length ? xs.map(function(x){
+    var st = x.status || 'attente';
+    return '<div class="xprop ' + st + '"><div class="xprop-h"><b>' + esc(money(x.total)) + ' <span class="muted small">avant taxes</span></b>' + pill(st === 'accepte' ? 'paid' : st === 'refuse' ? 'annule' : 'unpaid', EXTRA_LBL[st]) + '</div>' +
+      '<ul class="xitems">' + (x.items || []).map(function(i){ return '<li><span>' + esc(i.desc) + (i.qty && i.qty !== 1 ? ' × ' + esc(fmtQty(i.qty)) : '') + '</span><span class="num">' + esc(money(r2(num(i.price) * (num(i.qty) || 1)))) + '</span></li>'; }).join('') + '</ul>' +
+      (x.note ? '<p class="small">' + esc(x.note) + '</p>' : '') +
+      '<p class="muted small">' + (st === 'attente' ? 'Proposé le ' + esc(whenTxt(x.at)) + (x.sentAt ? ' · lien envoyé au client' + (x.smsStatus === 'sent' ? ' par texto ✓' : '') : '') :
+        (st === 'accepte' ? 'Accepté' : 'Refusé') + ' le ' + esc(whenTxt(x.answeredAt || x.at)) + (x.answeredBy === 'signature' ? ' (signature sur place' + (x.signer ? ', ' + esc(x.signer) : '') + ')' : x.answeredBy === 'lien' ? ' par le client (lien)' : x.answeredBy === 'manuel' ? ' (noté par ' + esc(x.answeredWho || 'le garage') + ')' : '')) + '</p>' +
+      (can && st === 'attente' ? '<div class="er-acts">' +
+        '<button type="button" class="btn sm primary" data-act="xp-sign" data-id="' + esc(x.id) + '">Le client signe ici</button>' +
+        (e && typeof e.clientLink === 'function' ? '<button type="button" class="btn sm" data-act="xp-send" data-id="' + esc(x.id) + '">' + (x.sentAt ? 'Renvoyer le texto' : 'Envoyer au client par texto') + '</button>' : '') +
+        '<button type="button" class="btn sm" data-act="xp-yes" data-id="' + esc(x.id) + '">Il a dit oui</button><button type="button" class="btn sm" data-act="xp-no" data-id="' + esc(x.id) + '">Il a dit non</button></div>' : '') + '</div>';
+  }).join('') : '<p class="muted small">Tu trouves autre chose à réparer ? Propose-le au client avant de le faire : il accepte par signature ou par texto, et ça s\'ajoute à la facture.</p>';
+  if (can) h += '<button type="button" class="btn block" data-act="xp-new">Proposer des travaux au client</button>';
+  return h;
+}
+function openExtra(){
+  var j = findJob(S.jobId); if (!j) return;
+  XP = {items:[], note:''};
+  var svc = services();
+  openSheet('Proposer des travaux', [cl(j).name, vehLabel(j)].filter(Boolean).join(' · '),
+    '<div class="stack">' + (svc.length ? '<div class="field"><span class="lbl">Ajouter un service</span><div class="chips">' + svc.map(function(sv, i){ return '<button type="button" class="chip add" data-act="xp-svc" data-v="' + i + '">' + esc(sv.name) + ' · ' + esc(money(sv.price)) + '</button>'; }).join('') + '</div></div>' : '') +
+    '<div class="xp-own"><div class="field"><label for="xp-desc">Ou décris le travail</label><input id="xp-desc" autocomplete="off" placeholder="Ex. Disques de frein avant"></div><div class="field"><label for="xp-price">Prix</label><input id="xp-price" inputmode="decimal" autocomplete="off" placeholder="0,00"></div><button type="button" class="btn sm" data-act="xp-add">Ajouter</button></div>' +
+    '<div id="xp-list"></div>' +
+    '<div class="field"><label for="xp-note">Pourquoi (le client le lit)</label><textarea id="xp-note" placeholder="Ex. Plaquettes à 2 mm, les disques sont rainurés."></textarea></div>' +
+    '<p class="formerr" id="xp-err" role="alert" hidden></p>' +
+    '<button type="button" class="btn primary block" data-act="xp-save">Enregistrer la proposition</button></div>');
+  renderExtraList();
+}
+function renderExtraList(){
+  var el = $('#xp-list'); if (!el) return;
+  var t = r2(XP.items.reduce(function(s0, i){ return s0 + num(i.price) * (num(i.qty) || 1); }, 0));
+  el.innerHTML = XP.items.length ? '<ul class="xitems">' + XP.items.map(function(i, k){ return '<li><span>' + esc(i.desc) + '</span><span class="num">' + esc(money(i.price)) + ' <button type="button" class="iconbtn sm" data-act="xp-del" data-v="' + k + '" aria-label="Retirer ' + esc(i.desc) + '">✕</button></span></li>'; }).join('') + '</ul>' +
+    '<p class="xp-tot">Total : <b>' + esc(money(t)) + '</b> avant taxes' + (cfg().taxesOn !== false ? ' · ' + esc(money(totals({lines:[{qty:1, price:t}], taxesOn:true}).total)) + ' taxes incluses' : '') + '</p>' : '<p class="muted small">Ajoute au moins un travail.</p>';
+}
+function saveExtra(){
+  var j = findJob(S.jobId); if (!j) return;
+  var d = val('xp-desc'), pr = val('xp-price');
+  if (d && pr) XP.items.push({desc:d, price:r2(num(pr)), qty:1, type:'mo'});
+  var err = $('#xp-err');
+  if (!XP.items.length){ err.textContent = 'Ajoute au moins un travail avec son prix.'; err.hidden = false; return; }
+  if (XP.items.some(function(i){ return !(num(i.price) > 0); })){ err.textContent = 'Chaque travail a besoin d\'un prix.'; err.hidden = false; return; }
+  var x = {id:'x' + Date.now().toString(36), items:XP.items.slice(), note:val('xp-note'), total:r2(XP.items.reduce(function(s0, i){ return s0 + num(i.price) * (num(i.qty) || 1); }, 0)), status:'attente', at:Date.now(),
+    by:(ext() && typeof ext().greetName === 'function' ? ext().greetName() : '') || ''};
+  closeSheet();
+  write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update({extras:jobExtras(j).concat([x]), updatedAt:Date.now()}); }, 'Proposition enregistrée : fais-la accepter par le client');
+}
+function answerExtra(id, yes){
+  var j = findJob(S.jobId); if (!j) return;
+  var who = (ext() && typeof ext().greetName === 'function' ? ext().greetName() : '') || '';
+  var xs = jobExtras(j).map(function(x){ return x.id === id ? Object.assign({}, x, {status:yes ? 'accepte' : 'refuse', answeredAt:Date.now(), answeredBy:'manuel', answeredWho:who}) : x; });
+  write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update({extras:xs, updatedAt:Date.now()}); }, yes ? 'Travaux acceptés : ils s\'ajoutent à la facture' : 'Travaux refusés');
+}
+
+/* ---------- envoyer au client : facture (et paiement) ou travaux à approuver — version équipe ---------- */
+function clientSend(j, what, extraId){
+  var e = ext(); if (!e || typeof e.clientLink !== 'function') return;
+  S.sending = j.id + what; render();
+  e.clientLink(j, what, extraId).then(function(r){
+    S.sending = null;
+    var sms = r && r.sms || {};
+    toast(sms.status === 'sent' ? 'Texto envoyé au client ✓' : sms.status === 'error' ? 'Texto pas envoyé : ' + (sms.error || 'erreur') + '. Le lien est copié.' : 'Lien prêt (textos pas branchés) : il est copié.');
+    if (sms.status !== 'sent' && r && r.link) copyText(r.link, '');
+    render();
+  }, function(err){ S.sending = null; toast(err && err.message ? err.message : 'Pas envoyé : vérifie la connexion.'); render(); });
+}
+function invoiceSendHTML(j){
+  var e = ext(), is = invState(j);
+  if (!e || typeof e.clientLink !== 'function' || (is !== 'unpaid' && is !== 'paid') || !canWrite()) return '';
+  var v = j.invoice, cs = v.sentAt ? 'Envoyée au client le ' + whenTxt(v.sentAt) + (v.smsStatus === 'sent' ? ' par texto ✓' : '') : '';
+  return '<div class="sendrow">' + (is === 'unpaid' ? '<button type="button" class="btn steel block" data-act="inv-send" data-id="' + esc(j.id) + '"' + (S.sending === j.id + 'facture' ? ' disabled' : '') + '>' +
+      (S.sending === j.id + 'facture' ? 'Envoi…' : (v.sentAt ? 'Renvoyer la facture au client' : 'Envoyer la facture au client') + (typeof e.payOn === 'function' && e.payOn() ? ' (avec « Payer »)' : '')) + '</button>' : '') +
+    (cs ? '<p class="muted small">' + esc(cs) + '</p>' : '') +
+    (v.stripe && v.stripe.amount ? '<p class="small ok-t">Payée en ligne par carte : ' + esc(money(v.stripe.amount)) + (v.stripe.at ? ' le ' + esc(whenTxt(v.stripe.at)) : '') + '</p>' : '') +
+    (v.stripe && v.stripe.short ? '<div class="banner warn"><p>Le paiement en ligne (' + esc(money(v.stripe.amount)) + ') ne correspond pas au total de la facture. Vérifie.</p></div>' : '') + '</div>';
+}
+
 /* what the team version may use (absent extension = nothing happens) */
 window.__garageApi = Object.freeze({S:S, render:render, toast:toast, findJob:findJob, findClient:findClient, cfg:cfg, mechanics:mechanics, esc:esc, hm:hm, money:money,
   bizName:bizName, dayLong:dayLong, dShort:dShort, today:today, jobServices:jobServices, cl:cl, addrFull:addrFull, clientName:clientName, telHref:telHref, fmtPhone:fmtPhone,
