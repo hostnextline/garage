@@ -89,18 +89,22 @@ function inviteMessage(o: { name: string; email: string; role: string; garage: s
   const subject = `Ton accès au carnet de ${o.garage}`;
   const text = `Bonjour ${first},\n\n${o.by} t'a ajouté à l'équipe de ${o.garage} (${role}).\n\n` +
     `1. Active ton compte et choisis ton mot de passe avec ce lien (valide ${INVITE_DAYS} jours) :\n${o.link}\n\n` +
-    `2. Mets l'app sur l'écran d'accueil de ton téléphone :\n` +
-    `- iPhone (Safari) : bouton Partager, puis « Sur l'écran d'accueil », puis « Ajouter ».\n` +
-    `- Android (Chrome) : menu ⋮, puis « Installer l'application » (ou « Ajouter à l'écran d'accueil »).\n\n` +
+    `2. Mets l'app sur l'écran d'accueil de ton téléphone (l'app te le montre aussi, étape par étape) :\n` +
+    `- iPhone (Safari) : bouton Partager (sur les iPhone récents : ••• à côté de l'adresse, puis Partager), puis « Sur l'écran d'accueil », puis « Ajouter ».\n` +
+    `- Android (Chrome) : menu ⋮, puis « Installer l'application » (ou « Ajouter à l'écran d'accueil »).\n` +
+    `Si le lien s'ouvre dans ton app de courriel, choisis d'abord « Ouvrir dans Safari » (iPhone) ou « Ouvrir dans Chrome » (Android).\n\n` +
+    `3. Ouvre l'app avec la nouvelle icône Garage et connecte-toi une fois. Ensuite, elle se souvient de toi.\n\n` +
     `Ton courriel pour te connecter : ${o.email}\n`;
   const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5;color:#1e1915;max-width:520px">` +
     `<p>Bonjour ${h(first)},</p><p>${h(o.by)} t'a ajouté à l'équipe de <b>${h(o.garage)}</b> (${h(role)}).</p>` +
     `<p><b>1. Active ton compte</b> et choisis ton mot de passe :</p>` +
     `<p><a href="${h(o.link)}" style="display:inline-block;background:#1e1915;color:#ffffff;text-decoration:none;font-weight:bold;padding:14px 22px;border-radius:12px">Activer mon compte</a></p>` +
     `<p style="font-size:13px;color:#6b5e55">Le lien est valide ${INVITE_DAYS} jours. S'il ne s'ouvre pas, copie cette adresse : ${h(o.link)}</p>` +
-    `<p><b>2. Mets l'app sur ton téléphone</b> (elle s'ouvrira comme une vraie app) :</p>` +
-    `<ul><li><b>iPhone (Safari)</b> : bouton Partager, puis « Sur l'écran d'accueil », puis « Ajouter ».</li>` +
+    `<p><b>2. Mets l'app sur ton téléphone</b> (elle s'ouvrira comme une vraie app ; l'app te le montre aussi, étape par étape) :</p>` +
+    `<ul><li><b>iPhone (Safari)</b> : bouton Partager (sur les iPhone récents : <b>•••</b> à côté de l'adresse, puis Partager), puis « Sur l'écran d'accueil », puis « Ajouter ».</li>` +
     `<li><b>Android (Chrome)</b> : menu ⋮, puis « Installer l'application » (ou « Ajouter à l'écran d'accueil »).</li></ul>` +
+    `<p style="font-size:13px;color:#6b5e55">Si le lien s'ouvre dans ton app de courriel, choisis d'abord « Ouvrir dans Safari » (iPhone) ou « Ouvrir dans Chrome » (Android).</p>` +
+    `<p><b>3. Ouvre l'app avec la nouvelle icône Garage</b> et connecte-toi une fois. Ensuite, elle se souvient de toi.</p>` +
     `<p>Ton courriel pour te connecter : <b>${h(o.email)}</b></p></div>`;
   return { subject, text, html };
 }

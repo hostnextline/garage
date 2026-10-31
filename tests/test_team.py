@@ -163,7 +163,10 @@ with sync_playwright() as pw:
         sp.wait_for_function('() => /Position envoyée/.test((document.getElementById("sh-line")||{}).textContent||"")', timeout=12000); ok = True
     except Exception: ok = False
     check('workday on: position sent line', ok, sp.text_content('#sh-line'))
-    live = psql("select on_shift, round(lat::numeric,4), round(lon::numeric,4) from public.mech_live l join public.members m using (user_id) where m.mechanic='Saleh'")
+    for _ in range(20):   # the line can say « Position envoyée » a moment before the server has written it
+        live = psql("select on_shift, round(lat::numeric,4), round(lon::numeric,4) from public.mech_live l join public.members m using (user_id) where m.mechanic='Saleh'")
+        if live == 't|45.5010|-73.6000': break
+        time.sleep(0.5)
     check('server has his live position', live == 't|45.5010|-73.6000', live)
     check('one point stored for the day path', psql("select count(*) from public.mech_positions") == '1')
 

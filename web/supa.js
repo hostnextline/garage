@@ -320,8 +320,10 @@
   function msg(text, ok){ var m = document.getElementById('g-msg'); if (!m) return; m.textContent = text || ''; m.hidden = !text; m.className = 'g-msg' + (ok ? ' ok' : ''); }
   function busy(on){ var b = document.getElementById('g-go'); if (b){ b.disabled = on; b.textContent = on ? 'Un instant…' : b.dataset.label; } }
 
+  function standalone(){ try { return !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)); } catch(e){ return false; } }
   function showLogin(note){
     gate({title:'Connexion', body:
+      (standalone() && !lsGet('gm.team.email') ? '<p class="g-help" id="g-first">Première ouverture de l\'app : connecte-toi une fois avec ton courriel et ton mot de passe. Ensuite, elle se souvient de toi.</p>' : '') +
       '<form id="g-form" novalidate><div class="g-f"><label for="g-email">Courriel</label><input id="g-email" type="email" autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false" value="' + esc(lsGet('gm.team.email') || '') + '"></div>' +
       '<div class="g-f"><label for="g-pw">Mot de passe</label><input id="g-pw" type="password" autocomplete="current-password"></div>' +
       '<p class="g-msg" id="g-msg" role="alert" hidden></p><button class="g-go" id="g-go" data-label="Se connecter" type="submit">Se connecter</button>' +

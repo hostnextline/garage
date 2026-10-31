@@ -241,12 +241,12 @@
       '#demo-bar .db-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;max-width:1100px;margin:0 auto}' +
       '#demo-bar .db-tag{font-weight:700;color:var(--steel)}#demo-bar .db-info{color:var(--muted)}#demo-bar .db-info b{color:var(--ink);font-weight:600}' +
       '#demo-bar button{font:inherit;font-weight:600;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);border-radius:8px;padding:6px 10px;cursor:pointer;min-height:36px}' +
-      '#demo-bar #db-open{margin-left:auto}#demo-bar .db-panel{max-width:1100px;margin:8px auto 2px;display:grid;gap:8px}#demo-bar .db-panel p{margin:0}' +
+      '#demo-bar .db-real{margin-left:auto;font-weight:700;color:var(--steel)}#demo-bar #db-open{margin-left:0}#demo-bar .db-panel{max-width:1100px;margin:8px auto 2px;display:grid;gap:8px}#demo-bar .db-panel p{margin:0}' +
       '#demo-bar .db-row{display:flex;flex-wrap:wrap;gap:8px}#demo-bar input{flex:1 1 220px;min-width:0;font:inherit;padding:8px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink)}' +
       '#demo-bar label{font-weight:600}#demo-bar .db-small{color:var(--muted);font-size:12.5px}#demo-bar .db-note{color:var(--warn);font-weight:600;max-width:1100px;margin:4px auto 0}#demo-bar .danger{color:var(--bad)}';
     document.head.appendChild(css);
     var el = document.createElement('div'); el.id = 'demo-bar'; el.setAttribute('role', 'region'); el.setAttribute('aria-label', 'Version rapide');
-    el.innerHTML = '<div class="db-top"><span class="db-tag">⚡ Version rapide · essai</span><span class="db-info">Adresses : <b id="db-prov"></b> · <span id="db-ms"></span></span><button type="button" id="db-open" aria-expanded="false" aria-controls="db-panel">Réglages de l\'essai</button></div>' +
+    el.innerHTML = '<div class="db-top"><span class="db-tag">⚡ Version rapide · essai</span><span class="db-info">Adresses : <b id="db-prov"></b> · <span id="db-ms"></span></span><a class="db-real" href="equipe/">L\'app du garage (avec ton compte) →</a><button type="button" id="db-open" aria-expanded="false" aria-controls="db-panel">Réglages de l\'essai</button></div>' +
       '<p class="db-note" id="db-note" aria-live="polite" hidden></p>' +
       '<div class="db-panel" id="db-panel" hidden><p>Cette copie tourne hors de claude.ai pour sentir la vraie vitesse. <b>Les données restent dans ce navigateur, sur cet appareil</b> : elles ne sont pas partagées avec tes partenaires.</p>' +
       '<label for="db-key">Clé TomTom (optionnelle)</label><div class="db-row"><input id="db-key" type="password" autocomplete="off" spellcheck="false" placeholder="Colle ta clé de developer.tomtom.com"><button type="button" id="db-save">Enregistrer</button><button type="button" id="db-unkey">Retirer</button></div>' +

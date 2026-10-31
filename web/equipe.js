@@ -113,8 +113,10 @@
     });
   }
   function gpsProblem(){
-    if (G.err === 'denied') return 'Le téléphone refuse de donner ta position. Autorise la localisation pour ce site (réglages du navigateur), puis recharge la page.';
-    if (G.err === 'none') return 'Ce navigateur ne donne pas la position.';
+    if (G.err === 'denied') return /iPhone|iPad|iPod/i.test(navigator.userAgent || '')
+      ? 'Le téléphone refuse de donner ta position. Va dans Réglages → Confidentialité et sécurité → Service de localisation → Sites web Safari, choisis « Lorsque l\'app est active », puis ferme et rouvre l\'app.'
+      : 'Le téléphone refuse de donner ta position. Touche le cadenas à côté de l\'adresse (ou, dans l\'app : ⋮ → Infos sur l\'app), autorise « Position », puis ferme et rouvre l\'app.';
+    if (G.err === 'none') return 'Ce téléphone ne donne pas la position ici. Ouvre l\'app dans Safari (iPhone) ou Chrome (Android).';
     if (G.err && !G.last) return 'Position introuvable pour l\'instant (signal GPS faible). On réessaie tout seul.';
     if (G.sendErr && G.sentAt && Date.now() - G.sentAt > 90000) return 'La position ne part plus (connexion). On réessaie tout seul.';
     return '';
@@ -122,7 +124,7 @@
   function shiftLine(){
     var el = document.getElementById('sh-line'); if (!el) return;
     var p = gpsProblem();
-    el.textContent = !G.on ? '' : p ? p : !G.last ? 'Recherche de ta position…' : 'Position envoyée ' + ago(G.sentAt || null) + (G.last.acc ? ' · précision ±' + Math.round(G.last.acc) + ' m' : '');
+    el.textContent = !G.on ? '' : p ? p : !G.last ? 'Recherche de ta position…' : (G.sentAt ? 'Position envoyée ' + ago(G.sentAt) : 'Position trouvée, envoi en cours…') + (G.last.acc ? ' · précision ±' + Math.round(G.last.acc) + ' m' : '');
     el.className = 'sh-line' + (p ? ' warn' : '');
     var w = document.getElementById('sh-wake'); if (w){ w.setAttribute('aria-pressed', String(!!G.wake)); w.textContent = G.wake ? 'Écran gardé allumé ✓' : 'Garder l\'écran allumé'; }
   }
@@ -488,6 +490,7 @@
   function onAction(a, b){
     var id = b.dataset.id, v = b.dataset.v, api = A();
     switch (a){
+      case 'app-reload': location.reload(); break;
       case 'acct-out': {
         var pend = T.pending ? T.pending() : 0;
         if (pend && !X.outArmed){ X.outArmed = true; A().toast(pend + (pend > 1 ? ' changements pas encore envoyés' : ' changement pas encore envoyé') + ' : attends le retour du signal. Touche encore « Se déconnecter » pour les perdre.'); setTimeout(function(){ X.outArmed = false; }, 8000); break; }
@@ -645,6 +648,7 @@
   function netBanner(){
     var n = T.net; if (!n || !me) return '';
     var h = '', p = n.pending, s = p > 1 ? 's' : '';
+    if (X.newVersion) h += '<div class="banner ok" role="status" id="upd-banner"><p><b>Nouvelle version de l\'app prête.</b></p><button type="button" class="btn sm primary" data-act="app-reload">Mettre à jour</button></div>';
     if (n.offlineMode || n.online === false)
       h += '<div class="banner warn net" role="status"><p><b>Hors ligne.</b> ' + (p ? p + ' changement' + s + ' gardé' + s + ' sur le téléphone, envoyé' + s + ' au retour du signal.' : 'Tu travailles avec la copie du téléphone ; tes changements seront envoyés au retour du signal.') + '</p></div>';
     else if (p) h += '<div class="banner net" role="status"><p>' + (n.sending ? 'Envoi de ' + p + ' changement' + s + '…' : p + ' changement' + s + ' en attente d\'envoi.') + '</p>' + (n.sending ? '' : '<button type="button" class="btn sm" data-act="net-send">Envoyer maintenant</button>') + '</div>';
@@ -665,7 +669,15 @@
   /* the page and its tools are kept on the phone: it opens even without network (« ?nosw » turns it off) */
   if ('serviceWorker' in navigator && /^(https:|http:\/\/(127\.0\.0\.1|localhost)(:|\/))/.test(location.href)){
     if (/[?&]nosw\b/.test(location.search)) navigator.serviceWorker.getRegistrations().then(function(rs){ rs.forEach(function(r){ r.unregister(); }); });
-    else window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+    else window.addEventListener('load', function(){
+      /* an app left open on the phone for days still learns about a new version: check when it comes back to the screen */
+      navigator.serviceWorker.register('sw.js').then(function(reg){
+        var had = !!navigator.serviceWorker.controller;
+        navigator.serviceWorker.addEventListener('controllerchange', function(){ if (had){ X.newVersion = true; var a = A(); if (a) a.render(); } had = true; });
+        document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible') reg.update().catch(function(){}); });
+        setInterval(function(){ reg.update().catch(function(){}); }, 30 * 60000);
+      }).catch(function(){});
+    });
   }
   window.__garageExt = {
     tabs:[{key:'carte', label:'Carte', icon:MAP_ICON, view:viewMap}, {key:'equipe', label:'Équipe', hidden:true, view:viewEquipe}],
