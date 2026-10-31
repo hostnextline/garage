@@ -630,6 +630,16 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
 .ph-job.s-route{border-left-color:var(--info)}.ph-job.s-place{border-left-color:var(--warn)}.ph-job.s-termine{border-left-color:var(--ok)}.ph-job.s-annule,.ph-job.s-noshow{opacity:.55;border-left-color:var(--line-strong)}
 .ph-job.s-annule b,.ph-job.s-noshow b{text-decoration:line-through}
 .offrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.vinlab{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.scanbox{position:relative;border-radius:16px;overflow:hidden;background:#000;aspect-ratio:4/3;max-height:52vh}
+.scanbox video{width:100%;height:100%;object-fit:cover;display:block}
+.scan-frame{position:absolute;left:8%;right:8%;top:34%;bottom:34%;border:3px solid rgba(255,255,255,.9);border-radius:12px;box-shadow:0 0 0 999px rgba(0,0,0,.28)}
+.scan-msg{margin:8px 0 4px;font-weight:600}.scanpanel{display:grid;gap:8px;margin-top:8px}.scan-type{display:grid;gap:8px;margin-top:8px}
+.vehsum{display:grid;gap:3px;padding:12px 14px;border-radius:14px;background:var(--card);border:1px solid var(--glass-edge,var(--line));margin:8px 0}.vehsum b{font-size:17px}.vehsum span{font-size:14px}
+.speccard{display:grid;gap:6px;margin-top:10px;min-width:0;padding:12px 14px;border-radius:14px;background:var(--card);border:1px solid var(--glass-edge,var(--line))}
+.speccard .btn{white-space:normal;justify-self:start;max-width:100%}
+.spec-h{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 10px;align-items:baseline}.spec-oil{font-size:17px;font-weight:650;color:var(--ok)}.spec-kv{gap:6px}
+.pj-oil{display:block;margin-top:4px;font-weight:650;color:var(--ok)}
 .colh.coloff{opacity:.7}.colh.coloff small{color:var(--bad)}.colh .linkbtn{display:block;margin:2px auto 0;font-size:12px}
 .crewbox{display:grid;gap:6px;margin:8px 0}.crew{display:flex;flex-wrap:wrap;gap:8px}.crew-f{display:grid;gap:3px;min-width:150px;flex:1 1 150px;max-width:280px}.crew-f span{font-size:12px;font-weight:600;color:var(--muted)}.crew-f small{font-size:12px}
 .fold .crew{padding-top:8px}
@@ -1941,6 +1951,7 @@ form:not(.ph-sets) .ph-secback{display:none}
     homeTab:function(){ return me && me.role === 'tresorier' ? 'tresor' : null; },
     greetName:function(){ return me ? first(me.name) : ''; },
     tellsClient:true, isMine:mineJob,
+    decodeVin:function(vin){ return invoke('vehicle', {vin:vin}).then(function(d){ return (d && d.r) || {}; }); },
     phoneTop:function(){ return me ? shiftCard() : ''; },
     plusItems:function(){
       var out = [];
@@ -2065,6 +2076,234 @@ function vinCheck(raw){
   return {state:'warn', year:y, msg:'Le chiffre de contrôle ne balance pas : relis le VIN. (Ça arrive avec certains véhicules importés.)'};
 }
 
+/* ---------- VIN: scan, decode (free NHTSA database), engine sheet kept by the garage ---------- */
+/* the maker from the first characters (works offline, only a fallback) */
+var WMI = {'1HG':'Honda','2HG':'Honda','5FN':'Honda','5J6':'Honda','JHM':'Honda','19X':'Honda','2HK':'Honda','5KB':'Honda','JHL':'Honda','19U':'Acura','JH4':'Acura','2HN':'Acura','5J8':'Acura',
+  '1G1':'Chevrolet','2G1':'Chevrolet','3G1':'Chevrolet','1GC':'Chevrolet','2GC':'Chevrolet','3GC':'Chevrolet','1GN':'Chevrolet','3GN':'Chevrolet','KL7':'Chevrolet','1GB':'Chevrolet',
+  '1GT':'GMC','2GT':'GMC','3GT':'GMC','1GK':'GMC','1G6':'Cadillac','1GY':'Cadillac','2G4':'Buick','5GA':'Buick','KL4':'Buick',
+  '1FA':'Ford','1FT':'Ford','1FM':'Ford','2FM':'Ford','3FA':'Ford','3FM':'Ford','1FD':'Ford','2FT':'Ford','3FT':'Ford','1FB':'Ford','1LN':'Lincoln','5LM':'Lincoln',
+  '1C3':'Chrysler','2C3':'Chrysler','2C4':'Chrysler','1C4':'Jeep','1J4':'Jeep','1J8':'Jeep','3C4':'Jeep','1C6':'Ram','3C6':'Ram','3C7':'Ram','2C7':'Ram','1D7':'Dodge','2B3':'Dodge','2D3':'Dodge','1B3':'Dodge','2C8':'Dodge',
+  '4T1':'Toyota','4T3':'Toyota','4T4':'Toyota','2T1':'Toyota','2T3':'Toyota','5TD':'Toyota','5TF':'Toyota','5TE':'Toyota','JTD':'Toyota','JTE':'Toyota','JTM':'Toyota','JTN':'Toyota','JTK':'Toyota','JTL':'Toyota',
+  'JTH':'Lexus','JTJ':'Lexus','2T2':'Lexus','58A':'Lexus','JN1':'Nissan','JN8':'Nissan','1N4':'Nissan','1N6':'Nissan','3N1':'Nissan','3N6':'Nissan','5N1':'Nissan','JN3':'Nissan','JNK':'Infiniti','5N3':'Infiniti',
+  'KMH':'Hyundai','5NP':'Hyundai','KM8':'Hyundai','5NM':'Hyundai','KMU':'Genesis','KNA':'Kia','KND':'Kia','5XY':'Kia','3KP':'Kia','5XX':'Kia','KNM':'Kia',
+  'JM1':'Mazda','JM3':'Mazda','3MZ':'Mazda','3MV':'Mazda','JF1':'Subaru','JF2':'Subaru','4S3':'Subaru','4S4':'Subaru','JA4':'Mitsubishi','JA3':'Mitsubishi','ML3':'Mitsubishi',
+  'WVW':'Volkswagen','WVG':'Volkswagen','3VW':'Volkswagen','1VW':'Volkswagen','3VV':'Volkswagen','WBA':'BMW','WBS':'BMW','WBX':'BMW','5UX':'BMW','5YM':'BMW','WMW':'Mini',
+  'WDD':'Mercedes-Benz','WDC':'Mercedes-Benz','4JG':'Mercedes-Benz','55S':'Mercedes-Benz','W1K':'Mercedes-Benz','W1N':'Mercedes-Benz','W1V':'Mercedes-Benz','WD3':'Mercedes-Benz','WD4':'Mercedes-Benz',
+  'WAU':'Audi','WA1':'Audi','WUA':'Audi','WP0':'Porsche','WP1':'Porsche','YV1':'Volvo','YV4':'Volvo','7JR':'Volvo','SAL':'Land Rover','SAJ':'Jaguar','5YJ':'Tesla','7SA':'Tesla','ZFA':'Fiat','3C3':'Fiat','ZAR':'Alfa Romeo','ZAS':'Alfa Romeo'};
+function wmiMake(v){ return WMI[String(v || '').slice(0, 3)] || ''; }
+/* the VIN inside what a barcode or a person gives (door stickers sometimes add a leading I) */
+function vinFrom(text){
+  var t = String(text || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  for (var i = 0; i + 17 <= t.length; i++){ var c = t.substr(i, 17); if (vinCheck(c).state === 'ok') return c; }
+  if (t.length === 18 && t.charAt(0) === 'I') t = t.slice(1);
+  return /^[A-HJ-NPR-Z0-9]{17}$/.test(t) ? t : '';
+}
+var DRIVE_FR = [[/front/i, 'Traction avant'], [/rear/i, 'Propulsion'], [/all/i, 'Intégrale'], [/4wd|4x4|4-wheel/i, '4x4'], [/4x2|2wd/i, '2 roues motrices']];
+function driveFr(d){ d = String(d || ''); for (var i = 0; i < DRIVE_FR.length; i++) if (DRIVE_FR[i][0].test(d)) return DRIVE_FR[i][1]; return d; }
+function fuelFr(f, el){
+  f = String(f || '').toLowerCase(); el = String(el || '').toUpperCase();
+  if (/PHEV/.test(el)) return 'Hybride rechargeable'; if (/HEV/.test(el)) return 'Hybride'; if (/BEV/.test(el) || /electric/.test(f)) return 'Électrique';
+  if (/diesel/.test(f)) return 'Diesel'; if (/flexible/.test(f)) return 'Essence (E85)'; if (/natural gas/.test(f)) return 'Gaz naturel'; if (/gasoline/.test(f)) return 'Essence'; return f ? f : '';
+}
+function titleMake(m){ m = String(m || '').trim(); if (!m) return ''; if (m.length <= 3) return m.toUpperCase(); return m.toLowerCase().replace(/(^|[\s-])([a-zà-ÿ])/g, function(_, a, b){ return a + b.toUpperCase(); }); }
+function engineLabel(v){ return [num(v.displL) > 0 ? num(v.displL).toFixed(1).replace('.', ',') + ' L' : '', v.cyl ? v.cyl + ' cyl.' : '', v.fuel && v.fuel !== 'Essence' ? v.fuel : ''].filter(Boolean).join(' '); }
+function normVpic(vin, r){
+  r = r || {};
+  var d = num(r.DisplacementL), v = {vin:vin, year:String(r.ModelYear || '').trim(), make:titleMake(r.Make) || wmiMake(vin), model:String(r.Model || '').trim(),
+    trim:String(r.Trim || r.Series || '').trim(), displL:d ? Math.round(d * 10) / 10 : '', cyl:parseInt(r.EngineCylinders, 10) || '', fuel:fuelFr(r.FuelTypePrimary, r.ElectrificationLevel), drive:driveFr(r.DriveType)};
+  v.engine = engineLabel(v); v.full = !!(v.make && v.model); return v;
+}
+function fetchVpic(vin){
+  var ctl = window.AbortController ? new AbortController() : null, t = setTimeout(function(){ if (ctl) ctl.abort(); }, 9000);
+  return fetch('https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/' + vin + '?format=json', ctl ? {signal:ctl.signal} : {})
+    .then(function(r){ clearTimeout(t); if (!r.ok) throw new Error('http'); return r.json(); }, function(e){ clearTimeout(t); throw e; })
+    .then(function(j){ return (j && j.Results && j.Results[0]) || {}; });
+}
+/* team version: through the garage's server; inside Claude: straight to the NHTSA; offline: year and maker from the VIN itself */
+function decodeVin(vin){
+  var e = ext(), p = e && typeof e.decodeVin === 'function' ? e.decodeVin(vin) : fetchVpic(vin);
+  return Promise.resolve(p).then(function(r){ return normVpic(vin, r); }, function(){ var v = normVpic(vin, {}); v.offline = true; return v; });
+}
+/* the engine sheet: filled once by a mechanic, used for every car with the same engine */
+var SPEC_F = [['oilL', 'Huile moteur (litres, avec le filtre)', 'decimal'], ['oilVisc', 'Viscosité', 'visc'], ['oilFilter', 'Filtre à huile (numéro)'], ['drainTorque', 'Bouchon de vidange (couple)'],
+  ['coolant', 'Liquide de refroidissement (litres, type)'], ['trans', 'Huile de transmission (type, litres)'], ['brake', 'Liquide de frein'], ['tires', 'Pneus (dimension)'], ['pressure', 'Pression des pneus'],
+  ['plugs', 'Bougies'], ['wipers', 'Essuie-glaces'], ['battery', 'Batterie (groupe)'], ['notes', 'Notes', 'area']];
+var VISC = ['0W-16', '0W-20', '5W-20', '0W-30', '5W-30', '10W-30', '0W-40', '5W-40', '15W-40'];
+function specKey(v){ return slug([v.year, v.make, v.model, v.displL ? String(v.displL) : '', v.cyl].join(' ')); }
+function findSpec(v){
+  if (!v || !v.make || !v.model) return null;
+  var ex = S.specs[specKey(v)]; if (ex) return {s:ex, exact:true};
+  var best = null;
+  Object.keys(S.specs).forEach(function(k){ var x = S.specs[k]; if (slug(x.make) !== slug(v.make) || slug(x.model) !== slug(v.model) || String(x.displL || '') !== String(v.displL || '') || String(x.cyl || '') !== String(v.cyl || '')) return;
+    if (!best || Math.abs(+x.year - +v.year) < Math.abs(+best.year - +v.year)) best = x; });
+  return best ? {s:best, exact:false} : null;
+}
+function oilLine(s){ return s && s.oilL ? 'Huile : ' + String(s.oilL).replace('.', ',') + ' L' + (s.oilVisc ? ' · ' + s.oilVisc : '') + (s.oilFilter ? ' · filtre ' + s.oilFilter : '') : ''; }
+function specCardHTML(v, canEdit, jid){
+  if (!v || !v.make || !v.model) return '';
+  var f = findSpec(v), s = f ? f.s : null, rows = s ? SPEC_F.filter(function(x){ return x[0] !== 'oilL' && x[0] !== 'oilVisc' && x[0] !== 'oilFilter' && s[x[0]]; }) : [];
+  return '<div class="speccard" id="speccard"><div class="spec-h"><b>Fiche technique</b><span class="muted small">' + esc([v.year, v.make, v.model, engineLabel(v)].filter(Boolean).join(' ')) + '</span></div>' +
+    (s && s.oilL ? '<p class="spec-oil">' + esc(oilLine(s)) + '</p>' : '<p class="muted">' + (s ? 'Huile pas encore indiquée.' : 'Pas encore dans la fiche du garage.') + '</p>') +
+    (f && !f.exact ? '<p class="small tight">D\'après une ' + esc(s.year) + ' (même moteur) : à confirmer.</p>' : '') +
+    (rows.length ? '<dl class="kv spec-kv">' + rows.map(function(x){ return '<div><dt>' + esc(x[1]) + '</dt><dd>' + esc(s[x[0]]) + '</dd></div>'; }).join('') + '</dl>' : '') +
+    (s && s.by ? '<p class="muted small">Confirmé par ' + esc(s.by) + (s.updatedAt ? ' le ' + esc(dateMed(isoDate(new Date(s.updatedAt)))) : '') + '</p>' : '') +
+    (canEdit ? '<button type="button" class="btn sm" data-act="spec-edit" data-id="' + esc(jid || '') + '">' + (s && f.exact ? 'Modifier la fiche' : s ? 'Confirmer pour ce moteur' : 'Remplir la fiche (une seule fois)') + '</button>' : '') + '</div>';
+}
+function jobVeh(j){ var v = Object.assign({}, j.vehicle || {}); if (!v.engine) v.engine = engineLabel(v); return v; }
+function openSpec(jid){
+  var j = findJob(jid); if (!j) return; var v = jobVeh(j); if (!v.make || !v.model){ toast('Indique d\'abord l\'année, la marque et le modèle (ou scanne le VIN).'); return; }
+  var f = findSpec(v), s = f ? f.s : {};
+  S.specFor = {jid:jid, key:specKey(v), v:v};
+  var h = '<form id="specform" class="stack" novalidate><p class="small">Ça vaut pour <b>toutes les autos avec ce moteur</b> (' + esc([v.year, v.make, v.model, engineLabel(v)].filter(Boolean).join(' ')) + '). La prochaine fois, tout sera déjà rempli.</p>' +
+    (f && !f.exact ? '<div class="banner"><p>Rempli d\'après une ' + esc(s.year) + ' avec le même moteur. Vérifie, puis enregistre.</p></div>' : '') +
+    SPEC_F.map(function(x){
+      var id = 'sp-' + x[0], val0 = s[x[0]] != null ? String(s[x[0]]).replace(x[2] === 'decimal' ? '.' : '\u0000', ',') : '';
+      if (x[2] === 'area') return '<div class="field"><label for="' + id + '">' + esc(x[1]) + '</label><textarea id="' + id + '">' + esc(val0) + '</textarea></div>';
+      return '<div class="field"><label for="' + id + '">' + esc(x[1]) + '</label><input id="' + id + '" autocomplete="off"' + (x[2] === 'decimal' ? ' inputmode="decimal" placeholder="Ex. 4,4"' : '') + ' value="' + esc(val0) + '">' +
+        (x[2] === 'visc' ? '<div class="chips">' + VISC.map(function(c){ return '<button type="button" class="chip" data-act="sp-visc" data-v="' + c + '">' + c + '</button>'; }).join('') + '</div>' : '') + '</div>';
+    }).join('') +
+    '<div class="actions"><button type="submit" class="btn primary block" id="sp-save">Enregistrer la fiche</button></div></form>';
+  openSheet('Fiche technique', [v.year, v.make, v.model, engineLabel(v)].filter(Boolean).join(' '), h);
+  $('#specform').addEventListener('submit', saveSpec);
+}
+function saveSpec(ev){
+  ev.preventDefault();
+  var sf = S.specFor; if (!sf) return;
+  var v = sf.v, e = ext(), who = e && typeof e.greetName === 'function' ? (e.greetName() || '') : '';
+  var doc = {key:sf.key, year:String(v.year || ''), make:v.make, model:v.model, displL:v.displL || '', cyl:v.cyl || '', engine:engineLabel(v), by:who, updatedAt:Date.now()};
+  SPEC_F.forEach(function(x){ var t = val('sp-' + x[0]); if (x[2] === 'decimal') doc[x[0]] = t ? r2(num(t)) : ''; else doc[x[0]] = t; });
+  if (doc.oilL !== '' && !(doc.oilL > 0 && doc.oilL < 30)){ toast('La quantité d\'huile doit être en litres (ex. 4,4).'); return; }
+  var b = $('#sp-save'); b.disabled = true;
+  write('specs/' + sf.key, function(){ return S.db.doc('specs/' + sf.key).set(doc); }, 'Fiche technique enregistrée').then(function(ok){ b.disabled = false; if (ok){ S.specs[sf.key] = Object.assign({id:sf.key}, doc); closeSheet(); } });
+}
+/* ---------- the scanner (live camera, a photo, or typing) ---------- */
+var zxP = null, SCAN = {stream:null, raf:0, done:false};
+function loadZxing(){
+  if (window.ZXing && window.ZXing.BrowserMultiFormatReader) return Promise.resolve(window.ZXing);
+  if (zxP) return zxP;
+  zxP = new Promise(function(res, rej){ var sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js'; sc.onload = function(){ window.ZXing ? res(window.ZXing) : rej(new Error('load')); }; sc.onerror = function(){ zxP = null; rej(new Error('load')); }; document.head.appendChild(sc); });
+  return zxP;
+}
+function zxHints(Z){
+  var hints = new Map(), F = Z.BarcodeFormat;
+  hints.set(Z.DecodeHintType.POSSIBLE_FORMATS, [F.CODE_39, F.CODE_128, F.DATA_MATRIX, F.QR_CODE, F.PDF_417]); hints.set(Z.DecodeHintType.TRY_HARDER, true);
+  return hints;
+}
+/* one picture (a camera frame or a photo, drawn on a canvas) → the text of its barcode, or '' */
+function zxCanvas(Z, reader, cv){
+  try { var r = reader.decodeWithState(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.HTMLCanvasElementLuminanceSource(cv)))); return r ? r.getText() : ''; } catch(e){ return ''; }
+}
+function drawScaled(src, w, h, max, cv){
+  var k = Math.min(1, max / Math.max(w, h)), W = Math.round(w * k), H = Math.round(h * k);
+  if (cv.width !== W) cv.width = W; if (cv.height !== H) cv.height = H;
+  cv.getContext('2d', {willReadFrequently:true}).drawImage(src, 0, 0, W, H); return cv;
+}
+function stopScan(){
+  SCAN.done = true; cancelAnimationFrame(SCAN.raf);
+  try { if (SCAN.stream) SCAN.stream.getTracks().forEach(function(t){ t.stop(); }); } catch(e){}
+  SCAN.stream = null;
+}
+function scanMsg(t, cls){ var m = $('#scan-msg'); if (m){ m.textContent = t; m.className = 'small scan-msg' + (cls ? ' ' + cls : ''); } }
+function scanHTML(){
+  return '<div class="scanbox"><video id="scan-v" playsinline muted autoplay></video><div class="scan-frame" aria-hidden="true"></div></div>' +
+    '<p class="small scan-msg" id="scan-msg" aria-live="polite">Ouverture de la caméra…</p>' +
+    '<p class="muted small">Le code-barres est sur l\'étiquette dans le cadre de la porte du conducteur. Pas d\'étiquette ? Tape le VIN (bas du pare-brise, côté conducteur).</p>' +
+    '<div class="grid2"><label class="btn" for="scan-file">Prendre une photo</label><button type="button" class="btn" data-act="scan-type">Taper le VIN</button></div>' +
+    '<input type="file" id="scan-file" accept="image/*" capture="environment" class="sr-only">' +
+    '<div class="scan-type" id="scan-typebox" hidden><div class="field"><label for="scan-in">VIN (17 caractères)</label><input id="scan-in" class="mono" maxlength="18" autocomplete="off" autocapitalize="characters" spellcheck="false"></div><button type="button" class="btn primary block" data-act="scan-typed">Décoder ce VIN</button></div>';
+}
+var BD_FORMATS = ['code_39', 'code_128', 'data_matrix', 'qr_code', 'pdf417'];
+function nativeDetector(){ if (!window.BarcodeDetector) return null; try { return new window.BarcodeDetector({formats:BD_FORMATS}); } catch(e){ return null; } }
+/* starts the camera in #scan-v; calls got(vin) once. The phone's own barcode reader when it has one (Android Chrome), else ZXing. */
+function startScan(got){
+  stopScan(); SCAN.done = false;
+  function hit(text){ if (SCAN.done || !text) return; var v = vinFrom(text); if (!v){ scanMsg('Ce code n\'est pas un VIN. Vise l\'autre code-barres.', 'tight'); return; } SCAN.done = true; if (navigator.vibrate) try { navigator.vibrate(60); } catch(e){} stopScan(); got(v); }
+  var det = nativeDetector(), zx = det ? null : loadZxing();
+  if (zx) zx.catch(function(){});
+  var fi = $('#scan-file');
+  if (fi) fi.addEventListener('change', function(ev){
+    var file = ev.target.files && ev.target.files[0]; ev.target.value = ''; if (!file) return;
+    scanMsg('Lecture de la photo…');
+    var url = URL.createObjectURL(file), img = new Image();
+    img.onerror = function(){ URL.revokeObjectURL(url); scanMsg('Cette photo ne s\'ouvre pas. Reprends-la, ou tape le VIN.', 'tight'); };
+    img.onload = function(){
+      URL.revokeObjectURL(url);
+      var cv = drawScaled(img, img.naturalWidth, img.naturalHeight, 1800, document.createElement('canvas'));
+      var none = function(){ scanMsg('Pas de code-barres lisible sur la photo. Rapproche-toi, ou tape le VIN.', 'tight'); };
+      (det ? det.detect(cv).then(function(c){ return c && c.length ? c[0].rawValue : ''; }, function(){ return ''; }) : (zx || loadZxing()).then(function(Z){ var rd = new Z.MultiFormatReader(); rd.setHints(zxHints(Z)); return zxCanvas(Z, rd, cv); }))
+        .then(function(t){ if (!t) return none(); var v = vinFrom(t); if (!v) return scanMsg('Ce code n\'est pas un VIN. Prends l\'autre code-barres.', 'tight'); SCAN.done = true; stopScan(); got(v); }, function(){ scanMsg('Le lecteur n\'a pas pu se charger (connexion ?). Tape le VIN.', 'tight'); });
+    };
+    img.src = url;
+  });
+  var video = $('#scan-v');
+  if (!video || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ scanMsg('La caméra n\'est pas offerte ici : prends une photo ou tape le VIN.', 'tight'); return; }
+  navigator.mediaDevices.getUserMedia({audio:false, video:{facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1080}}}).then(function(st){
+    if (SCAN.done || !$('#scan-v')){ st.getTracks().forEach(function(t){ t.stop(); }); return; }
+    SCAN.stream = st; video.srcObject = st; var pp = video.play(); if (pp && pp.catch) pp.catch(function(){});
+    var read;
+    if (det) read = Promise.resolve(function(){ return det.detect(video).then(function(c){ return c && c.length ? c[0].rawValue : ''; }, function(){ return ''; }); });
+    else read = zx.then(function(Z){ var rd = new Z.MultiFormatReader(), cv = document.createElement('canvas'); rd.setHints(zxHints(Z)); return function(){ return Promise.resolve(zxCanvas(Z, rd, drawScaled(video, video.videoWidth, video.videoHeight, 1280, cv))); }; });
+    read.then(function(one){
+      if (SCAN.done) return; scanMsg('Vise le code-barres…');
+      var last = 0, busy = false;
+      (function loop(ts){
+        if (SCAN.done) return; SCAN.raf = requestAnimationFrame(loop);
+        if (busy || ts - last < 220 || video.readyState < 2 || !video.videoWidth) return; last = ts; busy = true;
+        one().then(function(t){ busy = false; hit(t); }, function(){ busy = false; });
+      })(0);
+    }, function(){ if (!SCAN.done) scanMsg('Le lecteur n\'a pas pu se charger (connexion ?). Prends une photo plus tard, ou tape le VIN.', 'tight'); });
+  }, function(){ if (!SCAN.done) scanMsg('La caméra est bloquée : permets-la, ou prends une photo / tape le VIN.', 'tight'); });
+}
+/* the vehicle that was just decoded, with what we know about its engine */
+function vehSummary(v){
+  var f = findSpec(v), s = f ? f.s : null;
+  return '<div class="vehsum"><b>' + esc([v.year, v.make, v.model, v.trim].filter(Boolean).join(' ') || 'Véhicule') + '</b>' +
+    '<span>' + esc([engineLabel(v), v.drive].filter(Boolean).join(' · ')) + '</span>' +
+    (s && s.oilL ? '<span class="ok-t">' + esc(oilLine(s)) + (f.exact ? '' : ' (d\'après une ' + esc(s.year) + ')') + '</span>' : (v.full ? '<span class="muted">Huile : pas encore dans la fiche du garage</span>' : '')) +
+    (v.offline || !v.model ? '<span class="tight">' + (v.offline ? 'Base des véhicules pas joignable : seulement l\'année et la marque.' : 'Ce VIN n\'est pas dans la base : complète le modèle à la main.') + '</span>' : '') + '</div>';
+}
+/* job page: scan → confirm → the job's vehicle is updated */
+function openScanJob(jid){
+  var j = findJob(jid); if (!j) return; S.scanJob = jid;
+  openSheet('Scanner le VIN', [cl(j).name, vehLabel(j)].filter(Boolean).join(' · '), '<div id="scan-body">' + scanHTML() + '</div>');
+  startScan(function(vin){ scanDecoded(vin); });
+}
+function scanDecoded(vin){
+  var bd = $('#scan-body'); if (!bd) return;
+  bd.innerHTML = '<p class="muted">VIN <b class="mono">' + esc(vin) + '</b> · décodage…</p>';
+  decodeVin(vin).then(function(v){
+    S.scanVeh = v; if (!$('#scan-body')) return;
+    $('#scan-body').innerHTML = '<p class="small">VIN <b class="mono">' + esc(vin) + '</b> ' + (vinCheck(vin).state === 'ok' ? '<span class="ok-t">✓</span>' : '<span class="tight">(chiffre de contrôle à vérifier)</span>') + '</p>' + vehSummary(v) +
+      '<div class="grid2"><button type="button" class="btn" data-act="scan-again">Rescanner</button><button type="button" class="btn primary" data-act="scan-use">Mettre sur la job</button></div>';
+  });
+}
+function scanUse(){
+  var j = findJob(S.scanJob), v = S.scanVeh; if (!j || !v) return;
+  var cur = j.vehicle || {}, nv = Object.assign({}, cur, {vin:v.vin});
+  ['year', 'make', 'model', 'trim', 'displL', 'cyl', 'fuel', 'drive', 'engine'].forEach(function(k){ if (v[k] !== '' && v[k] != null) nv[k] = v[k]; });
+  closeSheet();
+  write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update({vehicle:nv, updatedAt:Date.now()}); }, 'Véhicule mis à jour');
+}
+/* booking form: the scanner opens right under the VIN field */
+function openScanForm(){
+  var box = $('#scanpanel'); if (!box) return;
+  box.hidden = false; box.innerHTML = '<div class="scanpanel">' + scanHTML() + '<button type="button" class="btn ghost block" data-act="scan-close">Fermer le scanner</button></div>';
+  startScan(function(vin){ fillFormVin(vin, true); });
+}
+function closeScanForm(){ stopScan(); var box = $('#scanpanel'); if (box){ box.hidden = true; box.innerHTML = ''; } }
+function fillFormVin(vin, scanned){
+  closeScanForm();
+  var fv = $('#f-vin'); if (!fv) return; fv.value = vin; updateVinMsg();
+  var box = $('#vinmsg'); if (box) box.insertAdjacentHTML('beforeend', ' <span class="muted">· décodage…</span>');
+  decodeVin(vin).then(function(v){
+    if (!$('#f-vin') || val('f-vin') !== vin) return;
+    S.formVeh = v;
+    [['f-year', v.year], ['f-make', v.make], ['f-model', v.model]].forEach(function(x){ var el = $('#' + x[0]); if (el && x[1] && (scanned || !el.value)) el.value = x[1]; });
+    updateVinMsg(); var bx = $('#specmsg'); if (bx) bx.innerHTML = vehSummary(v);
+    formChanged();
+  });
+}
+
 /* ---------- postal codes & distances ----------
    Quebec postal zones (first 3 characters) with an approximate position.
    Source: GeoNames postal code dump for Canada (CC BY 4.0), via the postalcodes-ca project. */
@@ -2086,7 +2325,7 @@ var TT = {mcp:null, state:'off', seq:0, vseq:0, opts:[], local:[], list:[], load
 var S = {
   db:null, dl:null, uid:null, noDb:false, clients:[], clientId:null, clientTab:'suivi', formClient:null, bookCtx:null, cq:'', backTo:null, dupOk:null, loaded:false, loadErr:false, canWrite:null, isAdmin:false, userUnknown:true,
   jobs:[], cfg:{}, tab:'agenda', screen:null, jobId:null, editId:null, quick:false,
-  day:today(), mech:lsGet('gm.mech') || '', view:['grid','week','list'].indexOf(lsGet('gm.view')) >= 0 ? lsGet('gm.view') : 'grid', days:{}, avail:{}, hoursEdit:false, sheet:false, invFilter:'unpaid', inv:null, invJob:null, confirmDel:false, settingsDirty:false
+  day:today(), mech:lsGet('gm.mech') || '', view:['grid','week','list'].indexOf(lsGet('gm.view')) >= 0 ? lsGet('gm.view') : 'grid', days:{}, avail:{}, specs:{}, hoursEdit:false, sheet:false, invFilter:'unpaid', inv:null, invJob:null, confirmDel:false, settingsDirty:false
 };
 function cfg(){ return S.cfg || {}; }
 function biz(){ return cfg().biz || {}; }
@@ -3289,6 +3528,7 @@ function openSheet(title, sub, html){
   $('#sheet').hidden = false; document.body.classList.add('locked');
 }
 function closeSheet(){
+  stopScan();
   if (!S.sheet) return;
   S.sheet = false; S.quick = false; S.editId = null;
   $('#sheet').hidden = true; $('#sheet-body').innerHTML = ''; document.body.classList.remove('locked');
@@ -3502,11 +3742,11 @@ function viewJob(){
       : w ? '<div class="banner"><p>Ce client n\'a pas encore de fiche.</p><button type="button" class="btn sm" data-act="cl-link">Créer sa fiche client</button></div>' : '') + '</section>';
 
   var vc = v.vin ? vinCheck(v.vin) : null;
-  body += '<section class="sect"><h3>Véhicule</h3><dl class="kv">' +
-    '<div><dt>Modèle</dt><dd class="tk-veh">' + esc(vehLabel(j) || '—') + '</dd></div>' +
+  body += '<section class="sect"><div class="sect-head"><h3>Véhicule</h3>' + (w && !isOff(j) ? '<button type="button" class="btn sm" data-act="scan-job" data-id="' + esc(j.id) + '">Scanner le VIN</button>' : '') + '</div><dl class="kv">' +
+    '<div><dt>Modèle</dt><dd class="tk-veh">' + esc(vehLabel(j) || '—') + (jobVeh(j).engine || v.trim ? '<br><span class="small muted">' + esc([v.trim, jobVeh(j).engine, v.drive].filter(Boolean).join(' · ')) + '</span>' : '') + '</dd></div>' +
     (v.vin ? '<div><dt>VIN</dt><dd><span class="vin sel">' + esc(v.vin) + '</span><br><span class="badge ' + (vc.state === 'ok' ? 'ok' : 'warn') + '">' + (vc.state === 'ok' ? 'Chiffre de contrôle correct' : 'À vérifier : ' + esc(vc.msg)) + '</span><div class="inline-actions"><button type="button" class="btn sm" data-act="copy" data-v="' + esc(v.vin) + '">Copier le VIN</button></div></dd></div>' : '') +
     ((v.plate || v.km) ? '<div class="grid2"><div><dt>Plaque</dt><dd class="mono">' + esc(v.plate || '—') + '</dd></div><div><dt>Kilométrage</dt><dd class="num">' + (v.km ? esc(v.km) + ' km' : '—') + '</dd></div></div>' : '') +
-    '</dl></section>';
+    '</dl>' + specCardHTML(jobVeh(j), w, j.id) + '</section>';
 
   body += '<section class="sect"><h3>Travail demandé</h3><dl class="kv">' +
     '<div><dt>' + (jobServices(j).length > 1 ? 'Services' : 'Service') + '</dt><dd>' + (jobServices(j).length ? '<div class="tags">' + jobServices(j).map(function(n){ return '<span class="tag">' + esc(n) + '</span>'; }).join('') + '</div>' : '—') + '</dd></div>' +
@@ -3604,7 +3844,7 @@ function buildEdit(id, quick, draft, preset, inSheet, clientArg){
       '<div id="sugbox" class="sugbox" aria-live="polite" hidden></div>' +
     '</section>' +
     '<section class="sect" data-step="1"><h3>Véhicule</h3>' +
-      '<div class="field"><label for="f-vin">VIN (17 caractères)</label><input id="f-vin" class="mono" maxlength="17" autocomplete="off" autocapitalize="characters" spellcheck="false" value="' + esc(v.vin) + '" placeholder="Sur le tableau de bord ou la portière"><div id="vinmsg" class="hint" aria-live="polite"></div></div>' +
+      '<div class="field"><div class="vinlab"><label for="f-vin">VIN (17 caractères)</label><button type="button" class="btn sm" data-act="scan-vin">Scanner le VIN</button></div><div id="scanpanel" hidden></div><input id="f-vin" class="mono" maxlength="17" autocomplete="off" autocapitalize="characters" spellcheck="false" value="' + esc(v.vin) + '" placeholder="Sur le tableau de bord ou la portière"><div id="vinmsg" class="hint" aria-live="polite"></div><div id="specmsg"></div></div>' +
       '<div class="veh">' + inputF('f-year', 'Année', v.year, 'inputmode="numeric" maxlength="4" autocomplete="off"') + inputF('f-make', 'Marque', v.make, 'list="makes" autocomplete="off"') + inputF('f-model', 'Modèle', v.model, 'autocomplete="off"') + '</div>' +
       '<datalist id="makes">' + MAKES.map(function(m){ return '<option value="' + m + '">'; }).join('') + '</datalist>' +
       '<div class="grid2">' + inputF('f-plate', 'Plaque', v.plate, 'class="mono" autocomplete="off" autocapitalize="characters"') + inputF('f-km', 'Kilométrage', v.km, 'inputmode="numeric" autocomplete="off"') + '</div>' +
@@ -3784,12 +4024,19 @@ function setDraftMsg(t, cls){ var m = $('#draftmsg'); if (!m) return; m.textCont
 function collectForm(){
   var out = {
     client:S.formClient ? clone(S.formClient) : {}, clientId:(S.formClient && S.formClient.id) || null,
-    vehicle:{vin:val('f-vin').toUpperCase(), year:val('f-year'), make:val('f-make'), model:val('f-model'), plate:val('f-plate').toUpperCase(), km:val('f-km')},
+    vehicle:formVehicle(),
     services:PK.picked.slice(), problem:val('f-prob'), date:val('f-date'), time:val('f-time'), durationMin:formDur(), mechanic:val('f-mech'), notes:val('f-notes')
   };
   if ($('#f-card')) out.cardOnFile = $('#f-card').checked;
   if ($('#f-truck')) out.truck = val('f-truck');
   return out;
+}
+function formVehicle(){
+  var v = {vin:val('f-vin').toUpperCase(), year:val('f-year'), make:val('f-make'), model:val('f-model'), plate:val('f-plate').toUpperCase(), km:val('f-km')}, x = S.formVeh;
+  var ej = S.editId ? findJob(S.editId) : null;
+  if (ej && ej.vehicle && (!x || x.vin !== v.vin)) x = Object.assign({vin:String(ej.vehicle.vin || '').toUpperCase()}, ej.vehicle);   /* editing a job keeps what the scan found */
+  if (x && x.vin === v.vin && slug(x.make) === slug(v.make) && slug(x.model) === slug(v.model)) ['trim', 'displL', 'cyl', 'fuel', 'drive', 'engine'].forEach(function(k){ if (x[k] !== '' && x[k] != null) v[k] = x[k]; });
+  return v;
 }
 function hasContent(d){ var v = d.vehicle; return !!(d.clientId || v.vin || v.year || v.make || v.model || v.plate || v.km || d.services.length || d.problem || d.notes || val('f-svc-in')); }
 function formChanged(){
@@ -3827,7 +4074,7 @@ function updateVinMsg(){
 }
 function bindForm(){
   var f = $('#jobform');
-  $('#f-vin').addEventListener('input', function(e){ var p = e.target.selectionStart; e.target.value = e.target.value.toUpperCase().replace(/\s/g,''); try { e.target.setSelectionRange(p, p); } catch(x){} updateVinMsg(); });
+  $('#f-vin').addEventListener('input', function(e){ var p = e.target.selectionStart; e.target.value = e.target.value.toUpperCase().replace(/\s/g,''); try { e.target.setSelectionRange(p, p); } catch(x){} updateVinMsg(); var vv = e.target.value; if (vinCheck(vv).state === 'ok'){ if (!S.formVeh || S.formVeh.vin !== vv) fillFormVin(vv, false); } else if (S.formVeh && S.formVeh.vin !== vv){ S.formVeh = null; var sm = $('#specmsg'); if (sm) sm.innerHTML = ''; } });
   f.addEventListener('input', formChanged);
   f.addEventListener('change', formChanged);
   f.addEventListener('submit', submitJob);
@@ -4444,6 +4691,15 @@ document.addEventListener('click', function(e){
     case 'pdf': downloadPdf(b); break;
     case 'copytext': { var cj = findJob(S.jobId); if (cj) copyText(invoiceText(cj), 'Facture copiée'); break; }
     case 'copy': copyText(v, 'Copié'); break;
+    case 'scan-vin': openScanForm(); break;
+    case 'scan-close': closeScanForm(); break;
+    case 'scan-job': openScanJob(id || S.jobId); break;
+    case 'scan-again': { var sb = $('#scan-body'); if (sb){ sb.innerHTML = scanHTML(); startScan(function(vin){ scanDecoded(vin); }); } break; }
+    case 'scan-use': scanUse(); break;
+    case 'scan-type': { var tb = $('#scan-typebox'); if (tb){ tb.hidden = false; var si = $('#scan-in'); if (si) si.focus(); } break; }
+    case 'scan-typed': { var tv = vinFrom(val('scan-in')); if (!tv){ scanMsg('Un VIN a 17 lettres et chiffres (jamais I, O ou Q).', 'tight'); break; } stopScan(); if ($('#scan-body')) scanDecoded(tv); else fillFormVin(tv, true); break; }
+    case 'spec-edit': openSpec(id || S.jobId); break;
+    case 'sp-visc': { var vi = $('#sp-oilVisc'); if (vi) vi.value = v; break; }
     case 'vinyear': { var y = $('#f-year'); if (y){ y.value = v; } updateVinMsg(); break; }
     case 'truck-toggle': toggleTruck(v); break;
     case 'addtruckrow': { var tb = $('#trucks-box'); if (tb){ var nn = $$('#trucks-box .tk-row').reduce(function(mx, r){ return Math.max(mx, parseInt(String(r.dataset.id).replace(/\D/g, ''), 10) || 0); }, 0) + 1; tb.insertAdjacentHTML('beforeend', truckRow({id:'c' + nn, name:'Camion ' + nn, on:false, mech:''}, '')); S.settingsDirty = true; var rr = $('#s-reset'); if (rr) rr.hidden = false; } break; }
@@ -4525,6 +4781,7 @@ function boot(){
       db.doc('config/main').onSnapshot(function(snap){ S.cfg = snap.exists ? snap.data() : {}; render(); }, function(){});
       db.collection('clients').onSnapshot(function(snap){ S.clients = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); }); render(); if (S.sheet && $('#cs-results')) renderClientResults(); }, function(){});
       db.collection('days').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ m[d.id] = d.data(); }); S.days = m; render(); }, function(){});
+      db.collection('specs').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ m[d.id] = Object.assign({id:d.id}, d.data()); }); S.specs = m; render(); }, function(){});
       db.collection('avail').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ var x = d.data(); if (x && x.mechanic) m[slug(x.mechanic)] = Object.assign({id:d.id}, x); }); S.avail = m; render(); }, function(){});
       render();
     });
@@ -4596,7 +4853,8 @@ function viewJobPhone(){
   if (!j) return viewJob();
   var c = cl(j), v = j.vehicle || {}, st = j.status || 'planifie', w = canWrite(), is = invState(j), e = ext(), ph = String(c.phone || '').replace(/[^\d+]/g, ''), addr = addrFull(c);
   var top = topBack(c.name || 'Client', 'back', cap(dShort(j.date)) + ' · ' + hm(j.time) + (truckMode() ? ' · ' + colName(jobCol(j)) : '') + (j.mechanic ? ' · ' + j.mechanic : ''));
-  var b = banners() + '<section class="sect pjob"><p class="pj-what"><b>' + esc(vehLabel(j) || 'Véhicule à préciser') + '</b><span>' + esc(jobServices(j).join(', ') || 'Service à préciser') + (j.durationMin ? ' · ' + esc(dur(j.durationMin)) : '') + '</span></p>' +
+  var sp0 = findSpec(jobVeh(j));
+  var b = banners() + '<section class="sect pjob"><p class="pj-what"><b>' + esc(vehLabel(j) || 'Véhicule à préciser') + '</b><span>' + esc(jobServices(j).join(', ') || 'Service à préciser') + (j.durationMin ? ' · ' + esc(dur(j.durationMin)) : '') + '</span>' + (sp0 && sp0.s.oilL ? '<span class="pj-oil">' + esc(oilLine(sp0.s)) + (sp0.exact ? '' : ' (à confirmer)') + '</span>' : '') + '</p>' +
     '<div class="rounds">' +
       (ph ? '<a class="round" href="' + esc(telHref(c.phone)) + '"><span aria-hidden="true">' + RI.phone + '</span>Appeler</a><a class="round" href="sms:' + esc(ph) + '"><span aria-hidden="true">' + RI.sms + '</span>Texter</a>' : '') +
       (addr ? '<a class="round" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&amp;query=' + esc(encodeURIComponent(addr)) + '"><span aria-hidden="true">' + RI.pin + '</span>Itinéraire</a>' : '') +
@@ -4611,7 +4869,8 @@ function viewJobPhone(){
   if (w) b += '<div class="field ph-st"><label for="ph-st">Corriger le statut</label><select id="ph-st" data-keep="no">' + ['planifie','route','place','termine','annule','noshow'].map(function(k){ return '<option value="' + k + '"' + (k === st ? ' selected' : '') + '>' + ST[k] + '</option>'; }).join('') + '</select></div>';
   b += '<details class="sect fold"><summary>Client</summary><dl class="kv">' + (c.phone ? '<div><dt>Téléphone</dt><dd class="mono sel">' + esc(c.phone) + '</dd></div>' : '') + (addr ? '<div><dt>Adresse</dt><dd class="sel">' + esc(addr) + '</dd></div>' : '') + (c.email ? '<div><dt>Courriel</dt><dd class="sel">' + esc(c.email) + '</dd></div>' : '') + '</dl>' +
     (j.clientId && findClient(j.clientId) ? '<button type="button" class="btn sm" data-act="cl-open" data-id="' + esc(j.clientId) + '">Voir la fiche client</button>' : (w ? '<button type="button" class="btn sm" data-act="cl-link">Créer sa fiche client</button>' : '')) + '</details>';
-  b += '<details class="sect fold"><summary>Véhicule</summary><dl class="kv"><div><dt>Modèle</dt><dd>' + esc(vehLabel(j) || '—') + '</dd></div>' + (v.vin ? '<div><dt>VIN</dt><dd class="vin sel">' + esc(v.vin) + '</dd></div>' : '') + (v.plate ? '<div><dt>Plaque</dt><dd class="mono">' + esc(v.plate) + '</dd></div>' : '') + (v.km ? '<div><dt>Kilométrage</dt><dd>' + esc(v.km) + ' km</dd></div>' : '') + '</dl></details>';
+  b += '<details class="sect fold" id="veh-fold"><summary><span>Véhicule et fiche technique' + (!v.vin && w && !isOff(j) ? ' <span class="small muted">· VIN à scanner</span>' : '') + '</span></summary><div class="stack">' + (w && !isOff(j) ? '<button type="button" class="btn block" data-act="scan-job" data-id="' + esc(j.id) + '">' + (v.vin ? 'Rescanner le VIN' : 'Scanner le VIN') + '</button>' : '') +
+    '<dl class="kv"><div><dt>Modèle</dt><dd>' + esc(vehLabel(j) || '—') + (jobVeh(j).engine || v.trim ? '<br><span class="small muted">' + esc([v.trim, jobVeh(j).engine, v.drive].filter(Boolean).join(' · ')) + '</span>' : '') + '</dd></div>' + (v.vin ? '<div><dt>VIN</dt><dd class="vin sel">' + esc(v.vin) + '</dd></div>' : '') + (v.plate ? '<div><dt>Plaque</dt><dd class="mono">' + esc(v.plate) + '</dd></div>' : '') + (v.km ? '<div><dt>Kilométrage</dt><dd>' + esc(v.km) + ' km</dd></div>' : '') + '</dl>' + specCardHTML(jobVeh(j), w, j.id) + '</div></details>';
   if (j.problem || j.notes) b += '<details class="sect fold" open><summary>Notes</summary><dl class="kv">' + (j.problem ? '<div><dt>Ce que le client décrit</dt><dd>' + esc(j.problem) + '</dd></div>' : '') + (j.notes ? '<div><dt>Notes pour le mécano</dt><dd>' + esc(j.notes) + '</dd></div>' : '') + '</dl></details>';
   b += '<details class="sect fold"><summary>Facture <span class="muted small">' + (is === 'none' ? 'pas encore' : esc(INV_LBL[is]) + (j.invoice && j.invoice.total ? ' · ' + esc(money(j.invoice.total)) : '')) + '</span></summary>' +
     (is === 'none' ? (w ? '<button type="button" class="btn block" data-act="invoice" data-id="' + esc(j.id) + '">Faire la facture</button>' : '<p class="muted">Pas encore facturée.</p>') : '<button type="button" class="btn block" data-act="' + (is === 'draft' && w ? 'invoice' : 'preview') + '" data-id="' + esc(j.id) + '">' + (is === 'draft' ? 'Continuer la facture' : 'Voir la facture') + '</button>') + '</details>';
