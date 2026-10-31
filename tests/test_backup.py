@@ -1,7 +1,7 @@
 """Automatic backup: the backup server function (key, pages, what is left out), the nightly copy script, and putting data back."""
 import json, os, subprocess, sys, tempfile, shutil, glob, urllib.request, urllib.error
 SC = os.path.dirname(os.path.abspath(__file__))
-REPO = os.path.join(os.path.dirname(SC), 'sauvegardes')
+REPO = '/home/claude/garage/sauvegardes-repo'
 K = json.load(open(os.path.join(SC, 'stack/keys.json')))
 API = 'http://127.0.0.1:54321'
 results = []
@@ -21,13 +21,14 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 GH_KEY, BAD_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048), rsa.generate_private_key(public_exponent=65537, key_size=2048)
 def b64u(n): return base64.urlsafe_b64encode(n.to_bytes((n.bit_length() + 7) // 8, 'big')).rstrip(b'=').decode()
 PUB = GH_KEY.public_key().public_numbers()
-JWKS = {'keys': [{'kty': 'RSA', 'kid': 'gh1', 'alg': 'RS256', 'use': 'sig', 'n': b64u(PUB.n), 'e': b64u(PUB.e)}]}
+KID = 'gh-' + os.urandom(4).hex()   # GitHub rotates its keys: a new key always comes with a new id
+JWKS = {'keys': [{'kty': 'RSA', 'kid': KID, 'alg': 'RS256', 'use': 'sig', 'n': b64u(PUB.n), 'e': b64u(PUB.e)}]}
 ISS = 'http://127.0.0.1:9205'
 GOOD = {'iss': ISS, 'aud': 'garage-sauvegarde', 'repository': 'hostnextline/garage-sauvegardes', 'repository_id': '1441054755', 'repository_owner_id': '243496564', 'ref': 'refs/heads/main', 'event_name': 'schedule'}
 def tok(key=None, **chg):
     c = dict(GOOD, iat=int(_t.time()), nbf=int(_t.time()) - 5, exp=int(_t.time()) + 300); c.update(chg)
     c = {k: v for k, v in c.items() if v is not None}
-    return pyjwt.encode(c, key or GH_KEY, algorithm='RS256', headers={'kid': 'gh1'})
+    return pyjwt.encode(c, key or GH_KEY, algorithm='RS256', headers={'kid': KID})
 MINT = {'claims': {}}
 class GH(http.server.BaseHTTPRequestHandler):
     def log_message(self, *a): pass
@@ -51,6 +52,9 @@ def run_backup(d, claims=None, extra=None):
     env.update(extra or {})
     return subprocess.run([sys.executable, os.path.join(REPO, 'sauvegarder.py')], env=env, capture_output=True, text=True, timeout=300)
 
+from team_seed import seed as _seed
+_seed()   # a garage with its team, clients and jobs (the other tests leave the base empty)
+psql("insert into public.docs (path, data) values ('jobs/j3', '{\"date\":\"2026-11-02\",\"mechanic\":\"Ali\",\"status\":\"planifie\"}') on conflict do nothing")
 before = docs_state()
 psql("delete from public.app_secrets where name in ('BACKUP_KEY_SHA256','GHL_TOKEN_TEST')")
 psql("insert into public.app_secrets (name, value) values ('GHL_TOKEN_TEST', 'pit-SECRET-NE-PAS-COPIER')")
@@ -58,6 +62,7 @@ uid = psql("select user_id from public.members limit 1")
 psql("insert into public.docs (path, data) values ('data/users/%s/draft-booking', '{\"note\":\"BROUILLON-PRIVE\"}') on conflict (path) do nothing" % uid)
 for i in range(40):
     psql("insert into public.docs (path, data) values ('receipts/t%02d', jsonb_build_object('img', 'data:image/jpeg;base64,' || repeat('A', 300000) || '%02d', 'expenseId', 'x%02d', 'at', %d))" % (i, i, i, i))
+psql("insert into public.docs (path, data) values ('photos/j1__p1', jsonb_build_object('jobId', 'j1', 'kind', 'avant', 'img', 'data:image/jpeg;base64,' || repeat('B', 250000))), ('photos/j1__sig1', jsonb_build_object('jobId', 'j1', 'kind', 'signature', 'img', 'data:image/png;base64,QUJD', 'name', 'Marie'))")
 psql("insert into public.docs (path, data) values ('specs/2018-honda-civic-2-4', '{\"oilL\":4.4,\"oilVisc\":\"0W-20\"}')")
 
 # ---------- the door: only a token signed by GitHub for THIS private repo, main branch ----------
@@ -83,7 +88,9 @@ days = sorted(glob.glob(os.path.join(d, 'sauvegarde', '*.json')))
 snap = json.load(open(days[-1], encoding='utf8')) if days else {}
 now = docs_state()
 want = {p for p in now if not p.startswith('receipts/')}
-check('copy of the day: every document except receipt photos, exactly as in the base', {x['path'] for x in snap.get('documents', [])} == want and all(now[x['path']] == x['data'] for x in snap.get('documents', [])), len(snap.get('documents', [])))
+want = {p for p in want if not p.startswith('photos/')}
+check('job photos and signatures: one file each in photos/ (2), not in the copy of the day', len(glob.glob(os.path.join(d, 'photos', '*.json'))) == 2 and json.load(open(os.path.join(d, 'photos', 'j1__sig1.json')))['data']['name'] == 'Marie' and sorted(snap.get('photos', [])) == ['photos/j1__p1', 'photos/j1__sig1'])
+check('copy of the day: every document except pictures, exactly as in the base', {x['path'] for x in snap.get('documents', [])} == want and all(now[x['path']] == x['data'] for x in snap.get('documents', [])), len(snap.get('documents', [])))
 check('receipt photos: one file each (40), identical to the base', len(glob.glob(os.path.join(d, 'recus', '*.json'))) == 40 and json.load(open(os.path.join(d, 'recus', 't07.json')))['data'] == now['receipts/t07'])
 check('team list in the copy (5 people, roles)', len(snap.get('equipe', [])) == 5 and {m['role'] for m in snap['equipe']} >= {'owner', 'mecano'}, snap.get('equipe'))
 whole = open(days[-1], encoding='utf8').read() + ''.join(open(f, encoding='utf8').read() for f in glob.glob(os.path.join(d, 'recus', '*.json')))
@@ -101,7 +108,7 @@ check('server unreachable: retries, then fails loudly', r4.returncode != 0 and '
 
 # ---------- putting data back ----------
 psql("update public.docs set data = jsonb_set(data, '{status}', '\"annule\"') where path = 'jobs/j1'")
-psql("delete from public.docs where path in ('clients/c1', 'receipts/t03', 'specs/2018-honda-civic-2-4')")
+psql("delete from public.docs where path in ('clients/c1', 'receipts/t03', 'specs/2018-honda-civic-2-4', 'photos/j1__p1')")
 psql("update public.docs set data = '{}'::jsonb where path = 'config/main'")
 broken = docs_state()
 check('(damage done: job changed, client + receipt + engine sheet deleted, settings emptied)', broken.get('jobs/j1', {}).get('status') == 'annule' and 'clients/c1' not in broken and broken['config/main'] == {})
@@ -114,13 +121,14 @@ check('clients back, the rest still as it was (job still cancelled)', a.returnco
 o = subprocess.run([sys.executable, os.path.join(REPO, 'restaurer.py'), days[-1], '--sortie', 'r2.sql'], capture_output=True, text=True)
 a = psql_file(os.path.join(d, 'r2.sql'))
 st2 = docs_state()
-check('full restore: every document back exactly as in the copy (job, settings, engine sheet, receipt photo)', a.returncode == 0 and all(st2.get(p) == v for p, v in now.items()) and st2['receipts/t03'] == now['receipts/t03'], [p for p, v in now.items() if st2.get(p) != v][:5])
+check('full restore: every document back exactly as in the copy (job, settings, engine sheet, receipt photo)', a.returncode == 0 and all(st2.get(p) == v for p, v in now.items()) and st2['receipts/t03'] == now['receipts/t03'] and st2.get('photos/j1__p1') == now['photos/j1__p1'], [p for p, v in now.items() if st2.get(p) != v][:5])
 psql("insert into public.docs (path, data) values ('clients/apres', '{\"firstName\":\"Après\"}')")
 a = psql_file(os.path.join(d, 'r2.sql'))
 check('restore never erases what was added after the copy', a.returncode == 0 and 'clients/apres' in docs_state())
 os.chdir(cwd)
 
 # ---------- back to the original state ----------
+psql("delete from public.docs where path like 'photos/j1__%%'")
 psql("delete from public.docs where path like 'receipts/t%%' or path in ('specs/2018-honda-civic-2-4', 'clients/apres', 'data/users/%s/draft-booking')" % uid)
 psql("delete from public.app_secrets where name in ('BACKUP_KEY_SHA256','GHL_TOKEN_TEST')")
 srv.shutdown()

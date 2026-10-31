@@ -24,6 +24,70 @@
     return err('invalid_argument', m);
   }
 
+  /* ---------- hors ligne : une copie du carnet sur le téléphone + les changements en attente ----------
+     Chaque sorte de documents (jobs, clients…) est gardée dans IndexedDB après chaque chargement.
+     Sans réseau, l'app s'ouvre avec cette copie ; chaque changement est appliqué tout de suite sur le
+     téléphone, gardé dans une file (outbox) et envoyé dans l'ordre dès que le signal revient. */
+  var IDB = null;
+  function idb(){
+    if (IDB) return IDB;
+    IDB = new Promise(function(res, rej){
+      if (!window.indexedDB) return rej(new Error('no idb'));
+      var r; try { r = indexedDB.open('gm-team', 1); } catch(e){ return rej(e); }
+      r.onupgradeneeded = function(){ var d = r.result; if (!d.objectStoreNames.contains('kv')) d.createObjectStore('kv'); if (!d.objectStoreNames.contains('outbox')) d.createObjectStore('outbox', {keyPath:'n', autoIncrement:true}); };
+      r.onsuccess = function(){ res(r.result); }; r.onerror = function(){ rej(r.error); }; r.onblocked = function(){ rej(new Error('blocked')); };
+    });
+    IDB.catch(function(){});
+    return IDB;
+  }
+  function tx(store, mode, fn){
+    return idb().then(function(d){ return new Promise(function(res, rej){
+      var t = d.transaction(store, mode), out, rq = fn(t.objectStore(store));
+      if (rq) rq.onsuccess = function(){ out = rq.result; };
+      t.oncomplete = function(){ res(out); }; t.onerror = t.onabort = function(){ rej(t.error); };
+    }); });
+  }
+  function kvGet(k){ return tx('kv', 'readonly', function(st){ return st.get(k); }).catch(function(){ return undefined; }); }
+  function kvSet(k, v){ return tx('kv', 'readwrite', function(st){ return v === undefined ? st.delete(k) : st.put(v, k); }).catch(function(){}); }
+  var OB = [], failed = [], flushing = false, flushT = null, netL = [];
+  var NET = {online:navigator.onLine !== false, offlineMode:false, pending:0, sending:false, failed:failed, lastOk:null, queuedAt:null};
+  T.net = NET;
+  T.onNet = function(f){ netL.push(f); };
+  function netChanged(){ NET.pending = OB.length; netL.slice().forEach(function(f){ try { f(NET); } catch(e){} }); }
+  function cacheKey(col){ return 'c|' + T.uid + '|' + col; }
+  var saveT = {};
+  function saveCol(col){
+    clearTimeout(saveT[col]);
+    saveT[col] = setTimeout(function(){ var c = C(col); if (T.uid && c.loaded) kvSet(cacheKey(col), {docs:c.docs, since:c.since, at:Date.now()}); }, 1200);
+  }
+  /* the copy kept on the phone: shown at once (even without network), then the server's version replaces it */
+  function hydrate(col){
+    var c = C(col);
+    if (c.loaded || c.hydrated || !T.uid) return Promise.resolve();
+    c.hydrated = kvGet(cacheKey(col)).then(function(v){
+      if (!v || c.loaded || !v.docs) return;
+      c.docs = v.docs; c.since = v.since || null; c.loaded = true; c.fromCache = true;
+      overlay(col); notify(col, null);
+    });
+    return c.hydrated;
+  }
+  function mergeDeep(a, b){
+    var out = (a && typeof a === 'object' && !Array.isArray(a)) ? clone(a) : {};
+    Object.keys(b || {}).forEach(function(k){
+      var x = out[k], y = b[k];
+      out[k] = (x && y && typeof x === 'object' && typeof y === 'object' && !Array.isArray(x) && !Array.isArray(y)) ? mergeDeep(x, y) : clone(y);
+    });
+    return out;
+  }
+  function applyLocal(op){
+    var c = C(colOf(op.path)), id = idOf(op.path);
+    if (op.kind === 'set') c.docs[id] = clone(op.data);
+    else if (op.kind === 'merge') c.docs[id] = mergeDeep(c.docs[id], op.data);
+    else delete c.docs[id];
+  }
+  /* changes not yet on the server stay visible on top of what the server sends */
+  function overlay(col){ var ids = []; OB.forEach(function(op){ if (colOf(op.path) === col){ applyLocal(op); ids.push(idOf(op.path)); } }); return ids; }
+
   /* ---------- the shared notebook: same calls as claude.use('db') ---------- */
   var cols = {};       // col -> {docs:{id:data}, loaded, since, listeners:[], docListeners:{id:[fn]}, loading}
   var seq = 0;
@@ -68,10 +132,12 @@
       Object.keys(changed).forEach(function(id){ if (JSON.stringify(c.docs[id]) !== JSON.stringify(changed[id])){ c.docs[id] = changed[id]; ids.push(id); } });
       /* a deletion counts only if the document was not saved again after it */
       gone.forEach(function(g){ if (c.docs[g.id] !== undefined && !(g.id in changed)){ delete c.docs[g.id]; ids.push(g.id); } });
+      if (OB.length) ids = ids.concat(overlay(col));
       c.since = maxAt || c.since || new Date().toISOString();
-      var first = !c.loaded; c.loaded = true; if (!start) c.full = Date.now();
+      var first = !c.loaded; c.loaded = true; c.fromCache = false; if (!start) c.full = Date.now();
       if (ids.length || first) notify(col, first ? null : ids);
-      c.err = null;
+      c.err = null; NET.lastOk = Date.now();
+      if (ids.length || first || !start) saveCol(col);
     }, function(e){ c.err = e; if (!c.loaded) c.listeners.forEach(function(f){ if (f.__onErr) f.__onErr(e); }); throw e; });
     c.loading = p.then(function(){ c.loading = null; }, function(){ c.loading = null; });
     return p;
@@ -88,23 +154,94 @@
       get:function(){
         var c = C(col);
         if (c.loaded) return Promise.resolve(snapDoc(col, id));
-        return T.sb.from('docs').select('data').eq('path', path).maybeSingle().then(function(r){
+        var kk = 'd|' + T.uid + '|' + path;
+        return withTimeout(T.sb.from('docs').select('data').eq('path', path).maybeSingle().then(function(r){
           if (r.error) throw mapErr(r.error);
+          if (r.data) kvSet(kk, r.data.data); else kvSet(kk, undefined);
           return {id:id, exists:!!r.data, data:function(){ return r.data ? freeze(clone(r.data.data)) : undefined; }, metadata:{fromCache:false, hasPendingWrites:false}};
+        }, function(e){ throw mapErr(e); }), 12000).catch(function(e){
+          if (!e || e.code !== 'unavailable') throw e;
+          var mine = OB.filter(function(op){ return op.path === path; });
+          return kvGet(kk).then(function(v){
+            mine.forEach(function(op){ v = op.kind === 'delete' ? undefined : op.kind === 'set' ? clone(op.data) : mergeDeep(v, op.data); });
+            if (v === undefined && !mine.length) throw e;
+            return {id:id, exists:v !== undefined, data:function(){ return v === undefined ? undefined : freeze(clone(v)); }, metadata:{fromCache:true, hasPendingWrites:!!mine.length}};
+          });
         });
       },
-      set:function(d){ var data = clone(d); return rpc('doc_set', {p_path:path, p_data:data}).then(function(){ C(col).docs[id] = data; notify(col, [id]); }); },
-      update:function(d){ return rpc('doc_merge', {p_path:path, p_patch:clone(d)}).then(function(out){ C(col).docs[id] = out; notify(col, [id]); }); },
-      delete:function(){ return rpc('doc_delete', {p_path:path}).then(function(){ if (C(col).docs[id] !== undefined){ delete C(col).docs[id]; notify(col, [id]); } }); },
+      set:function(d){ return write('set', path, d); },
+      update:function(d){ return write('merge', path, d); },
+      delete:function(){ return write('delete', path, null); },
       acquire:function(){ return Promise.resolve({acquired:true, version:1}); },
       onSnapshot:function(n, onErr){
         var c = C(col); (c.docListeners[id] = c.docListeners[id] || []).push(n);
-        if (c.loaded) setTimeout(function(){ n(snapDoc(col, id)); }, 0); else load(col, true).catch(function(e){ if (onErr) onErr(e); });
+        if (c.loaded) setTimeout(function(){ n(snapDoc(col, id)); }, 0); else hydrate(col).then(function(){ return load(col, true); }).catch(function(e){ if (onErr && !c.loaded) onErr(e); });
         return function(){ c.docListeners[id] = (c.docListeners[id] || []).filter(function(f){ return f !== n; }); };
       },
       collection:function(p){ return colRef(path + '/' + p); }
     };
   }
+  function withTimeout(p, ms){ return new Promise(function(res, rej){ var t = setTimeout(function(){ rej(err('unavailable', 'timeout')); }, ms); p.then(function(v){ clearTimeout(t); res(v); }, function(e){ clearTimeout(t); rej(e); }); }); }
+  function send(op){
+    if (op.kind === 'set') return rpc('doc_set', {p_path:op.path, p_data:op.data}).then(function(){ return op.data; });
+    if (op.kind === 'merge') return rpc('doc_merge', {p_path:op.path, p_patch:op.data});
+    return rpc('doc_delete', {p_path:op.path});
+  }
+  function landed(op, out){
+    var col = colOf(op.path), id = idOf(op.path), c = C(col);
+    if (op.kind === 'delete'){ if (c.docs[id] !== undefined) delete c.docs[id]; }
+    else c.docs[id] = op.kind === 'merge' ? out : clone(op.data);
+    if (OB.length) overlay(col);
+    notify(col, [id]); saveCol(col);
+  }
+  function persistOp(op){ return tx('outbox', 'readwrite', function(st){ return st.add({uid:op.uid, kind:op.kind, path:op.path, data:op.data, at:op.at}); }).then(function(n){ op.n = n; }).catch(function(e){ NET.storeErr = String(e && e.message || e); }); }
+  function dropOp(op){ if (op.n != null) tx('outbox', 'readwrite', function(st){ return st.delete(op.n); }).catch(function(){}); }
+  function queue(op){
+    applyLocal(op); notify(colOf(op.path), [idOf(op.path)]); saveCol(colOf(op.path));
+    OB.push(op); persistOp(op); NET.queuedAt = Date.now(); netChanged(); flushSoon(1500);
+    return Promise.resolve({queued:true});
+  }
+  function write(kind, path, d){
+    var op = {uid:T.uid, kind:kind, path:path, data:d == null ? null : clone(d), at:Date.now()};
+    if (OB.length || NET.offlineMode || navigator.onLine === false) return queue(op);
+    return withTimeout(send(op), 12000).then(function(out){ NET.lastOk = Date.now(); landed(op, out); }, function(e){
+      if (e && e.code === 'unavailable') return queue(op);
+      throw e;
+    });
+  }
+  function flushSoon(ms){ clearTimeout(flushT); flushT = setTimeout(flush, ms); }
+  /* sends the waiting changes, in order; a change the server refuses is put aside (and shown) instead of blocking the others */
+  function flush(){
+    if (flushing || !OB.length || navigator.onLine === false) { if (OB.length) flushSoon(20000); return Promise.resolve(); }
+    flushing = true; NET.sending = true; netChanged();
+    var ensure = NET.offlineMode ? T.reconnect() : T.sb.auth.getSession().then(function(r){ return !!(r.data && r.data.session); }, function(){ return false; });
+    return ensure.then(function(ok){
+      if (!ok) throw err('unavailable', 'no session');
+      return (function next(){
+        if (!OB.length) return;
+        var op = OB[0];
+        return withTimeout(send(op), 15000).then(function(out){ OB.shift(); dropOp(op); landed(op, out); netChanged(); return next(); }, function(e){
+          if (e && (e.code === 'unavailable' || /JWT|jwt|token/.test(String(e.message)))) throw e;   /* not the change's fault: try again later */
+          OB.shift(); dropOp(op);
+          failed.push({path:op.path, kind:op.kind, at:op.at, msg:String(e && e.message || e), code:e && e.code});
+          load(colOf(op.path), true).catch(function(){});
+          netChanged(); return next();
+        });
+      })();
+    }).then(function(){ flushing = false; NET.sending = false; NET.lastOk = Date.now(); netChanged(); T.resync(false); },
+            function(){ flushing = false; NET.sending = false; netChanged(); flushSoon(20000); });
+  }
+  T.flush = flush;
+  T.pending = function(){ return OB.length; };
+  T.outbox = function(){ return OB.map(function(op){ return {n:op.n, kind:op.kind, path:op.path, at:op.at}; }); };
+  T.clearFailed = function(){ failed.length = 0; netChanged(); };
+  function loadOutbox(){
+    return tx('outbox', 'readonly', function(st){ return st.getAll(); }).then(function(all){
+      (all || []).filter(function(op){ return op.uid === T.uid; }).sort(function(a, b){ return a.n - b.n; }).forEach(function(op){ OB.push(op); });
+      netChanged(); if (OB.length) flushSoon(500);
+    }).catch(function(){});
+  }
+
   function newId(){ var a = 'abcdefghijklmnopqrstuvwxyz0123456789', b = new Uint8Array(20), s = ''; (window.crypto || {}).getRandomValues ? crypto.getRandomValues(b) : b.forEach(function(_, i){ b[i] = Math.random() * 256; }); for (var i = 0; i < 20; i++) s += a[b[i] % 36]; return s; }
   function colRef(path){
     return {
@@ -112,7 +249,7 @@
       doc:function(id){ return docRef(path + '/' + (id || newId())); },
       onSnapshot:function(n, onErr){
         var c = C(path); if (onErr) n.__onErr = onErr; c.listeners.push(n);
-        if (c.loaded) setTimeout(function(){ n(snapCol(path)); }, 0); else load(path, true).catch(function(e){ if (onErr) onErr(e); });
+        if (c.loaded) setTimeout(function(){ n(snapCol(path)); }, 0); else hydrate(path).then(function(){ return load(path, true); }).catch(function(e){ if (onErr && !c.loaded) onErr(e); });
         return function(){ c.listeners = c.listeners.filter(function(f){ return f !== n; }); };
       },
       get:function(){ return load(path, !C(path).loaded).then(function(){ return snapCol(path); }); }
@@ -138,7 +275,9 @@
       if (document.visibilityState === 'hidden'){ hiddenAt = Date.now(); return; }
       T.resync(hiddenAt && Date.now() - hiddenAt > 5 * 60000);
     });
-    window.addEventListener('online', function(){ T.resync(false); });
+    window.addEventListener('online', function(){ NET.online = true; netChanged(); flush(); T.resync(false); });
+    window.addEventListener('offline', function(){ NET.online = false; netChanged(); });
+    setInterval(function(){ if (OB.length && !flushing) flush(); }, 30000);
   }
 
   /* ---------- the person who is signed in ---------- */
@@ -233,29 +372,78 @@
   }
 
   var started = false;
+  function netMsg(m){ return /fetch|network|Failed to|timeout|Load failed|NetworkError/i.test(String(m || '')); }
+  function cachedMember(uid){ try { var o = JSON.parse(lsGet('gm.team.member') || 'null'); return o && o.uid === uid && o.member && o.member.active ? o.member : null; } catch(e){ return null; } }
+  function storedUser(){ try { var o = JSON.parse(lsGet('gm.team.auth') || 'null'); return (o && o.user) || (o && o.currentSession && o.currentSession.user) || null; } catch(e){ return null; } }
+  function go(){
+    closeGate();
+    if (!started){ started = true; loadOutbox(); startSync(); setReady(T); T.listeners.forEach(function(f){ try { f(T); } catch(e){} }); }
+    netChanged();
+  }
+  /* no network at all: open with the copy kept on this phone (only for someone who already signed in here) */
+  function offlineStart(uid){
+    var m = cachedMember(uid);
+    if (!m){ showLogin('Pas de connexion au serveur. La première connexion sur ce téléphone doit se faire avec Internet.'); return; }
+    T.uid = uid; T.member = m; NET.offlineMode = true; NET.online = false;
+    go();
+  }
+  /* back online after an offline start: a fresh session, then the waiting changes go out */
+  var reconnecting = null;
+  T.reconnect = function(){
+    if (!NET.offlineMode) return Promise.resolve(true);
+    if (reconnecting) return reconnecting;
+    reconnecting = T.sb.auth.getSession().then(function(r){
+      var s = r.data && r.data.session;
+      if (!s){
+        if (r.error && netMsg(r.error.message)) return false;
+        NET.offlineMode = false; showLogin('Reconnecte-toi : tes changements faits sans réseau seront envoyés ensuite.'); return false;
+      }
+      return T.sb.from('members').select('*').eq('user_id', s.user.id).maybeSingle().then(function(m){
+        if (m.error) return false;
+        if (!m.data || !m.data.active || s.user.id !== T.uid){ NET.offlineMode = false; showNoAccess(); return false; }
+        T.session = s; T.member = m.data; lsSet('gm.team.member', JSON.stringify({uid:T.uid, member:m.data}));
+        NET.offlineMode = false; NET.online = true; netChanged(); T.resync(true);
+        return true;
+      });
+    }, function(){ return false; }).then(function(ok){ reconnecting = null; return ok; }, function(){ reconnecting = null; return false; });
+    return reconnecting;
+  };
   function afterSession(session){
     T.session = session; T.uid = session.user.id;
-    return T.sb.from('members').select('*').eq('user_id', T.uid).maybeSingle().then(function(r){
-      if (r.error){ showLogin(/fetch|network/i.test(r.error.message) ? 'Pas de connexion au serveur. Vérifie Internet.' : 'Connexion refusée : ' + r.error.message); return; }
-      if (!r.data || !r.data.active){ showNoAccess(); return; }
-      T.member = r.data;
-      closeGate();
-      if (!started){ started = true; startSync(); setReady(T); T.listeners.forEach(function(f){ try { f(T); } catch(e){} }); }
-    }, function(){ showLogin('Pas de connexion au serveur. Vérifie Internet.'); });
+    if (navigator.onLine === false && cachedMember(T.uid)) return offlineStart(T.uid);
+    return withTimeout(T.sb.from('members').select('*').eq('user_id', T.uid).maybeSingle(), 6000).then(function(r){
+      if (r.error){ if (netMsg(r.error.message) && cachedMember(T.uid)) return offlineStart(T.uid); showLogin(netMsg(r.error.message) ? 'Pas de connexion au serveur. Vérifie Internet.' : 'Connexion refusée : ' + r.error.message); return; }
+      if (!r.data || !r.data.active){ lsSet('gm.team.member', null); showNoAccess(); return; }
+      T.member = r.data; lsSet('gm.team.member', JSON.stringify({uid:T.uid, member:r.data}));
+      NET.offlineMode = false;
+      go();
+    }, function(){ if (cachedMember(T.uid)) return offlineStart(T.uid); showLogin('Pas de connexion au serveur. Vérifie Internet.'); });
   }
+  setInterval(function(){ if (NET.offlineMode && navigator.onLine !== false) T.reconnect().then(function(ok){ if (ok) flush(); }); }, 15000);
+  window.addEventListener('online', function(){ if (NET.offlineMode) T.reconnect().then(function(ok){ if (ok) flush(); }); });
   T.onReady = function(f){ if (started) f(T); else T.listeners.push(f); };
-  T.signOut = function(){ return T.sb.auth.signOut().then(function(){ location.reload(); }, function(){ location.reload(); }); };
+  function forgetPhone(){
+    lsSet('gm.team.member', null);
+    return new Promise(function(res){ try { (IDB || Promise.reject()).then(function(d){ d.close(); }, function(){}).then(function(){ var r = indexedDB.deleteDatabase('gm-team'); r.onsuccess = r.onerror = r.onblocked = function(){ res(); }; }); } catch(e){ res(); } });
+  }
+  T.signOut = function(){ return forgetPhone().then(function(){ return T.sb.auth.signOut(); }).then(function(){ location.reload(); }, function(){ location.reload(); }); };
 
   function start(){
     css();
     if (!CFG.url || !CFG.key || !window.supabase){ showConfigMissing(); failReady(err('no_config')); return; }
     T.sb = window.supabase.createClient(CFG.url, CFG.key, {auth:{persistSession:true, autoRefreshToken:true, storageKey:'gm.team.auth', detectSessionInUrl:false}});
     T.sb.auth.onAuthStateChange(function(ev){ if (ev === 'SIGNED_OUT' && started) location.reload(); });
-    T.sb.auth.getSession().then(function(r){
+    var su = storedUser();
+    if (navigator.onLine === false && su && su.id && cachedMember(su.id)){ offlineStart(su.id); return; }
+    withTimeout(T.sb.auth.getSession(), 6000).then(function(r){
       var s = r.data && r.data.session;
       if (s) return afterSession(s);
-      return T.sb.rpc('setup_needed').then(function(x){ if (x.data === true) showSetup(); else showLogin(); }, function(){ showLogin(); });
-    }, function(){ showLogin(); });
+      if (su && su.id && (navigator.onLine === false || (r.error && netMsg(r.error.message)))) return offlineStart(su.id);
+      return T.sb.rpc('setup_needed').then(function(x){
+        if (x.error && su && su.id && netMsg(x.error.message)) return offlineStart(su.id);
+        if (x.data === true) showSetup(); else showLogin();
+      }, function(){ if (su && su.id) offlineStart(su.id); else showLogin(); });
+    }, function(){ if (su && su.id) offlineStart(su.id); else showLogin(); });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();

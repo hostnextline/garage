@@ -133,7 +133,7 @@ with sync_playwright() as p:
     hrefs = pg.evaluate("[...document.querySelectorAll('.rounds .round')].map(a => [a.textContent.trim(), a.getAttribute('href')])")
     check('4. round buttons: Appeler (tel), Texter (sms), Itinéraire (maps)', [h[0] for h in hrefs] == ['Appeler', 'Texter', 'Itinéraire'] and hrefs[0][1].startswith('tel:') and hrefs[1][1] == 'sms:4505550404' and 'google.com/maps' in hrefs[2][1], hrefs)
     check('4. 4 steps, current = Planifiée', pg.locator('.steps4 li').count() == 4 and pg.locator('.steps4 li.here').count() == 1)
-    check('4. notes open, other details folded', pg.locator('details.fold[open]').count() == 1 and 'Bruit en freinant' in txt(pg, 'details.fold[open]') and pg.locator('details.fold').count() == 4)
+    check('4. notes open, other details folded', pg.locator('details.fold[open]').count() == 1 and 'Bruit en freinant' in txt(pg, 'details.fold[open]') and pg.locator('details.fold').count() == 6 and pg.locator('#xp-fold').count() == 1 and pg.locator('#ph-fold').count() == 1)
     check('4. no sideways scroll (job)', no_hscroll(pg))
     flow = []
     for want in ('route', 'place'):
@@ -202,7 +202,7 @@ with sync_playwright() as p:
     # ---------- 6. Plus ----------
     pg.click('.tab[data-t="plus"]'); wait(pg)
     pl = pg.evaluate("[...document.querySelectorAll('nav.ph-menu .ph-row b')].map(b=>b.textContent)")
-    check('6. Plus: Tableau de bord, Heures d\'ouverture, Disponibilités des mécanos, Réglages', pl == ['Tableau de bord', 'Heures d\'ouverture', 'Disponibilités des mécanos', 'Trésorerie', 'Réglages'], pl)
+    check('6. Plus: Tableau de bord, Heures d\'ouverture, Disponibilités des mécanos, Réglages', pl == ['Tableau de bord', 'Heures d\'ouverture', 'Disponibilités des mécanos', 'Trésorerie', 'Stock des camions', 'Réglages'], pl)
     check('6. Plus: « Version complète » row', pg.locator('[data-act="ui-full"]').count() == 1)
     check('6. no sideways scroll (Plus)', no_hscroll(pg))
     pg.click('a[href="#accueil"]'); wait(pg, 400)

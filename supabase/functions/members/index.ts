@@ -60,6 +60,21 @@ async function secretMap() {
   return s;
 }
 const mask = (v?: string) => (v ? '…' + v.slice(-4) : '');
+const STRIPE_BASE = Deno.env.get('STRIPE_BASE') || 'https://api.stripe.com';
+// Stripe: the key stays here (never in the browser); saving it creates the « paid » notice (webhook) toward the client function
+async function stripeCall(key: string, method: string, path: string, params?: [string, string][]) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 12000);
+  try {
+    const r = await fetch(`${STRIPE_BASE}/v1${path}`, { method, signal: ctl.signal, headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/x-www-form-urlencoded' }, body: params ? new URLSearchParams(params).toString() : undefined });
+    const j: any = await r.json().catch(() => ({}));
+    if (!r.ok) { const e: any = new Error(r.status === 401 ? 'Stripe refuse cette clé.' : 'Stripe : ' + (j?.error?.message || 'HTTP ' + r.status)); e.status = r.status; throw e; }
+    return j;
+  } finally { clearTimeout(t); }
+}
+function stripeStatus(s: Record<string, any>) {
+  const k = s.STRIPE_KEY?.value || '';
+  return { stripe: !!k, stripeKey: mask(k), stripeMode: /_test_/.test(k) ? 'test' : k ? 'live' : '', stripeHook: !!s.STRIPE_WEBHOOK_SECRET };
+}
 
 async function listMembers() {
   const { data: ms } = await admin.from('members').select('*').order('created_at');
@@ -166,7 +181,7 @@ Deno.serve(async (req) => {
 
     if (action === 'secrets') {
       const s = await secretMap();
-      return json({ ok: true, ghl: !!(s.GHL_TOKEN && s.GHL_LOCATION_ID), ghlToken: mask(s.GHL_TOKEN?.value), ghlLocation: mask(s.GHL_LOCATION_ID?.value), tomtom: mask(s.TOMTOM_KEY?.value), updated_at: s.GHL_TOKEN?.updated_at || null });
+      return json({ ok: true, ghl: !!(s.GHL_TOKEN && s.GHL_LOCATION_ID), ghlToken: mask(s.GHL_TOKEN?.value), ghlLocation: mask(s.GHL_LOCATION_ID?.value), tomtom: mask(s.TOMTOM_KEY?.value), updated_at: s.GHL_TOKEN?.updated_at || null, ...stripeStatus(s) });
     }
     if (action === 'secrets-set') {
       const pairs: [string, unknown][] = [['GHL_TOKEN', body.ghlToken], ['GHL_LOCATION_ID', body.ghlLocation], ['TOMTOM_KEY', body.tomtomKey]];
@@ -177,8 +192,29 @@ Deno.serve(async (req) => {
         if (!val) await admin.from('app_secrets').delete().eq('name', name);
         else await admin.from('app_secrets').upsert({ name, value: val, updated_at: new Date().toISOString() });
       }
+      let warn = '';
+      if (body.stripeKey !== undefined && body.stripeKey !== null) {
+        const k = String(body.stripeKey).trim(), s0 = await secretMap(), now = new Date().toISOString();
+        if (k && !/^(sk|rk)_(live|test)_[A-Za-z0-9]{10,}$/.test(k)) return fail('La clé Stripe commence par sk_live_ (ou rk_live_ pour une clé restreinte). La clé publique pk_… ne fonctionne pas ici.');
+        let hook: any = null;
+        if (k) {
+          try {
+            hook = await stripeCall(k, 'POST', '/webhook_endpoints', [['url', `${SB_URL}/functions/v1/client`], ['enabled_events[0]', 'checkout.session.completed'], ['enabled_events[1]', 'checkout.session.async_payment_succeeded'], ['description', 'Garage mobile : factures payées en ligne']]);
+          } catch (e) {
+            if ((e as any).status === 401) return fail('Stripe refuse cette clé. Copie la clé secrète (sk_live_…) dans Stripe → Développeurs → Clés API.', 400, 'stripe_key');
+            warn = 'Clé enregistrée, mais Stripe n\'a pas créé l\'avis de paiement (' + (e as Error).message + '). Les paiements seront confirmés quand le client revient sur sa page.';
+          }
+        }
+        if (s0.STRIPE_WEBHOOK_ID?.value && s0.STRIPE_KEY?.value) { try { await stripeCall(s0.STRIPE_KEY.value, 'DELETE', '/webhook_endpoints/' + encodeURIComponent(s0.STRIPE_WEBHOOK_ID.value)); } catch (_) { /* already gone */ } }
+        await admin.from('app_secrets').delete().in('name', ['STRIPE_KEY', 'STRIPE_WEBHOOK_SECRET', 'STRIPE_WEBHOOK_ID']);
+        if (k) {
+          const rows = [{ name: 'STRIPE_KEY', value: k, updated_at: now }];
+          if (hook?.secret && hook?.id) rows.push({ name: 'STRIPE_WEBHOOK_SECRET', value: hook.secret, updated_at: now }, { name: 'STRIPE_WEBHOOK_ID', value: hook.id, updated_at: now });
+          await admin.from('app_secrets').insert(rows);
+        }
+      }
       const s = await secretMap();
-      return json({ ok: true, ghl: !!(s.GHL_TOKEN && s.GHL_LOCATION_ID), ghlToken: mask(s.GHL_TOKEN?.value), ghlLocation: mask(s.GHL_LOCATION_ID?.value), tomtom: mask(s.TOMTOM_KEY?.value) });
+      return json({ ok: true, ghl: !!(s.GHL_TOKEN && s.GHL_LOCATION_ID), ghlToken: mask(s.GHL_TOKEN?.value), ghlLocation: mask(s.GHL_LOCATION_ID?.value), tomtom: mask(s.TOMTOM_KEY?.value), ...stripeStatus(s), warn });
     }
     if (action === 'sms-test') {
       const s = await secretMap();

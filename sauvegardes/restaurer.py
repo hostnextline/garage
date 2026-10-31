@@ -6,7 +6,7 @@
 
 Le fichier restaurer.sql se colle dans Supabase > SQL Editor (ou Claude l'applique).
 Il remet chaque document tel qu'il était ; il n'efface rien de ce qui a été ajouté après.
-Les photos de reçus viennent du dossier recus/. Les comptes (mots de passe) ne sont pas dans la sauvegarde :
+Les photos de reçus viennent du dossier recus/, les photos des jobs et les signatures du dossier photos/. Les comptes (mots de passe) ne sont pas dans la sauvegarde :
 si le projet était perdu, on recrée les comptes dans « Équipe ».
 """
 import json, os, sys
@@ -25,12 +25,13 @@ def main():
     snap = json.load(open(src, encoding='utf8'))
     base = os.path.dirname(os.path.dirname(os.path.abspath(src)))
     rows = list(snap['documents'])
-    for p in snap.get('recus', []):
-        f = os.path.join(base, 'recus', p.split('/', 1)[1] + '.json')
-        if os.path.exists(f):
-            rows.append(json.load(open(f, encoding='utf8')))
-        else:
-            print('reçu absent du dossier recus/ :', p)
+    for key, folder in (('recus', 'recus'), ('photos', 'photos')):
+        for p in snap.get(key, []):
+            f = os.path.join(base, folder, p.split('/', 1)[1] + '.json')
+            if os.path.exists(f):
+                rows.append(json.load(open(f, encoding='utf8')))
+            else:
+                print('absent du dossier %s/ :' % folder, p)
     rows = [r for r in rows if r['path'].startswith(only)]
     if not rows:
         sys.exit('Rien à restaurer pour « %s ».' % only)

@@ -26,7 +26,7 @@ jobs:
         run: |
           git config user.name "Sauvegarde du garage"
           git config user.email "host.nextline@gmail.com"
-          git add -A sauvegarde recus
+          git add -A sauvegarde recus photos
           if git diff --cached --quiet; then echo "Rien de nouveau"; exit 0; fi
           git commit -q -m "Sauvegarde $(date -u +%Y-%m-%d)"
           git push

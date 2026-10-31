@@ -309,7 +309,7 @@ with sync_playwright() as pw:
     mp.wait_for_timeout(500)
     check('phone · mechanic job: next = « Terminer la job »', (mp.text_content('.nextbtn') or '') == 'Terminer la job', mp.text_content('.nextbtn'))
     mp.click('.tab[data-t="plus"]'); mp.wait_for_timeout(400)
-    check('phone · mechanic Plus: dashboard + « Mes disponibilités » only (no map, team, hours, money, settings)', plus_rows(mp) == ['Tableau de bord', 'Mes disponibilités'], plus_rows(mp))
+    check('phone · mechanic Plus: dashboard + « Mes disponibilités » only (no map, team, hours, money, settings)', plus_rows(mp) == ['Tableau de bord', 'Mes disponibilités', 'Stock des camions'], plus_rows(mp))
     # his own availability, through the real rules
     mp.click('a[href="#dispos"]'); mp.wait_for_selector('#av-week', timeout=8000)
     check('phone · mechanic: « Mes disponibilités », his week only (no other mechanic)', 'Ma semaine' in mp.text_content('#av-week') and mp.locator('[data-act="av-mech"]').count() == 0)
@@ -336,7 +336,7 @@ with sync_playwright() as pw:
     check('phone · owner: tabs « Aujourd\'hui », Clients, +, Factures, Plus', ph_tabs(op2) == ["Aujourd'hui", 'Clients', '+', 'Factures', 'Plus'], ph_tabs(op2))
     check('phone · owner: sees both jobs + truck chips', op2.locator('.ph-job').count() == 2 and op2.locator('.chips.trucks [data-act="mech"]').count() == 4)
     op2.click('.tab[data-t="plus"]'); op2.wait_for_timeout(400)
-    check('phone · owner Plus: dashboard, map, team, hours, availability, treasury, settings', plus_rows(op2) == ['Tableau de bord', 'Carte des mécanos', 'Équipe et accès', "Heures d'ouverture", 'Disponibilités des mécanos', 'Trésorerie', 'Réglages'], plus_rows(op2))
+    check('phone · owner Plus: dashboard, map, team, hours, availability, treasury, settings', plus_rows(op2) == ['Tableau de bord', 'Carte des mécanos', 'Équipe et accès', "Heures d'ouverture", 'Disponibilités des mécanos', 'Trésorerie', 'Stock des camions', 'Réglages'], plus_rows(op2))
     op2.screenshot(path=os.path.join(SC, 'team_phone_plus.png'))
     op2.click('a[href="#carte"]'); op2.wait_for_selector('#map-slot', timeout=8000)
     check('phone · owner: map opens from Plus, back arrow to Plus', op2.locator('#map-slot').count() == 1 and op2.locator('[data-act="ph-back"]').count() == 1 and op2.locator('.tab[data-t="plus"][aria-current="page"]').count() == 1)

@@ -55,3 +55,60 @@ http.createServer((req, res) => {
   }
   send(res, 404, {message:'not found'});
 }).listen(9201, '127.0.0.1');
+
+// ---------- fake Stripe (9202): webhooks, Checkout Sessions, a payment page that signs and sends the « paid » notice ----------
+const crypto = require('crypto');
+let ST = {hooks:{}, sessions:{}, calls:[], n:0, delivered:[]};
+const GOOD_KEYS = ['sk_test_good1234567890', 'sk_live_good1234567890', 'rk_live_good1234567890'];
+function raw(req){ return new Promise(r => { let b = ''; req.on('data', c => b += c); req.on('end', () => r(b)); }); }
+function formParse(s){ const o = {}; new URLSearchParams(s).forEach((v, k) => { const parts = k.replace(/\]/g, '').split('['); let cur = o; parts.forEach((p, i) => { if (i === parts.length - 1) cur[p] = v; else cur = cur[p] = cur[p] || {}; }); }); return o; }
+function post(url, data, headers){ return new Promise((res) => { try { const u = new URL(url); const rq = http.request({host:u.hostname, port:u.port, path:u.pathname + u.search, method:'POST', headers:Object.assign({'content-type':'application/json', 'content-length':Buffer.byteLength(data)}, headers)}, (r) => { let b = ''; r.on('data', c => b += c); r.on('end', () => res({status:r.statusCode, body:b})); }); rq.on('error', (e) => res({status:0, body:String(e)})); rq.end(data); } catch(e){ res({status:0, body:String(e)}); } }); }
+http.createServer(async (req, res) => {
+  const u = new URL(req.url, 'http://x'), text = await raw(req);
+  if (u.pathname === '/__log') return send(res, 200, ST);
+  if (u.pathname === '/__reset'){ ST = {hooks:{}, sessions:{}, calls:[], n:0, delivered:[]}; return send(res, 200, {ok:true}); }
+  // the page Stripe would show to the client
+  let pm = u.pathname.match(/^\/pay\/(cs_[a-z0-9_]+)$/);
+  if (pm){
+    const s = ST.sessions[pm[1]]; if (!s){ res.writeHead(404); return res.end('no session'); }
+    if (req.method === 'GET'){
+      res.writeHead(200, {'content-type':'text/html; charset=utf-8'});
+      return res.end('<!doctype html><title>Stripe (test)</title><h1>Paiement</h1><p id="amt">' + (s.amount_total / 100).toFixed(2) + ' $ CAD</p><p>' + s.line_items[0].price_data.product_data.name + '</p>' +
+        '<form method="post"><button id="pay" type="submit">Payer</button></form><form method="post" action="?hook=off"><button id="pay-nohook" type="submit">Payer (sans avis)</button></form><a id="cancel" href="' + s.cancel_url + '">Retour</a>');
+    }
+    s.payment_status = 'paid'; s.status = 'complete';
+    if (u.searchParams.get('hook') !== 'off'){
+      for (const h of Object.values(ST.hooks)){
+        const ev = {id:'evt_' + (++ST.n), type:'checkout.session.completed', data:{object:s}}, payload = JSON.stringify(ev), t = Math.floor(Date.now() / 1000);
+        const sig = crypto.createHmac('sha256', h.secret).update(t + '.' + payload).digest('hex');
+        const r = await post(h.url, payload, {'stripe-signature':'t=' + t + ',v1=' + sig});
+        ST.delivered.push({to:h.url, status:r.status, body:r.body.slice(0, 300), event:ev.id});
+        if (u.searchParams.get('twice') === '1') { const r2 = await post(h.url, payload, {'stripe-signature':'t=' + t + ',v1=' + sig}); ST.delivered.push({to:h.url, status:r2.status, body:r2.body.slice(0, 300), event:ev.id, again:true}); }
+      }
+    }
+    res.writeHead(303, {location:s.success_url}); return res.end();
+  }
+  const auth = (req.headers.authorization || '').replace(/^Bearer\s+/, '');
+  ST.calls.push({method:req.method, path:u.pathname, auth:auth.slice(0, 8)});
+  if (!GOOD_KEYS.includes(auth)) return send(res, 401, {error:{message:'Invalid API Key provided', type:'invalid_request_error'}});
+  const b = formParse(text);
+  if (u.pathname === '/v1/webhook_endpoints' && req.method === 'POST'){
+    if (auth.startsWith('rk_')) return send(res, 403, {error:{message:'The provided key does not have the required permissions for this endpoint'}});
+    const id = 'we_' + (++ST.n), secret = 'whsec_' + crypto.randomBytes(12).toString('hex');
+    ST.hooks[id] = {id, url:b.url, secret, events:Object.values(b.enabled_events || {})};
+    return send(res, 200, {id, object:'webhook_endpoint', url:b.url, secret, enabled_events:ST.hooks[id].events});
+  }
+  let wm = u.pathname.match(/^\/v1\/webhook_endpoints\/(we_\d+)$/);
+  if (wm && req.method === 'DELETE'){ delete ST.hooks[wm[1]]; return send(res, 200, {id:wm[1], deleted:true}); }
+  if (u.pathname === '/v1/checkout/sessions' && req.method === 'POST'){
+    const li = (b.line_items || {})[0] || {}, cents = +((li.price_data || {}).unit_amount || 0) * (+li.quantity || 1);
+    if (!cents) return send(res, 400, {error:{message:'Missing amount'}});
+    const id = 'cs_test_' + (++ST.n);
+    ST.sessions[id] = {id, object:'checkout.session', url:'http://127.0.0.1:9202/pay/' + id, amount_total:cents, currency:(li.price_data || {}).currency, payment_status:'unpaid', status:'open', mode:b.mode, locale:b.locale,
+      metadata:b.metadata || {}, client_reference_id:b.client_reference_id, success_url:b.success_url, cancel_url:b.cancel_url, line_items:[li]};
+    return send(res, 200, ST.sessions[id]);
+  }
+  let sm = u.pathname.match(/^\/v1\/checkout\/sessions\/(cs_[a-z0-9_]+)$/);
+  if (sm && req.method === 'GET'){ const s = ST.sessions[sm[1]]; return s ? send(res, 200, s) : send(res, 404, {error:{message:'No such checkout.session'}}); }
+  send(res, 404, {error:{message:'Unrecognized request URL'}});
+}).listen(9202, '127.0.0.1');

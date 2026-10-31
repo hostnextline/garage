@@ -45,6 +45,11 @@ out = ('<!doctype html><html lang="fr-CA"><head><meta charset="utf-8">'
 open(os.path.join(a.out, 'index.html'), 'w', encoding='utf8').write(out)
 pwa(a.out, 'Carnet du garage mobile', 'Garage', 'garage-equipe')
 shutil.copyfile(os.path.join(D, 'suivi.html'), os.path.join(a.out, 'suivi.html'))
+shutil.copyfile(os.path.join(D, 'client.html'), os.path.join(a.out, 'client.html'))
+# works without network: the service worker keeps the page and its files on the phone (new version = new cache)
+import hashlib
+ver = hashlib.sha256((out + read('sw.js')).encode()).hexdigest()[:12]
+open(os.path.join(a.out, 'sw.js'), 'w', encoding='utf8').write(read('sw.js').replace('__VERSION__', ver))
 cfg = os.path.join(a.out, 'config.js')
 if a.url and a.key:
     open(cfg, 'w', encoding='utf8').write("/* Où est la base du garage. La clé publique (anon / publishable) est faite pour être publique : les règles d'accès protègent les données. */\nwindow.GARAGE_CFG = {url:%r, key:%r};\n" % (a.url.rstrip('/'), a.key))

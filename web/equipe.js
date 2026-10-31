@@ -456,6 +456,12 @@
       '<details class="small"><summary>Où trouver ça dans GoHighLevel ?</summary><ol><li>Paramètres → <b>Private Integrations</b> → Créer. Coche « View/Edit Contacts » et « View/Edit Conversation Messages ». Copie la clé (elle commence par pit-).</li><li>Paramètres → <b>Business Profile</b> : copie le « Location ID ».</li><li>Colle les deux ici. La clé va directement dans ta base : personne ne peut la relire, même pas dans l\'app.</li></ol></details>' +
       '<div class="er-acts"><button type="button" class="btn sm primary" data-act="gh-save">Enregistrer</button>' + (s.ghl ? '<button type="button" class="btn sm danger" data-act="gh-clear">Débrancher</button>' : '') + '</div>' +
       (s.ghl ? '<div class="field"><label for="gh-test">Envoyer un texto test au numéro</label><div class="er-acts"><input id="gh-test" type="tel" inputmode="tel" autocomplete="off" placeholder="514 555-0123"><button type="button" class="btn sm" data-act="gh-test">Envoyer</button></div></div>' : '') + '</section>';
+    b += '<section class="sect"><h3>Paiement en ligne (Stripe)</h3>' +
+      '<p class="small">' + (s.stripe ? '<span class="badge ok">Branché</span>' + (s.stripeMode === 'test' ? ' <span class="badge warn">mode test</span>' : '') + ' Clé ' + esc(s.stripeKey) + (s.stripeHook ? ' · confirmation automatique des paiements ✓' : ' · paiement confirmé quand le client revient sur sa page') :
+        '<span class="badge warn">Pas branché</span> Sans Stripe, la facture envoyée au client n\'a pas de bouton « Payer ».') + '</p>' +
+      '<div class="field"><label for="st-key">Clé secrète Stripe</label><input id="st-key" type="password" autocomplete="off" spellcheck="false" placeholder="' + (s.stripe ? 'Laisse vide pour garder la clé actuelle' : 'sk_live_…') + '"></div>' +
+      '<details class="small"><summary>Où trouver la clé ?</summary><ol><li>Stripe → <b>Développeurs</b> → <b>Clés API</b>.</li><li>Ligne « Clé secrète » → <b>Révéler</b> → copie (elle commence par sk_live_).</li><li>Colle-la ici. Elle reste sur le serveur du garage : jamais dans les téléphones, jamais affichée en entier.</li></ol><p>Pour essayer sans vrai argent : la clé sk_test_ et la carte 4242 4242 4242 4242.</p></details>' +
+      '<div class="er-acts"><button type="button" class="btn sm primary" data-act="st-save">Enregistrer</button>' + (s.stripe ? '<button type="button" class="btn sm danger" data-act="st-clear">Débrancher</button>' : '') + '</div></section>';
     b += '<section class="sect"><h3>Cartes (optionnel)</h3><p class="small muted">Avec une clé TomTom, l\'heure d\'arrivée tient compte du trafic et la recherche d\'adresse est plus précise. Sans clé : OpenStreetMap, gratuit.</p>' +
       '<p class="small">' + (s.tomtom ? '<span class="badge ok">TomTom branché</span> ' + esc(s.tomtom) : '<span class="badge">OpenStreetMap</span>') + '</p>' +
       '<div class="field"><label for="tt-key">Clé TomTom</label><input id="tt-key" type="password" autocomplete="off" spellcheck="false" placeholder="' + (s.tomtom ? 'Laisse vide pour garder la clé actuelle' : 'Clé de developer.tomtom.com') + '"></div>' +
@@ -470,7 +476,13 @@
   function onAction(a, b){
     var id = b.dataset.id, v = b.dataset.v, api = A();
     switch (a){
-      case 'acct-out': T.signOut(); break;
+      case 'acct-out': {
+        var pend = T.pending ? T.pending() : 0;
+        if (pend && !X.outArmed){ X.outArmed = true; A().toast(pend + (pend > 1 ? ' changements pas encore envoyés' : ' changement pas encore envoyé') + ' : attends le retour du signal. Touche encore « Se déconnecter » pour les perdre.'); setTimeout(function(){ X.outArmed = false; }, 8000); break; }
+        T.signOut(); break;
+      }
+      case 'net-send': if (T.flush) T.flush(); break;
+      case 'net-ok': if (T.clearFailed) T.clearFailed(); break;
       case 'sh-start': shiftStart(); break;
       case 'sh-end': shiftEnd(); break;
       case 'sh-wake': G.wakeWant = !G.wake; lsSet('gm.team.wake', G.wakeWant ? '1' : null); wake(G.wakeWant); setTimeout(shiftLine, 300); break;
@@ -537,6 +549,16 @@
         invoke('members', {action:'sms-test', phone:ph}).then(function(){ b.disabled = false; b.textContent = 'Envoyer'; toast('Texto test envoyé ✓ Vérifie ton téléphone.'); }, function(e){ b.disabled = false; b.textContent = 'Envoyer'; toast(e.message); });
         break;
       }
+      case 'st-save': case 'st-clear': {
+        var sk = a === 'st-clear' ? '' : val('st-key'); if (a === 'st-save' && !sk){ toast('Colle ta clé secrète Stripe.'); break; }
+        b.disabled = true;
+        invoke('members', {action:'secrets-set', stripeKey:sk}).then(function(r){
+          X.eq.secrets = r; X.payOnline = !!r.stripe;
+          return keysDoc({payOnline:!!r.stripe}).then(function(){ return r; });
+        }).then(function(r){ var e = document.getElementById('st-key'); if (e) e.value = ''; toast(r.warn ? r.warn : !sk ? 'Stripe débranché' : r.stripeMode === 'test' ? 'Stripe branché en mode test ✓' : 'Stripe branché ✓ Les factures envoyées auront « Payer ».'); render(); },
+          function(e){ b.disabled = false; toast(e.message); });
+        break;
+      }
       case 'tt-save': case 'tt-clear': {
         var k = a === 'tt-clear' ? '' : val('tt-key'); if (a === 'tt-save' && !k){ toast('Colle ta clé TomTom.'); break; }
         b.disabled = true;
@@ -582,13 +604,40 @@
   document.head.appendChild(css);
 
   var MAP_ICON = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>';
+  /* ---------- hors ligne : bandeau d'état ---------- */
+  var COLNAME = {jobs:'une job', clients:'une fiche client', days:'l\'horaire', avail:'des dispos', config:'les réglages', specs:'une fiche technique', expenses:'une dépense', receipts:'un reçu', photos:'une photo', stock:'le stock'};
+  function netBanner(){
+    var n = T.net; if (!n || !me) return '';
+    var h = '', p = n.pending, s = p > 1 ? 's' : '';
+    if (n.offlineMode || n.online === false)
+      h += '<div class="banner warn net" role="status"><p><b>Hors ligne.</b> ' + (p ? p + ' changement' + s + ' gardé' + s + ' sur le téléphone, envoyé' + s + ' au retour du signal.' : 'Tu travailles avec la copie du téléphone ; tes changements seront envoyés au retour du signal.') + '</p></div>';
+    else if (p) h += '<div class="banner net" role="status"><p>' + (n.sending ? 'Envoi de ' + p + ' changement' + s + '…' : p + ' changement' + s + ' en attente d\'envoi.') + '</p>' + (n.sending ? '' : '<button type="button" class="btn sm" data-act="net-send">Envoyer maintenant</button>') + '</div>';
+    if (n.failed && n.failed.length){
+      h += '<div class="banner warn net" role="alert"><p><b>' + n.failed.length + (n.failed.length > 1 ? ' changements refusés' : ' changement refusé') + ' par le serveur</b> (fait sans réseau) : ' +
+        n.failed.slice(-3).map(function(f){ var c = f.path.split('/')[0]; return (COLNAME[c] || c) + ' (' + esc(/permission|row-level|not_granted/i.test(f.msg) ? 'pas permis' : /not_found/i.test(f.msg) ? 'n\'existe plus' : f.msg.slice(0, 60)) + ')'; }).join(', ') +
+        '. Le carnet montre la version du serveur.</p><button type="button" class="btn sm" data-act="net-ok">OK</button></div>';
+    }
+    return h;
+  }
+  var netT = null, lastNet = '';
+  if (T.onNet) T.onNet(function(n){
+    var k = [n.offlineMode, n.online, n.pending, n.sending, n.failed.length].join('|');
+    if (k === lastNet) return; lastNet = k;
+    clearTimeout(netT); netT = setTimeout(function(){ var a = A(); if (a && a.render) a.render(); }, 120);
+  });
+
+  /* the page and its tools are kept on the phone: it opens even without network (« ?nosw » turns it off) */
+  if ('serviceWorker' in navigator && /^(https:|http:\/\/(127\.0\.0\.1|localhost)(:|\/))/.test(location.href)){
+    if (/[?&]nosw\b/.test(location.search)) navigator.serviceWorker.getRegistrations().then(function(rs){ rs.forEach(function(r){ r.unregister(); }); });
+    else window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+  }
   window.__garageExt = {
     tabs:[{key:'carte', label:'Carte', icon:MAP_ICON, view:viewMap}, {key:'equipe', label:'Équipe', hidden:true, view:viewEquipe}],
     can:function(w){
       if (!me) return undefined;
       var r = me.role;
       /* the treasurer: his own screen; sees clients and invoices, changes nothing else */
-      if (r === 'tresorier') return w === 'tab:tresor' || w === 'expenses' || w === 'money' || w === 'tab:clients' || w === 'tab:factures' || w === 'tab:plus';
+      if (r === 'tresorier') return w === 'tab:tresor' || w === 'expenses' || w === 'money' || w === 'tab:clients' || w === 'tab:factures' || w === 'tab:plus' || w === 'tab:stock' || w === 'stock';
       if (w === 'tab:tresor' || w === 'expenses') return r === 'owner';
       if (w === 'tab:reglages') return r === 'owner';
       if (w === 'tab:carte') return r !== 'mecano';
@@ -596,6 +645,10 @@
       if (w === 'book' || w === 'deleteJob' || w === 'hours' || w === 'money') return r !== 'mecano';
       return undefined;
     },
+    netBanner:netBanner,
+    /* the client's page: invoice (and « Payer »), work to approve; texted through GoHighLevel */
+    clientLink:function(j, what, extraId){ return invoke('client', {action:'link', jobId:j.id, send:what || null, extraId:extraId || null, base:trackBase()}); },
+    payOn:function(){ return !!X.payOnline; },
     myMechanic:function(){ return me && me.role === 'mecano' ? me.mechanic : null; },
     homeTab:function(){ return me && me.role === 'tresorier' ? 'tresor' : null; },
     greetName:function(){ return me ? first(me.name) : ''; },
@@ -617,6 +670,7 @@
   /* once signed in: role, workday already running, address keys of the garage */
   T.onReady(function(){
     me = T.member;
+    T.db.doc('config/keys').get().then(function(s){ X.payOnline = !!(s.exists && s.data().payOnline); }, function(){});
     if (worksShifts()){
       T.sb.from('mech_live').select('*').eq('user_id', me.user_id).maybeSingle().then(function(r){
         var l = r.data; if (!l || !l.on_shift) { render(); return; }

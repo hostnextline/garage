@@ -2,6 +2,7 @@
 
   sauvegarde/AAAA-MM-JJ.json  le carnet du jour (jobs, clients, factures, réglages, horaire, dépenses, fiches techniques, équipe)
   recus/<id>.json             une photo de reçu par fichier (écrit une seule fois : l'historique git garde tout)
+  photos/<id>.json            une photo de travail (avant / après) ou une signature par fichier, pareil
 
 Aucun mot de passe : GitHub signe chaque exécution (jeton OIDC, valable quelques minutes) et le serveur du garage
 n'accepte que ce dépôt privé. Variables : SUPABASE_URL, SUPABASE_ANON (clé publique). Sortie ≠ 0 = la sauvegarde a échoué
@@ -66,25 +67,30 @@ def main():
     else:
         sys.exit('Sauvegarde incomplète : reçu %s, attendu %s' % (got, counts))
 
-    os.makedirs(os.path.join(HERE, 'sauvegarde'), exist_ok=True); os.makedirs(os.path.join(HERE, 'recus'), exist_ok=True)
-    docs = [r for r in rows if not r['path'].startswith('receipts/')]
-    recus = [r for r in rows if r['path'].startswith('receipts/')]
-    new_recus = 0
-    for r in recus:
-        p = os.path.join(HERE, 'recus', r['path'].split('/', 1)[1] + '.json')
+    BIG = {'receipts': 'recus', 'photos': 'photos'}   # pictures: one file each, written once
+    for d in ['sauvegarde'] + list(BIG.values()): os.makedirs(os.path.join(HERE, d), exist_ok=True)
+    docs = [r for r in rows if r['path'].split('/', 1)[0] not in BIG]
+    recus = [r for r in rows if r['path'].split('/', 1)[0] == 'receipts']
+    photos = [r for r in rows if r['path'].split('/', 1)[0] == 'photos']
+    new_recus = new_photos = 0
+    for r in recus + photos:
+        col, rid = r['path'].split('/', 1)
+        p = os.path.join(HERE, BIG[col], rid + '.json')
         txt = json.dumps(r, ensure_ascii=False, sort_keys=True)
         old = open(p, encoding='utf8').read() if os.path.exists(p) else None
         if old != txt:
-            open(p, 'w', encoding='utf8').write(txt); new_recus += 1
+            open(p, 'w', encoding='utf8').write(txt)
+            if col == 'receipts': new_recus += 1
+            else: new_photos += 1
     day = at[:10]
-    snap = {'faite_le': at, 'nombre': counts, 'equipe': members, 'documents': docs, 'recus': sorted(r['path'] for r in recus)}
+    snap = {'faite_le': at, 'nombre': counts, 'equipe': members, 'documents': docs, 'recus': sorted(r['path'] for r in recus), 'photos': sorted(r['path'] for r in photos)}
     open(os.path.join(HERE, 'sauvegarde', day + '.json'), 'w', encoding='utf8').write(json.dumps(snap, ensure_ascii=False, indent=1, sort_keys=True))
     limit = (datetime.date.fromisoformat(day) - datetime.timedelta(days=KEEP_DAYS)).isoformat()
     for f in glob.glob(os.path.join(HERE, 'sauvegarde', '*.json')):
         if os.path.basename(f)[:10] < limit:
             os.remove(f)
-    print('OK %s : %d documents (%s), %d reçus (%d nouveaux), %d personnes dans l\'équipe'
-          % (day, len(docs), ', '.join('%s %d' % kv for kv in sorted(counts.items())), len(recus), new_recus, len(members)), flush=True)
+    print('OK %s : %d documents (%s), %d reçus (%d nouveaux), %d photos (%d nouvelles), %d personnes dans l\'équipe'
+          % (day, len(docs), ', '.join('%s %d' % kv for kv in sorted(counts.items())), len(recus), new_recus, len(photos), new_photos, len(members)), flush=True)
 
 
 if __name__ == '__main__':
