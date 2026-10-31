@@ -36,7 +36,7 @@ CODE = 'R4ND-0M7X-Q2PZ'
 psql("insert into public.setup_codes (code_hash) values ('%s')" % hashlib.sha256(CODE.replace('-', '').encode()).hexdigest())
 
 def ctx_for(browser, geo=None, perms=True, simple=False):
-    c = browser.new_context(viewport={'width': 390, 'height': 844}, timezone_id='America/Toronto', locale='fr-CA', has_touch=simple,
+    c = browser.new_context(viewport={'width': 390, 'height': 844}, timezone_id='America/Toronto', locale='fr-CA', has_touch=simple, **({'user_agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'} if simple else {}),
                             geolocation=geo, permissions=(['geolocation', 'clipboard-read', 'clipboard-write'] if perms else []))
     if not simple: c.add_init_script("try{localStorage.setItem('gm.ui','full')}catch(e){}")
     c.route('https://tile.openstreetmap.org/**', lambda r: r.fulfill(status=200, content_type='image/png', body=b''))
@@ -396,7 +396,8 @@ with sync_playwright() as pw:
     tp.click('[data-act="tr-view"][data-v="dep"]'); tp.wait_for_timeout(300); tp.locator('#exp-list .xrow').first.click(); tp.wait_for_selector('#expform')
     tp.click('[data-act="exp-del"]'); tp.click('[data-act="exp-del"]'); tp.wait_for_timeout(1500)
     check('treasurer deletes the test expense and its photo (original state)', psql("select count(*) from public.docs where col in ('expenses','receipts')") == '0')
-    tp.evaluate("localStorage.removeItem('gm.ui')"); tp.set_viewport_size({'width': 390, 'height': 844}); tp.wait_for_timeout(600)
+    tc.close()
+    tc = ctx_for(br, perms=False, simple=True); tp = page_for(tc, 'nadia-phone'); login(tp, 'nadia@garage.test', NADIA_PW); tp.wait_for_selector('#tr-label', timeout=15000); tp.wait_for_timeout(600)
     check('treasurer on a phone: Trésorerie, Clients, +, Factures, Plus', tp.evaluate("[...document.querySelectorAll('#tabbar .tab:not([hidden])')].sort((a,b)=>a.getBoundingClientRect().x-b.getBoundingClientRect().x).map(b=>b.dataset.t || '+')") == ['tresor', 'clients', '+', 'factures', 'plus'])
     tc.close()
 

@@ -5,7 +5,7 @@ seed['clients/c9'] = {'firstName': 'Nadia', 'lastName': 'Haddad', 'phone': '5145
 scheme = sys.argv[1] if len(sys.argv) > 1 else 'light'
 with sync_playwright() as p:
     br = p.chromium.launch()
-    ctx = br.new_context(viewport={'width': 390, 'height': 844}, color_scheme=scheme, timezone_id='America/Toronto', locale='fr-CA', has_touch=True)
+    ctx = br.new_context(viewport={'width': 390, 'height': 844}, color_scheme=scheme, timezone_id='America/Toronto', locale='fr-CA', has_touch=True, user_agent='Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1')
     pg = ctx.new_page(); errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.route('**/*', lambda r: r.fulfill(status=200, content_type='text/html; charset=utf-8', body=harness({'seed': seed})) if r.request.url == 'https://local.test/' else r.abort())

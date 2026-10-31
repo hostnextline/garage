@@ -32,11 +32,16 @@ def harness(mode, ui=None):
     return ('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
             f'<style>{RESET}</style><script>{pre}window.__MOCK={json.dumps(mode)};</script><script>{MOCK}</script></head><body>{PAGE}</body></html>')
 
+IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'
+IPAD = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'
+ANDROID = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36'
+ANDROID_TAB = 'Mozilla/5.0 (Linux; Android 14; SM-X710) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
 results = []
 def check(name, cond, detail=''):
     results.append((name, bool(cond))); print(('PASS ' if cond else 'FAIL ') + name + (('  -> ' + str(detail)[:300]) if detail and not cond else ''), flush=True)
-def open_page(br, mode, width=390, scheme='light', ui=None, touch=True):
-    ctx = br.new_context(viewport={'width': width, 'height': 844}, color_scheme=scheme, timezone_id='America/Toronto', locale='fr-CA', has_touch=touch)
+def open_page(br, mode, width=390, scheme='light', ui=None, touch=True, ua='iphone'):
+    ua = IPHONE if ua == 'iphone' else ua
+    ctx = br.new_context(viewport={'width': width, 'height': 844}, color_scheme=scheme, timezone_id='America/Toronto', locale='fr-CA', has_touch=touch, **({'user_agent': ua} if ua else {}))
     pg = ctx.new_page(); errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' and 'fonts.g' not in m.text and 'ERR_FAILED' not in m.text else None)
@@ -62,7 +67,7 @@ with sync_playwright() as p:
     br = p.chromium.launch()
     ctx, pg, errs = open_page(br, {'seed': seed})
     # ---------- 1. layout ----------
-    check('1. phone width (390) switches to the simple version', pg.evaluate("document.body.classList.contains('ui-phone')"))
+    check('1. a phone opens the simple version by itself', pg.evaluate("document.body.classList.contains('ui-phone')"))
     check('1. tabs: Aujourd\'hui, Clients, +, Factures, Plus (in that order)', tabs(pg) == ['jour', 'clients', '+', 'factures', 'plus'], tabs(pg))
     check('1. opens on Aujourd\'hui', pg.locator('.tab[data-t="jour"][aria-current="page"]').count() == 1)
     check('1. the « + » is the big one in the middle', pg.evaluate("(() => { const n = document.querySelector('.tab-new .tn-plus').getBoundingClientRect(); return n.width >= 44 && n.height >= 44; })()"))
@@ -242,10 +247,12 @@ with sync_playwright() as p:
     # full <-> simple
     pg.click('.tab[data-t="plus"]'); wait(pg); pg.click('[data-act="ui-full"]'); wait(pg, 500)
     check('7. « Version complète »: all tabs, opens Accueil', tabs(pg) == ['accueil', 'agenda', 'clients', 'factures', 'tresor', 'reglages'] and not pg.evaluate("document.body.classList.contains('ui-phone')"), tabs(pg))
-    check('7. choice remembered', pg.evaluate("localStorage.getItem('gm.ui')") == 'full')
+    check('7. « Version complète » lasts for this visit only (nothing kept on the phone)', pg.evaluate("sessionStorage.getItem('gm.ui')") == 'full' and pg.evaluate("localStorage.getItem('gm.ui')") is None)
+    p2 = ctx.new_page(); p2.route('**/*', lambda r: r.fulfill(status=200, content_type='text/html; charset=utf-8', body=harness({'seed': seed})) if r.request.url == 'https://local.test/' else r.abort()); p2.goto('https://local.test/'); p2.wait_for_timeout(700)
+    check('7. opening the app again on the phone: phone version again, by itself', p2.evaluate("document.body.classList.contains('ui-phone')")); p2.close()
     check('7. dashboard offers to go back to the simple version', pg.locator('[data-act="ui-phone"]').count() == 1)
     pg.click('[data-act="ui-phone"]'); wait(pg, 500)
-    check('7. back to the simple version', tabs(pg) == ['jour', 'clients', '+', 'factures', 'plus'] and pg.evaluate("localStorage.getItem('gm.ui')") is None)
+    check('7. back to the simple version', tabs(pg) == ['jour', 'clients', '+', 'factures', 'plus'] and pg.evaluate("sessionStorage.getItem('gm.ui')") is None)
     check('no page errors (main run)', not errs, errs)
     ctx.close()
 
@@ -259,14 +266,23 @@ with sync_playwright() as p:
     ctx.close()
 
     # ---------- 9. big screens stay the full version ----------
-    ctx, pg, errs = open_page(br, {'seed': seed}, width=1280, touch=False)
+    ctx, pg, errs = open_page(br, {'seed': seed}, width=1280, touch=False, ua=None)
     check('9. computer (1280): full version, opens Accueil', not pg.evaluate("document.body.classList.contains('ui-phone')") and pg.locator('.tab[data-t="accueil"][aria-current="page"]').count() == 1 and tabs(pg) == ['accueil', 'agenda', 'clients', 'factures', 'tresor', 'reglages'], tabs(pg))
     check('9. no « Version simple » chip on a computer', pg.locator('[data-act="ui-phone"]').count() == 0)
     pg.set_viewport_size({'width': 390, 'height': 844}); wait(pg, 500)
-    check('9. shrinking the window switches to the simple version', pg.evaluate("document.body.classList.contains('ui-phone')") and tabs(pg) == ['jour', 'clients', '+', 'factures', 'plus'])
+    check('9. a computer stays on the computer version, even in a narrow window', not pg.evaluate("document.body.classList.contains('ui-phone')") and tabs(pg)[0] == 'accueil')
     ctx.close()
-    ctx, pg, errs = open_page(br, {'seed': seed}, width=768, touch=True)
-    check('9. tablet (768): full version', not pg.evaluate("document.body.classList.contains('ui-phone')"))
+    ctx, pg, errs = open_page(br, {'seed': seed}, width=768, touch=True, ua=IPAD)
+    check('9. iPad: full version', not pg.evaluate("document.body.classList.contains('ui-phone')"))
+    ctx.close()
+    ctx, pg, errs = open_page(br, {'seed': seed}, width=800, touch=True, ua=ANDROID_TAB)
+    check('9. Android tablet: full version', not pg.evaluate("document.body.classList.contains('ui-phone')"))
+    ctx.close()
+    ctx, pg, errs = open_page(br, {'seed': seed}, width=412, touch=True, ua=ANDROID)
+    check('9. Android phone: phone version', pg.evaluate("document.body.classList.contains('ui-phone')") and tabs(pg) == ['jour', 'clients', '+', 'factures', 'plus'])
+    ctx.close()
+    ctx, pg, errs = open_page(br, {'seed': seed}, width=390, touch=False, ua=None, ui='full')
+    check('9. an old « always full » choice saved on a phone is forgotten', pg.evaluate("localStorage.getItem('gm.ui')") is None)
     ctx.close()
 
     # ---------- 10. dark mode ----------

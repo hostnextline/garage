@@ -29,7 +29,7 @@ def harness(ui):
     return ('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
             f'<style>{RESET}</style><script>{pre}window.__MOCK={json.dumps({"seed": seed})};</script><script>{MOCK}</script></head><body>{PAGE}</body></html>')
 def page(br, w, ui):
-    ctx = br.new_context(viewport={'width': w, 'height': 844 if w < 700 else 820}, color_scheme=scheme, timezone_id='America/Toronto', locale='fr-CA', has_touch=w < 700)
+    ctx = br.new_context(viewport={'width': w, 'height': 844 if w < 700 else 820}, color_scheme=scheme, timezone_id='America/Toronto', locale='fr-CA', has_touch=w < 700, **({'user_agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'} if w < 700 else {}))
     pg = ctx.new_page(); pg.route('**/*', lambda r: r.fulfill(status=200, content_type='text/html; charset=utf-8', body=harness(ui)) if r.request.url == 'https://local.test/' else r.abort())
     pg.goto('https://local.test/'); pg.wait_for_timeout(800); return ctx, pg
 def go(pg, js): pg.evaluate("() => { const S = window.__garageApi.S; " + js + "; window.__garageApi.render(); }"); pg.wait_for_timeout(350)
