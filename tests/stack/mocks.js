@@ -39,6 +39,15 @@ http.createServer((req, res) => {
     const d = hav(a, mid) + hav(mid, b);
     return send(res, 200, {code:'Ok', routes:[{distance:d, duration:d / (36000/3600), geometry:{type:'LineString', coordinates:coords}}]});
   }
+  const vp = u.pathname.match(/^\/vpic\/api\/vehicles\/DecodeVinValues\/([A-Z0-9]+)$/);
+  if (vp){
+    const KNOWN = {
+      '2HGFC2F58JH512345': {ModelYear:'2018', Make:'HONDA', Model:'Civic', Trim:'LX', Series:'', DisplacementL:'2.0', EngineCylinders:'4', FuelTypePrimary:'Gasoline', DriveType:'FWD/Front-Wheel Drive', BodyClass:'Sedan/Saloon', TransmissionStyle:'Continuously Variable Transmission (CVT)', EngineModel:'K20C2', ElectrificationLevel:'', PlantCountry:'CANADA', ErrorCode:'0', ErrorText:'0 - VIN decoded clean. Check Digit (9th position) is correct'},
+      '2T3W1RFV6LW012345': {ModelYear:'2020', Make:'TOYOTA', Model:'RAV4', Trim:'XLE', Series:'AXAA54L', DisplacementL:'2.487500', EngineCylinders:'4', FuelTypePrimary:'Gasoline', DriveType:'AWD/All-Wheel Drive', BodyClass:'Sport Utility Vehicle (SUV)/Multi-Purpose Vehicle (MPV)', TransmissionStyle:'Automatic', EngineModel:'A25A-FKS', ElectrificationLevel:'', PlantCountry:'CANADA', ErrorCode:'0', ErrorText:'0 - VIN decoded clean. Check Digit (9th position) is correct'}
+    };
+    const r = KNOWN[vp[1]] || {ModelYear:'', Make:'', Model:'', ErrorCode:'8', ErrorText:'8 - No detailed data available currently'};
+    return send(res, 200, {Count:1, Message:'Results returned successfully', Results:[Object.assign({VIN:vp[1]}, r)]});
+  }
   if (u.pathname === '/photon/api/'){
     const q = (u.searchParams.get('q') || '').toLowerCase();
     if (q.indexOf('introuvable') >= 0) return send(res, 200, {type:'FeatureCollection', features:[]});

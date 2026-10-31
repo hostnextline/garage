@@ -6,6 +6,7 @@ import io, base64, openpyxl
 
 SC = os.path.dirname(os.path.abspath(__file__))
 XLSX = open(os.path.join(SC, 'xlsxlib/node_modules/xlsx/dist/xlsx.full.min.js'), encoding='utf8').read()
+ZXJS = open(os.path.join(SC, 'zxinglib/node_modules/@zxing/library/umd/index.min.js'), encoding='utf8').read()
 K = json.load(open(os.path.join(SC, 'stack/keys.json')))
 BASE = 'http://127.0.0.1:8088/'
 API = 'http://127.0.0.1:54321'
@@ -41,6 +42,7 @@ def ctx_for(browser, geo=None, perms=True, simple=False):
     if not simple: c.add_init_script("try{localStorage.setItem('gm.ui','full')}catch(e){}")
     c.route('https://tile.openstreetmap.org/**', lambda r: r.fulfill(status=200, content_type='image/png', body=b''))
     c.route('https://fonts.googleapis.com/**', lambda r: r.fulfill(status=200, content_type='text/css', body=''))
+    c.route('https://cdn.jsdelivr.net/npm/@zxing/**', lambda r: r.fulfill(status=200, content_type='application/javascript', body=ZXJS))
     c.route('https://cdnjs.cloudflare.com/ajax/libs/xlsx/**', lambda r: r.fulfill(status=200, content_type='application/javascript', body=XLSX))
     c.route('https://photon.komoot.io/**', lambda r: r.fulfill(status=200, content_type='application/json', body='{"type":"FeatureCollection","features":[]}'))
     return c
@@ -400,6 +402,44 @@ with sync_playwright() as pw:
     tc = ctx_for(br, perms=False, simple=True); tp = page_for(tc, 'nadia-phone'); login(tp, 'nadia@garage.test', NADIA_PW); tp.wait_for_selector('#tr-label', timeout=15000); tp.wait_for_timeout(600)
     check('treasurer on a phone: Trésorerie, Clients, +, Factures, Plus', tp.evaluate("[...document.querySelectorAll('#tabbar .tab:not([hidden])')].sort((a,b)=>a.getBoundingClientRect().x-b.getBoundingClientRect().x).map(b=>b.dataset.t || '+')") == ['tresor', 'clients', '+', 'factures', 'plus'])
     tc.close()
+
+    # ---------- 9e. VIN through the garage server (NHTSA base, fake here) + engine sheet in the real base ----------
+    CIV = '2HGFC2F58JH512345'
+    r = http('POST', API + '/functions/v1/vehicle', {'vin': CIV})
+    check('vehicle server: refused without a garage login', isinstance(r, dict) and r.get('_status') == 401, r)
+    stok = token('saleh@garage.test', SALEH_PW)
+    r = http('POST', API + '/functions/v1/vehicle', {'vin': 'ABC123'}, stok)
+    check('vehicle server: a wrong VIN gets « 17 lettres et chiffres »', isinstance(r, dict) and r.get('_status') == 400 and '17 lettres' in r.get('_body', ''), r)
+    r = http('POST', API + '/functions/v1/vehicle', {'vin': CIV.lower()}, stok)
+    rr = (r or {}).get('r') or {}
+    check('vehicle server: mechanic decodes → 2018 HONDA Civic 2.0 L 4 cyl., only the useful fields sent back', (r or {}).get('ok') and rr.get('Make') == 'HONDA' and rr.get('ModelYear') == '2018' and rr.get('DisplacementL') == '2.0' and len(rr) == 16 and 'VIN' not in rr, r)
+    r = http('POST', API + '/functions/v1/vehicle', {'vin': CIV}, ttok)
+    check('vehicle server: the treasurer may decode too (read only, harmless)', (r or {}).get('ok'), r)
+    vc = ctx_for(br); vp = page_for(vc, 'saleh-vin'); vp.set_viewport_size({'width': 1100, 'height': 900}); login(vp, 'saleh@garage.test', SALEH_PW); vp.wait_for_selector('.acct', timeout=15000); vp.wait_for_timeout(800)
+    vp.evaluate("() => { const S = window.__garageApi.S; S.tab = 'agenda'; S.screen = 'job'; S.jobId = 'j3'; window.__garageApi.render(); }"); vp.wait_for_timeout(400)
+    vp.click('[data-act="scan-job"]'); vp.wait_for_selector('#scan-body'); vp.wait_for_timeout(600)
+    vp.click('[data-act="scan-type"]'); vp.fill('#scan-in', CIV); vp.click('[data-act="scan-typed"]')
+    try: vp.wait_for_selector('#scan-body .vehsum', timeout=12000); okv = True
+    except Exception: okv = False
+    body = (vp.text_content('#scan-body') or '').replace('\xa0', ' ')
+    check('team · mechanic: typed VIN decoded through the garage server: 2018 Honda Civic LX, 2,0 L 4 cyl.', okv and '2018 Honda Civic LX' in body and '2,0 L 4 cyl.' in body, body[:200])
+    vp.click('[data-act="scan-use"]'); toast_has(vp, 'Véhicule mis à jour'); vp.wait_for_timeout(800)
+    vj = json.loads(psql("select data->'vehicle' from public.docs where path='jobs/j3'") or '{}')
+    check('team · mechanic: « Mettre sur la job » saved in the real base (VIN, model, engine)', vj.get('vin') == CIV and vj.get('model') == 'Civic' and vj.get('engine') == '2,0 L 4 cyl.' and vj.get('drive') == 'Traction avant', vj)
+    vp.click('#speccard [data-act="spec-edit"]'); vp.wait_for_selector('#specform'); vp.fill('#sp-oilL', '4,4'); vp.click('[data-act="sp-visc"][data-v="0W-20"]'); vp.fill('#sp-oilFilter', 'PH7317'); vp.click('#sp-save')
+    check('team · mechanic: engine sheet saved', toast_has(vp, 'Fiche technique enregistrée'))
+    vp.wait_for_timeout(600)
+    spd = json.loads(psql("select data from public.docs where path='specs/2018-honda-civic-2-4'") or '{}')
+    check('team · engine sheet in the real base: 4.4 L 0W-20 PH7317, « by » Saleh', spd.get('oilL') == 4.4 and spd.get('oilVisc') == '0W-20' and spd.get('oilFilter') == 'PH7317' and spd.get('by') == 'Saleh', spd)
+    check('team · mechanic sees « Huile : 4,4 L · 0W-20 · filtre PH7317 » on the job', 'Huile : 4,4 L · 0W-20 · filtre PH7317' in (vp.text_content('#speccard') or '').replace('\xa0', ' '))
+    rd = http('GET', API + '/rest/v1/docs?select=path&col=eq.specs', token=atok)
+    check('team · the other mechanic (Ali) reads the engine sheet', isinstance(rd, list) and len(rd) == 1, rd)
+    r = doc_set(ttok, 'specs/2018-honda-civic-2-4', {'oilL': 99})
+    check('team · treasurer cannot change an engine sheet', isinstance(r, dict) and r.get('_status') in (400, 401, 403) and psql("select data->>'oilL' from public.docs where path='specs/2018-honda-civic-2-4'") == '4.4', r)
+    vc.close()
+    psql("delete from public.docs where col='specs'")
+    doc_set(otok, 'jobs/j3', dict(json.loads(psql("select data from public.docs where path='jobs/j3'")), vehicle={'make': 'Honda'}))
+    check('engine sheet and job vehicle back to the original state', psql("select count(*) from public.docs where col='specs'") == '0' and psql("select data->'vehicle'->>'vin' from public.docs where path='jobs/j3'") == '')
 
     # ---------- 10. end of day, access removed ----------
     sp.click('.tab[data-t="agenda"]'); sp.wait_for_selector('[data-act="sh-end"]', timeout=8000); sp.click('[data-act="sh-end"]')

@@ -600,6 +600,7 @@
     homeTab:function(){ return me && me.role === 'tresorier' ? 'tresor' : null; },
     greetName:function(){ return me ? first(me.name) : ''; },
     tellsClient:true, isMine:mineJob,
+    decodeVin:function(vin){ return invoke('vehicle', {vin:vin}).then(function(d){ return (d && d.r) || {}; }); },
     phoneTop:function(){ return me ? shiftCard() : ''; },
     plusItems:function(){
       var out = [];
