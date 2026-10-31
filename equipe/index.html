@@ -2139,8 +2139,23 @@ function extTabs(){ var e = ext(); return e && Array.isArray(e.tabs) ? e.tabs : 
 function extTab(k){ return extTabs().filter(function(t){ return t.key === k; })[0] || null; }
 function tabOk(k){ if (k === 'tresor') return canTresor(); return (['accueil','agenda','clients','factures','reglages','jour','plus','heures','dispos'].indexOf(k) >= 0 || !!extTab(k)) && allow('tab:' + k); }
 /* phone: a simpler set of screens (Aujourd'hui, Clients, Factures, Plus); bigger screens keep everything */
-var MQ = window.matchMedia ? window.matchMedia('(max-width: 699px)') : null;
-function phone(){ var o = lsGet('gm.ui'); if (o === 'full') return false; if (o === 'phone') return true; return !!(MQ && MQ.matches); }
+/* the device decides, not the window: a phone gets the phone screens, a computer (or a tablet) the full ones,
+   even in a narrow window. « Version complète » on a phone only lasts for this visit. */
+function phoneDevice(){
+  try {
+    var ua = navigator.userAgent || '', d = navigator.userAgentData;
+    if (/iPhone|iPod|Android.+Mobile|Mobile.+Firefox|Windows Phone|BlackBerry|BB10|webOS|Opera Mini|IEMobile/i.test(ua)) return true;
+    if (/iPad|Tablet|Android|Silk|Kindle|PlayBook/i.test(ua)) return false;
+    if (d && typeof d.mobile === 'boolean') return d.mobile;
+    var mm = window.matchMedia, small = Math.min(screen.width || 9999, screen.height || 9999) < 600;
+    return !!(small && mm && mm('(pointer: coarse)').matches && mm('(hover: none)').matches);
+  } catch(e){ return false; }
+}
+var PHONE_DEV = phoneDevice();
+function uiOverride(){ try { var o = sessionStorage.getItem('gm.ui'); return o === 'full' || o === 'phone' ? o : null; } catch(e){ return null; } }
+function setUiOverride(v){ try { if (v) sessionStorage.setItem('gm.ui', v); else sessionStorage.removeItem('gm.ui'); } catch(e){} }
+try { localStorage.removeItem('gm.ui'); } catch(e){}   /* an old « always full » choice no longer sticks */
+function phone(){ var o = uiOverride(); if (o) return o === 'phone'; return PHONE_DEV; }
 function defTab(){ var e = ext(), h = e && typeof e.homeTab === 'function' ? e.homeTab() : null; if (h && tabOk(h)) return h; return phone() ? 'jour' : 'accueil'; }
 function tabShown(k){ if (phone()){ if (k === 'tresor') return !tabOk('jour'); return ['jour','clients','factures','plus'].indexOf(k) >= 0; } if (['jour','plus','heures','dispos'].indexOf(k) >= 0) return false; return ['accueil','agenda','clients','factures','reglages','tresor'].indexOf(k) >= 0 || (!!extTab(k) && !extTab(k).hidden); }
 function fitTab(){
@@ -3391,7 +3406,7 @@ function viewDash(){
   quick += '<button type="button" class="chip" data-act="tab" data-t="agenda">Ouvrir l\'agenda</button>';
   if (lm) quick += '<button type="button" class="chip" data-act="tab" data-t="dispos">Mes disponibilités</button>';
   else if (mechanics().length && canHours()) quick += '<button type="button" class="chip" data-act="tab" data-t="dispos">Disponibilités des mécanos</button>';
-  if (lsGet('gm.ui') === 'full' && MQ && MQ.matches) quick += '<button type="button" class="chip" data-act="ui-phone">Version simple pour téléphone</button>';
+  if (uiOverride() === 'full' && PHONE_DEV) quick += '<button type="button" class="chip" data-act="ui-phone">Version simple pour téléphone</button>';
   b += '<div class="dash"><div class="quick" role="group" aria-label="Raccourcis">' + quick + '</div>';
 
   /* today, like a control panel */
@@ -4460,8 +4475,8 @@ document.addEventListener('click', function(e){
     case 'ph-sec': phoneSecShow(v); break;
     case 'wiz-next': wizNext(); break;
     case 'wiz-prev': wizGo(Math.max(1, (S.wiz || 1) - 1)); break;
-    case 'ui-full': lsSet('gm.ui', 'full'); S.tab = 'accueil'; if (location.hash) location.hash = 'accueil'; render(); window.scrollTo(0, 0); break;
-    case 'ui-phone': lsSet('gm.ui', null); S.tab = defTab(); if (location.hash) location.hash = S.tab; render(); window.scrollTo(0, 0); break;
+    case 'ui-full': setUiOverride('full'); S.tab = 'accueil'; if (location.hash) location.hash = 'accueil'; render(); window.scrollTo(0, 0); break;
+    case 'ui-phone': setUiOverride(null); S.tab = defTab(); if (location.hash) location.hash = S.tab; render(); window.scrollTo(0, 0); break;
     case 'ph-install': installApp(); break;
     case 'dash-mech': S.mech = truckMode() ? (truckOfMech(today(), v) || '') : (v || ''); lsSet('gm.mech', S.mech); S.day = today(); if (location.hash !== '#agenda') location.hash = 'agenda'; else { S.tab = 'agenda'; render(); } break;
     case 'dash-unpaid': S.invFilter = 'unpaid'; if (location.hash !== '#factures') location.hash = 'factures'; else { S.tab = 'factures'; render(); } break;
@@ -4635,7 +4650,7 @@ function viewPlus(){
   var b = banners() + '<nav class="ph-menu" aria-label="Plus">' + items.map(function(it){ return '<a class="ph-row" href="' + esc(it.href) + '"><span><b>' + esc(it.label) + '</b>' + (it.sub ? '<span>' + esc(it.sub) + '</span>' : '') + '</span>' + RI.chev + '</a>'; }).join('') + '</nav>';
   if (window.__webDownloads) b += '<details class="sect fold"><summary>Mettre l\'app sur l\'écran d\'accueil</summary><p class="small">Elle s\'ouvrira en plein écran, comme une vraie app.</p>' + (window.__bip ? '<button type="button" class="btn primary block" data-act="ph-install">Installer l\'app</button>' : '') +
     '<ol class="small"><li><b>iPhone (Safari)</b> : bouton Partager, puis « Sur l\'écran d\'accueil ».</li><li><b>Android (Chrome)</b> : menu ⋮, puis « Ajouter à l\'écran d\'accueil » ou « Installer l\'application ».</li></ol></details>';
-  b += '<button type="button" class="ph-row" data-act="ui-full"><span><b>Version complète</b><span>Grille de l\'agenda, semaine, tous les détails</span></span>' + RI.chev + '</button>';
+  b += '<button type="button" class="ph-row" data-act="ui-full"><span><b>Version complète</b><span>Pour cette visite : grille de l\'agenda, semaine, tous les détails</span></span>' + RI.chev + '</button>';
   if (e && typeof e.accountRow === 'function') b += e.accountRow() || '';
   return {top:top, body:b};
 }
@@ -4982,7 +4997,6 @@ function phoneInvoice(){
     }
   });
   document.addEventListener('click', function(ev){ var a = ev.target.closest('a[data-sec]'); if (a) S.setSecName = a.dataset.sec; });
-  if (MQ){ var onMq = function(){ if (!lsGet('gm.ui')){ fitTab(); render(); } }; if (MQ.addEventListener) MQ.addEventListener('change', onMq); else if (MQ.addListener) MQ.addListener(onMq); }
 })();
 function changeStatus(v, extra){
   var j = findJob(S.jobId); if (!j || !ST[v] || (j.status === v && !extra)) return Promise.resolve(false);
