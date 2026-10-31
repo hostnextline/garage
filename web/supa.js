@@ -363,6 +363,41 @@
       }, function(){ busy(false); msg('Pas de connexion au serveur. Vérifie Internet.'); });
     };
   }
+  /* the invitation link (#invite=…): the person chooses a password, then is signed in */
+  function errJson(r){ return (r.error && r.error.context && r.error.context.json ? r.error.context.json() : Promise.resolve({})).then(function(j){ return j || {}; }, function(){ return {}; }); }
+  function showInvite(token){
+    gate({title:'Bienvenue', body:'<p class="g-help">Un instant…</p>'});
+    var bad = function(text){
+      gate({title:'Invitation', body:'<div class="g-msg">' + esc(text) + '</div><button class="g-go" id="g-go" data-label="Aller à la connexion" type="button">Aller à la connexion</button>'});
+      document.getElementById('g-go').onclick = function(){ showLogin(); };
+    };
+    T.sb.functions.invoke('members', {body:{action:'invite-info', token:token}}).then(function(r){
+      if (r.error) return errJson(r).then(function(j){ bad(j.message || (netMsg(r.error.message) ? 'Pas de connexion au serveur. Vérifie Internet, puis rouvre le lien.' : 'Cette invitation n\'est plus valide. Demande au propriétaire de t\'en renvoyer une.')); });
+      var d = r.data || {}, first = String(d.name || '').trim().split(/\s+/)[0];
+      gate({title:'Bonjour' + (first ? ' ' + esc(first) : '') + ' !', body:
+        '<p class="g-help">Tu es invité dans le carnet de <b>' + esc(d.garage || 'Garage mobile') + '</b>. Choisis ton mot de passe : il servira à te connecter.</p>' +
+        '<form id="g-form" novalidate><div class="g-f"><label for="g-email">Ton courriel</label><input id="g-email" type="email" autocomplete="username" value="' + esc(d.email) + '" readonly></div>' +
+        '<div class="g-f"><label for="g-pw">Choisis ton mot de passe <span class="g-help">(8 caractères ou plus)</span></label><input id="g-pw" type="password" autocomplete="new-password"></div>' +
+        '<div class="g-f"><label for="g-pw2">Écris-le encore une fois</label><input id="g-pw2" type="password" autocomplete="new-password"></div>' +
+        '<p class="g-msg" id="g-msg" role="alert" hidden></p><button class="g-go" id="g-go" data-label="Activer mon compte" type="submit">Activer mon compte</button></form>'});
+      document.getElementById('g-form').onsubmit = function(e){
+        e.preventDefault();
+        var pw = document.getElementById('g-pw').value, pw2 = document.getElementById('g-pw2').value;
+        if (pw.length < 8){ msg('Le mot de passe doit avoir au moins 8 caractères.'); return; }
+        if (pw !== pw2){ msg('Les deux mots de passe ne sont pas pareils. Écris-les encore.'); return; }
+        busy(true); msg('');
+        T.sb.functions.invoke('members', {body:{action:'invite-accept', token:token, password:pw}}).then(function(r2){
+          if (r2.error) return errJson(r2).then(function(j){ busy(false); msg(j.message || 'L\'activation n\'a pas passé. Réessaie.'); });
+          return T.sb.auth.signInWithPassword({email:d.email, password:pw}).then(function(s){
+            busy(false);
+            if (s.error){ showLogin('Compte activé. Connecte-toi avec ton courriel et ton mot de passe.'); return; }
+            lsSet('gm.team.email', d.email); lsSet('gm.welcome', '1');
+            afterSession(s.data.session);
+          });
+        }, function(){ busy(false); msg('Pas de connexion au serveur. Vérifie Internet.'); });
+      };
+    }, function(){ bad('Pas de connexion au serveur. Vérifie Internet, puis rouvre le lien.'); });
+  }
   function showNoAccess(){
     gate({title:'Pas d\'accès', body:'<div class="g-msg">Ce compte n\'a pas (ou plus) accès au carnet du garage. Parle au propriétaire.</div><button class="g-go" id="g-go" data-label="Changer de compte" type="button">Changer de compte</button>'});
     document.getElementById('g-go').onclick = function(){ T.sb.auth.signOut().then(function(){ showLogin(); }, function(){ showLogin(); }); };
@@ -433,6 +468,8 @@
     if (!CFG.url || !CFG.key || !window.supabase){ showConfigMissing(); failReady(err('no_config')); return; }
     T.sb = window.supabase.createClient(CFG.url, CFG.key, {auth:{persistSession:true, autoRefreshToken:true, storageKey:'gm.team.auth', detectSessionInUrl:false}});
     T.sb.auth.onAuthStateChange(function(ev){ if (ev === 'SIGNED_OUT' && started) location.reload(); });
+    var inv = (String(location.hash).match(/^#invite=([A-Za-z0-9_-]{20,80})$/) || [])[1];
+    if (inv){ try { history.replaceState(null, '', location.pathname + location.search); } catch(e){} showInvite(inv); return; }
     var su = storedUser();
     if (navigator.onLine === false && su && su.id && cachedMember(su.id)){ offlineStart(su.id); return; }
     withTimeout(T.sb.auth.getSession(), 6000).then(function(r){

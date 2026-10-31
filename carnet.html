@@ -848,6 +848,13 @@ a.chip{color:var(--ink);text-decoration:none;display:inline-flex;align-items:cen
 details.adv{border-top:1px dashed var(--line-strong);padding-top:8px;margin-top:4px}
 details.adv > summary{cursor:pointer;color:var(--muted);font-weight:600;font-size:15px;min-height:40px;display:flex;align-items:center}
 details.adv[open] > summary{margin-bottom:8px}
+.inst .inst-b{background:var(--sunk);border-radius:16px;padding:12px 14px}
+.inst .inst-b h3{margin:0 0 6px;font-size:17px}
+.inst ol{margin:0;padding-left:22px;display:grid;gap:8px;font-size:16px;line-height:1.4}
+.inst .ish{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--surface);border:1px solid var(--line);vertical-align:middle;color:#0a6cff}
+.qrbox{width:200px;height:200px;padding:10px;border-radius:14px;background:#fff;justify-self:center;border:1px solid var(--line)}
+.qrbox svg{width:100%;height:100%;display:block}
+.inst-url{text-align:center;font-size:15px;word-break:break-all}
 .guide{display:grid;gap:10px}
 .guide ol{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .guide li a,.guide li button.g-go{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:10px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);color:var(--ink);text-decoration:none;font:inherit;font-weight:600;text-align:left;cursor:pointer}
@@ -1549,6 +1556,7 @@ function render(){
   if (vkey === S._vkey) $$('#main input[id], #main textarea[id], #main select[id]').forEach(function(el){ if (el.type !== 'checkbox' && el.type !== 'radio' && el.type !== 'hidden') vals[el.id] = el.value; });
   try { if (aeId){ selS = ae.selectionStart; selE = ae.selectionEnd; } } catch(x){}
   setView(v);
+  appInstCheck(); welcomeCheck();
   if (phone() || S.tab === 'reglages') phoneAfter();
   if (vkey === S._vkey) Object.keys(vals).forEach(function(id){ var el = document.getElementById(id); if (el && el.value !== vals[id] && el.dataset.keep !== 'no') el.value = vals[id]; });
   S._vkey = vkey;
@@ -2587,6 +2595,7 @@ function guideItems(){
     {t:'Les mécanos et les camions', sub:'Qui part avec quel camion.', done:mechanics().length > 0 && (!truckMode() || trucks().some(function(tr){ return tr.on !== false && tr.mech; })), sec:truckMode() ? 'Camions' : 'Mécanos'}
   ];
   var e = ext(); if (e && typeof e.guideItems === 'function') it = it.concat(e.guideItems() || []);
+  if (window.__webDownloads) it.push({t:'Mettre l\'app sur ton téléphone', sub:'Elle s\'ouvre comme une vraie app, avec son icône. On t\'explique comment.', done:!!S.appInst || isStandalone(), act:'app-install'});
   it.push({t:'Ta première réservation', sub:'Avec le bouton « + Réservation ».', done:S.jobs.length > 0, act:canBook() ? (phone() ? 'ph-book' : 'new') : ''});
   return it;
 }
@@ -3748,6 +3757,9 @@ document.addEventListener('click', function(e){
     case 'ui-full': setUiOverride('full'); S.tab = 'accueil'; if (location.hash) location.hash = 'accueil'; render(); window.scrollTo(0, 0); break;
     case 'ui-phone': setUiOverride(null); S.tab = defTab(); if (location.hash) location.hash = S.tab; render(); window.scrollTo(0, 0); break;
     case 'ph-install': installApp(); break;
+    case 'app-install': installSheet(); break;
+    case 'app-done': appInstMark('manuel'); closeSheet(); toast('Bravo ! L\'app est sur ton téléphone.'); render(); break;
+    case 'inst-later': try { localStorage.setItem('gm.inst.later', '1'); } catch(x){} render(); break;
     case 'dash-mech': S.mech = truckMode() ? (truckOfMech(today(), v) || '') : (v || ''); lsSet('gm.mech', S.mech); S.day = today(); if (location.hash !== '#agenda') location.hash = 'agenda'; else { S.tab = 'agenda'; render(); } break;
     case 'dash-unpaid': S.invFilter = 'unpaid'; if (location.hash !== '#factures') location.hash = 'factures'; else { S.tab = 'factures'; render(); } break;
     default: if (ext() && typeof ext().onAction === 'function') ext().onAction(a, b);
@@ -3835,7 +3847,7 @@ function viewDay(){
   var b = banners();
   if (d === t && e && typeof e.phoneTop === 'function') b += e.phoneTop() || '';
   if (!S.loaded && !S.noDb) return {top:top, body:b + '<p class="muted">Ouverture du carnet…</p>'};
-  if (d === t) b += guideHTML();
+  if (d === t){ var gh = guideHTML(); b += gh || installCard(); }
   var closed = !dayAnyOpen(info);
   if (closed) b += '<div class="banner"><p><b>Fermé ce jour-là.</b></p>' + (canHours() ? '<button type="button" class="btn sm" data-act="day-open">Ouvrir cette journée</button>' : '') + '</div>';
   var rows = all.map(function(j, i){ return {at:toMin(j.time), job:j, i:i}; });
@@ -3934,14 +3946,61 @@ function viewPlus(){
   if (tabOk('reglages')) items.push({href:'#reglages', label:'Réglages', sub:'Garage, prix, taxes, services, mécanos'});
   var top = '<div class="wrap top-in"><div class="brandrow"><div><div class="eyebrow">' + esc(bizName()) + '</div><h1>Plus</h1></div></div></div>';
   var b = banners() + '<nav class="ph-menu" aria-label="Plus">' + items.map(function(it){ return '<a class="ph-row" href="' + esc(it.href) + '"><span><b>' + esc(it.label) + '</b>' + (it.sub ? '<span>' + esc(it.sub) + '</span>' : '') + '</span>' + RI.chev + '</a>'; }).join('') + '</nav>';
-  if (window.__webDownloads) b += '<details class="sect fold"><summary>Mettre l\'app sur l\'écran d\'accueil</summary><p class="small">Elle s\'ouvrira en plein écran, comme une vraie app.</p>' + (window.__bip ? '<button type="button" class="btn primary block" data-act="ph-install">Installer l\'app</button>' : '') +
-    '<ol class="small"><li><b>iPhone (Safari)</b> : bouton Partager, puis « Sur l\'écran d\'accueil ».</li><li><b>Android (Chrome)</b> : menu ⋮, puis « Ajouter à l\'écran d\'accueil » ou « Installer l\'application ».</li></ol></details>';
+  if (window.__webDownloads && !isStandalone()) b += '<button type="button" class="ph-row" data-act="app-install"><span><b>Mettre l\'app sur l\'écran d\'accueil</b><span>' + (S.appInst ? 'Déjà fait sur un téléphone · revoir comment' : 'Elle s\'ouvre comme une vraie app') + '</span></span>' + RI.chev + '</button>';
   b += '<button type="button" class="ph-row" data-act="ui-full"><span><b>Version ordinateur</b><span>Pour cette visite : grille de l\'agenda, semaine, tous les détails</span></span>' + RI.chev + '</button>';
   if (e && typeof e.accountRow === 'function') b += e.accountRow() || '';
   return {top:top, body:b};
 }
 window.addEventListener('beforeinstallprompt', function(ev){ ev.preventDefault(); window.__bip = ev; });
-function installApp(){ var p = window.__bip; if (!p) return; p.prompt(); p.userChoice.then(function(){ window.__bip = null; render(); }, function(){}); }
+function installApp(){ var p = window.__bip; if (!p) return; p.prompt(); p.userChoice.then(function(c){ window.__bip = null; if (c && c.outcome === 'accepted') appInstMark('bouton'); render(); }, function(){}); }
+/* ---------- l'app sur l'écran d'accueil du téléphone (version web seulement) ---------- */
+function isStandalone(){ try { return !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)); } catch(e){ return false; } }
+function appUrl(){ return location.origin + location.pathname; }
+function devicePlat(){ var ua = navigator.userAgent || ''; if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return 'ios'; if (/Android/i.test(ua)) return 'android'; return phone() ? 'other' : 'pc'; }
+function appInstPath(){ return S.db && S.uid ? 'data/users/' + S.uid + '/app' : null; }
+function appInstMark(how){ S.appInst = true; var p = appInstPath(); if (p) S.db.doc(p).set({installedAt:Date.now(), how:how || 'auto'}).then(function(){}, function(){}); }
+function appInstCheck(){
+  if (!window.__webDownloads || !appInstPath() || S.appInstAsked) return;
+  S.appInstAsked = true;
+  if (isStandalone()){ if (!S.appInst) appInstMark('auto'); return; }
+  S.db.doc(appInstPath()).get().then(function(sn){ if (sn.exists && sn.data() && sn.data().installedAt){ S.appInst = true; render(); } }, function(){});
+}
+var QR_LIB = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+function qrInto(el, text){
+  var draw = function(){ try { var q = window.qrcode(0, 'M'); q.addData(text); q.make(); el.innerHTML = q.createSvgTag({cellSize:5, margin:2, scalable:true}); el.hidden = false; } catch(e){ el.hidden = true; } };
+  if (window.qrcode) return draw();
+  var s = document.createElement('script'); s.src = QR_LIB; s.onload = draw; s.onerror = function(){ el.hidden = true; }; document.head.appendChild(s);
+}
+var SHARE_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>';
+function installSheet(){
+  var plat = devicePlat(), url = appUrl();
+  var ios = '<li>Ouvre l\'app dans <b>Safari</b> (pas dans Chrome).</li><li>Touche le bouton <b>Partager</b> <span class="ish" aria-hidden="true">' + SHARE_ICON + '</span> (en bas de l\'écran).</li><li>Descends et touche <b>« Sur l\'écran d\'accueil »</b>.</li><li>Touche <b>« Ajouter »</b>. L\'icône du garage apparaît avec tes autres apps.</li>';
+  var andr = '<li>Ouvre l\'app dans <b>Chrome</b>.</li><li>Touche le menu <b>⋮</b> (en haut à droite).</li><li>Touche <b>« Installer l\'application »</b> (ou « Ajouter à l\'écran d\'accueil »).</li><li>Touche <b>« Installer »</b>. L\'icône du garage apparaît avec tes autres apps.</li>';
+  var h = '<div class="stack inst">';
+  if (window.__bip) h += '<button type="button" class="btn primary block" data-act="ph-install">Installer l\'app maintenant</button><p class="small muted">Ou fais-le à la main :</p>';
+  if (plat === 'pc') h += '<p><b>Sur l\'ordinateur, il n\'y a rien à installer.</b> Pour ton téléphone : ouvre l\'appareil photo et vise ce code, ou écris l\'adresse dans le navigateur du téléphone.</p><div class="qrbox" id="inst-qr" role="img" aria-label="Code QR de l\'adresse de l\'app" hidden></div><p class="mono sel inst-url">' + esc(url.replace(/^https?:\/\//, '')) + '</p>';
+  var blocks = [['Sur un iPhone', ios, 'ios'], ['Sur un Android (Samsung, Pixel…)', andr, 'android']];
+  if (plat === 'android') blocks.reverse();
+  h += blocks.map(function(x){ return '<section class="inst-b" data-p="' + x[2] + '"><h3>' + x[0] + '</h3><ol>' + x[1] + '</ol></section>'; }).join('');
+  h += '<p class="small muted">Ensuite, ouvre toujours l\'app avec cette icône. La première fois, connecte-toi : elle se souvient de toi.</p>' +
+    '<button type="button" class="btn block" data-act="app-done">C\'est fait</button></div>';
+  openSheet('Mettre l\'app sur ton téléphone', 'Elle s\'ouvre comme une vraie app', h);
+  if (plat === 'pc'){ var el = $('#inst-qr'); if (el) qrInto(el, url); }
+}
+/* everyone but the owner (who has the guide): a small card on the phone until the app is on the home screen */
+function installCard(){
+  if (!window.__webDownloads || !phone() || isStandalone() || S.appInst) return '';
+  try { if (localStorage.getItem('gm.inst.later') === '1') return ''; } catch(e){}
+  return '<section class="sect inst-card" id="inst-card"><h3>Mets l\'app sur ton écran d\'accueil</h3><p class="small">Elle s\'ouvrira d\'un seul geste, comme une vraie app.</p><div class="grid2"><button type="button" class="btn primary" data-act="app-install">Comment faire</button><button type="button" class="btn ghost" data-act="inst-later">Plus tard</button></div></section>';
+}
+/* right after someone activates the account from the invitation: show how to put the app on the phone */
+function welcomeCheck(){
+  var w = null; try { w = localStorage.getItem('gm.welcome'); } catch(e){}
+  if (w !== '1' || !S.loaded) return;
+  try { localStorage.removeItem('gm.welcome'); } catch(e){}
+  toast('Ton compte est activé. Bienvenue !');
+  if (window.__webDownloads && phone() && !isStandalone()) setTimeout(installSheet, 700);
+}
 /* opening hours, one day at a time */
 function viewHours(){
   var t = today(), rows = '';

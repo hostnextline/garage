@@ -1,5 +1,6 @@
 // Équipe et accès : seulement le propriétaire (sauf « setup », qui crée le tout premier propriétaire avec un code à usage unique).
-// POST { action: 'setup' | 'list' | 'create' | 'update' | 'password' | 'remove' | 'secrets' | 'secrets-set' | 'sms-test', ... }
+// POST { action: 'setup' | 'list' | 'create' | 'invite' | 'invite-resend' | 'update' | 'password' | 'remove' | 'secrets' | 'secrets-set' | 'sms-test', ... }
+// Sans compte (lien d'invitation) : { action: 'invite-info' | 'invite-accept', token, password? }
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0';
 
 const SB_URL = Deno.env.get('SUPABASE_URL')!;
@@ -60,6 +61,86 @@ async function secretMap() {
   return s;
 }
 const mask = (v?: string) => (v ? '…' + v.slice(-4) : '');
+
+// ---------- invitations : le propriétaire écrit un courriel, la personne choisit son mot de passe avec le lien ----------
+const DEFAULT_BASE = Deno.env.get('TRACK_BASE') || 'https://hostnextline.github.io/garage/equipe/';
+const ROLE_FR: Record<string, string> = { owner: 'propriétaire', bureau: 'bureau', mecano: 'mécano', tresorier: 'trésorier' };
+const INVITE_DAYS = 7;
+function newToken(n = 24) {
+  const b = new Uint8Array(n); crypto.getRandomValues(b);
+  return btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function pickBase(baseIn: unknown, s: Record<string, any>) {
+  let base = s.TRACK_BASE?.value || DEFAULT_BASE;
+  const b = String(baseIn || '');
+  try {
+    const u = new URL(b);
+    if (/^[^\s?#]+\/$/.test(b) && (u.origin === new URL(base).origin || /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(u.origin))) base = b;
+  } catch (_) { /* default */ }
+  return base;
+}
+async function garageName() {
+  const { data } = await admin.from('docs').select('data').eq('path', 'config/main').maybeSingle();
+  return String((data?.data as any)?.biz?.name || 'Garage mobile').trim();
+}
+const h = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
+function inviteMessage(o: { name: string; email: string; role: string; garage: string; by: string; link: string }) {
+  const first = o.name.split(' ')[0] || o.name, role = ROLE_FR[o.role] || o.role;
+  const subject = `Ton accès au carnet de ${o.garage}`;
+  const text = `Bonjour ${first},\n\n${o.by} t'a ajouté à l'équipe de ${o.garage} (${role}).\n\n` +
+    `1. Active ton compte et choisis ton mot de passe avec ce lien (valide ${INVITE_DAYS} jours) :\n${o.link}\n\n` +
+    `2. Mets l'app sur l'écran d'accueil de ton téléphone :\n` +
+    `- iPhone (Safari) : bouton Partager, puis « Sur l'écran d'accueil », puis « Ajouter ».\n` +
+    `- Android (Chrome) : menu ⋮, puis « Installer l'application » (ou « Ajouter à l'écran d'accueil »).\n\n` +
+    `Ton courriel pour te connecter : ${o.email}\n`;
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5;color:#1e1915;max-width:520px">` +
+    `<p>Bonjour ${h(first)},</p><p>${h(o.by)} t'a ajouté à l'équipe de <b>${h(o.garage)}</b> (${h(role)}).</p>` +
+    `<p><b>1. Active ton compte</b> et choisis ton mot de passe :</p>` +
+    `<p><a href="${h(o.link)}" style="display:inline-block;background:#1e1915;color:#ffffff;text-decoration:none;font-weight:bold;padding:14px 22px;border-radius:12px">Activer mon compte</a></p>` +
+    `<p style="font-size:13px;color:#6b5e55">Le lien est valide ${INVITE_DAYS} jours. S'il ne s'ouvre pas, copie cette adresse : ${h(o.link)}</p>` +
+    `<p><b>2. Mets l'app sur ton téléphone</b> (elle s'ouvrira comme une vraie app) :</p>` +
+    `<ul><li><b>iPhone (Safari)</b> : bouton Partager, puis « Sur l'écran d'accueil », puis « Ajouter ».</li>` +
+    `<li><b>Android (Chrome)</b> : menu ⋮, puis « Installer l'application » (ou « Ajouter à l'écran d'accueil »).</li></ul>` +
+    `<p>Ton courriel pour te connecter : <b>${h(o.email)}</b></p></div>`;
+  return { subject, text, html };
+}
+async function sendInvite(s: Record<string, any>, name: string, email: string, msg: { subject: string; text: string; html: string }) {
+  if (!s.GHL_TOKEN || !s.GHL_LOCATION_ID) return { status: 'off' };
+  try {
+    const parts = name.trim().split(/\s+/);
+    const up = await ghl('/contacts/upsert', '2021-07-28', s.GHL_TOKEN.value, { locationId: s.GHL_LOCATION_ID.value, firstName: parts[0] || undefined, lastName: parts.slice(1).join(' ') || undefined, email, source: 'Garage mobile', tags: ['garage-mobile', 'equipe'] });
+    const contactId = up.contact?.id || up.id;
+    if (!contactId) throw new Error('GoHighLevel : contact non créé');
+    await ghl('/conversations/messages', '2021-04-15', s.GHL_TOKEN.value, { type: 'Email', contactId, subject: msg.subject, html: msg.html, message: msg.text });
+    return { status: 'sent' };
+  } catch (e) {
+    return { status: 'error', error: String((e as Error).message || e) };
+  }
+}
+/* a fresh link for this person (older unused links stop working) */
+async function makeInvite(userId: string, email: string, by: string) {
+  await admin.from('invites').delete().eq('user_id', userId).is('used_at', null);
+  const token = newToken();
+  const { error } = await admin.from('invites').insert({ token_hash: await sha256(token), user_id: userId, email, created_by: by, expires_at: new Date(Date.now() + INVITE_DAYS * 86400000).toISOString() });
+  if (error) throw new Error('L\'invitation n\'a pas pu être créée : ' + error.message);
+  return token;
+}
+async function inviteAndSend(me: any, m: { user_id: string; name: string; role: string }, email: string, baseIn: unknown) {
+  const s = await secretMap();
+  const token = await makeInvite(m.user_id, email, me.user_id);
+  const link = pickBase(baseIn, s) + '#invite=' + token;
+  const msg = inviteMessage({ name: m.name, email, role: m.role, garage: await garageName(), by: String(me.name || 'Le propriétaire').split(' ')[0], link });
+  const mail = await sendInvite(s, m.name, email, msg);
+  await admin.from('invites').update({ sent_by: mail.status === 'sent' ? 'courriel' : 'manuel' }).eq('token_hash', await sha256(token));
+  return { link, mail, message: { subject: msg.subject, body: msg.text } };
+}
+async function inviteRow(token: unknown) {
+  const t = String(token || '');
+  if (!/^[A-Za-z0-9_-]{20,80}$/.test(t)) return null;
+  const { data } = await admin.from('invites').select('*').eq('token_hash', await sha256(t)).maybeSingle();
+  if (!data || data.used_at || Date.parse(data.expires_at) < Date.now()) return null;
+  return data;
+}
 const STRIPE_BASE = Deno.env.get('STRIPE_BASE') || 'https://api.stripe.com';
 // Stripe: the key stays here (never in the browser); saving it creates the « paid » notice (webhook) toward the client function
 async function stripeCall(key: string, method: string, path: string, params?: [string, string][]) {
@@ -78,10 +159,14 @@ function stripeStatus(s: Record<string, any>) {
 
 async function listMembers() {
   const { data: ms } = await admin.from('members').select('*').order('created_at');
+  const { data: inv } = await admin.from('invites').select('user_id,created_at,expires_at,used_at,sent_by').order('created_at', { ascending: false });
   const out = [];
   for (const m of ms || []) {
     const { data } = await admin.auth.admin.getUserById(m.user_id);
-    out.push({ ...m, email: data?.user?.email || '', last_sign_in_at: data?.user?.last_sign_in_at || null });
+    const last = (inv || []).find((x: any) => x.user_id === m.user_id);
+    const signed = data?.user?.last_sign_in_at || null;
+    const invite = last && !last.used_at && !signed ? { at: last.created_at, expires_at: last.expires_at, expired: Date.parse(last.expires_at) < Date.now(), sent_by: last.sent_by } : null;
+    out.push({ ...m, email: data?.user?.email || '', last_sign_in_at: signed, invite });
   }
   return out;
 }
@@ -116,6 +201,29 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    // ---- the invited person, with the secret link (no account yet) ----
+    if (action === 'invite-info') {
+      const row = await inviteRow(body.token);
+      if (!row) return fail('Cette invitation n\'est plus valide (déjà utilisée ou plus de 7 jours). Demande au propriétaire de t\'en renvoyer une.', 404, 'bad_invite');
+      const { data: m } = await admin.from('members').select('name,role,active').eq('user_id', row.user_id).maybeSingle();
+      if (!m || !m.active) return fail('Ce compte n\'a plus accès au garage. Parle au propriétaire.', 403, 'no_access');
+      return json({ ok: true, name: m.name, role: m.role, email: row.email, garage: await garageName() });
+    }
+    if (action === 'invite-accept') {
+      const password = String(body.password || '');
+      if (password.length < 8) return fail('Le mot de passe doit avoir au moins 8 caractères.');
+      const row = await inviteRow(body.token);
+      if (!row) return fail('Cette invitation n\'est plus valide (déjà utilisée ou plus de 7 jours). Demande au propriétaire de t\'en renvoyer une.', 404, 'bad_invite');
+      const { data: m } = await admin.from('members').select('active').eq('user_id', row.user_id).maybeSingle();
+      if (!m || !m.active) return fail('Ce compte n\'a plus accès au garage. Parle au propriétaire.', 403, 'no_access');
+      // one use only: take the link first, give it back if the password could not be set
+      const { data: took } = await admin.from('invites').update({ used_at: new Date().toISOString() }).eq('token_hash', row.token_hash).is('used_at', null).select();
+      if (!took?.length) return fail('Cette invitation vient d\'être utilisée.', 409, 'bad_invite');
+      const { error } = await admin.auth.admin.updateUserById(row.user_id, { password, email_confirm: true } as any);
+      if (error) { await admin.from('invites').update({ used_at: null }).eq('token_hash', row.token_hash); return fail('Le mot de passe n\'a pas été enregistré : ' + error.message); }
+      return json({ ok: true, email: row.email });
+    }
+
     const me = await caller(req);
     if (!me) return fail('Connecte-toi avec un compte du garage.', 401, 'not_member');
     if (me.role !== 'owner') return fail('Seul le propriétaire gère les accès.', 403, 'forbidden');
@@ -140,7 +248,41 @@ Deno.serve(async (req) => {
       return json({ ok: true, user_id: u.user.id, password, members: await listMembers() });
     }
 
+    if (action === 'invite') {
+      const email = clean(body.email, 120).toLowerCase(), name = clean(body.name), role = String(body.role || ''), mechanic = clean(body.mechanic) || null;
+      if (!emailOk(email)) return fail('Courriel invalide.');
+      if (!name) return fail('Écris le nom de la personne.');
+      if (!ROLES.includes(role)) return fail('Choisis un rôle.');
+      if (role === 'mecano' && !mechanic) return fail('Choisis le nom du mécano dans la liste.');
+      // nobody knows this password: the person chooses one with the link
+      const { data: u, error } = await admin.auth.admin.createUser({ email, password: newToken(24) + 'aA1!', email_confirm: true, user_metadata: { name } });
+      if (error || !u?.user) return fail(/already|exists|registered/i.test(error?.message || '') ? 'Ce courriel a déjà un compte. Dans la liste, touche « Renvoyer l\'invitation » ou « Nouveau mot de passe ».' : 'L\'invitation n\'a pas pu être créée : ' + (error?.message || ''));
+      const { error: e2 } = await admin.from('members').insert({ user_id: u.user.id, role, name, mechanic });
+      if (e2) {
+        await admin.auth.admin.deleteUser(u.user.id);
+        return fail(/members_mechanic_uq/.test(e2.message) ? `${mechanic} a déjà un compte.` : 'L\'invitation n\'a pas pu être créée : ' + e2.message);
+      }
+      try {
+        const r = await inviteAndSend(me, { user_id: u.user.id, name, role }, email, body.base);
+        return json({ ok: true, user_id: u.user.id, email, ...r, members: await listMembers() });
+      } catch (e) {
+        await admin.auth.admin.deleteUser(u.user.id);
+        return fail(String((e as Error).message || e), 500);
+      }
+    }
+
     const uid = String(body.user_id || '');
+    if (action === 'invite-resend') {
+      const { data: m } = await admin.from('members').select('*').eq('user_id', uid).maybeSingle();
+      if (!m) return fail('Cette personne n\'a plus de compte.', 404, 'no_member');
+      const { data: au } = await admin.auth.admin.getUserById(uid);
+      const { data: used } = await admin.from('invites').select('token_hash').eq('user_id', uid).not('used_at', 'is', null).limit(1);
+      if (au?.user?.last_sign_in_at || used?.length) return fail('Cette personne a déjà activé son compte. Pour l\'aider, donne-lui un nouveau mot de passe.');
+      const email = au?.user?.email || '';
+      if (!email) return fail('Cette personne n\'a pas de courriel.');
+      const r = await inviteAndSend(me, m, email, body.base);
+      return json({ ok: true, user_id: uid, email, ...r, members: await listMembers() });
+    }
     if (['update', 'password', 'remove'].includes(action)) {
       const { data: m } = await admin.from('members').select('*').eq('user_id', uid).maybeSingle();
       if (!m) return fail('Cette personne n\'a plus de compte.', 404, 'no_member');

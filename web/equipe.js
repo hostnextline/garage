@@ -424,12 +424,21 @@
         '<pre class="cred" hidden>' + esc(txt) + '</pre>' +
         '<div class="er-acts"><button type="button" class="btn sm steel" data-act="eq-copycred">Copier</button><a class="btn sm" href="' + esc('sms:?&body=' + encodeURIComponent(txt)) + '">Texter</a><a class="btn sm" href="' + esc('mailto:' + cr.email + '?subject=' + encodeURIComponent('Accès au carnet du garage') + '&body=' + encodeURIComponent(txt)) + '">Courriel</a><button type="button" class="btn sm" data-act="eq-hidecred">C\'est envoyé</button></div></section>';
     }
+    if (X.eq.invited){
+      var iv = X.eq.invited, sent = iv.mail && iv.mail.status === 'sent', ms = iv.message || {};
+      b += '<section class="sect created" id="eq-invited" aria-live="polite"><h3>' + (sent ? 'Invitation envoyée à ' : 'Invitation prête pour ') + esc(iv.name) + '</h3>' +
+        (sent ? '<p class="small">Un courriel est parti à <b>' + esc(iv.email) + '</b>. ' + esc(first(iv.name)) + ' touche « Activer mon compte », choisit son mot de passe, et c\'est fait. Il verra aussi comment mettre l\'app sur son téléphone.</p>'
+          : '<p class="small">' + (iv.mail && iv.mail.status === 'error' ? 'Le courriel automatique n\'est pas parti (' + esc(iv.mail.error) + '). ' : 'Les courriels automatiques ne sont pas branchés (textos automatiques, GoHighLevel). ') + 'Envoie-la toi-même avec un de ces boutons : le message est déjà écrit.</p>' +
+            '<div class="er-acts"><a class="btn sm steel" id="inv-mail" href="' + esc('mailto:' + iv.email + '?subject=' + encodeURIComponent(ms.subject || '') + '&body=' + encodeURIComponent(ms.body || iv.link)) + '">Envoyer par courriel</a>' +
+            '<a class="btn sm" href="' + esc('sms:?&body=' + encodeURIComponent((ms.body || iv.link))) + '">Envoyer par texto</a><button type="button" class="btn sm" data-act="eq-copylink">Copier le lien</button></div>') +
+        '<p class="muted small">Le lien marche une seule fois, pendant 7 jours.</p><button type="button" class="linkbtn" data-act="eq-hideinv">Fermer</button></section>';
+    }
     b += '<section class="sect"><h3>Personnes</h3>';
     if (!X.eq.list) b += '<p class="muted">Chargement…</p>';
     else X.eq.list.forEach(function(m){
       var self = m.user_id === me.user_id;
       b += '<div class="eqp' + (m.active ? '' : ' off') + '"><div class="eqp-head"><div><b>' + esc(m.name) + '</b>' + (self ? ' <span class="muted small">(toi)</span>' : '') + '<div class="small muted sel">' + esc(m.email) + '</div></div><span class="pillx r-' + m.role + '">' + ROLE[m.role] + '</span></div>' +
-        '<p class="small muted">' + (m.mechanic ? 'Dans l\'agenda : ' + esc(m.mechanic) + ' · ' : '') + (m.active ? (m.last_sign_in_at ? 'dernière connexion ' + esc(ago(m.last_sign_in_at)) : 'jamais connecté') : '<b>Accès désactivé</b>') + '</p>';
+        '<p class="small muted">' + (m.mechanic ? 'Dans l\'agenda : ' + esc(m.mechanic) + ' · ' : '') + (m.active ? (m.last_sign_in_at ? 'dernière connexion ' + esc(ago(m.last_sign_in_at)) : m.invite ? '<b>' + (m.invite.expired ? 'Invitation expirée' : 'Invitation envoyée ' + esc(ago(m.invite.at))) + '</b> · pas encore activé' : 'jamais connecté') : '<b>Accès désactivé</b>') + '</p>';
       if (X.eq.editing === m.user_id){
         b += '<div class="eq-form"><div class="field"><label for="ed-name">Nom</label><input id="ed-name" value="' + esc(m.name) + '" autocomplete="off"></div>' +
           '<div class="grid2"><div class="field"><label for="ed-role">Rôle</label>' + roleSelect('ed-role', m.role) + '</div><div class="field"><label for="ed-mech">Nom dans l\'agenda</label>' + mechSelect('ed-mech', m.mechanic) + '</div></div>' +
@@ -438,19 +447,19 @@
         b += '<div class="banner warn"><p>Supprimer le compte de ' + esc(m.name) + ' ? Ses jobs restent au carnet.</p></div><div class="er-acts"><button type="button" class="btn sm" data-act="eq-cancel">Garder</button><button type="button" class="btn sm danger solid" data-act="eq-remove" data-v="' + esc(m.user_id) + '">Supprimer</button></div>';
       } else {
         b += '<div class="er-acts"><button type="button" class="btn sm" data-act="eq-edit" data-v="' + esc(m.user_id) + '">Modifier</button>' +
-          (self ? '' : '<button type="button" class="btn sm" data-act="eq-pw" data-v="' + esc(m.user_id) + '">Nouveau mot de passe</button>') + '</div>' +
+          (self ? '' : (!m.last_sign_in_at && m.active ? '<button type="button" class="btn sm" data-act="eq-reinvite" data-v="' + esc(m.user_id) + '">' + (m.invite ? 'Renvoyer l\'invitation' : 'Envoyer une invitation') + '</button>' : '') + '<button type="button" class="btn sm" data-act="eq-pw" data-v="' + esc(m.user_id) + '">Nouveau mot de passe</button>') + '</div>' +
           (self ? '' : (m.active ? '<details class="small eq-more"><summary>Bloquer ou supprimer l\'accès</summary><div class="er-acts">' : '<div class="er-acts">') + '<button type="button" class="btn sm" data-act="eq-active" data-v="' + esc(m.user_id) + '">' + (m.active ? 'Bloquer l\'accès (garder le compte)' : 'Redonner l\'accès') + '</button><button type="button" class="btn sm danger" data-act="eq-confirm" data-v="' + esc(m.user_id) + '">Supprimer le compte</button></div>' + (m.active ? '</details>' : ''));
       }
       b += '</div>';
     });
     b += '</section>';
-    b += '<section class="sect"><h3>Ajouter une personne</h3>' +
+    b += '<section class="sect" id="eq-new"><h3>Inviter une personne</h3><p class="small">Écris son courriel : elle reçoit un lien, choisit elle-même son mot de passe, et son compte est activé.</p>' +
       '<div class="field"><label for="nw-name">Nom</label><input id="nw-name" autocomplete="off"></div>' +
       '<div class="field"><label for="nw-email">Courriel</label><input id="nw-email" type="email" inputmode="email" autocapitalize="off" spellcheck="false" autocomplete="off"></div>' +
       '<div class="grid2"><div class="field"><label for="nw-role">Rôle' + (A().help ? A().help('roles', 'les rôles') : '') + '</label>' + roleSelect('nw-role', 'mecano') + '</div><div class="field"><label for="nw-mech">Nom dans l\'agenda</label>' + mechSelect('nw-mech', '') + '</div></div>' +
       '<ul class="roles small"><li><b>Mécano</b> : seulement ses jobs, le bouton « En route », la facture sur place. Sa position est partagée pendant sa journée.</li><li><b>Bureau</b> : agenda, clients, factures et carte des mécanos. Pas les réglages.</li><li><b>Trésorier</b> : son propre écran, la trésorerie (dépenses avec photo des reçus, rapport, taxes à remettre, Excel). Il voit les clients et les factures, sans rien y changer.</li><li><b>Propriétaire</b> : tout, y compris les accès.</li></ul>' +
-      '<p class="formerr" id="nw-err" role="alert" hidden></p><button type="button" class="btn primary block" data-act="eq-add">Créer le compte</button>' +
-      '<p class="muted small">Un mot de passe temporaire est créé : tu l\'envoies à la personne.</p></section>';
+      '<p class="formerr" id="nw-err" role="alert" hidden></p><button type="button" class="btn primary block" data-act="eq-invite">Envoyer l\'invitation</button>' +
+      '<details class="small eq-more"><summary>Autre façon : créer un mot de passe temporaire</summary><p class="small">Pour quelqu\'un qui ne lit pas ses courriels : tu lui donnes toi-même un mot de passe.</p><button type="button" class="btn block" data-act="eq-add">Créer le compte avec un mot de passe temporaire</button></details></section>';
     var s = X.eq.secrets || {};
     b += '<section class="sect"><h3>Textos automatiques aux clients' + (A().help ? A().help('textos', 'les textos') : '') + '</h3>' +
       '<p class="small">' + (s.ghl ? '<span class="badge ok">Branché</span> Clé ' + esc(s.ghlToken) + ' · compte ' + esc(s.ghlLocation) : '<span class="badge warn">Pas branché</span> Sans GoHighLevel, le bouton « En route » prépare le texto et tu l\'envoies toi-même.') + '</p>' +
@@ -521,6 +530,30 @@
         break;
       }
       case 'eq-remove': b.disabled = true; invoke('members', {action:'remove', user_id:v}).then(function(r){ X.eq.list = r.members; X.eq.confirm = null; toast('Compte supprimé'); render(); }, function(e){ b.disabled = false; toast(e.message); }); break;
+      case 'eq-invite': {
+        var inm = val('nw-name'), iem = val('nw-email'), irl = val('nw-role'), imc = val('nw-mech');
+        if (!inm) return eqErr('Écris le nom de la personne.');
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(iem)) return eqErr('Écris un courriel valide.');
+        if (irl === 'mecano' && !imc) return eqErr(api.mechanics().length ? 'Choisis son nom dans l\'agenda (liste des mécanos).' : 'Ajoute d\'abord le nom de ce mécano dans Réglages → Mécanos.');
+        eqErr(''); b.disabled = true; b.textContent = 'Envoi…';
+        invoke('members', {action:'invite', name:inm, email:iem, role:irl, mechanic:imc, base:trackBase()}).then(function(r){
+          X.eq.list = r.members; X.eq.created = null; X.eq.invited = {name:inm, email:r.email || iem, link:r.link, mail:r.mail, message:r.message}; X.liveAt = 0;
+          ['nw-name', 'nw-email', 'nw-mech'].forEach(function(i){ var e = document.getElementById(i); if (e) e.value = ''; });
+          render(); window.scrollTo(0, 0);
+        }, function(e){ b.disabled = false; b.textContent = 'Envoyer l\'invitation'; eqErr(e.message); });
+        break;
+      }
+      case 'eq-reinvite': {
+        var rm = (X.eq.list || []).filter(function(x){ return x.user_id === v; })[0];
+        b.disabled = true; b.textContent = 'Envoi…';
+        invoke('members', {action:'invite-resend', user_id:v, base:trackBase()}).then(function(r){
+          X.eq.list = r.members; X.eq.created = null; X.eq.invited = {name:rm ? rm.name : '', email:r.email, link:r.link, mail:r.mail, message:r.message};
+          render(); window.scrollTo(0, 0);
+        }, function(e){ b.disabled = false; b.textContent = rm && rm.invite ? 'Renvoyer l\'invitation' : 'Envoyer une invitation'; toast(e.message); });
+        break;
+      }
+      case 'eq-copylink': { var lk = X.eq.invited && X.eq.invited.link; if (lk && navigator.clipboard) navigator.clipboard.writeText(lk).then(function(){ toast('Lien copié'); }, function(){ toast(lk); }); else if (lk) toast(lk); break; }
+      case 'eq-hideinv': X.eq.invited = null; render(); break;
       case 'eq-add': {
         var nm = val('nw-name'), em = val('nw-email'), rl = val('nw-role'), mc = val('nw-mech');
         if (!nm) return eqErr('Écris le nom de la personne.');
@@ -528,7 +561,7 @@
         if (rl === 'mecano' && !mc) return eqErr(api.mechanics().length ? 'Choisis son nom dans l\'agenda (liste des mécanos).' : 'Ajoute d\'abord le nom de ce mécano dans Réglages → Mécanos.');
         eqErr(''); b.disabled = true; b.textContent = 'Création…';
         invoke('members', {action:'create', name:nm, email:em, role:rl, mechanic:mc}).then(function(r){
-          X.eq.list = r.members; X.eq.created = {name:nm, email:em, password:r.password}; X.liveAt = 0;
+          X.eq.list = r.members; X.eq.invited = null; X.eq.created = {name:nm, email:em, password:r.password}; X.liveAt = 0;
           ['nw-name', 'nw-email', 'nw-mech'].forEach(function(i){ var e = document.getElementById(i); if (e) e.value = ''; });
           render(); window.scrollTo(0, 0);
         }, function(e){ b.disabled = false; b.textContent = 'Créer le compte'; eqErr(e.message); });
@@ -664,7 +697,7 @@
       if (!X.eq.list && !X.eq.loading && !X.eq.err) eqLoad();
       var s = X.eq.secrets || {}, n = (X.eq.list || []).filter(function(m){ return m.active; }).length;
       return [
-        {t:'Les comptes de ton équipe', sub:'Un compte par mécano et pour le bureau.', done:n > 1, href:'#equipe'},
+        {t:'Les comptes de ton équipe', sub:'Invite chaque personne avec son courriel.', done:n > 1, href:'#equipe'},
         {t:'Les textos automatiques aux clients', sub:'À brancher une seule fois, dans Équipe et accès.', done:!!s.ghl, href:'#equipe'},
         {t:'Le paiement par carte (facultatif)', sub:'Le client paie avec le lien reçu par texto.', done:!!s.stripe, href:'#equipe'}
       ];

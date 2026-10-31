@@ -13,6 +13,10 @@ http.createServer(async (req, res) => {
   if (req.url === '/contacts/upsert'){
     if (req.headers.version !== '2021-07-28') return send(res, 400, {message:'bad version'});
     if (b.locationId !== 'loc123') return send(res, 403, {message:'The token does not have access to this location'});
+    if (!b.phone && /^[^\s@]+@[^\s@]+$/.test(b.email || '')){   // a team member invited by email (no phone)
+      const id = contacts[b.email] || ('ct_' + b.email.split('@')[0]); const isNew = !contacts[b.email]; contacts[b.email] = id;
+      return send(res, 200, {new:isNew, contact:{id, email:b.email, firstName:b.firstName}, traceId:'t1'});
+    }
     if (!/^\+1\d{10}$/.test(b.phone || '')) return send(res, 422, {message:['phone must be valid']});
     const id = contacts[b.phone] || ('ct_' + b.phone.slice(-4)); const isNew = !contacts[b.phone]; contacts[b.phone] = id;
     return send(res, 200, {new:isNew, contact:{id, phone:b.phone, firstName:b.firstName}, traceId:'t1'});
@@ -20,6 +24,11 @@ http.createServer(async (req, res) => {
   if (req.url === '/conversations/messages'){
     if (req.headers.version !== '2021-04-15') return send(res, 400, {message:'bad version'});
     if (ghlFail === 'dnd') return send(res, 400, {message:'Contact has DND enabled for SMS'});
+    if (b.type === 'Email'){
+      if (ghlFail === 'noemail') return send(res, 400, {message:'Email service is not configured for this location'});
+      if (!b.contactId || !b.subject || !(b.html || b.message)) return send(res, 422, {message:'missing fields'});
+      return send(res, 201, {conversationId:'cv1', messageId:'e' + log.length, emailMessageId:'em' + log.length, msg:'Email queued'});
+    }
     if (b.type !== 'SMS' || !b.contactId || !b.message) return send(res, 422, {message:'missing fields'});
     return send(res, 201, {conversationId:'cv1', messageId:'m' + log.length, msg:'Message queued'});
   }
