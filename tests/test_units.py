@@ -9,14 +9,14 @@ with sync_playwright() as p:
     pg.click('#top [data-act="new"]'); pg.wait_for_timeout(250)
     sheet_new_client(pg, 'Client', 'Unités', '5145552222', '9 rue Test, Montréal H4P 2B5')
     print('LABEL SEEN:', repr(pg.inner_text('label[for="f-units"]')), repr(pg.inner_text('#f-units-lbl')))
-    check('U1. Duration is entered in units: "1 unité = 10 min", 6 units = 1 h by default', '1 unité = 10 min' in pg.inner_text('label[for="f-units"]').lower() and pg.input_value('#f-units') == '6' and pg.inner_text('#f-units-lbl') == '6 unités = 1 h')
+    check('U1. Duration label « Durée » (with a « ? »), 6 cases = 1 h by default', pg.inner_text('label[for="f-units"]').strip().startswith('Durée') and pg.locator('label[for="f-units"] .qhelp').count() == 1 and pg.input_value('#f-units') == '6' and pg.inner_text('#f-units-lbl') == '= 1 h (6 cases de 10 min)', pg.inner_text('#f-units-lbl'))
     pg.click('[data-act="units"][data-v="1"]'); pg.wait_for_timeout(30)
-    ok_plus = pg.input_value('#f-units') == '7' and pg.inner_text('#f-units-lbl') == '7 unités = 1 h 10'
+    ok_plus = pg.input_value('#f-units') == '7' and pg.inner_text('#f-units-lbl') == '= 1 h 10 (7 cases de 10 min)'
     pg.click('[data-act="units"][data-v="-1"]'); pg.click('[data-act="units"][data-v="-1"]'); pg.wait_for_timeout(30)
-    ok_minus = pg.input_value('#f-units') == '5' and pg.inner_text('#f-units-lbl') == '5 unités = 50 min'
+    ok_minus = pg.input_value('#f-units') == '5' and pg.inner_text('#f-units-lbl') == '= 50 min (5 cases de 10 min)'
     check('U2. − / + change units and show the time', ok_plus and ok_minus, pg.inner_text('#f-units-lbl'))
     pg.fill('#f-units', '12'); pg.wait_for_timeout(30)
-    check('U2b. Typing 12 gives 2 h', pg.inner_text('#f-units-lbl') == '12 unités = 2 h')
+    check('U2b. Typing 12 gives 2 h', pg.inner_text('#f-units-lbl') == '= 2 h (12 cases de 10 min)', pg.inner_text('#f-units-lbl'))
     pg.fill('#f-units', 'ab'); pg.wait_for_timeout(30)
     check('U2c. Letters are refused', pg.input_value('#f-units') == '')
     pg.fill('#f-units', '12')
@@ -33,7 +33,7 @@ with sync_playwright() as p:
     check('U5c. A 12-unit booking covers 12 cases', ab and abs(ab['height'] - (12 * 24 - 3)) <= 2, ab)
     pg.screenshot(path=os.path.join(SC, 'shot_units_grid.png'), full_page=False)
     pg.locator('.appt', has_text='Client Unités').click(); pg.wait_for_timeout(80)
-    check('U6. Job card shows "2 h (12 unités)"', '2 h (12 unités)' in pg.inner_text('.when'), pg.inner_text('.when'))
+    check('U6. Job card shows "2 h" (no units)', '2 h' in pg.inner_text('.when') and 'unité' not in pg.inner_text('.when'), pg.inner_text('.when'))
     pg.click('[data-act="back"]'); pg.wait_for_timeout(60)
     # periods
     pg.click('[data-act="hours-edit"]'); pg.wait_for_timeout(80)
@@ -61,15 +61,15 @@ with sync_playwright() as p:
     pg.click('.chip[data-act="view"][data-v="grid"]'); pg.wait_for_timeout(60)
     # change the unit to 15 min
     pg.click('.tab[data-t="reglages"]'); pg.wait_for_timeout(80)
-    check('U12. Settings show "1 unité = 10 min" selected', pg.locator('#s-slot option:checked').inner_text() == '1 unité = 10 min')
+    check('U12. Settings show "10 min" selected', pg.locator('#s-slot option:checked').inner_text() == '10 min')
     pg.select_option('#s-slot', '15'); pg.click('#s-save'); pg.wait_for_timeout(150)
     pg.click('.tab[data-t="agenda"]'); pg.wait_for_timeout(80)
     check('U13. Switching to 15 min redraws the grid in 15-min cases', pg.locator('.col[data-col="Ali"] .slot[data-t="09:15"]').count() == 1 and pg.locator('.col[data-col="Ali"] .slot[data-t="09:10"]').count() == 0)
     pg.locator('.appt', has_text='Client Unités').click(); pg.wait_for_timeout(60)
-    check('U14. The same 2-hour booking now reads 8 units', '2 h (8 unités)' in pg.inner_text('.when'))
+    check('U14. The same 2-hour booking still reads 2 h', '2 h' in pg.inner_text('.when') and 'unité' not in pg.inner_text('.when'), pg.inner_text('.when'))
     pg.click('[data-act="back"]'); pg.click('#top [data-act="new"]'); pg.wait_for_timeout(250)
     sheet_pick_client(pg, 'unités')
-    check('U15. Form follows: "1 unité = 15 min", 4 units = 1 h', '1 unité = 15 min' in pg.inner_text('label[for="f-units"]').lower() and pg.input_value('#f-units') == '4' and pg.inner_text('#f-units-lbl') == '4 unités = 1 h')
+    check('U15. Form follows 15-min cases: 4 cases = 1 h', pg.input_value('#f-units') == '4' and pg.inner_text('#f-units-lbl') == '= 1 h (4 cases de 15 min)', pg.inner_text('#f-units-lbl'))
     pg.click('.sheet-head [data-act="sheet-close"]'); pg.wait_for_timeout(80)
     check('U16. No script errors; no page side-scroll', not errs and no_hscroll(pg), errs[:3])
     ctx.close(); br.close()

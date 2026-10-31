@@ -36,6 +36,7 @@ def check(name, cond, detail=''):
     results.append((name, bool(cond))); print(('PASS ' if cond else 'FAIL ') + name + (('  -> ' + str(detail)[:300]) if detail and not cond else ''), flush=True)
 def open_page(br, mode, width=390, scheme='light', hash=''):
     ctx = br.new_context(viewport={'width': width, 'height': 844}, color_scheme=scheme, timezone_id='America/Toronto', locale='fr-CA')
+    ctx.add_init_script('window.__allSettings = 1')  # réglages : toutes les parties d\'un coup (le découpage est testé par test_pc_layout / test_phone)
     pg = ctx.new_page(); errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' and 'fonts.g' not in m.text and 'ERR_FAILED' not in m.text else None)

@@ -20,7 +20,7 @@ with sync_playwright() as p:
     check('E1. Each service in the list shows its time ("≈ 1 h 30" for the alternator)', '≈ 1 h 30' in pg.locator('#svc-opts .opt', has_text='alternateur').first.inner_text())
     pg.keyboard.press('Enter'); pg.wait_for_timeout(80)
     check('E2. Chip shows "≈ 1 h 30"; estimate 1 h 30 (between 1 h and 3 h 30), dealership times', '≈ 1 h 30' in pg.inner_text('.pchip') and 'Temps estimé : 1 h 30' in est(pg) and 'entre 1 h et 3 h 30' in est(pg) and 'concessionnaires' in est(pg), est(pg))
-    check('E3. Duration filled automatically: 9 units = 1 h 30', units(pg) == '9' and pg.inner_text('#f-units-lbl') == '9 unités = 1 h 30')
+    check('E3. Duration filled automatically: 9 units = 1 h 30', units(pg) == '9' and pg.inner_text('#f-units-lbl') == '= 1 h 30 (9 cases de 10 min)', pg.inner_text('#f-units-lbl'))
     pick(pg, 'huile', "Changement d'huile")
     check('E4. Oil change added: 2 h, 12 units; the oil change shows its price and time', 'Temps estimé : 2 h' in est(pg) and units(pg) == '12' and '89,99' in pg.locator('.pchip', has_text='huile').inner_text() and '≈ 30 min' in pg.locator('.pchip', has_text='huile').inner_text())
     pg.click('#f-svc-in'); pg.keyboard.type('Bruit roue avant gauche'); pg.keyboard.press('Enter'); pg.wait_for_timeout(80)

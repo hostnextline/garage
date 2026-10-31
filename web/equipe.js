@@ -203,11 +203,9 @@
     var c = A().cl(j), who = first(c.firstName || c.name) || 'le client', phone = c.phone || '', mine = mineJob(j), busy = X.busy[j.id];
     var h = '<section class="sect er" aria-labelledby="er-h"><h3 id="er-h">' + (st === 'route' ? 'En route vers ' + esc(who) : st === 'place' ? 'Sur place' : 'Départ vers le client') + '</h3>';
     if (st === 'planifie'){
-      if (onPhone()) h += busy ? '<p class="er-line">Envoi du texto…</p>' : '';
-      else h += '<button type="button" class="btn primary block er-go" data-act="status" data-v="route"' + (busy ? ' disabled' : '') + '>' + (busy ? 'Envoi du texto…' : (mine ? 'Je pars : aviser ' : 'En route : aviser ') + esc(who)) + '</button>';
-      h += '<p class="muted small">' + (phone ? esc(who) + ' reçoit un texto avec le lien pour suivre le trajet en direct.' : 'Pas de téléphone au dossier : le lien de suivi sera prêt à partager.') + '</p>';
-      if (!mine && j.mechanic) h += '<p class="muted small">Le client suivra la position de ' + esc(j.mechanic) + ' (s\'il a commencé sa journée).</p>';
-      if (mine && !G.on) h += '<p class="muted small">Ta journée commencera en même temps (ta position sera partagée).</p>';
+      if (busy) h += '<p class="er-line">Envoi du texto…</p>';
+      h += '<p class="muted small">' + (phone ? 'Au départ, ' + esc(who) + ' reçoit un texto pour suivre le camion.' : 'Pas de téléphone au dossier : le lien de suivi sera prêt à partager.') + '</p>';
+      if (!mine && j.mechanic) h += '<p class="muted small">Le client suivra la position de ' + esc(j.mechanic) + '.</p>';
     } else if (st === 'route'){
       var act = t && t.status === 'active';
       if (busy) h += '<p class="er-line">Envoi en cours…</p>';
@@ -226,7 +224,6 @@
           (t.sms_status !== 'off' && t.sms_status ? '<button type="button" class="btn sm" data-act="er-resend" data-id="' + esc(j.id) + '">Renvoyer le texto</button>' : '') + '</div>';
       }
       if (X.near && X.enRoute && X.enRoute.jobId === j.id) h += '<div class="banner ok"><p>Tu sembles arrivé chez ' + esc(who) + '.</p></div>';
-      if (!onPhone()) h += '<button type="button" class="btn block" data-act="status" data-v="place">Je suis arrivé</button>';
     } else if (st === 'place'){
       h += '<p class="muted small">' + (t && t.status === 'arrived' ? 'Le suivi est fermé' + (t.ended_at ? ' depuis ' + esc(clock(t.ended_at)) : '') + ' : le client ne voit plus ta position.' : 'Le client ne voit pas ta position.') + '</p>';
     }
@@ -242,23 +239,28 @@
   /* ================= haut de l'agenda : compte, journée, trajet en cours ================= */
   function agendaTop(){
     if (!me) return '';
+    /* on a big screen the side menu shows who is signed in; in a small window this line does */
     return (onPhone() ? '' : '<div class="acct"><span>Connecté : <b>' + esc(me.name) + '</b> · ' + esc(ROLE[me.role]) + '</span><button type="button" class="linkbtn" data-act="acct-out">Se déconnecter</button></div>') + shiftCard();
   }
+  /* the side menu of a computer ends with who is signed in */
+  function navFoot(){ return me ? '<div class="navfoot"><span><b>' + esc(me.name) + '</b> · ' + esc(ROLE[me.role]) + '</span><button type="button" class="linkbtn" data-act="acct-out">Se déconnecter</button></div>' : ''; }
+  /* « Commencer ma journée » only where a position can be sent: a phone or a tablet (not a desk computer) */
+  function canTrack(){ try { return onPhone() || !!(window.matchMedia && matchMedia('(pointer: coarse)').matches); } catch(e){ return onPhone(); } }
   function shiftCard(){
     var h = '';
-    if (worksShifts()){
+    if (worksShifts() && canTrack()){
       if (!G.on){
         var known = lsGet('gm.team.gpsok') === '1';
-        h += '<section class="sect shift" aria-labelledby="sh-h"><h3 id="sh-h">Début de journée</h3>' +
-          (known ? '<p class="muted small">Ta position est partagée avec le garage seulement entre « Commencer ma journée » et « Fin de journée ».</p>'
-            : '<p class="small">Pendant ta journée, ton téléphone envoie ta position au garage (environ aux 15 secondes) : le bureau voit où tu es et le client peut suivre ton trajet quand tu pars chez lui.</p><p class="muted small">Rien n\'est envoyé avant « Commencer ma journée » ni après « Fin de journée ». Les positions sont gardées 30 jours, puis effacées.</p>') +
+        h += '<section class="sect shift" aria-labelledby="sh-h"><h3 id="sh-h">Début de journée' + (A().help ? A().help('position', 'ta position') : '') + '</h3>' +
+          (known ? '<p class="small">Touche ce bouton en partant le matin. Le bureau voit où tu es jusqu\'à « Fin de journée ».</p>'
+            : '<p class="small">Touche ce bouton en partant le matin. Le bureau voit où tu es, et le client voit ton trajet quand tu pars chez lui.</p><p class="muted small">Rien n\'est envoyé avant « Commencer ma journée » ni après « Fin de journée ». Les positions sont gardées 30 jours, puis effacées.</p>') +
           '<button type="button" class="btn primary block" data-act="sh-start"' + (G.starting ? ' disabled' : '') + '>' + (G.starting ? 'Un instant…' : 'Commencer ma journée') + '</button></section>';
       } else {
         var trip = X.enRoute && A().findJob(X.enRoute.jobId), tt = trip && X.tracks[trip.id];
         h += '<section class="sect shift on" aria-labelledby="sh-h"><div class="sh-head"><span class="sh-dot" aria-hidden="true"></span><h3 id="sh-h">Journée en cours' + (G.since ? ' depuis ' + esc(clock(G.since)) : '') + '</h3></div>' +
           '<p class="sh-line" id="sh-line" aria-live="polite"></p>' +
           (trip ? '<div class="banner"><p><b>En route vers ' + esc(first(A().cl(trip).firstName || A().cl(trip).name)) + '</b>' + (tt && tt.eta_at ? ' · arrivée prévue ' + esc(clock(tt.eta_at)) : '') + '</p><button type="button" class="btn sm" data-act="er-open" data-id="' + esc(trip.id) + '">Ouvrir la job</button></div>' : '') +
-          '<p class="muted small">Garde cette page ouverte : si tu fermes l\'app ou barres l\'écran, ta position arrête de partir.</p>' +
+          '<p class="muted small">Garde l\'app ouverte pendant ta journée.</p>' +
           '<div class="er-acts"><button type="button" class="btn sm" id="sh-wake" data-act="sh-wake" aria-pressed="false">Garder l\'écran allumé</button><button type="button" class="btn sm" data-act="sh-end">Fin de journée</button></div></section>';
         setTimeout(shiftLine, 0);
       }
@@ -267,7 +269,7 @@
   }
   function settingsTop(){
     if (!me || me.role !== 'owner' || onPhone()) return '';
-    return '<section class="sect"><h3>Équipe et accès</h3><p class="muted small">Comptes du bureau et des mécanos, mots de passe, textos aux clients (GoHighLevel).</p><a class="btn block" href="#equipe">Gérer l\'équipe et les accès</a></section>';
+    return '<section class="sect"><h3>Équipe et accès</h3><p class="muted small">Les comptes de l\'équipe, les mots de passe, les textos aux clients et le paiement par carte.</p><a class="btn block" href="#equipe">Gérer l\'équipe et les accès</a></section>';
   }
 
   /* ================= carte des mécanos ================= */
@@ -436,7 +438,8 @@
         b += '<div class="banner warn"><p>Supprimer le compte de ' + esc(m.name) + ' ? Ses jobs restent au carnet.</p></div><div class="er-acts"><button type="button" class="btn sm" data-act="eq-cancel">Garder</button><button type="button" class="btn sm danger solid" data-act="eq-remove" data-v="' + esc(m.user_id) + '">Supprimer</button></div>';
       } else {
         b += '<div class="er-acts"><button type="button" class="btn sm" data-act="eq-edit" data-v="' + esc(m.user_id) + '">Modifier</button>' +
-          (self ? '' : '<button type="button" class="btn sm" data-act="eq-pw" data-v="' + esc(m.user_id) + '">Nouveau mot de passe</button><button type="button" class="btn sm" data-act="eq-active" data-v="' + esc(m.user_id) + '">' + (m.active ? 'Désactiver' : 'Réactiver') + '</button><button type="button" class="btn sm danger" data-act="eq-confirm" data-v="' + esc(m.user_id) + '">Supprimer</button>') + '</div>';
+          (self ? '' : '<button type="button" class="btn sm" data-act="eq-pw" data-v="' + esc(m.user_id) + '">Nouveau mot de passe</button>') + '</div>' +
+          (self ? '' : (m.active ? '<details class="small eq-more"><summary>Bloquer ou supprimer l\'accès</summary><div class="er-acts">' : '<div class="er-acts">') + '<button type="button" class="btn sm" data-act="eq-active" data-v="' + esc(m.user_id) + '">' + (m.active ? 'Bloquer l\'accès (garder le compte)' : 'Redonner l\'accès') + '</button><button type="button" class="btn sm danger" data-act="eq-confirm" data-v="' + esc(m.user_id) + '">Supprimer le compte</button></div>' + (m.active ? '</details>' : ''));
       }
       b += '</div>';
     });
@@ -444,28 +447,28 @@
     b += '<section class="sect"><h3>Ajouter une personne</h3>' +
       '<div class="field"><label for="nw-name">Nom</label><input id="nw-name" autocomplete="off"></div>' +
       '<div class="field"><label for="nw-email">Courriel</label><input id="nw-email" type="email" inputmode="email" autocapitalize="off" spellcheck="false" autocomplete="off"></div>' +
-      '<div class="grid2"><div class="field"><label for="nw-role">Rôle</label>' + roleSelect('nw-role', 'mecano') + '</div><div class="field"><label for="nw-mech">Nom dans l\'agenda</label>' + mechSelect('nw-mech', '') + '</div></div>' +
+      '<div class="grid2"><div class="field"><label for="nw-role">Rôle' + (A().help ? A().help('roles', 'les rôles') : '') + '</label>' + roleSelect('nw-role', 'mecano') + '</div><div class="field"><label for="nw-mech">Nom dans l\'agenda</label>' + mechSelect('nw-mech', '') + '</div></div>' +
       '<ul class="roles small"><li><b>Mécano</b> : seulement ses jobs, le bouton « En route », la facture sur place. Sa position est partagée pendant sa journée.</li><li><b>Bureau</b> : agenda, clients, factures et carte des mécanos. Pas les réglages.</li><li><b>Trésorier</b> : son propre écran, la trésorerie (dépenses avec photo des reçus, rapport, taxes à remettre, Excel). Il voit les clients et les factures, sans rien y changer.</li><li><b>Propriétaire</b> : tout, y compris les accès.</li></ul>' +
       '<p class="formerr" id="nw-err" role="alert" hidden></p><button type="button" class="btn primary block" data-act="eq-add">Créer le compte</button>' +
       '<p class="muted small">Un mot de passe temporaire est créé : tu l\'envoies à la personne.</p></section>';
     var s = X.eq.secrets || {};
-    b += '<section class="sect"><h3>Textos aux clients (GoHighLevel)</h3>' +
+    b += '<section class="sect"><h3>Textos automatiques aux clients' + (A().help ? A().help('textos', 'les textos') : '') + '</h3>' +
       '<p class="small">' + (s.ghl ? '<span class="badge ok">Branché</span> Clé ' + esc(s.ghlToken) + ' · compte ' + esc(s.ghlLocation) : '<span class="badge warn">Pas branché</span> Sans GoHighLevel, le bouton « En route » prépare le texto et tu l\'envoies toi-même.') + '</p>' +
-      '<div class="field"><label for="gh-token">Clé d\'intégration privée</label><input id="gh-token" type="password" autocomplete="off" spellcheck="false" placeholder="' + (s.ghl ? 'Laisse vide pour garder la clé actuelle' : 'pit-…') + '"></div>' +
-      '<div class="field"><label for="gh-loc">ID du compte (Location ID)</label><input id="gh-loc" autocomplete="off" spellcheck="false" placeholder="' + (s.ghl ? 'Laisse vide pour garder l\'ID actuel' : '') + '"></div>' +
+      '<div class="field"><label for="gh-token">Clé GoHighLevel (commence par pit-)</label><input id="gh-token" type="password" autocomplete="off" spellcheck="false" placeholder="' + (s.ghl ? 'Laisse vide pour garder la clé actuelle' : 'pit-…') + '"></div>' +
+      '<div class="field"><label for="gh-loc">Numéro du compte GoHighLevel (Location ID)</label><input id="gh-loc" autocomplete="off" spellcheck="false" placeholder="' + (s.ghl ? 'Laisse vide pour garder l\'ID actuel' : '') + '"></div>' +
       '<details class="small"><summary>Où trouver ça dans GoHighLevel ?</summary><ol><li>Paramètres → <b>Private Integrations</b> → Créer. Coche « View/Edit Contacts » et « View/Edit Conversation Messages ». Copie la clé (elle commence par pit-).</li><li>Paramètres → <b>Business Profile</b> : copie le « Location ID ».</li><li>Colle les deux ici. La clé va directement dans ta base : personne ne peut la relire, même pas dans l\'app.</li></ol></details>' +
       '<div class="er-acts"><button type="button" class="btn sm primary" data-act="gh-save">Enregistrer</button>' + (s.ghl ? '<button type="button" class="btn sm danger" data-act="gh-clear">Débrancher</button>' : '') + '</div>' +
       (s.ghl ? '<div class="field"><label for="gh-test">Envoyer un texto test au numéro</label><div class="er-acts"><input id="gh-test" type="tel" inputmode="tel" autocomplete="off" placeholder="514 555-0123"><button type="button" class="btn sm" data-act="gh-test">Envoyer</button></div></div>' : '') + '</section>';
-    b += '<section class="sect"><h3>Paiement en ligne (Stripe)</h3>' +
+    b += '<section class="sect"><h3>Paiement par carte (Stripe)' + (A().help ? A().help('carte', 'le paiement par carte') : '') + '</h3>' +
       '<p class="small">' + (s.stripe ? '<span class="badge ok">Branché</span>' + (s.stripeMode === 'test' ? ' <span class="badge warn">mode test</span>' : '') + ' Clé ' + esc(s.stripeKey) + (s.stripeHook ? ' · confirmation automatique des paiements ✓' : ' · paiement confirmé quand le client revient sur sa page') :
         '<span class="badge warn">Pas branché</span> Sans Stripe, la facture envoyée au client n\'a pas de bouton « Payer ».') + '</p>' +
-      '<div class="field"><label for="st-key">Clé secrète Stripe</label><input id="st-key" type="password" autocomplete="off" spellcheck="false" placeholder="' + (s.stripe ? 'Laisse vide pour garder la clé actuelle' : 'sk_live_…') + '"></div>' +
+      '<div class="field"><label for="st-key">Clé secrète Stripe (commence par sk_live_)</label><input id="st-key" type="password" autocomplete="off" spellcheck="false" placeholder="' + (s.stripe ? 'Laisse vide pour garder la clé actuelle' : 'sk_live_…') + '"></div>' +
       '<details class="small"><summary>Où trouver la clé ?</summary><ol><li>Stripe → <b>Développeurs</b> → <b>Clés API</b>.</li><li>Ligne « Clé secrète » → <b>Révéler</b> → copie (elle commence par sk_live_).</li><li>Colle-la ici. Elle reste sur le serveur du garage : jamais dans les téléphones, jamais affichée en entier.</li></ol><p>Pour essayer sans vrai argent : la clé sk_test_ et la carte 4242 4242 4242 4242.</p></details>' +
       '<div class="er-acts"><button type="button" class="btn sm primary" data-act="st-save">Enregistrer</button>' + (s.stripe ? '<button type="button" class="btn sm danger" data-act="st-clear">Débrancher</button>' : '') + '</div></section>';
-    b += '<section class="sect"><h3>Cartes (optionnel)</h3><p class="small muted">Avec une clé TomTom, l\'heure d\'arrivée tient compte du trafic et la recherche d\'adresse est plus précise. Sans clé : OpenStreetMap, gratuit.</p>' +
-      '<p class="small">' + (s.tomtom ? '<span class="badge ok">TomTom branché</span> ' + esc(s.tomtom) : '<span class="badge">OpenStreetMap</span>') + '</p>' +
+    b += '<details class="sect fold"' + (s.tomtom ? ' open' : '') + '><summary>Options avancées : cartes plus précises</summary><div class="stack"><p class="small muted">Facultatif. Avec une clé TomTom, l\'heure d\'arrivée tient compte du trafic. Sans clé, les cartes gratuites suffisent.</p>' +
+      '<p class="small">' + (s.tomtom ? '<span class="badge ok">TomTom branché</span> ' + esc(s.tomtom) : '<span class="badge">Cartes gratuites</span>') + '</p>' +
       '<div class="field"><label for="tt-key">Clé TomTom</label><input id="tt-key" type="password" autocomplete="off" spellcheck="false" placeholder="' + (s.tomtom ? 'Laisse vide pour garder la clé actuelle' : 'Clé de developer.tomtom.com') + '"></div>' +
-      '<div class="er-acts"><button type="button" class="btn sm primary" data-act="tt-save">Enregistrer</button>' + (s.tomtom ? '<button type="button" class="btn sm danger" data-act="tt-clear">Retirer</button>' : '') + '</div></section>';
+      '<div class="er-acts"><button type="button" class="btn sm primary" data-act="tt-save">Enregistrer</button>' + (s.tomtom ? '<button type="button" class="btn sm danger" data-act="tt-clear">Retirer</button>' : '') + '</div></div></details>';
     b += '<section class="sect"><h3>Ton compte</h3><p class="small">' + esc(me.name) + ' · ' + ROLE[me.role] + '</p><button type="button" class="btn" data-act="acct-out">Se déconnecter</button></section>';
     return {top:top, body:b};
   }
@@ -655,6 +658,17 @@
     tellsClient:true, isMine:mineJob,
     decodeVin:function(vin){ return invoke('vehicle', {vin:vin}).then(function(d){ return (d && d.r) || {}; }); },
     phoneTop:function(){ return me ? shiftCard() : ''; },
+    navFoot:navFoot,
+    guideItems:function(){
+      if (!me || me.role !== 'owner') return [];
+      if (!X.eq.list && !X.eq.loading && !X.eq.err) eqLoad();
+      var s = X.eq.secrets || {}, n = (X.eq.list || []).filter(function(m){ return m.active; }).length;
+      return [
+        {t:'Les comptes de ton équipe', sub:'Un compte par mécano et pour le bureau.', done:n > 1, href:'#equipe'},
+        {t:'Les textos automatiques aux clients', sub:'À brancher une seule fois, dans Équipe et accès.', done:!!s.ghl, href:'#equipe'},
+        {t:'Le paiement par carte (facultatif)', sub:'Le client paie avec le lien reçu par texto.', done:!!s.stripe, href:'#equipe'}
+      ];
+    },
     plusItems:function(){
       var out = [];
       if (isStaff()) out.push({href:'#carte', label:'Carte des mécanos', sub:'Où est chaque mécano, qui est en route'});

@@ -21,6 +21,7 @@ def check(name, cond, detail=''):
 
 def new_page(browser, mode, scheme='light', width=390, secure=True):
     ctx = browser.new_context(viewport={'width': width, 'height': 844}, color_scheme=scheme, timezone_id='America/Toronto', locale='fr-CA')
+    ctx.add_init_script('window.__allSettings = 1')  # réglages : toutes les parties d\'un coup (le découpage est testé par test_pc_layout / test_phone)
     base = 'https://local.test/' if secure else 'http://local.test/'
     ctx.grant_permissions(['clipboard-read', 'clipboard-write'], origin=base.rstrip('/'))
     page = ctx.new_page()
@@ -64,7 +65,7 @@ with sync_playwright() as p:
 
     # ---------- main flow ----------
     ctx, pg, errs = new_page(br, {'seed': {'config/main': {'trucks': []}}})
-    check('1. Empty agenda shows the day grid with a "touch a free case" hint', pg.locator('text=Touche une case libre').count() == 1 and pg.locator('.cal').count() == 1)
+    check('1. Empty agenda shows the day grid with a "click a free case" hint (no touch screen: « Clique »)', pg.locator('text=Clique une case libre').count() == 1 and pg.locator('.cal').count() == 1)
     check('1b. No horizontal scroll at 390px (agenda)', no_hscroll(pg))
     pg.screenshot(path=os.path.join(SC, 'shot_empty.png'), full_page=True)
 
@@ -163,7 +164,7 @@ with sync_playwright() as p:
     pg.wait_for_timeout(1200)
     dr = store(pg).get('data/users/u_test/draft-booking')
     check('A1. Form auto-saved to the database while typing', dr is not None and dr['client']['name'] == 'Jean Tremblay' and dr.get('clientId') == cid and len(dr['services']) == 3 and dr['vehicle']['vin'] == '2HGFC2F59JH542376', dr)
-    check('A2. "Brouillon sauvegardé à …" shown', 'Brouillon sauvegardé' in pg.inner_text('#draftmsg'), pg.inner_text('#draftmsg'))
+    check('A2. "Gardé automatiquement à …" shown', 'Gardé automatiquement' in pg.inner_text('#draftmsg'), pg.inner_text('#draftmsg'))
     pg.fill('#f-notes', 'Stationné en arrière')
     pg.click('[data-act="back-edit"]'); pg.wait_for_timeout(250)
     dr = store(pg).get('data/users/u_test/draft-booking') or {}
@@ -285,11 +286,11 @@ with sync_playwright() as p:
     pg.click('[data-act="invoice"]'); pg.fill('#l0-desc', 'Diagnostic'); pg.click('[data-act="savedraft"]'); pg.wait_for_timeout(150)
     d = jobs(pg)[did]['invoice']
     check('17. Draft invoice saved without a number', d.get('number') is None and d['lines'][0]['desc'] == 'Diagnostic', d)
-    pg.click('[data-act="del"]'); pg.wait_for_timeout(40)
+    pg.evaluate("document.querySelectorAll('#more-fold').forEach(d => d.open = true)"); pg.click('[data-act="del"]'); pg.wait_for_timeout(40)
     check('17b. Delete asks for confirmation inside the page', pg.locator('[data-act="del-yes"]').count() == 1)
     pg.click('[data-act="del-no"]'); pg.wait_for_timeout(40)
     check('17c. "Garder" cancels', did in jobs(pg))
-    pg.click('[data-act="del"]'); pg.click('[data-act="del-yes"]'); pg.wait_for_timeout(150)
+    pg.evaluate("document.querySelectorAll('#more-fold').forEach(d => d.open = true)"); pg.click('[data-act="del"]'); pg.click('[data-act="del-yes"]'); pg.wait_for_timeout(150)
     check('17d. Confirmed delete removes the job', did not in jobs(pg))
 
     # edit booking
@@ -412,6 +413,7 @@ with sync_playwright() as p:
     check('W11. Tapping a day in the strip from week view also opens that day', pg.locator('.cal.week').count() == 0 and 'samedi' in pg.inner_text('.daytitle').lower())
     pg.click('[data-act="today"]'); pg.wait_for_timeout(60)
     ctx2 = br.new_context(viewport={'width': 1280, 'height': 900}, timezone_id='America/Toronto', locale='fr-CA')
+    ctx2.add_init_script('window.__allSettings = 1')  # réglages : toutes les parties d\'un coup (le découpage est testé par test_pc_layout / test_phone)
     ctx2.close()
 
     # draft reset

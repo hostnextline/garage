@@ -103,7 +103,7 @@ with sync_playwright() as p:
     tax = pg.evaluate("[...document.querySelectorAll('#rep-tax tbody tr')].map(r => [...r.children].map(c => c.textContent.replace(/\\s/g,' ')))")
     # TPS: collected 50 + 25 = 75 ; paid 10 + 3.48 = 13.48 ; due 61.52 · TVQ: 99.75 + 49.88 = 149.63 ; paid 19.95 + 6.94 = 26.89 ; due 122.74
     check('taxes to remit: TPS 75,00 − 13,48 = 61,52 ; TVQ 149,63 − 26,89 = 122,74', tax[0][1:] == ['75,00 $', '149,63 $'] and tax[1][1:] == ['−13,48 $', '−26,89 $'] and tax[2][1:] == ['61,52 $', '122,74 $'], tax)
-    check('cancellations and no-shows, receivables', '-200,00 $' in m(txt(pg, '#rep-other')) and '1 no-show' in txt(pg, '#rep-other') and '574,88 $' in m(txt(pg, '#rep-other')), m(txt(pg, '#rep-other')))
+    check('cancellations and absent clients, receivables', '-200,00 $' in m(txt(pg, '#rep-other')) and '1 client absent' in txt(pg, '#rep-other') and '574,88 $' in m(txt(pg, '#rep-other')), m(txt(pg, '#rep-other')))
     pg.click('[data-act="tr-xlsx"]'); wait(pg, 2500)
     saved = pg.evaluate('window.__saved')
     check('Excel file saved for the accountant', len(saved) == 1 and saved[0]['filename'] == 'Trésorerie %s.xlsx' % MLABEL, [s['filename'] for s in saved])

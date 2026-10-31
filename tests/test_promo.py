@@ -36,11 +36,11 @@ with sync_playwright() as p:
     pg.click('[data-act="finalize"]'); pg.wait_for_timeout(400)
     inv = [v['invoice'] for v in jobs(pg).values() if v.get('invoice', {}).get('number')]
     check('P6. Total 200 $ + TPS 10 $ + TVQ 19,95 $ = 229,95 $', inv and inv[0]['sub'] == 200 and inv[0]['total'] == 229.95, inv and (inv[0]['sub'], inv[0]['total']))
-    check('P6b. Invoice shows "Forfait · 1 × 200,00 $" (not hours)', 'Forfait · 1 × 200,00' in pg.inner_text('.paper') and '1 h × 200' not in pg.inner_text('.paper'), pg.inner_text('.paper')[:400])
+    check('P6b. Invoice shows "Service à prix fixe · 1 × 200,00 $" (not hours)', 'Service à prix fixe · 1 × 200,00' in pg.inner_text('.paper') and '1 h × 200' not in pg.inner_text('.paper'), pg.inner_text('.paper')[:400])
     pg.click('[data-act="pdf"]'); pg.wait_for_timeout(2500)
     saved = pg.evaluate('window.__saved')
     txt = ''.join(x.extract_text() for x in PdfReader(io.BytesIO(base64.b64decode(saved[-1]['b64']))).pages) if saved else ''
-    check('P6c. PDF shows the promo as "Forfait", 200,00 and the total 229,95', 'Forfait' in txt and '200,00' in txt and '229,95' in txt and 'Promo : pneus non mont' in txt, txt[:300])
+    check('P6c. PDF shows the promo as "Service à prix fixe", 200,00 and the total 229,95', 'Service à prix fixe' in txt and '200,00' in txt and '229,95' in txt and 'Promo : pneus non mont' in txt, txt[:300])
     pg.screenshot(path=os.path.join(SC, 'shot_promo_invoice.png'), full_page=True)
     # settings
     pg.click('.tab[data-t="reglages"]'); pg.wait_for_timeout(150)

@@ -233,7 +233,7 @@ with sync_playwright() as p:
     pg.click('[data-act="week-close"]'); pg.wait_for_timeout(300)
     S4 = store(pg)
     check('W26. "Fermer toute la semaine": the 6 open days closed, no free case left', all(S4.get(f'days/{d}', {}).get('closed') is True for d in wk[:6]) and pg.locator('.cal.week .slot.open').count() == 0)
-    check('W26b. Week strip and day headers show "fermé"', all('fermé' in pg.locator(f'.dayh[data-v="{d}"]').inner_text() or 'rdv' in pg.locator(f'.dayh[data-v="{d}"]').inner_text() for d in wk))
+    check('W26b. Week strip and day headers show "fermé"', all('fermé' in pg.locator(f'.dayh[data-v="{d}"]').inner_text() or 'rendez-vous' in pg.locator(f'.dayh[data-v="{d}"]').inner_text() for d in wk))
     pg.click('[data-act="week-reset"]'); pg.wait_for_timeout(300)
     check('W27. "Revenir à l\'horaire normal pour la semaine" removes every override', not [k for k in store(pg) if k.startswith('days/')] and pg.locator('.cal.week .slot.open').count() > 0)
     pg.click('#hours-panel [data-act="hours-edit"]'); pg.wait_for_timeout(150)

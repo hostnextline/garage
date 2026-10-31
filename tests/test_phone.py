@@ -133,7 +133,7 @@ with sync_playwright() as p:
     hrefs = pg.evaluate("[...document.querySelectorAll('.rounds .round')].map(a => [a.textContent.trim(), a.getAttribute('href')])")
     check('4. round buttons: Appeler (tel), Texter (sms), Itinéraire (maps)', [h[0] for h in hrefs] == ['Appeler', 'Texter', 'Itinéraire'] and hrefs[0][1].startswith('tel:') and hrefs[1][1] == 'sms:4505550404' and 'google.com/maps' in hrefs[2][1], hrefs)
     check('4. 4 steps, current = Planifiée', pg.locator('.steps4 li').count() == 4 and pg.locator('.steps4 li.here').count() == 1)
-    check('4. notes open, other details folded', pg.locator('details.fold[open]').count() == 1 and 'Bruit en freinant' in txt(pg, 'details.fold[open]') and pg.locator('details.fold').count() == 6 and pg.locator('#xp-fold').count() == 1 and pg.locator('#ph-fold').count() == 1)
+    check('4. notes open, other details folded (incl. « Autres actions »)', pg.locator('details.fold[open]').count() == 1 and 'Bruit en freinant' in txt(pg, 'details.fold[open]') and pg.locator('details.fold').count() == 7 and pg.locator('#more-fold:not([open])').count() == 1 and pg.locator('#xp-fold').count() == 1 and pg.locator('#ph-fold').count() == 1)
     check('4. no sideways scroll (job)', no_hscroll(pg))
     flow = []
     for want in ('route', 'place'):
@@ -161,7 +161,7 @@ with sync_playwright() as p:
     if S(pg, 'screen') != 'job':
         pg.evaluate("window.__garageApi.S.screen = 'job'; window.__garageApi.S.jobId = 'a4'; window.__garageApi.render()"); wait(pg)
     check('4. then: Voir la facture', txt(pg, '.nextbtn') == 'Voir la facture', txt(pg, '.nextbtn'))
-    pg.select_option('#ph-st', 'annule'); wait(pg, 400)
+    pg.evaluate("document.querySelectorAll('#more-fold').forEach(d => d.open = true)"); pg.select_option('#ph-st', 'annule'); wait(pg, 400)
     check('4. status menu « Annulé » asks for the amount lost first', pg.locator('#cx-amt').is_visible() and (store(pg, 'jobs/a4') or {}).get('status') == 'termine')
     pg.click('[data-act="cx-why"][data-v="client"]'); pg.click('[data-act="cx-yes"]'); wait(pg, 500)
     lo = (store(pg, 'jobs/a4') or {}).get('lost') or {}
@@ -173,11 +173,11 @@ with sync_playwright() as p:
     # delete the job booked in step 3 (asks first)
     pg.evaluate("w => { const i = document.getElementById('ph-date'); i.value = w; i.dispatchEvent(new Event('change', {bubbles: true})); }", iso(W)); wait(pg)
     pg.click('.ph-job[data-id="%s"]' % newid); wait(pg, 400)
-    pg.click('[data-act="del"]'); wait(pg)
+    pg.evaluate("document.querySelectorAll('#more-fold').forEach(d => d.open = true)"); pg.click('[data-act="del"]'); wait(pg)
     check('4. delete asks first', pg.locator('[data-act="del-yes"]').count() == 1 and store(pg, 'jobs/' + newid) is not None)
     pg.click('[data-act="del-no"]'); wait(pg)
     check('4. « Garder » keeps it', store(pg, 'jobs/' + newid) is not None and pg.locator('[data-act="del-yes"]').count() == 0)
-    pg.click('[data-act="del"]'); wait(pg); pg.click('[data-act="del-yes"]'); wait(pg, 600)
+    pg.evaluate("document.querySelectorAll('#more-fold').forEach(d => d.open = true)"); pg.click('[data-act="del"]'); wait(pg); pg.click('[data-act="del-yes"]'); wait(pg, 600)
     check('4. « Supprimer » removes it (back to the original state)', store(pg, 'jobs/' + newid) is None and 'job:' + newid not in rows(pg), rows(pg))
     # ---------- 5. « + » menu ----------
     pg.click('.tab-new'); wait(pg, 400)
@@ -203,7 +203,7 @@ with sync_playwright() as p:
     pg.click('.tab[data-t="plus"]'); wait(pg)
     pl = pg.evaluate("[...document.querySelectorAll('nav.ph-menu .ph-row b')].map(b=>b.textContent)")
     check('6. Plus: Tableau de bord, Heures d\'ouverture, Disponibilités des mécanos, Réglages', pl == ['Tableau de bord', 'Heures d\'ouverture', 'Disponibilités des mécanos', 'Trésorerie', 'Stock des camions', 'Réglages'], pl)
-    check('6. Plus: « Version complète » row', pg.locator('[data-act="ui-full"]').count() == 1)
+    check('6. Plus: « Version ordinateur » row', pg.locator('[data-act="ui-full"]').count() == 1)
     check('6. no sideways scroll (Plus)', no_hscroll(pg))
     pg.click('a[href="#accueil"]'); wait(pg, 400)
     check('6. dashboard opens from Plus, « Plus » tab stays lit', pg.locator('.kpi-big').count() == 1 and pg.locator('.tab[data-t="plus"][aria-current="page"]').count() == 1)
@@ -236,18 +236,21 @@ with sync_playwright() as p:
     check('6. Réglages: a list of parts', len(secs) >= 5 and 'Tarifs' in secs and pg.locator('#setform > section.sect:visible').count() == 0, secs)
     ti = secs.index('Tarifs')
     pg.click('[data-act="ph-sec"][data-v="%d"]' % ti); wait(pg)
-    check('6. one part at a time + save button', pg.locator('#setform > section.sect:visible').count() == 1 and pg.locator('#s-goal').is_visible() and pg.locator('#s-save').is_visible())
+    check('6. one part at a time + save button; the goal is under « Options avancées »', pg.locator('#setform > section.sect:visible').count() == 1 and pg.locator('#s-rate').is_visible() and not pg.locator('#s-goal').is_visible() and pg.locator('#s-save').is_visible())
     check('6. no sideways scroll (Réglages)', no_hscroll(pg))
+    pg.click('#setform section.sect.cur details.adv summary'); wait(pg)
+    check('6. « Options avancées » shows the goal', pg.locator('#s-goal').is_visible())
     pg.fill('#s-goal', '25000'); pg.click('#s-save'); wait(pg, 800)
     check('6. saving a part works', (store(pg, 'config/main') or {}).get('goal') == 25000, (store(pg, 'config/main') or {}).get('goal'))
-    if S(pg, 'tab') == 'reglages' and pg.locator('#s-goal:visible').count() == 0:
+    if S(pg, 'tab') == 'reglages' and pg.locator('#setform section.sect.cur').count() == 0:
         pg.click('[data-act="ph-sec"][data-v="%d"]' % ti); wait(pg)
+    if pg.locator('#s-goal:visible').count() == 0: pg.click('#setform section.sect.cur details.adv summary'); wait(pg)
     pg.fill('#s-goal', '20000'); pg.click('#s-save'); wait(pg, 800)
     check('6. put back to 20 000 (original)', (store(pg, 'config/main') or {}).get('goal') == 20000)
     # full <-> simple
     pg.click('.tab[data-t="plus"]'); wait(pg); pg.click('[data-act="ui-full"]'); wait(pg, 500)
-    check('7. « Version complète »: all tabs, opens Accueil', tabs(pg) == ['accueil', 'agenda', 'clients', 'factures', 'tresor', 'reglages'] and not pg.evaluate("document.body.classList.contains('ui-phone')"), tabs(pg))
-    check('7. « Version complète » lasts for this visit only (nothing kept on the phone)', pg.evaluate("sessionStorage.getItem('gm.ui')") == 'full' and pg.evaluate("localStorage.getItem('gm.ui')") is None)
+    check('7. « Version ordinateur »: all tabs, opens Accueil', tabs(pg) == ['accueil', 'agenda', 'clients', 'factures', 'tresor', 'reglages'] and not pg.evaluate("document.body.classList.contains('ui-phone')"), tabs(pg))
+    check('7. « Version ordinateur » lasts for this visit only (nothing kept on the phone)', pg.evaluate("sessionStorage.getItem('gm.ui')") == 'full' and pg.evaluate("localStorage.getItem('gm.ui')") is None)
     p2 = ctx.new_page(); p2.route('**/*', lambda r: r.fulfill(status=200, content_type='text/html; charset=utf-8', body=harness({'seed': seed})) if r.request.url == 'https://local.test/' else r.abort()); p2.goto('https://local.test/'); p2.wait_for_timeout(700)
     check('7. opening the app again on the phone: phone version again, by itself', p2.evaluate("document.body.classList.contains('ui-phone')")); p2.close()
     check('7. dashboard offers to go back to the simple version', pg.locator('[data-act="ui-phone"]').count() == 1)

@@ -37,7 +37,7 @@ CODE = 'R4ND-0M7X-Q2PZ'
 psql("insert into public.setup_codes (code_hash) values ('%s')" % hashlib.sha256(CODE.replace('-', '').encode()).hexdigest())
 
 def ctx_for(browser, geo=None, perms=True, simple=False):
-    c = browser.new_context(viewport={'width': 390, 'height': 844}, timezone_id='America/Toronto', locale='fr-CA', has_touch=simple, **({'user_agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'} if simple else {}),
+    c = browser.new_context(viewport={'width': 390, 'height': 844}, timezone_id='America/Toronto', locale='fr-CA', has_touch=True, **({'user_agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'} if simple else {}),
                             geolocation=geo, permissions=(['geolocation', 'clipboard-read', 'clipboard-write'] if perms else []))
     if not simple: c.add_init_script("try{localStorage.setItem('gm.ui','full')}catch(e){}")
     c.route('https://tile.openstreetmap.org/**', lambda r: r.fulfill(status=200, content_type='image/png', body=b''))
@@ -169,7 +169,7 @@ with sync_playwright() as pw:
 
     # ---------- 4. en route ----------
     sp.click('[data-act="open"][data-id="j1"]'); sp.wait_for_selector('.er', timeout=8000)
-    btn = sp.locator('.er-go')
+    btn = sp.locator('.nextbtn')
     check('big button « Je pars : aviser Marie »', btn.count() == 1 and 'Je pars : aviser Marie' in btn.text_content(), btn.text_content() if btn.count() else '')
     check('job page tells Marie gets a text', 'Marie reçoit un texto' in sp.text_content('.er'))
     check('job page no sideways scroll', no_hscroll(sp))
@@ -230,7 +230,7 @@ with sync_playwright() as pw:
     op.screenshot(path=os.path.join(SC, 'team_map.png'))
 
     # ---------- 7. arrived, invoice on site ----------
-    sp.click('.er [data-act="status"][data-v="place"]')
+    sp.click('.nextbtn[data-v="place"]')
     check('« Sur place » saved', toast_has(sp, 'Sur place'))
     ok = False
     for _ in range(20):
@@ -268,9 +268,9 @@ with sync_playwright() as pw:
     check('office cannot open team screen', lp.locator('#nw-name').count() == 0)
     # office presses « En route » for Ali's job: Ali is not on shift → link without position
     lp.goto(BASE + '#agenda'); lp.wait_for_selector('[data-act="open"][data-id="j2"]', timeout=8000); lp.click('[data-act="open"][data-id="j2"]')
-    lp.wait_for_selector('.er-go'); check('office button says « En route : aviser Paul »', 'En route : aviser Paul' in lp.text_content('.er-go'))
+    lp.wait_for_selector('.nextbtn'); check('office button says « En route : aviser Paul »', 'En route : aviser Paul' in lp.text_content('.nextbtn'))
     check('office is told whose position the client follows', 'position de Ali' in lp.text_content('.er'))
-    lp.click('.er-go')
+    lp.click('.nextbtn')
     check('office: text sent to Paul', toast_has(lp, 'Texto envoyé à Paul', 15000))
     lp.wait_for_selector('.er a.btn.steel', timeout=8000)
     check('no ETA without Ali\'s position (said plainly)', 'position du mécano n\'est pas encore connue' in lp.text_content('.er'), lp.text_content('.er'))
@@ -415,7 +415,7 @@ with sync_playwright() as pw:
     check('vehicle server: mechanic decodes → 2018 HONDA Civic 2.0 L 4 cyl., only the useful fields sent back', (r or {}).get('ok') and rr.get('Make') == 'HONDA' and rr.get('ModelYear') == '2018' and rr.get('DisplacementL') == '2.0' and len(rr) == 16 and 'VIN' not in rr, r)
     r = http('POST', API + '/functions/v1/vehicle', {'vin': CIV}, ttok)
     check('vehicle server: the treasurer may decode too (read only, harmless)', (r or {}).get('ok'), r)
-    vc = ctx_for(br); vp = page_for(vc, 'saleh-vin'); vp.set_viewport_size({'width': 1100, 'height': 900}); login(vp, 'saleh@garage.test', SALEH_PW); vp.wait_for_selector('.acct', timeout=15000); vp.wait_for_timeout(800)
+    vc = ctx_for(br); vp = page_for(vc, 'saleh-vin'); vp.set_viewport_size({'width': 1100, 'height': 900}); login(vp, 'saleh@garage.test', SALEH_PW); vp.wait_for_selector('#navfoot .navfoot', timeout=15000); vp.wait_for_timeout(800)
     vp.evaluate("() => { const S = window.__garageApi.S; S.tab = 'agenda'; S.screen = 'job'; S.jobId = 'j3'; window.__garageApi.render(); }"); vp.wait_for_timeout(400)
     vp.click('[data-act="scan-job"]'); vp.wait_for_selector('#scan-body'); vp.wait_for_timeout(600)
     vp.click('[data-act="scan-type"]'); vp.fill('#scan-in', CIV); vp.click('[data-act="scan-typed"]')
@@ -449,7 +449,7 @@ with sync_playwright() as pw:
     op.wait_for_timeout(10500)
     check('map: Saleh now « Hors service »', op.locator('#mc-' + psql("select user_id from public.members where mechanic='Saleh'") + ' .pillx').text_content() == 'Hors service')
     op.goto(BASE + '#equipe'); op.wait_for_selector('.eqp', timeout=8000)
-    row = op.locator('.eqp', has_text='ali@garage.test'); row.locator('[data-act="eq-active"]').click()
+    row = op.locator('.eqp', has_text='ali@garage.test'); row.locator('.eq-more summary').click(); row.locator('[data-act="eq-active"]').click()
     check('owner deactivates Ali', toast_has(op, 'Accès désactivé'))
     ac2 = ctx_for(br); ap2 = page_for(ac2, 'ali2'); login(ap2, 'ali@garage.test', ALI_PW); ap2.wait_for_timeout(2000)
     check('deactivated person cannot sign in', 'désactivé' in (ap2.text_content('#g-msg') or ''), ap2.text_content('#g-msg'))
