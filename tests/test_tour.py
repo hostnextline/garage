@@ -48,11 +48,17 @@ with sync_playwright() as pl:
         c = ctx(b, phone=phone); p = page(c, who)
         if not phone: p.set_viewport_size({'width': 1366, 'height': 860})
         login(p, who + '@garage.test', pw[who], tour=True); start(p, who, phone)
+        cfg0 = psql("select data::text from public.docs where path='config/main'")
         before = p.evaluate(STATE)
         WALKS[tag] = walk(p, shots='tour_' + who + ('_ph' if phone else '_pc'))
         p.click('#tour-ov [data-act="tt-end"]'); p.wait_for_timeout(900)
         after = p.evaluate(STATE)
         WALKS[tag + ' (après)'] = {'before': before, 'after': after, 'ov': p.locator('#tour-ov').count(), 'sched': p.locator('#sched').count(), 'sheet': p.evaluate("!!window.__garageApi.S.sheet && !document.querySelector('#sheet .inst')")}
+        if who == 'hassan':   # the color he picked during the visit stays: on screen, saved for the garage, still there when the app is opened again
+            saved = (doc('config/main') or {}).get('lux') or ''
+            p.reload(); p.wait_for_selector('#tabbar, .acct, .ph-top', timeout=15000); p.wait_for_timeout(1800)
+            WALKS[tag + ' (couleur)'] = {'before': before['lux'], 'after': after['lux'], 'saved': saved, 'reopened': p.evaluate("document.documentElement.getAttribute('data-lux') || ''")}
+            psql("update public.docs set data = '%s'::jsonb where path = 'config/main'" % cfg0.replace("'", "''"))   # (the test puts the garage's color back)
         c.close()
     # ---------- 3. one person, two roles (mechanic + treasurer) ----------
     fn(otok, 'members', {'action': 'update', 'user_id': uid['ali'], 'roles': ['mecano', 'tresorier'], 'mechanic': 'Ali'})
@@ -104,10 +110,15 @@ check('owner: agenda (days, views, schedule grid), clients, invoices, treasury (
 tr = [s['t'] for s in walks['trésorier · téléphone']]
 check('treasurer: her treasury first (expense amount, report, period), the stock through « Plus », invoices and clients', tr.index('Le montant') < tr.index('Le rapport') < tr.index('La période') and 'Le stock des camions' in tr and 'Les filtres' in tr, tr)
 after = {k: v for k, v in WALKS.items() if k.endswith('(après)')}
-check('after each visit: his view is back as it was (agenda view, invoice filter, search, report view, day) and the color too', all(v['before'] == v['after'] for v in after.values()), {k: (v['before'], v['after']) for k, v in after.items() if v['before'] != v['after']})
+nolux = lambda d: {k: v for k, v in d.items() if k != 'lux'}
+check('after each visit: his view is back as it was (agenda view, invoice filter, search, report view, day)', all(nolux(v['before']) == nolux(v['after']) for v in after.values()), {k: (v['before'], v['after']) for k, v in after.items() if nolux(v['before']) != nolux(v['after'])})
+check('…the people who have no color step keep the app\'s color as it was', all(v['before']['lux'] == v['after']['lux'] for k, v in after.items() if 'propriétaire' not in k), {k: (v['before']['lux'], v['after']['lux']) for k, v in after.items() if 'propriétaire' not in k})
+lux = {k: v for k, v in WALKS.items() if k.endswith('(couleur)')}
+check('the owner picks a color during the visit: IT STAYS after « Terminer », it is saved for the garage, and it is still there when the app is opened again (%s)' % ', '.join('%s → %s' % (v['before'] or 'sable', v['after']) for v in lux.values()),
+      len(lux) == 2 and all(v['after'] and v['after'] != v['before'] and v['saved'] == v['after'] and v['reopened'] == v['after'] for v in lux.values()), lux)
 check('…the visit is closed, no schedule window, no form left open', all(v['ov'] == 0 and v['sched'] == 0 and not v['sheet'] for v in after.values()), after)
 fn(otok, 'members', {'action': 'update', 'user_id': uid['ali'], 'roles': ['mecano'], 'mechanic': 'Ali'})   # (the test itself gave Ali a 2nd role)
-check('NOTHING tried during the visits was saved: the base is exactly as before (jobs, clients, settings, hours, colors, people, rights, invitations)', dbsig() == sig0, [sig0, dbsig()])
+check('NOTHING else tried during the visits was saved: the base is exactly as before (jobs, clients, settings, hours, people, rights, invitations; the color chosen was put back by the test)', dbsig() == sig0, [sig0, dbsig()])
 psql("insert into public.docs (path, data) select 'data/users/' || user_id || '/tour', '{\"seenAt\": 1}' from public.members on conflict (path) do nothing")
 check('back to the start (Ali a mechanic only)', psql("select array_to_string(roles, ',') from public.members where user_id='%s'" % uid['ali']) == 'mecano')
 check('no page errors', not ERRS, ERRS[:5])

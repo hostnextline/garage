@@ -29,7 +29,7 @@ def do_try(p, s):
         x0 = r[0] + r[2] * 0.55; y0 = r[1] + min(r[3] * 0.35, 160)
         p.mouse.move(x0, y0); p.mouse.down(); p.mouse.move(x0, y0 + 50, steps=6); p.mouse.up(); return 'drag grid'
     if 'lux-sect' in part:
-        pt = center(p, '#lux-sect .lux-sw[aria-pressed="false"]'); p.mouse.click(*pt); return 'color'
+        pt = center(p, '#lux-sect .lux-sw[aria-pressed="false"]:not([data-v="sable"])'); p.mouse.click(*pt); return 'color'
     if 'trbar' in part:
         pt = center(p, '.trbar [data-act="tr-kind"][data-v="quarter"]'); p.mouse.click(*pt); return 'quarter'
     if 'map-slot' in part:

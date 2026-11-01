@@ -1733,7 +1733,7 @@ var renderT = 0;
 function renderSoon(){ if (renderT) return; renderT = requestAnimationFrame(function(){ renderT = 0; render(); }); }   /* data arriving: one redraw per frame at most */
 function render(){
   if (renderT){ cancelAnimationFrame(renderT); renderT = 0; }
-  if (S.cfgLoaded && !(TOUR && TOUR.luxBack != null)) applyLux(S.cfg.lux);   /* (a color being tried in the guided tour stays) */   /* until the garage's settings arrive, the device's last colors stay (no flash) */
+  if (S.cfgLoaded) applyLux(S.cfg.lux);   /* until the garage's settings arrive, the device's last colors stay (no flash) */
   if (!tabOk(S.tab)) S.tab = defTab();
   fitTab();
   var lm = lockedMech(); if (lm) S.mech = truckMode() ? '' : lm;
@@ -3743,7 +3743,6 @@ document.addEventListener('click', function(e){
       var lxk = luxOf(v).k, lxp = cfg().lux, lxref = S.db.doc('config/main'), lxt = Date.now();
       var lxMark = function(k){ $$('.lux-sw').forEach(function(x){ x.setAttribute('aria-pressed', String(x.dataset.v === luxOf(k).k)); }); };
       applyLux(lxk); lxMark(lxk);
-      if (TOUR && TOUR.steps[TOUR.i] && TOUR.steps[TOUR.i].try){ if (TOUR.luxBack == null) TOUR.luxBack = luxOf(lxp).k; break; }   /* the guided tour: only tried, not saved */
       write('config/main', function(){ return S.cfg && Object.keys(S.cfg).length ? lxref.update({lux:lxk, updatedAt:lxt}) : lxref.set(Object.assign(clone(cfg()), {lux:lxk, updatedAt:lxt})); }, 'Couleurs de l\'app : ' + luxOf(lxk).n).then(function(ok){
         if (ok){ S.cfg = Object.assign(clone(cfg()), {lux:lxk}); S.cfgLoaded = true; }
         else { applyLux(lxp); lxMark(lxp); }
@@ -4277,7 +4276,7 @@ function tourCheck(){
   }, function(){});
 }
 /* ---- the guided tour: a soft light around the part being explained, a bubble with the words. The person goes from screen to screen himself
-   (he touches the lit button), and tries things on the way; nothing he tries is saved.
+   (he touches the lit button), and tries things on the way; nothing he tries is saved, except the app's color: the one he picks stays.
    Steps: {ch: chapter, icon, t: title, p: text, x: a tip (optional), sel: what to light up,
      tap: the button to touch (the visit goes on after his touch; no « Suivant »), do: what to touch,
      try: what he can play with (tryT: the invitation, done: the words once he did), after: what it opens (lit with it),
@@ -4299,7 +4298,7 @@ function tourStart(replay){
   if (SCH) schedClose();
   if (TOUR) tourEnd(true, true);
   st.forEach(function(x){ if (!x.sel) x.sel = x.tap || x.try || null; });
-  TOUR = {steps:st, i:0, dir:1, replay:!!replay, seq:0, busy:true, rk:'', tried:false, luxBack:null,
+  TOUR = {steps:st, i:0, dir:1, replay:!!replay, seq:0, busy:true, rk:'', tried:false,
     keep:{view:S.view, invFilter:S.invFilter, cq:S.cq, trView:S.trView, trP:S.trP, day:S.day, mech:S.mech, avMech:S.avMech}};
   clearInterval(ttWatch); ttWatch = setInterval(function(){ if (TOUR) tourFollow(false); else { clearInterval(ttWatch); ttWatch = 0; } }, 300);
   tourMount();
@@ -4403,7 +4402,7 @@ function ttScrolled(seq){   /* the soft scroll is done (or a short time passed) 
 function tourShow(){
   if (!TOUR) return;
   var seq = ++TOUR.seq, x = TOUR.steps[TOUR.i], ov = $('#tour-ov');
-  TOUR.busy = true; TOUR.tried = false; tourUndo(); document.body.classList.remove('tt-free'); if (ov){ ov.dataset.ready = '0'; ov.classList.remove('open'); var hl0 = ov.querySelector('.tt-hole'); if (hl0) hl0.classList.remove('tap'); }
+  TOUR.busy = true; TOUR.tried = false; document.body.classList.remove('tt-free'); if (ov){ ov.dataset.ready = '0'; ov.classList.remove('open'); var hl0 = ov.querySelector('.tt-hole'); if (hl0) hl0.classList.remove('tap'); }
   var shut0 = S.sheet && !/#sheet|#expform|\.x-scan|#x-/.test(x.sel || ''), tip = ov && ov.querySelector('.tt-tip'), moves = tourMoves(x.go) || shut0, red = ttReduced();   /* (a step outside the open sheet: it closes) */
   if (tip){ tip.classList.add('fade'); if (moves) tip.classList.add('gone'); }   /* another screen: the bubble leaves too, and comes back where it belongs */
   if (moves) tourLight(null);   /* close the light: the screen changes in the dark */
@@ -4558,8 +4557,8 @@ function tourPrev(){ if (!TOUR || TOUR.busy || !TOUR.i) return; TOUR.dir = -1; T
 function tourEnd(skipped, quiet){
   if (!TOUR) return;
   var replay = TOUR.replay, p = tourPath(), ov = $('#tour-ov'), home;
-  tourUndo(); var kp = TOUR.keep; TOUR = null;
-  if (kp){ Object.keys(kp).forEach(function(k){ S[k] = kp[k]; }); lsSet('gm.view', S.view); lsSet('gm.mech', S.mech); if (S.sheet) closeSheet(); }   /* what was tried (a view, a filter, a search) is put back */
+  var kp = TOUR.keep; TOUR = null;
+  if (kp){ Object.keys(kp).forEach(function(k){ S[k] = kp[k]; }); lsSet('gm.view', S.view); lsSet('gm.mech', S.mech); if (S.sheet) closeSheet(); }   /* what was tried (a view, a filter, a search) is put back; the app's color he chose stays */
   if (ov){ ov.removeAttribute('id'); ov.classList.remove('on'); ov.classList.add('out'); setTimeout(function(){ ov.remove(); }, ttReduced() ? 0 : 260); }
   document.body.classList.remove('touring'); document.body.classList.remove('tt-free');
   if (quiet) return;
@@ -4622,12 +4621,6 @@ function tourTried(){
   if (!TOUR || !tip || TOUR.tried) return;
   TOUR.tried = true; tip.classList.add('tried');
   setTimeout(function(){ tourFollow(true); }, 40);   /* the bubble's words changed, and what was tried may have opened something */
-}
-/* what was only tried goes back as it was (a color tried during the visit is not kept) */
-function tourUndo(){
-  if (!TOUR || TOUR.luxBack == null) return;
-  var k = TOUR.luxBack; TOUR.luxBack = null; applyLux(k);
-  $$('.lux-sw').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.v === luxOf(k).k)); });
 }
 /* the person scrolls: the light and the words stay on the part, without lagging behind */
 var ttSc = 0, ttScT = 0;

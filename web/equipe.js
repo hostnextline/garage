@@ -844,7 +844,8 @@
   /* ---- the guided tour, for each role (a person with several roles gets each part once) ----
      The person does it. To go to another screen, HE touches it: the menu, « Plus », a tab, a button. The tour lights where to
      touch and says where it leads; the visit goes on when he touches it (no « Passer »). On each screen he tries things
-     (search, filters, sections, the schedule grid, the colors…): nothing tried is saved, and his view comes back as it was.
+     (search, filters, sections, the schedule grid…): nothing tried is saved, and his view comes back as it was.
+     The app's color is the exception: the one the owner picks during the visit stays (it is saved like any other time).
      A step: t title, p words, icon, x a tip, sel what is lit, go its screen (put back when he goes back with ‹ Retour; going forward it
      is already open after his touch, except the job and the schedule window, opened for him where nothing can be touched), tap he touches it, nav that touch opens this screen (skipped if he is already there),
      try he plays with it (tryT what to try, done what it showed), after lit with it once tried, need skip it when not there. */
@@ -886,7 +887,7 @@
     var P = {
       hello:['Bienvenue', [{icon:'👋', go:'home', t:'Bienvenue' + (nm ? ', ' + nm : '') + ' !',
         p:'On fait le tour de l\'app ensemble. Ici, c\'est toi qui touches : je t\'éclaire le bouton, tu le touches, et je t\'explique ce qui s\'ouvre.',
-        x:'Rien de ce que tu essaies pendant la visite n\'est enregistré. Le ✕ en haut arrête la visite ; elle reste dans « Plus ».'}]],
+        x:'Rien de ce que tu essaies pendant la visite n\'est enregistré' + (own ? ', sauf la couleur de l\'app si tu en choisis une : elle reste' : '') + '. Le ✕ en haut arrête la visite ; elle reste dans « Plus ».'}]],
       dash:(own || bur) && ['Le tableau de bord', nav('accueil', 'Le tableau de bord', 'Ton tableau de bord : la journée et le mois d\'un coup d\'œil.').concat([
         {icon:'🏠', go:'tab:accueil', sel:'main .rings, main .ringcard, main', t:'D\'un coup d\'œil', p:'Les jobs du jour, ce qui est réservé cette semaine, l\'argent encaissé ce mois-ci et ce qui reste à recevoir.' + (own ? ' Seuls toi et le bureau voyez ces chiffres (sauf si tu le permets à quelqu\'un).' : '')},
         {icon:'🚚', go:'tab:accueil', sel:'.mcard, .qrow', need:true, t:'Tes mécanos aujourd\'hui', p:'Une carte par mécano : ses jobs du jour, ce qui est fait, et s\'il est en route vers un client.'}])],
@@ -952,7 +953,7 @@
         {icon:'👉', go:'dispos', try:'#main [aria-label="Mécano"]', need:true, t:'Un mécano à la fois', p:'Les noms en haut : la semaine de chacun.', tryT:'Essaie : touche le nom d\'un autre mécano.', done:'Voilà sa semaine : ses jours, ses heures, ses congés.'}])],
       settings:own && ['Les réglages', nav('reglages', 'Les réglages', 'Les réglages du garage.').concat([
         {icon:'👆', go:'set:', tap:'[data-act="ph-sec"][data-for="lux-sect"]', need:true, t:'Les couleurs de l\'app', p:'Les réglages sont rangés en sections.', do:'Touche « Couleurs de l\'app ».'},
-        {icon:'🎨', go:'set:Couleurs', try:'#lux-sect', t:'Les couleurs', p:'Le mode vitrine : des panneaux en verre sur un fond de couleur. Toute l\'équipe voit celle que tu choisis.', tryT:'Essaie : touche une couleur pour la voir sur toute l\'app.', done:'C\'est un essai : elle revient comme avant à l\'étape suivante. Pour la garder, reviens ici après la visite et touche-la.'},
+        {icon:'🎨', go:'set:Couleurs', try:'#lux-sect', t:'Les couleurs', p:'Le mode vitrine : des panneaux en verre sur un fond de couleur. Toute l\'équipe voit celle que tu choisis.', tryT:'Choisis : touche une couleur, elle s\'applique tout de suite à toute l\'app.', done:'Elle reste : c\'est maintenant la couleur de l\'app pour toute l\'équipe. Tu peux en choisir une autre ici quand tu veux.'},
         {icon:'👆', go:'set:Couleurs', tap:'#lux-sect .ph-secback', need:true, t:'Tous les réglages', p:'Pour revenir à la liste des sections.', do:'Touche « ‹ Tous les réglages ».'},
         {icon:'⚙️', go:'set:', sel:'#ph-setlist, #setform', t:'Le reste des réglages', p:'Le nom du garage, les taxes, ton taux horaire, tes prix, l\'horaire, les mécanos et les camions, le bas des factures.'}])],
       team:own && ['L\'équipe et les accès', nav('equipe', 'L\'équipe et les accès', 'Les comptes de ton équipe.').concat([
