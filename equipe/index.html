@@ -2743,7 +2743,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   /* ---- the guided tour, for each role (a person with several roles gets each part once) ----
      The person does it. To go to another screen, HE touches it: the menu, « Plus », a tab, a button. The tour lights where to
      touch and says where it leads; the visit goes on when he touches it (no « Passer »). On each screen he tries things
-     (search, filters, sections, the schedule grid, the colors…): nothing tried is saved, and his view comes back as it was.
+     (search, filters, sections, the schedule grid…): nothing tried is saved, and his view comes back as it was.
+     The app's color is the exception: the one the owner picks during the visit stays (it is saved like any other time).
      A step: t title, p words, icon, x a tip, sel what is lit, go its screen (put back when he goes back with ‹ Retour; going forward it
      is already open after his touch, except the job and the schedule window, opened for him where nothing can be touched), tap he touches it, nav that touch opens this screen (skipped if he is already there),
      try he plays with it (tryT what to try, done what it showed), after lit with it once tried, need skip it when not there. */
@@ -2785,7 +2786,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     var P = {
       hello:['Bienvenue', [{icon:'👋', go:'home', t:'Bienvenue' + (nm ? ', ' + nm : '') + ' !',
         p:'On fait le tour de l\'app ensemble. Ici, c\'est toi qui touches : je t\'éclaire le bouton, tu le touches, et je t\'explique ce qui s\'ouvre.',
-        x:'Rien de ce que tu essaies pendant la visite n\'est enregistré. Le ✕ en haut arrête la visite ; elle reste dans « Plus ».'}]],
+        x:'Rien de ce que tu essaies pendant la visite n\'est enregistré' + (own ? ', sauf la couleur de l\'app si tu en choisis une : elle reste' : '') + '. Le ✕ en haut arrête la visite ; elle reste dans « Plus ».'}]],
       dash:(own || bur) && ['Le tableau de bord', nav('accueil', 'Le tableau de bord', 'Ton tableau de bord : la journée et le mois d\'un coup d\'œil.').concat([
         {icon:'🏠', go:'tab:accueil', sel:'main .rings, main .ringcard, main', t:'D\'un coup d\'œil', p:'Les jobs du jour, ce qui est réservé cette semaine, l\'argent encaissé ce mois-ci et ce qui reste à recevoir.' + (own ? ' Seuls toi et le bureau voyez ces chiffres (sauf si tu le permets à quelqu\'un).' : '')},
         {icon:'🚚', go:'tab:accueil', sel:'.mcard, .qrow', need:true, t:'Tes mécanos aujourd\'hui', p:'Une carte par mécano : ses jobs du jour, ce qui est fait, et s\'il est en route vers un client.'}])],
@@ -2851,7 +2852,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         {icon:'👉', go:'dispos', try:'#main [aria-label="Mécano"]', need:true, t:'Un mécano à la fois', p:'Les noms en haut : la semaine de chacun.', tryT:'Essaie : touche le nom d\'un autre mécano.', done:'Voilà sa semaine : ses jours, ses heures, ses congés.'}])],
       settings:own && ['Les réglages', nav('reglages', 'Les réglages', 'Les réglages du garage.').concat([
         {icon:'👆', go:'set:', tap:'[data-act="ph-sec"][data-for="lux-sect"]', need:true, t:'Les couleurs de l\'app', p:'Les réglages sont rangés en sections.', do:'Touche « Couleurs de l\'app ».'},
-        {icon:'🎨', go:'set:Couleurs', try:'#lux-sect', t:'Les couleurs', p:'Le mode vitrine : des panneaux en verre sur un fond de couleur. Toute l\'équipe voit celle que tu choisis.', tryT:'Essaie : touche une couleur pour la voir sur toute l\'app.', done:'C\'est un essai : elle revient comme avant à l\'étape suivante. Pour la garder, reviens ici après la visite et touche-la.'},
+        {icon:'🎨', go:'set:Couleurs', try:'#lux-sect', t:'Les couleurs', p:'Le mode vitrine : des panneaux en verre sur un fond de couleur. Toute l\'équipe voit celle que tu choisis.', tryT:'Choisis : touche une couleur, elle s\'applique tout de suite à toute l\'app.', done:'Elle reste : c\'est maintenant la couleur de l\'app pour toute l\'équipe. Tu peux en choisir une autre ici quand tu veux.'},
         {icon:'👆', go:'set:Couleurs', tap:'#lux-sect .ph-secback', need:true, t:'Tous les réglages', p:'Pour revenir à la liste des sections.', do:'Touche « ‹ Tous les réglages ».'},
         {icon:'⚙️', go:'set:', sel:'#ph-setlist, #setform', t:'Le reste des réglages', p:'Le nom du garage, les taxes, ton taux horaire, tes prix, l\'horaire, les mécanos et les camions, le bas des factures.'}])],
       team:own && ['L\'équipe et les accès', nav('equipe', 'L\'équipe et les accès', 'Les comptes de ton équipe.').concat([
@@ -3882,7 +3883,7 @@ var renderT = 0;
 function renderSoon(){ if (renderT) return; renderT = requestAnimationFrame(function(){ renderT = 0; render(); }); }   /* data arriving: one redraw per frame at most */
 function render(){
   if (renderT){ cancelAnimationFrame(renderT); renderT = 0; }
-  if (S.cfgLoaded && !(TOUR && TOUR.luxBack != null)) applyLux(S.cfg.lux);   /* (a color being tried in the guided tour stays) */   /* until the garage's settings arrive, the device's last colors stay (no flash) */
+  if (S.cfgLoaded) applyLux(S.cfg.lux);   /* until the garage's settings arrive, the device's last colors stay (no flash) */
   if (!tabOk(S.tab)) S.tab = defTab();
   fitTab();
   var lm = lockedMech(); if (lm) S.mech = truckMode() ? '' : lm;
@@ -5892,7 +5893,6 @@ document.addEventListener('click', function(e){
       var lxk = luxOf(v).k, lxp = cfg().lux, lxref = S.db.doc('config/main'), lxt = Date.now();
       var lxMark = function(k){ $$('.lux-sw').forEach(function(x){ x.setAttribute('aria-pressed', String(x.dataset.v === luxOf(k).k)); }); };
       applyLux(lxk); lxMark(lxk);
-      if (TOUR && TOUR.steps[TOUR.i] && TOUR.steps[TOUR.i].try){ if (TOUR.luxBack == null) TOUR.luxBack = luxOf(lxp).k; break; }   /* the guided tour: only tried, not saved */
       write('config/main', function(){ return S.cfg && Object.keys(S.cfg).length ? lxref.update({lux:lxk, updatedAt:lxt}) : lxref.set(Object.assign(clone(cfg()), {lux:lxk, updatedAt:lxt})); }, 'Couleurs de l\'app : ' + luxOf(lxk).n).then(function(ok){
         if (ok){ S.cfg = Object.assign(clone(cfg()), {lux:lxk}); S.cfgLoaded = true; }
         else { applyLux(lxp); lxMark(lxp); }
@@ -6426,7 +6426,7 @@ function tourCheck(){
   }, function(){});
 }
 /* ---- the guided tour: a soft light around the part being explained, a bubble with the words. The person goes from screen to screen himself
-   (he touches the lit button), and tries things on the way; nothing he tries is saved.
+   (he touches the lit button), and tries things on the way; nothing he tries is saved, except the app's color: the one he picks stays.
    Steps: {ch: chapter, icon, t: title, p: text, x: a tip (optional), sel: what to light up,
      tap: the button to touch (the visit goes on after his touch; no « Suivant »), do: what to touch,
      try: what he can play with (tryT: the invitation, done: the words once he did), after: what it opens (lit with it),
@@ -6448,7 +6448,7 @@ function tourStart(replay){
   if (SCH) schedClose();
   if (TOUR) tourEnd(true, true);
   st.forEach(function(x){ if (!x.sel) x.sel = x.tap || x.try || null; });
-  TOUR = {steps:st, i:0, dir:1, replay:!!replay, seq:0, busy:true, rk:'', tried:false, luxBack:null,
+  TOUR = {steps:st, i:0, dir:1, replay:!!replay, seq:0, busy:true, rk:'', tried:false,
     keep:{view:S.view, invFilter:S.invFilter, cq:S.cq, trView:S.trView, trP:S.trP, day:S.day, mech:S.mech, avMech:S.avMech}};
   clearInterval(ttWatch); ttWatch = setInterval(function(){ if (TOUR) tourFollow(false); else { clearInterval(ttWatch); ttWatch = 0; } }, 300);
   tourMount();
@@ -6552,7 +6552,7 @@ function ttScrolled(seq){   /* the soft scroll is done (or a short time passed) 
 function tourShow(){
   if (!TOUR) return;
   var seq = ++TOUR.seq, x = TOUR.steps[TOUR.i], ov = $('#tour-ov');
-  TOUR.busy = true; TOUR.tried = false; tourUndo(); document.body.classList.remove('tt-free'); if (ov){ ov.dataset.ready = '0'; ov.classList.remove('open'); var hl0 = ov.querySelector('.tt-hole'); if (hl0) hl0.classList.remove('tap'); }
+  TOUR.busy = true; TOUR.tried = false; document.body.classList.remove('tt-free'); if (ov){ ov.dataset.ready = '0'; ov.classList.remove('open'); var hl0 = ov.querySelector('.tt-hole'); if (hl0) hl0.classList.remove('tap'); }
   var shut0 = S.sheet && !/#sheet|#expform|\.x-scan|#x-/.test(x.sel || ''), tip = ov && ov.querySelector('.tt-tip'), moves = tourMoves(x.go) || shut0, red = ttReduced();   /* (a step outside the open sheet: it closes) */
   if (tip){ tip.classList.add('fade'); if (moves) tip.classList.add('gone'); }   /* another screen: the bubble leaves too, and comes back where it belongs */
   if (moves) tourLight(null);   /* close the light: the screen changes in the dark */
@@ -6707,8 +6707,8 @@ function tourPrev(){ if (!TOUR || TOUR.busy || !TOUR.i) return; TOUR.dir = -1; T
 function tourEnd(skipped, quiet){
   if (!TOUR) return;
   var replay = TOUR.replay, p = tourPath(), ov = $('#tour-ov'), home;
-  tourUndo(); var kp = TOUR.keep; TOUR = null;
-  if (kp){ Object.keys(kp).forEach(function(k){ S[k] = kp[k]; }); lsSet('gm.view', S.view); lsSet('gm.mech', S.mech); if (S.sheet) closeSheet(); }   /* what was tried (a view, a filter, a search) is put back */
+  var kp = TOUR.keep; TOUR = null;
+  if (kp){ Object.keys(kp).forEach(function(k){ S[k] = kp[k]; }); lsSet('gm.view', S.view); lsSet('gm.mech', S.mech); if (S.sheet) closeSheet(); }   /* what was tried (a view, a filter, a search) is put back; the app's color he chose stays */
   if (ov){ ov.removeAttribute('id'); ov.classList.remove('on'); ov.classList.add('out'); setTimeout(function(){ ov.remove(); }, ttReduced() ? 0 : 260); }
   document.body.classList.remove('touring'); document.body.classList.remove('tt-free');
   if (quiet) return;
@@ -6771,12 +6771,6 @@ function tourTried(){
   if (!TOUR || !tip || TOUR.tried) return;
   TOUR.tried = true; tip.classList.add('tried');
   setTimeout(function(){ tourFollow(true); }, 40);   /* the bubble's words changed, and what was tried may have opened something */
-}
-/* what was only tried goes back as it was (a color tried during the visit is not kept) */
-function tourUndo(){
-  if (!TOUR || TOUR.luxBack == null) return;
-  var k = TOUR.luxBack; TOUR.luxBack = null; applyLux(k);
-  $$('.lux-sw').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.v === luxOf(k).k)); });
 }
 /* the person scrolls: the light and the words stay on the part, without lagging behind */
 var ttSc = 0, ttScT = 0;
