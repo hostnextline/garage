@@ -13,7 +13,7 @@ def lit(p, sel):
     """is the lit hole around this element (or around its top part, for a tall one)?"""
     return p.evaluate("""(sel) => { const h = document.querySelector('#tour-ov .tt-hole'); const e = [...document.querySelectorAll(sel)].find(x => x.getBoundingClientRect().width > 0); if (!h || !e) return false;
       const a = h.getBoundingClientRect(), b = e.getBoundingClientRect(); return a.left <= b.left + 1 && a.right >= b.right - 1 && a.top <= Math.max(b.top, 70) + 1 && (a.bottom >= b.bottom - 1 || a.height >= innerHeight * .45); }""", sel)
-def settle(p): p.wait_for_function("!!document.querySelector('#tour-ov .tt-tip') && !document.querySelector('#tour-ov .tt-tip.going')", timeout=9000); p.wait_for_timeout(120)
+def settle(p): p.wait_for_function("!!document.querySelector('#tour-ov[data-ready=\"1\"]')", timeout=9000); p.wait_for_timeout(60)
 def nxt(p): p.click('#tour-ov [data-act="tt-next"]'); p.wait_for_timeout(60); settle(p)
 def walk(p):
     """« Suivant » to the last step; returns what each step showed"""
@@ -22,6 +22,16 @@ def walk(p):
         if p.locator('#tour-ov [data-act="tt-end"]').count(): break
         nxt(p); seen.append(info(p))
     return seen
+REC = """(() => { window.__tt = []; window.__ttOn = true; (function f(){ const o = document.querySelector('#tour-ov'); if (o){ const h = o.querySelector('.tt-hole'), t = o.querySelector('.tt-tip'), i = t && t.querySelector('.tt-in'), r = h.getBoundingClientRect();
+  window.__tt.push({hash: location.hash, screen: window.__garageApi ? window.__garageApi.S.screen : null, shut: h.classList.contains('shut'), top: Math.round(r.top), h: Math.round(r.height), to: +getComputedStyle(t).opacity, io: i ? +getComputedStyle(i).opacity : 1, title: ((t.querySelector('h3') || {}).textContent || '').replace(/\u00a0/g, ' ')}); }
+  if (window.__ttOn) requestAnimationFrame(f); })(); })()"""
+def rec_next(p):
+    """« Suivant », filmed: what the light and the bubble do on each frame until the step is ready"""
+    p.evaluate("window.__keep = [document.querySelector('#tour-ov .tt-hole'), document.querySelector('#tour-ov .tt-tip')]")
+    p.evaluate(REC); p.click('#tour-ov [data-act="tt-next"]'); p.wait_for_timeout(60); settle(p)
+    fr = p.evaluate("window.__ttOn = false, window.__tt")
+    same = p.evaluate("window.__keep[0] === document.querySelector('#tour-ov .tt-hole') && window.__keep[1] === document.querySelector('#tour-ov .tt-tip')")
+    return fr, same
 def no_game(p): t = tip(p); return '⭐' not in t and 'point' not in t.lower() and 'À toi' not in t and p.locator('#tour-ov .tt-pts, #tour-ov .tt-win, #tour-ov .tt-conf, .tt-pop').count() == 0
 otok, pw = seed()
 uid = {k: psql("select id from auth.users where email='%s@garage.test'" % k) for k in ('hassan', 'saleh', 'ali', 'nadia', 'lina')}
@@ -46,15 +56,31 @@ with sync_playwright() as pl:
     check('the rest of the screen waits during the visit (touching « Factures » does nothing)', sp.evaluate('location.hash') != '#factures' and sp.locator('#tour-ov').count() == 1)
     nxt(sp)
     check('…his appointments of the day (Marie), with what each label means', lit(sp, '.ph-list') and 'Planifié' in tip(sp) and 'Terminé' in tip(sp))
-    nxt(sp); i = info(sp)
+    old = info(sp)['t']; fr, same = rec_next(sp); i = info(sp)
+    changed = [f for f in fr if f['screen'] == 'job']
+    check('smooth: on a change of screen, the light closes first (the whole screen dims evenly) and the new screen comes in the dark', bool(changed) and changed[0]['shut'], [(f['screen'], f['shut']) for f in fr[:12]])
+    check('…the words of the last step never show over the new screen (the bubble leaves, then comes back with the new words)', all(f['to'] * f['io'] < 0.06 for f in changed if f['title'] == old), [(round(f['to'], 2), round(f['io'], 2), f['title'][:12]) for f in changed[:8]])
+    check('…one light and one bubble for the whole visit (they move, nothing is rebuilt)', same)
     check('« Une job, du début à la fin »: the visit opens his job by itself (call, text, GPS)', i['ch'] == 'Une job, du début à la fin' and i['screen'] == 'job' and lit(sp, '.pjob') and 'itinéraire' in tip(sp), i)
-    nxt(sp)
+    fr, same = rec_next(sp)
+    tops = [f['top'] for f in fr if not f['shut']]
+    mid = [t for t in tops if min(tops[0], tops[-1]) + 2 < t < max(tops[0], tops[-1]) - 2] if tops else []
+    check('smooth: on the same screen, the light glides from one part to the next (in-between positions, no jump)', len(set(mid)) >= 3 and same, [tops[:3], len(set(mid)), tops[-1:]])
+    nw = [f for f in fr if f['title'] == 'Le gros bouton']
+    check('…the new words come in hidden, then fade in (never half-shown over the old ones)', bool(nw) and nw[0]['io'] < 0.06 and nw[-1]['io'] > 0.94, [round(f['io'], 2) for f in nw[:6]])
     check('…the big button explained (« Je pars » texts the client, then « Je suis arrivé »…)', lit(sp, '.nextbtn') and 'Je pars' in tip(sp) and 'Je suis arrivé' in tip(sp))
     sp.screenshot(path='tour_4.png')
     sp.click('#tour-ov [data-act="tt-prev"]'); sp.wait_for_timeout(60); settle(sp)
     check('« ‹ Retour » goes back one step', info(sp)['t'] == 'La fiche de la job')
     sp.keyboard.press('ArrowRight'); sp.wait_for_timeout(60); settle(sp)
     check('the → key goes forward too', info(sp)['t'] == 'Le gros bouton')
+    n0 = info(sp)['n']; sp.click('#tour-ov [data-act="tt-next"]'); sp.mouse.click(*sp.evaluate("(() => { const r = document.querySelector('#tour-ov .tt-tip').getBoundingClientRect(); return [r.right - 60, r.bottom - 30]; })()")); sp.wait_for_timeout(60); settle(sp)
+    check('a quick double tap on « Suivant » moves one step only', int(info(sp)['n'].split()[0]) == int(n0.split()[0]) + 1, [n0, info(sp)['n']])
+    sp.click('#tour-ov [data-act="tt-prev"]'); sp.wait_for_timeout(60); settle(sp)
+    sp.set_viewport_size({'width': 390, 'height': 700}); sp.wait_for_timeout(400)
+    tb = sp.evaluate("(() => { const t = document.querySelector('#tour-ov .tt-tip').getBoundingClientRect(); return [t.top, t.bottom]; })()")
+    check('the phone bar shows / hides (smaller screen): the bubble moves to stay inside, nothing is rebuilt', tb[1] <= 700 and tb[0] >= 0 and info(sp)['t'] == 'Le gros bouton', tb)
+    sp.set_viewport_size({'width': 390, 'height': 844}); sp.wait_for_timeout(400)
     rest = walk(sp)
     chs = []
     for x in rest:
