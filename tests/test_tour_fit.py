@@ -14,7 +14,8 @@ PROBE = """(() => {
   const bot = hr.bottom - 8;   // the part's edge inside the light (8 px of air around it)
   const edge = hr.bottom >= H - 40;   // the light goes to the bottom of the screen: the page just goes on below, nothing is cut
   if (!shut && hr.width > 4 && !edge){
-    const cands = [...document.querySelectorAll('main .card, main tr, main .sect, main .row, main details, main fieldset, main label, #sched .sch-scroll, #map-slot, .cal')];
+    const R = document.querySelector('#sheet:not([hidden])') ? '#sheet ' : 'main ';   // a window open on top: what is behind it is not what is lit
+    const cands = [...document.querySelectorAll((R === 'main ' ? ['.card', 'tr', '.sect', '.row', 'details', 'fieldset', 'label'] : ['.card', '.sect', '.inst-b']).map(x => R + x).join(', ') + ', #sched .sch-scroll, #map-slot, .cal')];
     cut = cands.filter(e => !(e.closest('details:not([open])') && !e.closest('summary'))).filter(e => { const r = e.getBoundingClientRect(); return r.height > 8 && r.height < H * .8 && r.left >= hr.left - 2 && r.right <= hr.right + 2 && r.top < bot - 3 && r.bottom > bot + 3 && r.top > hr.top + 12; })
                .map(e => e.tagName + '.' + e.className.toString().slice(0, 20));
   }

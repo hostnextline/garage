@@ -40,10 +40,13 @@ h1{font:700 28px/1.05 var(--f-display);margin:4px 0 0;text-wrap:balance}
 .pin.home{border-radius:10px;background:#F2B200;color:#1E1600}
 .leaflet-container{font:inherit}
 @media (prefers-reduced-motion:no-preference){ .state i{animation:p 2s ease-in-out infinite} @keyframes p{50%{box-shadow:0 0 0 8px var(--ok-bg)}} }
+.langbar{display:flex;gap:6px;justify-content:flex-end;margin:0 0 6px}.langbar button{font:600 13px/1 var(--f-body);padding:7px 11px;border-radius:999px;border:1px solid var(--line-strong);background:transparent;color:var(--ink);cursor:pointer;min-height:32px}.langbar button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+@media print{.langbar{display:none}}
 </style>
 </head>
 <body>
 <header class="head"><div class="in">
+  <div class="langbar" role="group" aria-label="Langue / Language" translate="no"><button type="button" data-lang-set="fr" lang="fr">Français</button><button type="button" data-lang-set="en" lang="en">English</button></div>
   <div class="eyebrow" id="garage">Suivi en direct</div>
   <h1 id="title">Chargement…</h1>
   <div class="eta" id="eta" hidden><b id="eta-time"></b><span id="eta-left"></span></div>
@@ -151,6 +154,10 @@ h1{font:700 28px/1.05 var(--f-display);margin:4px 0 0;text-wrap:balance}
   }
   document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible' && !stopped){ clearTimeout(timer); poll(); } });
   if (!token || !CFG.url) return stop('Lien de suivi incomplet', 'Vérifiez le lien reçu par texto.');
+  /* the page's language: the client's own choice, otherwise the one on his file at the garage (in the link), otherwise his phone's */
+  function langMark(){ var l = window.I18N ? I18N.lang : 'fr'; Array.prototype.forEach.call(document.querySelectorAll('[data-lang-set]'), function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-lang-set') === l)); }); }
+  document.addEventListener('click', function(ev){ var b = ev.target.closest('[data-lang-set]'); if (!b || !window.I18N) return; I18N.set(b.getAttribute('data-lang-set')); langMark(); });
+  langMark();
   poll();
 })();
 </script>

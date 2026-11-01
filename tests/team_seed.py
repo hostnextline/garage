@@ -68,6 +68,8 @@ def seed(stripe=False):
 def ctx(browser, phone=False, geo=None, scheme='light'):
     c = browser.new_context(viewport={'width': 390 if phone else 1100, 'height': 844 if phone else 900}, timezone_id='America/Toronto', locale='fr-CA', has_touch=phone, color_scheme=scheme,
                             geolocation=geo, permissions=['geolocation'] if geo else [], **({'user_agent': IPHONE} if phone else {}))
+    if os.environ.get('I18N_COLLECT'): c.add_init_script("window.__i18nCollect = 'http://127.0.0.1:9299/c';")   # (gathering every text shown, for the translation)
+    if os.environ.get('I18N_LANG'): c.add_init_script("try { localStorage.setItem('gm.lang', '%s'); } catch(e){}" % os.environ['I18N_LANG'])
     c.route('https://tile.openstreetmap.org/**', lambda r: r.fulfill(status=200, content_type='image/png', body=b''))
     c.route('https://fonts.googleapis.com/**', lambda r: r.fulfill(status=200, content_type='text/css', body=''))
     c.route('https://fonts.gstatic.com/**', lambda r: r.abort())

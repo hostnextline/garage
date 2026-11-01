@@ -21,7 +21,8 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 const fail = (message: string, status = 400, error = 'bad_request') => json({ error, message }, status);
 const norm = (s: unknown) => String(s ?? '').trim().toLowerCase();
 const r2 = (n: number) => Math.round((+n || 0) * 100) / 100;
-const money = (n: number) => new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(r2(n)).replace(/\s/g, ' ');
+const money = (n: number, lang = 'fr') => new Intl.NumberFormat(lang === 'en' ? 'en-CA' : 'fr-CA', { style: 'currency', currency: 'CAD' }).format(r2(n)).replace(/\s/g, ' ');
+const langOf = (c: any) => (c && c.lang === 'en' ? 'en' : 'fr');   // the language on the client's file (French unless set)
 const todayTO = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 
 async function timed(url: string, init: RequestInit = {}, ms = 12000) {
@@ -158,7 +159,7 @@ async function view(row: any, cfg?: any) {
   return {
     ok: true,
     garage: { name: biz.name || 'Garage mobile', phone: biz.phone || '', email: biz.email || '', address: biz.address || '', taxIds: [biz.tps ? 'TPS ' + biz.tps : '', biz.tvq ? 'TVQ ' + biz.tvq : ''].filter(Boolean).join(' · '), footer: conf.footer || '' },
-    client: { first: first(client.firstName || client.name) },
+    client: { first: first(client.firstName || client.name), lang: langOf(client) },
     job: { date: job.date || '', vehicle: vehicleLabel(job.vehicle), mechanic: first(job.mechanic) },
     invoice: inv ? { number: inv.number, issuedAt: inv.issuedAt, lines: (inv.lines || []).map((l: any) => ({ desc: l.desc, qty: l.qty, price: l.price, type: l.type })),
       sub: inv.sub, tps: inv.tps, tvq: inv.tvq, total: inv.total, taxesOn: inv.taxesOn !== false, paid: !!inv.paid, method: inv.method || '', paidAt: inv.paidAt || null, note: inv.note || '',
@@ -221,16 +222,22 @@ Deno.serve(async (req) => {
         if (error) return fail('Le lien n\'a pas pu être créé.', 500, 'link');
         row = ins;
       } else if (row.base !== base) { await admin.from('client_links').update({ base }).eq('token', row.token); row.base = base; }
-      const link = `${base}client.html#t=${row.token}`;
-      if (!send) return json({ ok: true, token: row.token, link });
-
       let client: any = job.client || {};
       if (job.clientId) { const c = await docGet('clients/' + job.clientId); if (c) client = { ...client, ...c }; }
+      const lg = langOf(client), en = lg === 'en';
+      const link = `${base}client.html#t=${row.token}&l=${lg}`;   // (the page opens in the client's language)
+      if (!send) return json({ ok: true, token: row.token, link });
+
       const conf = (await docGet('config/main')) || {};
-      const garage = String(conf.biz?.name || 'votre garage mobile').trim(), hi = `Bonjour${first(client.firstName || client.name) ? ' ' + first(client.firstName || client.name) : ''}`;
-      const message = send === 'facture'
-        ? `${hi}, voici votre facture ${job.invoice.number} de ${garage} (${money(job.invoice.total)}) : ${link}` + (cfg.stripeKey && !job.invoice.paid ? ' Vous pouvez la payer en ligne par carte.' : '')
-        : `${hi}, ${first(me.name) || 'votre mécano'} de ${garage} propose des travaux supplémentaires sur votre ${vehicleLabel(job.vehicle) || 'véhicule'} (${money(extra.total)} avant taxes). Pour voir et accepter ou refuser : ${link}`;
+      const fn = first(client.firstName || client.name);
+      const garage = String(conf.biz?.name || (en ? 'your mobile garage' : 'votre garage mobile')).trim(), hi = (en ? 'Hello' : 'Bonjour') + (fn ? ' ' + fn : '');
+      const message = en
+        ? (send === 'facture'
+          ? `${hi}, here is your invoice ${job.invoice.number} from ${garage} (${money(job.invoice.total, 'en')}): ${link}` + (cfg.stripeKey && !job.invoice.paid ? ' You can pay it online by card.' : '')
+          : `${hi}, ${first(me.name) || 'your mechanic'} from ${garage} is proposing extra work on your ${vehicleLabel(job.vehicle) || 'vehicle'} (${money(extra.total, 'en')} before tax). To see it and accept or decline: ${link}`)
+        : (send === 'facture'
+          ? `${hi}, voici votre facture ${job.invoice.number} de ${garage} (${money(job.invoice.total)}) : ${link}` + (cfg.stripeKey && !job.invoice.paid ? ' Vous pouvez la payer en ligne par carte.' : '')
+          : `${hi}, ${first(me.name) || 'votre mécano'} de ${garage} propose des travaux supplémentaires sur votre ${vehicleLabel(job.vehicle) || 'véhicule'} (${money(extra.total)} avant taxes). Pour voir et accepter ou refuser : ${link}`);
       let sms: any = { status: 'off', body: message, phone: client.phone || '' };
       if (cfg.ghlToken && cfg.ghlLocation) {
         try { await sendSms(cfg, client, message); sms = { status: 'sent', body: message, phone: client.phone }; }
@@ -269,13 +276,13 @@ Deno.serve(async (req) => {
       const cents = Math.round(r2(inv.total) * 100);
       if (cents < 50) return fail('Montant trop petit pour un paiement par carte.');
       const conf = (await docGet('config/main')) || {};
-      const back = `${row.base}client.html#t=${row.token}`;
+      const back = `${row.base}client.html#t=${row.token}&l=${body.lang === 'en' ? 'en' : 'fr'}`;   // (back from paying: the page in the same language)
       const s = await stripeCall(cfg.stripeKey, 'POST', '/checkout/sessions', {
-        mode: 'payment', locale: 'fr-CA', client_reference_id: row.job_id,
+        mode: 'payment', locale: body.lang === 'en' ? 'en' : 'fr-CA', client_reference_id: row.job_id,
         success_url: back + '&retour=paye', cancel_url: back,
-        line_items: { 0: { quantity: 1, price_data: { currency: 'cad', unit_amount: cents, product_data: { name: `Facture ${inv.number} — ${conf.biz?.name || 'Garage mobile'}` } } } },
+        line_items: { 0: { quantity: 1, price_data: { currency: 'cad', unit_amount: cents, product_data: { name: `${body.lang === 'en' ? 'Invoice' : 'Facture'} ${inv.number} — ${conf.biz?.name || (body.lang === 'en' ? 'Mobile garage' : 'Garage mobile')}` } } } },
         metadata: { job_id: row.job_id, invoice: inv.number },
-        payment_intent_data: { metadata: { job_id: row.job_id, invoice: inv.number }, description: `Facture ${inv.number}` },
+        payment_intent_data: { metadata: { job_id: row.job_id, invoice: inv.number }, description: `${body.lang === 'en' ? 'Invoice' : 'Facture'} ${inv.number}` },
       });
       await admin.from('client_links').update({ last_session: s.id }).eq('token', row.token);
       return json({ ok: true, url: s.url });

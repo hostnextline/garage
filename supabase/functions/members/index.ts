@@ -96,7 +96,7 @@ async function garageName() {
   return String((data?.data as any)?.biz?.name || 'Garage mobile').trim();
 }
 const h = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
-function inviteMessage(o: { name: string; email: string; role: string; garage: string; by: string; link: string }) {
+function inviteMessageFr(o: { name: string; email: string; role: string; garage: string; by: string; link: string }) {
   const first = o.name.split(' ')[0] || o.name, role = String(o.role).split(',').map((r) => ROLE_FR[r] || r).join(' et ');
   const subject = `Ton accès au carnet de ${o.garage}`;
   const text = `Bonjour ${first},\n\n${o.by} t'a ajouté à l'équipe de ${o.garage} (${role}).\n\n` +
@@ -120,6 +120,32 @@ function inviteMessage(o: { name: string; email: string; role: string; garage: s
     `<p>Ton courriel pour te connecter : <b>${h(o.email)}</b></p></div>`;
   return { subject, text, html };
 }
+const ROLE_EN: Record<string, string> = { owner: 'owner', bureau: 'office', mecano: 'mechanic', tresorier: 'treasurer' };
+function inviteMessageEn(o: { name: string; email: string; role: string; garage: string; by: string; link: string }) {
+  const first = o.name.split(' ')[0] || o.name, role = String(o.role).split(',').map((r) => ROLE_EN[r] || r).join(' and ');
+  const subject = `Your access to the ${o.garage} logbook`;
+  const text = `Hello ${first},\n\n${o.by} added you to the ${o.garage} team (${role}).\n\n` +
+    `1. Activate your account and choose your password with this link (valid ${INVITE_DAYS} days):\n${o.link}\n\n` +
+    `2. Put the app on your phone's home screen (the app also shows you how, step by step):\n` +
+    `- iPhone (Safari): Share button (on recent iPhones: ••• next to the address, then Share), then "Add to Home Screen", then "Add".\n` +
+    `- Android (Chrome): menu ⋮, then "Install app" (or "Add to Home screen").\n` +
+    `If the link opens inside your email app, first choose "Open in Safari" (iPhone) or "Open in Chrome" (Android).\n\n` +
+    `3. Open the app with the new Garage icon and sign in once. After that, it remembers you.\n\n` +
+    `Your email to sign in: ${o.email}\n`;
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5;color:#1e1915;max-width:520px">` +
+    `<p>Hello ${h(first)},</p><p>${h(o.by)} added you to the <b>${h(o.garage)}</b> team (${h(role)}).</p>` +
+    `<p><b>1. Activate your account</b> and choose your password:</p>` +
+    `<p><a href="${h(o.link)}" style="display:inline-block;background:#1e1915;color:#ffffff;text-decoration:none;font-weight:bold;padding:14px 22px;border-radius:12px">Activate my account</a></p>` +
+    `<p style="font-size:13px;color:#6b5e55">The link is valid ${INVITE_DAYS} days. If it doesn't open, copy this address: ${h(o.link)}</p>` +
+    `<p><b>2. Put the app on your phone</b> (it opens like a real app; the app also shows you how, step by step):</p>` +
+    `<ul><li><b>iPhone (Safari)</b>: Share button (on recent iPhones: <b>•••</b> next to the address, then Share), then "Add to Home Screen", then "Add".</li>` +
+    `<li><b>Android (Chrome)</b>: menu ⋮, then "Install app" (or "Add to Home screen").</li></ul>` +
+    `<p style="font-size:13px;color:#6b5e55">If the link opens inside your email app, first choose "Open in Safari" (iPhone) or "Open in Chrome" (Android).</p>` +
+    `<p><b>3. Open the app with the new Garage icon</b> and sign in once. After that, it remembers you.</p>` +
+    `<p>Your email to sign in: <b>${h(o.email)}</b></p></div>`;
+  return { subject, text, html };
+}
+function inviteMessage(o: { name: string; email: string; role: string; garage: string; by: string; link: string; lang?: string }) { return o.lang === 'en' ? inviteMessageEn(o) : inviteMessageFr(o); }
 async function sendInvite(s: Record<string, any>, name: string, email: string, msg: { subject: string; text: string; html: string }) {
   if (!s.GHL_TOKEN || !s.GHL_LOCATION_ID) return { status: 'off' };
   try {
@@ -141,11 +167,12 @@ async function makeInvite(userId: string, email: string, by: string) {
   if (error) throw new Error('L\'invitation n\'a pas pu être créée : ' + error.message);
   return token;
 }
-async function inviteAndSend(me: any, m: { user_id: string; name: string; role: string; roles?: string[] }, email: string, baseIn: unknown) {
+async function inviteAndSend(me: any, m: { user_id: string; name: string; role: string; roles?: string[] }, email: string, baseIn: unknown, langIn?: unknown) {
+  const lang = langIn === 'en' ? 'en' : 'fr';   // the language of the person who invites (what he sees in the app)
   const s = await secretMap();
   const token = await makeInvite(m.user_id, email, me.user_id);
-  const link = pickBase(baseIn, s) + '#invite=' + token;
-  const msg = inviteMessage({ name: m.name, email, role: (m.roles && m.roles.length ? m.roles : [m.role]).join(','), garage: await garageName(), by: String(me.name || 'Le propriétaire').split(' ')[0], link });
+  const link = pickBase(baseIn, s) + '#invite=' + token + '&l=' + lang;   // (the activation page opens in that language)
+  const msg = inviteMessage({ name: m.name, email, role: (m.roles && m.roles.length ? m.roles : [m.role]).join(','), garage: await garageName(), by: String(me.name || (lang === 'en' ? 'The owner' : 'Le propriétaire')).split(' ')[0], link, lang });
   const mail = await sendInvite(s, m.name, email, msg);
   await admin.from('invites').update({ sent_by: mail.status === 'sent' ? 'courriel' : 'manuel' }).eq('token_hash', await sha256(token));
   return { link, mail, message: { subject: msg.subject, body: msg.text } };
@@ -242,6 +269,16 @@ Deno.serve(async (req) => {
 
     const me = await caller(req);
     if (!me) return fail('Connecte-toi avec un compte du garage.', 401, 'not_member');
+    // a person deletes his own account (his jobs, invoices and clients stay in the garage's logbook)
+    if (action === 'leave') {
+      if (me.role === 'owner' || (Array.isArray(me.roles) && me.roles.includes('owner'))) {
+        const { count } = await admin.from('members').select('user_id', { count: 'exact', head: true }).eq('role', 'owner').eq('active', true);
+        if ((count || 0) <= 1) return fail("Tu es le seul propriétaire : donne d'abord le rôle de propriétaire à quelqu'un d'autre (Équipe et accès), puis supprime ton compte.", 400, 'last_owner');
+      }
+      const { error } = await admin.auth.admin.deleteUser(me.user_id);
+      if (error) return fail('Le compte n\'a pas été supprimé : ' + error.message);
+      return json({ ok: true });
+    }
     if (me.role !== 'owner') return fail('Seul le propriétaire gère les accès.', 403, 'forbidden');
 
     if (action === 'list') return json({ ok: true, members: await listMembers() });
@@ -279,7 +316,7 @@ Deno.serve(async (req) => {
         return fail(/members_mechanic_uq/.test(e2.message) ? `${mechanic} a déjà un compte.` : 'L\'invitation n\'a pas pu être créée : ' + e2.message);
       }
       try {
-        const r = await inviteAndSend(me, { user_id: u.user.id, name, role, roles }, email, body.base);
+        const r = await inviteAndSend(me, { user_id: u.user.id, name, role, roles }, email, body.base, body.lang);
         return json({ ok: true, user_id: u.user.id, email, ...r, members: await listMembers() });
       } catch (e) {
         await admin.auth.admin.deleteUser(u.user.id);
@@ -296,7 +333,7 @@ Deno.serve(async (req) => {
       if (au?.user?.last_sign_in_at || used?.length) return fail('Cette personne a déjà activé son compte. Pour l\'aider, donne-lui un nouveau mot de passe.');
       const email = au?.user?.email || '';
       if (!email) return fail('Cette personne n\'a pas de courriel.');
-      const r = await inviteAndSend(me, m, email, body.base);
+      const r = await inviteAndSend(me, m, email, body.base, body.lang);
       return json({ ok: true, user_id: uid, email, ...r, members: await listMembers() });
     }
     if (['update', 'password', 'remove'].includes(action)) {
@@ -386,7 +423,7 @@ Deno.serve(async (req) => {
         const up = await ghl('/contacts/upsert', '2021-07-28', s.GHL_TOKEN.value, { locationId: s.GHL_LOCATION_ID.value, firstName: clean(me.name).split(' ')[0] || 'Test', phone, source: 'Garage mobile', tags: ['garage-mobile', 'test'] });
         const contactId = up.contact?.id || up.id;
         if (!contactId) throw new Error('GoHighLevel : contact non créé');
-        await ghl('/conversations/messages', '2021-04-15', s.GHL_TOKEN.value, { type: 'SMS', contactId, message: 'Test du garage mobile : les textos « en route » fonctionnent.' });
+        await ghl('/conversations/messages', '2021-04-15', s.GHL_TOKEN.value, { type: 'SMS', contactId, message: body.lang === 'en' ? 'Mobile garage test: the "on the way" texts work.' : 'Test du garage mobile : les textos « en route » fonctionnent.' });
         return json({ ok: true });
       } catch (e) {
         return fail(String((e as Error).message || e), 502, 'sms_failed');

@@ -1,0 +1,14 @@
+{
+ "rendez-vous, {s0} terminé{s1}": "appointments, {s0} done",
+ "{s0} client{s1} absent{s2}": "{s0} no-show client{s1}",
+ "{s0} sur {s1} fait{s2}": "{s0} of {s1} done",
+ "{s0} facture{s1} non payée{s2}": "{s0} unpaid invoice{s1}",
+ "· {s0} terminée{s1}": "· {s0} done",
+ "· {s0} client{s1} absent{s2}": "· {s0} no-show client{s1}",
+ "{s0} · {s1} facture{s2} non payée{s3}": "{s0} · {s1} unpaid invoice{s2}",
+ "{s0} changement{s1} gardé{s2} sur le téléphone, envoyé{s3} au retour du signal.": "{s0} change{s1} saved on the phone, sent when the signal is back.",
+ "1er trimestre {0}": "Q1 {0}",
+ "2e trimestre {0}": "Q2 {0}",
+ "3e trimestre {0}": "Q3 {0}",
+ "4e trimestre {0}": "Q4 {0}"
+}

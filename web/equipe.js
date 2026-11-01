@@ -45,6 +45,7 @@
     }, w); });
     return Promise.race([Promise.resolve(p), late]).then(function(v){ clearTimeout(t); return v; }, function(e){ clearTimeout(t); throw e; });
   }
+  function lng(){ return window.I18N && window.I18N.lang === 'en' ? 'en' : 'fr'; }   /* the language the person sees: his invitations are written in it */
   function invoke(name, body){
     return timed(T.sb.functions.invoke(name, {body:body}), null, WORK_MS).then(function(r){
       if (!r.error) return r.data;
@@ -234,7 +235,12 @@
     return true;
   }
   function smsText(j, t){
-    var c = A().cl(j), name = first(c.firstName || c.name), mech = first((t && t.mech_name) || j.mechanic || (me && me.name)) || 'Votre mécano';
+    var c = A().cl(j), name = first(c.firstName || c.name), cc = j.clientId ? A().findClient(j.clientId) : null;
+    if (((cc && cc.lang) || c.lang) === 'en' && window.I18N){   /* an English-speaking client: the text in English, the page too */
+      var mE = first((t && t.mech_name) || j.mechanic || (me && me.name)) || 'Your mechanic';
+      return 'Hello' + (name ? ' ' + name : '') + ', ' + mE + ' from ' + A().bizName() + ' is on the way to you' + (t && t.eta_at ? ': arriving around ' + I18N.t(clock(t.eta_at), 'en') : '') + '. Follow the trip live: ' + trackLink(t) + (t && t.token ? '&l=en' : '');
+    }
+    var mech = first((t && t.mech_name) || j.mechanic || (me && me.name)) || 'Votre mécano';
     return 'Bonjour' + (name ? ' ' + name : '') + ', ' + mech + ' de ' + A().bizName() + ' est en route vers chez vous' + (t && t.eta_at ? ' : arrivée prévue vers ' + clock(t.eta_at) : '') + '. Suivez son trajet en direct : ' + trackLink(t);
   }
   function smsHref(phone, text){ var d = String(phone || '').replace(/\D/g, ''); return 'sms:' + (d ? (d.length === 10 ? '+1' : '+') + d : '') + '?&body=' + encodeURIComponent(text); }
@@ -327,7 +333,9 @@
     return (onPhone() ? '' : '<div class="acct"><span>Connecté : <b>' + esc(m.name) + '</b> · ' + esc(rolesLabel(m)) + '</span><button type="button" class="linkbtn" data-act="acct-out">Se déconnecter</button></div>') + shiftCard();
   }
   /* the side menu of a computer ends with who is signed in */
-  function navFoot(){ var m = eff(); return m ? '<div class="navfoot"><span><b>' + esc(m.name) + '</b> · ' + esc(rolesLabel(m)) + '</span><button type="button" class="linkbtn" data-act="tour-replay">👋 ' + (tourAuto() ? 'Revoir la visite guidée' : 'Visite guidée de l\'app') + '</button><button type="button" class="linkbtn" data-act="acct-out">Se déconnecter</button></div>' : ''; }
+  function navFoot(){ var m = eff(); return m ? '<div class="navfoot"><span><b>' + esc(m.name) + '</b> · ' + esc(rolesLabel(m)) + '</span><button type="button" class="linkbtn" data-act="tour-replay">👋 ' + (tourAuto() ? 'Revoir la visite guidée' : 'Visite guidée de l\'app') + '</button><button type="button" class="linkbtn" data-act="acct-out">Se déconnecter</button>' + leaveBtn('linkbtn danger-t') + '</div>' : ''; }
+  /* delete one's own account: asked twice; the jobs, invoices and clients he entered stay in the garage's logbook */
+  function leaveBtn(cls){ if (previewing()) return ''; return '<button type="button" class="' + cls + '" data-act="acct-leave">' + (X.leaveArmed ? 'Touche encore pour supprimer ton compte pour de bon' : 'Supprimer mon compte') + '</button>' + (X.leaveArmed ? '<p class="small muted">Ton accès disparaît ; les jobs, factures et clients restent au carnet du garage.</p>' : ''); }
   /* « Commencer ma journée » only where a position can be sent: a phone or a tablet (not a desk computer) */
   function canTrack(){ try { return onPhone() || !!(window.matchMedia && matchMedia('(pointer: coarse)').matches); } catch(e){ return onPhone(); } }
   function shiftCard(){
@@ -721,7 +729,7 @@
         b += '<div class="er-acts"><button type="button" class="btn sm" data-act="eq-edit" data-v="' + esc(m.user_id) + '">Modifier</button>' +
           (self || !m.active || hasR(m, 'owner') ? '' : '<button type="button" class="btn sm" data-act="pv-person" data-v="' + esc(m.user_id) + '">👁 Voir comme ' + esc(first(m.name)) + '</button>') +
           (self ? '' : (!m.last_sign_in_at && m.active ? '<button type="button" class="btn sm" data-act="eq-reinvite" data-v="' + esc(m.user_id) + '">' + (m.invite ? 'Renvoyer l\'invitation' : 'Envoyer une invitation') + '</button>' : '') + '<button type="button" class="btn sm" data-act="eq-pw" data-v="' + esc(m.user_id) + '">Nouveau mot de passe</button>') + '</div>' +
-          (self ? '' : (m.active ? '<details class="small eq-more"><summary>Bloquer ou supprimer l\'accès</summary><div class="er-acts">' : '<div class="er-acts">') + '<button type="button" class="btn sm" data-act="eq-active" data-v="' + esc(m.user_id) + '">' + (m.active ? 'Bloquer l\'accès (garder le compte)' : 'Redonner l\'accès') + '</button><button type="button" class="btn sm danger" data-act="eq-confirm" data-v="' + esc(m.user_id) + '">Supprimer le compte</button></div>' + (m.active ? '</details>' : ''));
+          (self ? '' : (m.active ? '<div class="eq-more-x">' : '') + '<div class="er-acts"><button type="button" class="btn sm" data-act="eq-active" data-v="' + esc(m.user_id) + '">' + (m.active ? 'Bloquer l\'accès (garder le compte)' : 'Redonner l\'accès') + '</button><button type="button" class="btn sm danger" data-act="eq-confirm" data-v="' + esc(m.user_id) + '">Supprimer le compte</button></div>' + (m.active ? '</div>' : ''));
       }
       b += '</div>';
     });
@@ -849,9 +857,11 @@
      A step: t title, p words, icon, x a tip, sel what is lit, go its screen (put back when he goes back with ‹ Retour; going forward it
      is already open after his touch, except the job and the schedule window, opened for him where nothing can be touched), tap he touches it, nav that touch opens this screen (skipped if he is already there),
      try he plays with it (tryT what to try, done what it showed), after lit with it once tried, need skip it when not there. */
+  function standalone(){ try { return !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)); } catch(e){ return false; } }
   function tourAuto(){ var m = eff(); return !!m && !hasR(m, 'owner'); }
   function tourSteps(){
     var m = eff(); if (!m) return [];
+    var inst = !!window.__webDownloads && !standalone();   /* (already opened from its icon: nothing to install) */
     var own = hasR(m, 'owner'), mec = hasR(m, 'mecano'), tre = hasR(m, 'tresorier'), bur = hasR(m, 'bureau') || own, ph = onPhone(), nm = first(m.name);
     var can = function(k){ return own || permOf(m, k); }, mr = mainRole(rolesOf(m));
     var solo = mec && !bur;   /* a mechanic alone sees his own jobs, clients and invoices */
@@ -888,14 +898,25 @@
       hello:['Bienvenue', [{icon:'👋', go:'home', t:'Bienvenue' + (nm ? ', ' + nm : '') + ' !',
         p:'On fait le tour de l\'app ensemble. Ici, c\'est toi qui touches : je t\'éclaire le bouton, tu le touches, et je t\'explique ce qui s\'ouvre.',
         x:'Rien de ce que tu essaies pendant la visite n\'est enregistré' + (own ? ', sauf la couleur de l\'app si tu en choisis une : elle reste' : '') + '. Le ✕ en haut arrête la visite ; elle reste dans « Plus ».'}]],
+      install:inst && [ph ? 'L\'app sur ton téléphone' : 'L\'app sur ton ordinateur', (ph ? [
+          {icon:'📲', t:'D\'abord : l\'app sur ton écran d\'accueil', p:'Avec son icône sur ton écran d\'accueil, l\'app s\'ouvre d\'un seul geste, comme une vraie app : plus besoin de chercher la page.'}
+        ].concat(nav('plus', 'L\'app sur ton écran d\'accueil', 'C\'est dans « Plus ».'), [
+          {icon:'👆', tap:'.ph-row[data-act="app-install"]', need:true, t:'Mettre l\'app sur l\'écran d\'accueil', p:'Les étapes pour ton téléphone.', do:'Touche « Mettre l\'app sur l\'écran d\'accueil ».'}])
+        : [
+          {icon:'💻', t:'D\'abord : l\'app sur ton bureau', p:'Une icône Garage sur ton bureau (et sur ton téléphone) : l\'app s\'ouvre d\'un clic, dans sa propre fenêtre.'},
+          {icon:'👆', tap:'.nf-app [data-act="app-install"]', need:true, t:'Installer l\'app', p:'En bas du menu, à gauche.', do:'Touche « Installer l\'app » en bas du menu.'}]).concat([
+          {icon:'📲', try:'#sheet .inst-main', need:true, t:'Fais-le maintenant', p:ph ? 'Suis les étapes de ton téléphone : 2 ou 3 gestes. La visite t\'attend ici.' : 'Le bouton (ou les étapes) met l\'app sur ton bureau. Plus bas : la même chose pour ton téléphone.',
+            tryT:'Fais-le maintenant, ou touche « Suivant » pour le faire plus tard.', done:'Super ! La prochaine fois, ouvre l\'app avec son icône Garage.'},
+          {icon:'👆', tap:'#sheet .sheet-head [data-act="sheet-close"]', need:true, t:'Fermer', p:'Ces étapes restent dans « ' + (ph ? 'Plus' : 'Installer l\'app') + ' » si tu veux les revoir.', do:'Touche ✕ en haut pour fermer.'}]).concat(ph ? nav(A().defTab(), 'Maintenant, la visite', 'On revient à ta page de départ : c\'est là que la visite commence.') : [])],   /* (back where the visit goes on: by his own touch) */
       dash:(own || bur) && ['Le tableau de bord', nav('accueil', 'Le tableau de bord', 'Ton tableau de bord : la journée et le mois d\'un coup d\'œil.').concat([
         {icon:'🏠', go:'tab:accueil', sel:'main .rings, main .ringcard, main', t:'D\'un coup d\'œil', p:'Les jobs du jour, ce qui est réservé cette semaine, l\'argent encaissé ce mois-ci et ce qui reste à recevoir.' + (own ? ' Seuls toi et le bureau voyez ces chiffres (sauf si tu le permets à quelqu\'un).' : '')},
         {icon:'🚚', go:'tab:accueil', sel:'.mcard, .qrow', need:true, t:'Tes mécanos aujourd\'hui', p:'Une carte par mécano : ses jobs du jour, ce qui est fait, et s\'il est en route vers un client.'}])],
       day:mec && ['Ta journée', [
         {icon:'📅', go:'home', sel:'.dayhead, #top', t:'Ta journée', p:'Ton écran de tous les jours : la date en haut, tes rendez-vous en dessous.'}].concat(ph ? dayTry : [], [
         {icon:'☀️', go:'home', sel:'.shift', need:true, t:'Commencer ma journée', p:'Le matin, en partant : <b>« Commencer ma journée »</b>. Ta position est partagée pendant ta journée seulement ; le soir, <b>« Fin de journée »</b> arrête tout.', x:'Pendant la visite, on n\'y touche pas.'},
-        {icon:'🔧', go:'home', sel:'.ph-list, .cal, .list, #main .nrow', t:'Tes rendez-vous', p:'Une ligne par client : l\'heure, l\'auto, le travail. L\'étiquette dit où tu en es : <b>Planifié</b>, <b>En route</b>, <b>Sur place</b>, <b>Terminé</b>.'},
-        {icon:'👆', go:'home', tap:'.ph-job, .ticket, #main .nrow, .appt', need:true, t:'Ouvre un rendez-vous', p:'Pour voir une job, tu touches sa ligne.', do:'Touche le rendez-vous éclairé.'}])],
+      ].concat(ph ? [] : nav('agenda', 'Tes rendez-vous', 'Sur l\'ordinateur, tous tes rendez-vous sont dans l\'agenda.'), [   /* (on the computer, his day is in the schedule: he goes there himself) */
+        {icon:'🔧', go:ph ? 'home' : 'tab:agenda', sel:'.ph-list, .cal, .list, #main .nrow', t:'Tes rendez-vous', p:'Une ligne par client : l\'heure, l\'auto, le travail. L\'étiquette dit où tu en es : <b>Planifié</b>, <b>En route</b>, <b>Sur place</b>, <b>Terminé</b>.'},
+        {icon:'👆', go:ph ? 'home' : 'tab:agenda', tap:'.ph-job, .ticket, #main .nrow, .appt', need:true, t:'Ouvre un rendez-vous', p:'Pour voir une job, tu touches sa ligne.', do:'Touche le rendez-vous éclairé.'}]))],
       job:mec && ['Une job, du début à la fin', [
         {icon:'📋', go:'job', sel:'.pjob, #main .sect', t:'La fiche de la job', p:'L\'auto, les travaux à faire, et les boutons pour <b>appeler</b> le client, lui <b>texter</b> ou ouvrir l\'<b>itinéraire</b> dans ton GPS.'},
         {icon:'⚫', go:'job', sel:'.nextbtn', need:true, t:'Le gros bouton', p:'Il dit toujours la prochaine étape : <b>« Je pars »</b> (le client reçoit un texto avec ton heure d\'arrivée), puis <b>« Je suis arrivé »</b>, puis <b>« Travaux terminés »</b>.', x:'Pendant la visite, on n\'y touche pas : il enverrait un vrai texto.'},
@@ -917,7 +938,7 @@
           {icon:'👉', go:'home', try:'.chips.trucks', need:true, t:'Un camion à la fois', p:'Les boutons en haut montrent un seul camion, avec son mécano.', tryT:'Essaie : touche « Camion 1 », puis « Tous ».', done:'La journée suit le camion que tu choisis.'}]
           : [{icon:'📅', go:'tab:agenda', sel:'.cal, .list, main', t:'L\'agenda', p:(own || bur ? 'Chaque colonne, c\'est un camion (ou un mécano). Touche une case libre pour réserver à cette heure-là ; touche un rendez-vous pour l\'ouvrir.' : 'Les rendez-vous de toute l\'équipe' + (can('book') ? '.' : ', en lecture seulement.'))}]) : [],
         mec && ph ? [] : dayTry,   /* (the mechanic tried the days on his phone screen already) */
-        ph ? [] : [{icon:'👉', go:'tab:agenda', try:'[aria-label="Affichage"]', need:true, t:'Jour, semaine ou liste', p:'Trois façons de voir l\'agenda.', tryT:'Essaie : touche « Semaine », puis « Jour ».', done:'La vue change tout de suite.'}],
+        ph ? [] : [{icon:'👉', go:'tab:agenda', try:'[data-g="affichage"]', need:true, t:'Jour, semaine ou liste', p:'Trois façons de voir l\'agenda.', tryT:'Essaie : touche « Semaine », puis « Jour ».', done:'La vue change tout de suite.'}],
         (own || bur || can('book')) ? [{icon:'➕', go:ph ? 'home' : 'tab:agenda', sel:'#top [data-act="new"]', need:true, t:'« + Réservation »', p:'Choisis le client et le service : l\'app propose les moments libres, près des autres jobs du même coin. Le client reçoit sa confirmation.', x:'On ne réserve pas pendant la visite.'}] : [],
         can('hours_others') ? (ph ? nav('heures', 'Les heures d\'ouverture', 'Les heures d\'ouverture du garage.') : []).concat(sched('garage', '[data-act="sched"][data-v="garage"]', 'Touche « Modifier l\'horaire ».', 'Modifier l\'horaire', 'Les heures d\'ouverture du garage s\'ouvrent dans une grande grille.')) : [])],
       clients:can('clients') && ['Les clients', nav('clients', solo ? 'Tes clients' : 'Les clients', 'Les fiches des clients.').concat([
@@ -927,8 +948,8 @@
         {icon:'📇', sel:'#main .sect, #main', t:'La fiche du client', p:'Ses coordonnées, ses autos, ses visites et ce qu\'il doit. De là, tu l\'appelles ou tu lui textes d\'un toucher.', x:'Pour revenir à la liste : la flèche ‹ en haut.'}])],
       factures:can('factures') && ['Les factures', nav('factures', solo && !tre ? 'Tes factures' : 'Les factures', 'Les factures ont leur propre écran.').concat([
         {icon:'💵', go:'tab:factures', sel:'main', t:solo && !tre ? 'Tes factures' : 'Les factures', p:'Celles à recevoir et celles déjà payées. ' + (own || bur || can('editinv') ? 'Ouvre une facture pour la revoir, la renvoyer au client ou la marquer payée.' : 'Ouvre une facture pour la revoir ou la renvoyer au client.')},
-        {icon:'👉', go:'tab:factures', try:'[aria-label="Filtrer"] .chip', sel:'[aria-label="Filtrer"]', need:true, t:'Les filtres', p:'Tu choisis ce que tu veux voir.', tryT:'Essaie : touche « Payées », puis « Non payées ».', done:'La liste change selon le filtre.'},
-        {icon:'❓', go:'tab:factures', try:'[aria-label="Filtrer"] .qhelp', after:'.helptip', need:true, t:'Les petits « ? »', p:'Partout dans l\'app, un <b>?</b> à côté d\'un mot donne une explication simple.', tryT:'Essaie : touche le ? à côté des filtres.', done:'Touche-le encore pour fermer l\'explication.'}])],
+        {icon:'👉', go:'tab:factures', try:'[data-g="filtrer"] .chip', sel:'[data-g="filtrer"]', need:true, t:'Les filtres', p:'Tu choisis ce que tu veux voir.', tryT:'Essaie : touche « Payées », puis « Non payées ».', done:'La liste change selon le filtre.'},
+        {icon:'❓', go:'tab:factures', try:'[data-g="filtrer"] .qhelp', after:'.helptip', need:true, t:'Les petits « ? »', p:'Partout dans l\'app, un <b>?</b> à côté d\'un mot donne une explication simple.', tryT:'Essaie : touche le ? à côté des filtres.', done:'Touche-le encore pour fermer l\'explication.'}])],
       tresor:can('tresor') && ['La trésorerie', nav('tresor', 'La trésorerie', 'L\'argent du garage.').concat([
         {icon:'💼', go:'view:dep', sel:'#top', t:'La trésorerie', p:'Ce qui entre (les factures payées), ce qui sort (les dépenses) et ce qui reste.'},
         {icon:'👆', go:'view:dep', tap:'[data-act="exp-new"]', need:true, t:'Ajouter une dépense', p:'Chaque reçu devient une dépense.', do:'Touche « + Dépense ».'},
@@ -950,7 +971,7 @@
         sched('avail', '[data-act="sched"][data-v="avail"]', 'Touche « Modifier mes disponibilités ».', 'Tes disponibilités', 'Tu dis au bureau quand tu travailles : l\'agenda ne te donne des rendez-vous que dans tes heures.'))],
       dispos:(own || bur) && ['Les disponibilités', nav('dispos', 'Les disponibilités', 'Quand chaque mécano travaille.').concat([
         {icon:'🗓', go:'dispos', sel:'main', t:'Les disponibilités des mécanos', p:'Quand chaque mécano travaille. L\'agenda ne propose que ses heures.' + (can('hours_others') ? ' Tu changes l\'horaire de chacun avec la même grille.' : '')},
-        {icon:'👉', go:'dispos', try:'#main [aria-label="Mécano"]', need:true, t:'Un mécano à la fois', p:'Les noms en haut : la semaine de chacun.', tryT:'Essaie : touche le nom d\'un autre mécano.', done:'Voilà sa semaine : ses jours, ses heures, ses congés.'}])],
+        {icon:'👉', go:'dispos', try:'#main [data-g="mecano"]', need:true, t:'Un mécano à la fois', p:'Les noms en haut : la semaine de chacun.', tryT:'Essaie : touche le nom d\'un autre mécano.', done:'Voilà sa semaine : ses jours, ses heures, ses congés.'}])],
       settings:own && ['Les réglages', nav('reglages', 'Les réglages', 'Les réglages du garage.').concat([
         {icon:'👆', go:'set:', tap:'[data-act="ph-sec"][data-for="lux-sect"]', need:true, t:'Les couleurs de l\'app', p:'Les réglages sont rangés en sections.', do:'Touche « Couleurs de l\'app ».'},
         {icon:'🎨', go:'set:Couleurs', try:'#lux-sect', t:'Les couleurs', p:'Le mode vitrine : des panneaux en verre sur un fond de couleur. Toute l\'équipe voit celle que tu choisis.', tryT:'Choisis : touche une couleur, elle s\'applique tout de suite à toute l\'app.', done:'Elle reste : c\'est maintenant la couleur de l\'app pour toute l\'équipe. Tu peux en choisir une autre ici quand tu veux.'},
@@ -969,7 +990,7 @@
       bureau:['dash', 'agenda', 'clients', 'factures', 'map', 'dispos', 'stock'],
       mecano:['day', 'job', 'plusbtn', 'clients', 'factures', 'map', 'avail', 'agenda', 'stock'],
       tresorier:['tresor', 'stock', 'factures', 'clients', 'agenda', 'map']};
-    var keys = ['hello'];
+    var keys = ['hello', 'install'];   /* first of all: the app on the home screen (or the desktop) */
     rolesOf(m).slice().sort(function(a, b){ return (a === mr ? -1 : 0) - (b === mr ? -1 : 0); }).forEach(function(r){ (ORDER[r] || []).forEach(function(k){ if (keys.indexOf(k) < 0) keys.push(k); }); });
     ['tresor', 'agenda', 'map', 'stock'].forEach(function(k){ if (keys.indexOf(k) < 0) keys.push(k); });   /* rights given to this person */
     keys.push('end');
@@ -1004,6 +1025,13 @@
         var pend = T.pending ? T.pending() : 0;
         if (pend && !X.outArmed){ X.outArmed = true; A().toast(pend + (pend > 1 ? ' changements pas encore envoyés' : ' changement pas encore envoyé') + ' : attends le retour du signal. Touche encore « Se déconnecter » pour les perdre.'); setTimeout(function(){ X.outArmed = false; }, 8000); break; }
         T.signOut(); break;
+      }
+      case 'acct-leave': {
+        if (!X.leaveArmed){ X.leaveArmed = true; render(); clearTimeout(X.leaveT); X.leaveT = setTimeout(function(){ X.leaveArmed = false; render(); }, 8000); break; }
+        clearTimeout(X.leaveT); X.leaveArmed = false; b.disabled = true;
+        invoke('members', {action:'leave'}).then(function(){ A().toast('Ton compte est supprimé.'); setTimeout(function(){ T.signOut(); }, 600); },
+          function(e){ b.disabled = false; render(); A().toast(e.message); });
+        break;
       }
       case 'net-send': if (T.flush) T.flush(); break;
       case 'net-ok': if (T.clearFailed) T.clearFailed(); break;
@@ -1051,7 +1079,7 @@
         if (!irs.length) return eqErr('Coche au moins un rôle.');
         if (irs.indexOf('mecano') >= 0 && !imc) return eqErr(api.mechanics().length ? 'Choisis son nom dans l\'agenda (liste des mécanos).' : 'Ajoute d\'abord le nom de ce mécano dans Réglages → Mécanos.');
         eqErr(''); b.disabled = true; b.textContent = 'Envoi…';
-        invoke('members', {action:'invite', name:inm, email:iem, roles:irs, perms:permsFrom(irs, 'nw'), mechanic:imc, base:trackBase()}).then(function(r){
+        invoke('members', {action:'invite', lang:lng(), name:inm, email:iem, roles:irs, perms:permsFrom(irs, 'nw'), mechanic:imc, base:trackBase()}).then(function(r){
           X.eq.list = r.members; X.eq.created = null; X.eq.invited = {name:inm, email:r.email || iem, link:r.link, mail:r.mail, message:r.message}; X.liveAt = 0; delete X.eq.draft.nw;
           ['nw-name', 'nw-email', 'nw-mech'].forEach(function(i){ var e = document.getElementById(i); if (e) e.value = ''; });
           render(); window.scrollTo(0, 0);
@@ -1061,7 +1089,7 @@
       case 'eq-reinvite': {
         var rm = (X.eq.list || []).filter(function(x){ return x.user_id === v; })[0];
         b.disabled = true; b.textContent = 'Envoi…';
-        invoke('members', {action:'invite-resend', user_id:v, base:trackBase()}).then(function(r){
+        invoke('members', {action:'invite-resend', lang:lng(), user_id:v, base:trackBase()}).then(function(r){
           X.eq.list = r.members; X.eq.created = null; X.eq.invited = {name:rm ? rm.name : '', email:r.email, link:r.link, mail:r.mail, message:r.message};
           render(); window.scrollTo(0, 0);
         }, function(e){ b.disabled = false; b.textContent = rm && rm.invite ? 'Renvoyer l\'invitation' : 'Envoyer une invitation'; toast(e.message); });
@@ -1098,7 +1126,7 @@
       case 'gh-test': {
         var ph = val('gh-test'); if (!ph){ toast('Écris ton numéro.'); break; }
         b.disabled = true; b.textContent = 'Envoi…';
-        invoke('members', {action:'sms-test', phone:ph}).then(function(){ b.disabled = false; b.textContent = 'Envoyer'; toast('Texto test envoyé ✓ Vérifie ton téléphone.'); }, function(e){ b.disabled = false; b.textContent = 'Envoyer'; toast(e.message); });
+        invoke('members', {action:'sms-test', lang:lng(), phone:ph}).then(function(){ b.disabled = false; b.textContent = 'Envoyer'; toast('Texto test envoyé ✓ Vérifie ton téléphone.'); }, function(e){ b.disabled = false; b.textContent = 'Envoyer'; toast(e.message); });
         break;
       }
       case 'st-save': case 'st-clear': {
@@ -1252,7 +1280,7 @@
       if (eff() && hasR(eff(), 'owner')) out.push({href:'#equipe', label:'Équipe et accès', sub:'Comptes, voir comme…, mots de passe, textos'});
       return out;
     },
-    accountRow:function(){ var m = eff(); return m ? '<section class="sect"><p class="small">Connecté : <b>' + esc(m.name) + '</b> · ' + esc(rolesLabel(m)) + '</p><button type="button" class="btn block" data-act="acct-out">Se déconnecter</button></section>' : ''; },
+    accountRow:function(){ var m = eff(); return m ? '<section class="sect"><p class="small">Connecté : <b>' + esc(m.name) + '</b> · ' + esc(rolesLabel(m)) + '</p><button type="button" class="btn block" data-act="acct-out">Se déconnecter</button>' + leaveBtn('btn ghost block danger-t') + '</section>' : ''; },
     dashTop:agendaTop, dashExtra:dashExtra,
     agendaTop:agendaTop, settingsTop:settingsTop, jobExtra:jobExtra, onStatus:onStatus, onAction:onAction,
     nextInvoiceNo:function(start){ return T.sb.rpc('next_invoice_number', {p_start:start}).then(function(r){ if (r.error || typeof r.data !== 'number') throw r.error || new Error('no number'); return r.data; }); }

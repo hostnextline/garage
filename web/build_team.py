@@ -45,8 +45,22 @@ out = ('<!doctype html><html lang="fr-CA"><head><meta charset="utf-8">'
        '</head><body>\n' + body + '\n</body></html>\n')
 open(os.path.join(a.out, 'index.html'), 'w', encoding='utf8').write(out)
 pwa(a.out, 'Carnet du garage mobile', 'Garage', 'garage-equipe')
-shutil.copyfile(os.path.join(D, 'suivi.html'), os.path.join(a.out, 'suivi.html'))
-shutil.copyfile(os.path.join(D, 'client.html'), os.path.join(a.out, 'client.html'))
+# the client's pages speak the client's language: the same language engine as the app, with their own words
+# (plus the names of the usual services, as they appear on an invoice)
+import re
+eng = re.search(r'<script>\n(/\* ===== Langue de l.app[\s\S]*?)</script>', app).group(1)
+full = json.loads(re.search(r'<script type="application/json" id="i18n-en">([\s\S]*?)</script>', app).group(1).replace('<\\/', '</'))
+cw = json.load(open(os.path.join(D, 'i18n-client.json'), encoding='utf8'))
+svc = re.search(r'var COMMON_SVCS = (\[[^\n]*\]);', app).group(1)
+names = set(re.findall(r'"((?:[^"\\]|\\.)*)"|\'((?:[^\'\\]|\\.)*)\'', svc + re.search(r'var DEFAULT_PROMOS = [^\n]*\n[^\n]*', app).group(0)))
+for a1, a2 in names:
+    k = (a1 or a2).replace("\\'", "'")
+    if k in full and k not in cw: cw[k] = full[k]
+cjs = json.dumps(cw, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/')
+inj = '<script>window.__i18nConf = {key:"gm.clang"};</script>\n<script type="application/json" id="i18n-en">' + cjs + '</script>\n<script>\n' + eng + '</script>\n'
+for n in ('suivi.html', 'client.html'):
+    page = open(os.path.join(D, n), encoding='utf8').read()
+    open(os.path.join(a.out, n), 'w', encoding='utf8').write(page.replace('</head>', inj + '</head>', 1))
 # works without network: the service worker keeps the page and its files on the phone (new version = new cache)
 import hashlib
 ver = hashlib.sha256((out + read('sw.js')).encode()).hexdigest()[:12]

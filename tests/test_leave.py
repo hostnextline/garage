@@ -1,0 +1,47 @@
+"""Removing an account: the owner removes a person in plain sight (asked twice); a person deletes his own account
+(asked twice; his jobs, invoices and clients stay); the only owner cannot (the garage would have nobody to run it)."""
+from team_seed import *
+from playwright.sync_api import sync_playwright
+otok, pw = seed()
+uid = lambda e: psql("select id from auth.users where email='%s'" % e)
+with sync_playwright() as pl:
+    b = pl.chromium.launch()
+    # ---------- 1. the owner removes Lina ----------
+    c = ctx(b); p = page(c, 'owner'); p.set_viewport_size({'width': 1366, 'height': 860}); login(p, 'hassan@garage.test', pw['hassan']); p.wait_for_timeout(1000)
+    p.evaluate("location.hash = 'equipe'"); p.wait_for_selector('.eqp', timeout=10000); p.wait_for_timeout(600)
+    card = p.locator('.eqp', has_text='lina@garage.test')
+    btn = card.locator('[data-act="eq-confirm"]')
+    check('Équipe et accès: « Supprimer le compte » is in plain sight on each person (not folded away)', btn.count() == 1 and btn.is_visible())
+    btn.click(); p.wait_for_timeout(300)
+    check('…asked first: « Supprimer le compte de Lina Bureau ? Ses jobs restent au carnet. » with « Garder » / « Supprimer »', 'Supprimer le compte de Lina Bureau' in txt(p, '.eqp:has-text("Lina")') and p.locator('[data-act="eq-remove"]').count() == 1)
+    p.click('[data-act="eq-remove"]'); p.wait_for_timeout(1500)
+    check('…« Supprimer »: Lina is gone (from the list and from the accounts)', p.locator('.eqp', has_text='lina@garage.test').count() == 0 and not uid('lina@garage.test'))
+    check('the owner cannot delete himself from that list (no button on his own card)', p.locator('.eqp', has_text='hassan@garage.test').locator('[data-act="eq-confirm"]').count() == 0)
+    # ---------- 2. the only owner tries to delete his own account ----------
+    lv = p.locator('#navfoot [data-act="acct-leave"]')
+    check('computer: « Supprimer mon compte » at the bottom of the side bar', lv.count() == 1 and 'Supprimer mon compte' in lv.inner_text())
+    lv.click(); p.wait_for_timeout(300)
+    check('…first touch: « Touche encore pour supprimer ton compte pour de bon », what stays is said', 'Touche encore' in txt(p, '#navfoot') and 'restent au carnet' in txt(p, '#navfoot'))
+    p.locator('#navfoot [data-act="acct-leave"]').click(); p.wait_for_timeout(1500)
+    check('…the only owner: refused (« Tu es le seul propriétaire… »), still signed in, account kept', 'seul propriétaire' in txt(p, '#toast') and p.locator('#gate').count() == 0 and uid('hassan@garage.test'), txt(p, '#toast'))
+    c.close()
+    # ---------- 3. a mechanic deletes his own account (phone) ----------
+    jobs0 = psql("select count(*) from public.docs where path like 'jobs/%' and data->>'mechanic' = 'Ali'")
+    c = ctx(b, phone=True); p = page(c, 'ali'); login(p, 'ali@garage.test', pw['ali']); p.wait_for_timeout(1000)
+    p.click('.tab[data-t="plus"]'); p.wait_for_timeout(500)
+    lv = p.locator('#main [data-act="acct-leave"]')
+    check('phone: « Supprimer mon compte » under « Se déconnecter » in « Plus »', lv.count() == 1)
+    lv.click(); p.wait_for_timeout(300)
+    check('…first touch asks again', 'Touche encore' in txt(p, '#main [data-act="acct-leave"]'))
+    p.wait_for_timeout(8600)
+    check('…not touched again within a few seconds: back to « Supprimer mon compte » (nothing done)', 'Supprimer mon compte' == p.locator('#main [data-act="acct-leave"]').inner_text().strip() and uid('ali@garage.test'))
+    p.locator('#main [data-act="acct-leave"]').click(); p.wait_for_timeout(200); p.locator('#main [data-act="acct-leave"]').click()
+    p.wait_for_selector('#gate', timeout=10000); p.wait_for_timeout(500)
+    check('…touched twice: « Ton compte est supprimé », back to the sign-in screen, his account gone', not uid('ali@garage.test') and p.locator('#gate #g-email').count() == 1)
+    check('…his jobs stay in the garage\'s logbook', psql("select count(*) from public.docs where path like 'jobs/%' and data->>'mechanic' = 'Ali'") == jobs0 != '0', jobs0)
+    p.fill('#g-email', 'ali@garage.test'); p.fill('#g-pw', pw['ali']); p.click('#g-go'); p.wait_for_timeout(2500)
+    check('…he can no longer sign in', p.locator('#gate').count() == 1)
+    c.close()
+    b.close()
+check('no page errors', not [e for e in ERRS if '400' not in e and '401' not in e], ERRS[:5])
+summary()

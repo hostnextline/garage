@@ -457,7 +457,7 @@ with sync_playwright() as pw:
     op.wait_for_timeout(10500)
     check('map: Saleh now « Pas en journée »', op.locator('#mc-' + psql("select user_id from public.members where mechanic='Saleh'") + ' .mc-who .pillx').text_content() == 'Pas en journée')
     op.goto(BASE + '#equipe'); op.wait_for_selector('.eqp', timeout=8000)
-    row = op.locator('.eqp', has_text='ali@garage.test'); row.locator('.eq-more summary').click(); row.locator('[data-act="eq-active"]').click()
+    row = op.locator('.eqp', has_text='ali@garage.test'); row.locator('[data-act="eq-active"]').click()   # (in plain sight now, next to « Supprimer le compte »)
     check('owner deactivates Ali', toast_has(op, 'Accès désactivé'))
     ac2 = ctx_for(br); ap2 = page_for(ac2, 'ali2'); login(ap2, 'ali@garage.test', ALI_PW); ap2.wait_for_timeout(2000)
     check('deactivated person cannot sign in', 'désactivé' in (ap2.text_content('#g-msg') or ''), ap2.text_content('#g-msg'))

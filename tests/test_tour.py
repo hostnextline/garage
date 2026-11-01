@@ -31,7 +31,10 @@ with sync_playwright() as pl:
     check('…« Plus tard » and « Commencer la visite »', p.locator('#tour-ov [data-act="tt-skip"]', has_text='Plus tard').count() == 1 and p.locator('#tour-ov [data-act="tt-next"]', has_text='Commencer la visite').count() == 1)
     st = walk(p, shots='tour_meca'); WALKS['mécano · téléphone'] = st
     p.click('#tour-ov [data-act="tt-end"]'); p.wait_for_timeout(900)
-    check('« Terminer »: the visit closes, back on his day, a short message, the install help opens', p.locator('#tour-ov').count() == 0 and p.locator('#sched').count() == 0 and p.evaluate('location.hash') == '#jour' and p.locator('#sheet:not([hidden]) .inst').count() == 1)
+    ti = [s['t'] for s in st]
+    check('the visit starts with putting the app on the home screen: right after « Bienvenue », he touches « Plus », then « Mettre l\'app sur l\'écran d\'accueil », the steps for his phone open and he can do it right away',
+          ti[1:2] == ["D'abord : l'app sur ton écran d'accueil"] and "Mettre l'app sur l'écran d'accueil" in ti[:5] and 'Fais-le maintenant' in ti[:6] and [s for s in st if s['t'] == 'Fais-le maintenant'][0].get('did') == 'install', ti[:7])
+    check('« Terminer »: the visit closes, back on his day, a short message (the install help does not open again: it was the first part)', p.locator('#tour-ov').count() == 0 and p.locator('#sched').count() == 0 and p.evaluate('location.hash') == '#jour' and p.locator('#sheet:not([hidden]) .inst').count() == 0)
     t0 = doc('data/users/%s/tour' % uid['saleh'])
     check('…remembered once per person', bool(t0) and t0.get('seenAt'))
     c.close()

@@ -56,8 +56,10 @@ with sync_playwright() as pl:
     check('…all the way to « C\'est tout ! » (%d steps, he touches to go from screen to screen; a calm visit: no points, no trophy)' % len(st), "C'est tout" in txt(kp, '#tour-ov .tt-tip') and kp.locator('#tour-ov .tt-win, #tour-ov .tt-pts, #tour-ov .tt-conf').count() == 0)
     kp.click('#tour-ov [data-act="tt-end"]'); kp.wait_for_timeout(1200)
     check('the tour is remembered for him', bool((doc('data/users/%s/tour' % uid) or {}).get('seenAt')))
-    check('after the visit (« Terminer »): how to put the app on the phone opens by itself (iPhone first)', kp.locator('#sheet:not([hidden]) .inst').count() == 1 and kp.locator('.inst .inst-b').first.get_attribute('data-p') == 'ios-safari', kp.locator('.inst .inst-b').count())
-    check('steps are concrete: Partager (or ••• then Partager), « Sur l\'écran d\'accueil », « Ajouter »', all(w in txt(kp, '.inst .inst-b[data-p="ios-safari"]') for w in ['Partager', '•••', 'Sur l\'écran d\'accueil', 'Ajouter']))
+    ins = [s for s in st if s['t'] == 'Fais-le maintenant']
+    check('the visit\'s first part: how to put the app on the phone (iPhone first), right after « Bienvenue »', st[1]['t'] == "D'abord : l'app sur ton écran d'accueil" and bool(ins) and ins[0].get('inst') == 'ios-safari', [s['t'] for s in st[:6]])
+    check('steps are concrete: Partager (or ••• then Partager), « Sur l\'écran d\'accueil », « Ajouter »', bool(ins) and all(w in ins[0].get('insttext', '') for w in ['Partager', '•••', 'Sur l\'écran d\'accueil', 'Ajouter']), ins and ins[0].get('insttext', '')[:200])
+    kp.click('.tab[data-t="plus"]'); kp.wait_for_timeout(500); kp.click('.ph-row[data-act="app-install"]'); kp.wait_for_timeout(500)   # (later, from « Plus »: « C'est fait »)
     kp.click('[data-act="app-done"]'); kp.wait_for_timeout(600)
     check('« C\'est fait » is remembered for that person', bool((doc('data/users/%s/app' % uid) or {}).get('installedAt')), doc('data/users/%s/app' % uid))
     check('invite used once (marked used)', psql("select count(*) from public.invites where user_id='%s' and used_at is not null" % uid) == '1')
@@ -81,7 +83,7 @@ with sync_playwright() as pl:
     lea = psql("select id from auth.users where email='lea@garage.test'")
     old = fn(otok, 'members', {'action': 'invite-resend', 'user_id': lea, 'base': BASE})
     new = fn(otok, 'members', {'action': 'invite-resend', 'user_id': lea, 'base': BASE})
-    t_old, t_new = old['link'].split('#invite=')[1], new['link'].split('#invite=')[1]
+    t_old, t_new = old['link'].split('#invite=')[1].split('&')[0], new['link'].split('#invite=')[1].split('&')[0]   # (the link also says its language: &l=fr)
     check('« Renvoyer » makes a new link and the older one stops working', fn(None, 'members', {'action': 'invite-info', 'token': t_old}).get('error') == 'bad_invite' and fn(None, 'members', {'action': 'invite-info', 'token': t_new}).get('email') == 'lea@garage.test')
     check('invite-info tells only the name, email, role and garage', set(fn(None, 'members', {'action': 'invite-info', 'token': t_new}).keys()) == {'ok', 'name', 'role', 'email', 'garage'})
     psql("update public.invites set expires_at = now() - interval '1 minute' where user_id='%s'" % lea)
@@ -98,8 +100,8 @@ with sync_playwright() as pl:
     item = op.locator('#guide li', has_text='Mettre l\'app sur ton téléphone')
     check('guide: step « Mettre l\'app sur ton téléphone »', item.count() == 1 and item.get_attribute('class') == '' and 'On t\'explique comment' in item.inner_text())
     item.locator('button').click(); op.wait_for_timeout(600)
-    check('computer: nothing to install here, a code to scan with the phone + the address', 'rien à installer' in txt(op, '.inst') and op.locator('#inst-qr svg').count() == 1 and op.is_visible('#inst-qr') and '127.0.0.1:8088/' in txt(op, '.inst-url'))
-    check('both phones explained (iPhone, Android) + a fold for Samsung / Chrome iPhone', op.locator('.inst > .inst-b').count() == 2 and op.locator('.inst details .inst-b').count() == 2 and 'Android' in txt(op, '.inst') and '⋮' in txt(op, '.inst'))
+    check('computer: first the app on this computer\'s desktop (Chrome / Edge « Installer », Safari « Ajouter au Dock »), then a code to scan with the phone + the address', 'icône sur le bureau' in txt(op, '.inst') and 'Ajouter au Dock' in txt(op, '.inst') and op.locator('#inst-qr svg').count() == 1 and op.is_visible('#inst-qr') and '127.0.0.1:8088/' in txt(op, '.inst-url'))
+    check('both phones explained (iPhone, Android) + a fold for Samsung / Chrome iPhone', op.locator('.inst > .inst-b').count() == 3 and op.locator('.inst details .inst-b').count() == 2 and 'Android' in txt(op, '.inst') and '⋮' in txt(op, '.inst'))
     check('the QR library is inside the app (no outside download)', op.evaluate("typeof qrcode === 'function'") and not any('qrcode' in r for r in QR_REQ), QR_REQ)
     import cv2, numpy as np
     shot = op.locator('#inst-qr').screenshot()

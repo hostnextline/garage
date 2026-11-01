@@ -51,10 +51,13 @@ main{display:grid;gap:14px;padding:14px 0 28px}
 .foot a{color:inherit}
 :focus-visible{outline:3px solid var(--signal);outline-offset:2px}
 @media print{ .btn,.foot,.noprint{display:none!important} body{background:#fff;color:#000} .card{border:0;padding:0} }
+.langbar{display:flex;gap:6px;justify-content:flex-end;margin:0 0 6px}.langbar button{font:600 13px/1 var(--f-body);padding:7px 11px;border-radius:999px;border:1px solid var(--line-strong);background:transparent;color:var(--ink);cursor:pointer;min-height:32px}.langbar button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+@media print{.langbar{display:none}}
 </style>
 </head>
 <body>
 <div class="in">
+  <div class="langbar" role="group" aria-label="Langue / Language" translate="no"><button type="button" data-lang-set="fr" lang="fr">Français</button><button type="button" data-lang-set="en" lang="en">English</button></div>
   <header><div class="eyebrow" id="garage">Garage mobile</div><h1 id="title">Chargement…</h1></header>
   <main id="main" aria-live="polite"></main>
   <p class="foot" id="foot"></p>
@@ -73,7 +76,7 @@ main{display:grid;gap:14px;padding:14px 0 28px}
   function day(iso){ if (!iso) return ''; var p = String(iso).slice(0, 10).split('-'); return DF.format(new Date(+p[0], +p[1] - 1, +p[2])); }
   function call(body){
     var h = {'Content-Type':'application/json', apikey:CFG.key, Authorization:'Bearer ' + CFG.key};
-    return fetch(CFG.url + '/functions/v1/client', {method:'POST', headers:h, body:JSON.stringify(Object.assign({token:token}, body)), cache:'no-store'}).then(function(r){
+    return fetch(CFG.url + '/functions/v1/client', {method:'POST', headers:h, body:JSON.stringify(Object.assign({token:token, lang:window.I18N ? I18N.lang : 'fr'}, body)), cache:'no-store'}).then(function(r){
       return r.json().catch(function(){ return {}; }).then(function(j){ if (!r.ok) throw new Error(j.message || 'Le serveur ne répond pas. Réessayez dans un moment.'); return j; });
     }, function(){ throw new Error('Pas de connexion Internet. Réessayez dans un moment.'); });
   }
@@ -147,15 +150,17 @@ main{display:grid;gap:14px;padding:14px 0 28px}
      so a reload checks again. The bank's confirmation can take a few seconds: ask again every 3 s, for about 45 s.
      The card was accepted (Stripe only comes back here after a payment): until the server confirms it, the « Payer » button
      is not shown, even after the checks stop (no second payment by mistake). */
+  function lnk(){ var m = /[#&]l=(en|fr)\b/.exec(location.hash); return m ? '&l=' + m[1] : ''; }   /* (the language in the address stays) */
   function load(){
     if (!token || !CFG.url){ fail('Ce lien est incomplet. Demandez au garage de vous le renvoyer.'); return; }
     clearTimeout(checkT);
     call({action:back ? 'check' : 'view'}).then(function(r){
       D = r;
+      if (window.I18N && !I18N.chosen && !I18N.linked && r.client && r.client.lang && r.client.lang !== I18N.lang){ I18N.set(r.client.lang, true, true); langMark(); }   /* (the language on his file) */
       if (!back){ render(null); return; }
       var inv = r.invoice;
-      if (inv && inv.paid){ back = false; checks = 0; history.replaceState(null, '', location.pathname + '#t=' + token); render({text:'Paiement reçu. Merci !'}); return; }
-      if (inv && inv.online && inv.online.short){ back = false; checks = 0; history.replaceState(null, '', location.pathname + '#t=' + token); render(null); return; }   /* received, but not the right amount: the invoice says it */
+      if (inv && inv.paid){ back = false; checks = 0; history.replaceState(null, '', location.pathname + '#t=' + token + lnk()); render({text:'Paiement reçu. Merci !'}); return; }
+      if (inv && inv.online && inv.online.short){ back = false; checks = 0; history.replaceState(null, '', location.pathname + '#t=' + token + lnk()); render(null); return; }   /* received, but not the right amount: the invoice says it */
       if (++checks < 15){ render({wait:true, text:'Paiement en vérification…'}); checkT = setTimeout(load, 3000); return; }
       checks = 0; render({wait:true, bad:true, text:'Votre paiement est en route, mais pas encore confirmé. Ne payez pas une deuxième fois : rechargez cette page dans quelques minutes.'});
     }, function(e){
@@ -164,6 +169,10 @@ main{display:grid;gap:14px;padding:14px 0 28px}
       fail(e.message);
     });
   }
+  /* the page's language: the client's own choice, otherwise the one on his file at the garage (in the link), otherwise his phone's */
+  function langMark(){ var l = window.I18N ? I18N.lang : 'fr'; Array.prototype.forEach.call(document.querySelectorAll('[data-lang-set]'), function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-lang-set') === l)); }); }
+  document.addEventListener('click', function(ev){ var b = ev.target.closest('[data-lang-set]'); if (!b || !window.I18N) return; I18N.set(b.getAttribute('data-lang-set')); langMark(); });
+  langMark();
   load();
 })();
 </script>

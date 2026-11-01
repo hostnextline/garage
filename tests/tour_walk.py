@@ -28,6 +28,10 @@ def do_try(p, s):
         r = p.evaluate("(() => { const r = document.querySelector('#sched .sch-scroll').getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; })()")
         x0 = r[0] + r[2] * 0.55; y0 = r[1] + min(r[3] * 0.35, 160)
         p.mouse.move(x0, y0); p.mouse.down(); p.mouse.move(x0, y0 + 50, steps=6); p.mouse.up(); return 'drag grid'
+    if '.inst' in part:   # the steps to put the app on the home screen (or the desktop): he reads them, touches them (and could do it right there)
+        s['inst'] = p.evaluate("(document.querySelector('#sheet .inst .inst-b') || {dataset: {}}).dataset.p || ''")
+        s['insttext'] = p.evaluate("(document.querySelector('#sheet .inst .inst-b') || {}).innerText || ''")
+        pt = center(p, '#sheet .inst-main .inst-b h3, #sheet .inst-main ol li'); p.mouse.click(*pt); return 'install'
     if 'lux-sect' in part:
         pt = center(p, '#lux-sect .lux-sw[aria-pressed="false"]:not([data-v="sable"])'); p.mouse.click(*pt); return 'color'
     if 'trbar' in part:
@@ -41,18 +45,18 @@ def do_try(p, s):
         pt = center(p, part); p.mouse.click(*pt); return '?'
     if 'cl-q' in part:
         pt = center(p, '#cl-q'); p.mouse.click(*pt); p.keyboard.type('mar', delay=40); return 'search'
-    if 'Filtrer' in part:
-        pt = center(p, '[aria-label="Filtrer"] [data-v="paid"]'); p.mouse.click(*pt); return 'filter'
+    if 'filtrer' in part:
+        pt = center(p, '[data-g="filtrer"] [data-v="paid"]'); p.mouse.click(*pt); return 'filter'
     if 'x-total' in part:
         pt = center(p, '#x-total'); p.mouse.click(*pt); p.keyboard.type('57,49', delay=40)
         p.keyboard.press('Enter'); time.sleep(0.2)   # « Entrée » would save the expense: during the visit it must not
         s['enter'] = p.evaluate("!!document.getElementById('expform') && !!window.__garageApi.S.sheet"); return 'amount'   # (the window stays open: nothing sent)
     if 'rbox' in part:
         pt = center(p, '#eq-new label[for$="-r-tresorier"]'); p.mouse.click(*pt); return 'role'
-    if 'Affichage' in part:
-        pt = center(p, '[aria-label="Affichage"] [data-v="week"]'); p.mouse.click(*pt); return 'week'
-    if 'Mécano' in part:
-        pt = center(p, '#main [aria-label="Mécano"] .chip:not(.on)'); p.mouse.click(*pt); return 'mechanic'
+    if 'affichage' in part:
+        pt = center(p, '[data-g="affichage"] [data-v="week"]'); p.mouse.click(*pt); return 'week'
+    if 'mecano' in part:
+        pt = center(p, '#main [data-g="mecano"] .chip:not(.on)'); p.mouse.click(*pt); return 'mechanic'
     if 'trucks' in part:
         pt = center(p, '.chips.trucks .chip:not(.on)'); p.mouse.click(*pt); return 'truck'
     if 'ph-day' in part:

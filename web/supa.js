@@ -320,6 +320,7 @@
       '#gate label{font-weight:600}#gate input{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--ink);font-size:17px}' +
       '#gate input:focus-visible,#gate button:focus-visible{outline:3px solid var(--signal);outline-offset:2px}' +
       '#gate .g-f{display:grid;gap:6px}#gate .g-msg{border-radius:10px;padding:10px 12px;background:var(--bad-bg);color:var(--bad);font-weight:600}#gate .g-msg.ok{background:var(--ok-bg);color:var(--ok)}' +
+      '#gate .g-lang{display:flex;gap:6px;justify-content:center}#gate .g-lang .chip{min-height:36px;padding:0 12px}' +
       '#gate .g-help{color:var(--muted);font-size:14.5px}#gate .g-link{background:none;border:0;color:var(--steel);font-weight:600;text-decoration:underline;padding:6px 0;cursor:pointer;justify-self:start;min-height:40px}' +
       '#gate .g-go{min-height:50px;border-radius:10px;border:1px solid var(--signal);background:var(--signal);color:var(--on-signal);font-weight:700;font-size:17px;cursor:pointer}' +
       '#gate .g-go[disabled]{opacity:.6;cursor:wait}' +
@@ -331,11 +332,17 @@
   function gate(html){
     var g = document.getElementById('gate');
     if (!g){ g = document.createElement('div'); g.id = 'gate'; g.setAttribute('role', 'dialog'); g.setAttribute('aria-modal', 'true'); g.setAttribute('aria-labelledby', 'g-title'); document.body.appendChild(g); }
-    g.innerHTML = '<div class="g-box"><div class="g-brand"><div class="g-logo">' + LOGO + '</div><div><div class="eyebrow">Garage mobile · équipe</div><h1 id="g-title">' + html.title + '</h1></div></div>' + html.body + '</div>';
+    g.innerHTML = '<div class="g-box"><div class="g-brand"><div class="g-logo">' + LOGO + '</div><div><div class="eyebrow">Garage mobile · équipe</div><h1 id="g-title">' + html.title + '</h1></div></div>' + html.body + langSw() + '</div>';
     g.hidden = false; document.body.classList.add('locked');
     var f = g.querySelector('input:not([readonly])'); if (f) setTimeout(function(){ try { f.focus(); } catch(e){} }, 30);
     return g;
   }
+  /* the language, chosen before signing in too (the app's own buttons: data-act="lang") */
+  function langSw(){
+    var l = window.I18N ? window.I18N.lang : 'fr';
+    return '<p class="g-lang langsw" role="group" aria-label="Langue / Language" translate="no">' + [['fr', 'Français'], ['en', 'English']].map(function(x){ return '<button type="button" class="chip' + (l === x[0] ? ' on' : '') + '" data-act="lang" data-v="' + x[0] + '" aria-pressed="' + (l === x[0]) + '" lang="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</p>';
+  }
+  window.addEventListener('i18n', function(){ var g = document.querySelector('#gate .g-lang'); if (g) g.outerHTML = langSw(); });
   function closeGate(){ var g = document.getElementById('gate'); if (g) g.remove(); document.body.classList.remove('locked'); }
   function msg(text, ok){ var m = document.getElementById('g-msg'); if (!m) return; m.textContent = text || ''; m.hidden = !text; m.className = 'g-msg' + (ok ? ' ok' : ''); }
   function busy(on){ var b = document.getElementById('g-go'); if (b){ b.disabled = on; b.textContent = on ? 'Un instant…' : b.dataset.label; } }
@@ -536,7 +543,7 @@
     T.sb = window.supabase.createClient(CFG.url, CFG.key, {auth:{persistSession:true, autoRefreshToken:true, storageKey:'gm.team.auth', detectSessionInUrl:false, flowType:'pkce'}});
     T.sb.auth.onAuthStateChange(function(ev){ if (ev === 'SIGNED_OUT' && started) location.reload(); });
     if (googleReturn()) return;
-    var inv = (String(location.hash).match(/^#invite=([A-Za-z0-9_-]{20,80})$/) || [])[1];
+    var inv = (String(location.hash).match(/^#invite=([A-Za-z0-9_-]{20,80})(?:&l=(?:en|fr))?$/) || [])[1];   /* (&l=: the language the invitation was written in) */
     if (inv){ try { history.replaceState(null, '', location.pathname + location.search); } catch(e){} showInvite(inv); return; }
     var su = storedUser();
     if (navigator.onLine === false && su && su.id && cachedMember(su.id)){ offlineStart(su.id); return; }

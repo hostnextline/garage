@@ -99,7 +99,7 @@ function e164(phone: string) {
   if (d.length === 11 && d[0] === '1') d = d.slice(1);
   return d.length === 10 ? '+1' + d : '';
 }
-const hhmm = (d: Date) => new Intl.DateTimeFormat('fr-CA', { timeZone: 'America/Toronto', hour: 'numeric', minute: '2-digit' }).format(d).replace(/\s/g, ' ');
+const hhmm = (d: Date, lang = 'fr') => new Intl.DateTimeFormat(lang === 'en' ? 'en-CA' : 'fr-CA', { timeZone: 'America/Toronto', hour: 'numeric', minute: '2-digit' }).format(d).replace(/\s/g, ' ');
 
 async function ghl(path: string, version: string, token: string, body: unknown) {
   const r = await timed(`${GHL_BASE}${path}`, {
@@ -204,7 +204,8 @@ Deno.serve(async (req) => {
     if (!dest) dest = await geocode(address, cfg.tomtom);
 
     const { data: conf } = await admin.from('docs').select('data').eq('path', 'config/main').maybeSingle();
-    const garage = String(conf?.data?.biz?.name || 'votre garage mobile').trim();
+    const en = client.lang === 'en';   // the language on the client's file
+    const garage = String(conf?.data?.biz?.name || (en ? 'your mobile garage' : 'votre garage mobile')).trim();
     const r = from && dest ? await route(from, dest, cfg.tomtom) : null;
     const now = Date.now();
     const eta = r ? new Date(now + r.minutes * 60000) : null;
@@ -230,11 +231,15 @@ Deno.serve(async (req) => {
       const u = new URL(baseIn), allowed = [new URL(base).origin];
       if (/^[^\s?#]+\/$/.test(baseIn) && (allowed.includes(u.origin) || /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(u.origin))) base = baseIn;
     } catch (_) { /* default */ }
-    const link = `${base}suivi.html#t=${tk}`;
-    const mechFirst = String(mech.name || 'Votre mécano').trim().split(/\s+/)[0];
-    const message = `Bonjour${first ? ' ' + first : ''}, ${mechFirst} de ${garage} est en route vers chez vous` +
-      (eta ? ` : arrivée prévue vers ${hhmm(eta)} (environ ${Math.max(1, Math.round(r!.minutes))} min)` : '') +
-      `. Suivez son trajet en direct : ${link}`;
+    const link = `${base}suivi.html#t=${tk}${en ? '&l=en' : ''}`;
+    const mechFirst = String(mech.name || (en ? 'Your mechanic' : 'Votre mécano')).trim().split(/\s+/)[0];
+    const message = en
+      ? `Hello${first ? ' ' + first : ''}, ${mechFirst} from ${garage} is on the way to you` +
+        (eta ? `: arriving around ${hhmm(eta, 'en')} (about ${Math.max(1, Math.round(r!.minutes))} min)` : '') +
+        `. Follow the trip live: ${link}`
+      : `Bonjour${first ? ' ' + first : ''}, ${mechFirst} de ${garage} est en route vers chez vous` +
+        (eta ? ` : arrivée prévue vers ${hhmm(eta)} (environ ${Math.max(1, Math.round(r!.minutes))} min)` : '') +
+        `. Suivez son trajet en direct : ${link}`;
 
     let sms: any = { status: 'off', body: message, phone: client.phone || '' };
     if (active && active.sms_status === 'sent' && !body.resend) sms = { status: 'already', body: message, phone: client.phone || '', at: active.sms_at };
