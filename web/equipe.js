@@ -563,6 +563,8 @@
   }
   function saveVA(){ try { sessionStorage.setItem('gm.viewas', JSON.stringify(VA)); } catch(e){} }
   function switchFmt(){ if (!previewing()) return; VA.fmt = VA.fmt === 'phone' ? 'pc' : 'phone'; saveVA(); applyView(); goHome(); }
+  /* « Version ordinateur » (Plus) or « Version simple pour téléphone » chosen inside a preview: the preview follows */
+  function onUi(){ if (!previewing()) return; VA.fmt = A().phone() ? 'phone' : 'pc'; saveVA(); applyView(); }
   function stopView(){
     var a = A(); VA = null;
     try { sessionStorage.removeItem('gm.viewas'); var u = sessionStorage.getItem('gm.ui.before'); sessionStorage.removeItem('gm.ui.before'); a.setUi(u || null); } catch(e){ a.setUi(null); }
@@ -770,7 +772,7 @@
     '#pv-bar .btn{min-height:34px;padding:0 12px;background:#F7F1EA;color:#1E1915;border-color:#F7F1EA}#pv-bar b{color:#FFB37A}.pv-short{display:none}' +
     '@media (max-width:560px){#pv-bar .pv-long{display:none}#pv-bar .pv-short{display:inline}#pv-bar{font-size:14px}}' +
     'body.pv-on{padding-top:var(--pvh,48px)}body.pv-on .top{top:calc(var(--pvh,48px) + 6px)}body.pv-on.ui-pc .tabbar{top:calc(var(--pvh,48px) + 12px)}' +
-    'body.pv-narrow .top{max-width:450px;margin-left:auto;margin-right:auto}body.pv-narrow .wrap{max-width:430px}body.pv-narrow .tabbar{width:min(430px,calc(100% - 20px))}body.pv-narrow .sheet{max-width:430px}' +
+    'body.pv-narrow.ui-phone .top{max-width:450px;margin-left:auto;margin-right:auto}body.pv-narrow.ui-phone .wrap{max-width:430px}body.pv-narrow.ui-phone .tabbar{width:min(430px,calc(100% - 20px))}body.pv-narrow.ui-phone .sheet{max-width:430px}' +
     '#pv-bar .pv-fmt{background:transparent;color:#F7F1EA;border-color:rgba(247,241,234,.5)}';
   document.head.appendChild(css);
 
@@ -847,7 +849,7 @@
     myMechanic:function(){ var m = eff(); return m && m.role === 'mecano' ? m.mechanic : null; },
     homeTab:function(){ var m = eff(); return m && m.role === 'tresorier' ? 'tresor' : null; },
     greetName:function(){ var m = eff(); return m ? first(m.name) : ''; },
-    tellsClient:true, isMine:mineView, previewing:previewing,
+    tellsClient:true, isMine:mineView, previewing:previewing, onUi:onUi,
     decodeVin:function(vin){ return invoke('vehicle', {vin:vin}).then(function(d){ return (d && d.r) || {}; }); },
     phoneTop:function(){ return me ? shiftCard() : ''; },
     navFoot:navFoot,

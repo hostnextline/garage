@@ -3762,8 +3762,8 @@ document.addEventListener('click', function(e){
     case 'ph-sec': phoneSecShow(v); break;
     case 'wiz-next': wizNext(); break;
     case 'wiz-prev': wizGo(Math.max(1, (S.wiz || 1) - 1)); break;
-    case 'ui-full': setUiOverride('full'); S.tab = 'accueil'; if (location.hash) location.hash = 'accueil'; render(); window.scrollTo(0, 0); break;
-    case 'ui-phone': setUiOverride(null); S.tab = defTab(); if (location.hash) location.hash = S.tab; render(); window.scrollTo(0, 0); break;
+    case 'ui-full': setUiOverride('full'); S.tab = 'accueil'; if (location.hash) location.hash = 'accueil'; render(); window.scrollTo(0, 0); if (ext() && typeof ext().onUi === 'function') ext().onUi(); break;
+    case 'ui-phone': setUiOverride(null); S.tab = defTab(); if (location.hash) location.hash = S.tab; render(); window.scrollTo(0, 0); if (ext() && typeof ext().onUi === 'function') ext().onUi(); break;
     case 'ph-install': installApp(); break;
     case 'app-install': installSheet(); break;
     case 'inst-copy': { var iu = realAppUrl(); if (navigator.clipboard) navigator.clipboard.writeText(iu).then(function(){ toast('Adresse copiée : colle-la dans Safari ou Chrome'); }, function(){ toast(iu); }); else toast(iu); break; }
