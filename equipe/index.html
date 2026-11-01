@@ -5,49 +5,26 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:wght@500;600;700&display=swap">
 <style>
 /* Layout: a mechanic's clipboard: sticky day header, job tickets with a perforated time stub, thumb-reach tab bar at the bottom */
-:root{
-  --paper:#ECEFF2; --surface:#FFFFFF; --sunk:#E2E7EC; --ink:#14202B; --muted:#55626F; --line:#D2D9E0; --line-strong:#B4BEC8; --line-faint:#E9EDF0;
-  --signal:#F2B200; --on-signal:#1E1600; --steel:#1D4B77; --on-steel:#FFFFFF; --steel-soft:#DCE7F3;
-  --ok:#1B6E45; --ok-bg:#DCF0E3; --warn:#8F5400; --warn-bg:#FBEACB; --bad:#AE2116; --bad-bg:#FADFDB;
-  --info:#1D5CA3; --info-bg:#DCE8F7; --idle:#55626F; --idle-bg:#E2E7EC; --closed-a:#E3E7EB; --closed-b:#F1F3F5; --scrim:rgba(14,19,24,.45);
-  --f-display:"Barlow Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
-  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  --r:10px;
-}
+:root{--f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --paper:#0E1318; --surface:#172029; --sunk:#111920; --ink:#E6ECF1; --muted:#97A5B2; --line:#26323D; --line-strong:#3A4855; --line-faint:#1D2630;
-    --signal:#F4BE2A; --on-signal:#1E1600; --steel:#93BCE4; --on-steel:#0E1318; --steel-soft:#1C3046;
-    --ok:#5CCB93; --ok-bg:#15321F; --warn:#F2AE45; --warn-bg:#382709; --bad:#F2796D; --bad-bg:#3A1714;
-    --info:#7DB2EC; --info-bg:#14273D; --idle:#97A5B2; --idle-bg:#1E2832; --closed-a:#1A222B; --closed-b:#121921; --scrim:rgba(0,0,0,.6);
-    color-scheme:dark;
-  }
+  :root:not([data-theme="light"]){color-scheme:dark;}
 }
-:root[data-theme="dark"]{
-  --paper:#0E1318; --surface:#172029; --sunk:#111920; --ink:#E6ECF1; --muted:#97A5B2; --line:#26323D; --line-strong:#3A4855; --line-faint:#1D2630;
-  --signal:#F4BE2A; --on-signal:#1E1600; --steel:#93BCE4; --on-steel:#0E1318; --steel-soft:#1C3046;
-  --ok:#5CCB93; --ok-bg:#15321F; --warn:#F2AE45; --warn-bg:#382709; --bad:#F2796D; --bad-bg:#3A1714;
-  --info:#7DB2EC; --info-bg:#14273D; --idle:#97A5B2; --idle-bg:#1E2832; --closed-a:#1A222B; --closed-b:#121921; --scrim:rgba(0,0,0,.6);
-  color-scheme:dark;
-}
+:root[data-theme="dark"]{color-scheme:dark;}
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;padding-block:0 calc(92px + env(safe-area-inset-bottom,0px))}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+body{color:var(--ink);;font-family:var(--f-body);;font-size:16px;;line-height:1.45;;padding-block:0 calc(92px + env(safe-area-inset-bottom,0px));}
+body::before{content:"";;position:fixed;;inset:0 0 auto;;height:env(safe-area-inset-top,0px);;z-index:10;}
 .wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-h1,h2,h3{font-family:var(--f-display);font-weight:700;line-height:1.05;margin:0;text-wrap:balance;letter-spacing:.01em}
-h1{font-size:30px} h2{font-size:24px} h3{font-size:19px;font-weight:600}
+h1,h2,h3{font-family:var(--f-display);;margin:0;;text-wrap:balance;}
 p{margin:0}
 button,input,select,textarea{font:inherit;color:inherit}
 .muted{color:var(--muted)} .small{font-size:14px}
 .mono{font-family:var(--f-mono);letter-spacing:.03em}
 .num{font-variant-numeric:tabular-nums}
-.eyebrow,.lbl{font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.eyebrow,.lbl{font-family:var(--f-display);;font-weight:600;;font-size:13px;}
 .stack{display:grid;gap:14px}
-
 /* top band */
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);border-bottom:1px solid var(--line)}
+.top{position:sticky;;top:env(safe-area-inset-top,0px);;z-index:5;;border-bottom:1px solid var(--line);}
 .top-in{display:grid;gap:12px;padding-block:14px 12px}
 .brandrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .brandrow>div{min-width:0}
@@ -57,37 +34,28 @@ button,input,select,textarea{font:inherit;color:inherit}
 .weeknav{display:flex;align-items:center;gap:6px}
 .weeknav .month{font-family:var(--f-display);font-weight:600;font-size:17px;flex:1;text-transform:capitalize}
 .days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
-.day{display:grid;justify-items:center;gap:1px;padding:7px 0 6px;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer}
+.day{display:grid;;justify-items:center;;gap:1px;;padding:7px 0 6px;;border:1px solid transparent;;background:transparent;;cursor:pointer;}
 .day .dw{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-.day .dn{font-family:var(--f-display);font-size:22px;font-weight:700;line-height:1.1}
+.day .dn{font-family:var(--f-display);;font-weight:700;;line-height:1.1;}
 .day .dc{display:flex;gap:3px;height:6px;align-items:center}
-.day .dc i{width:5px;height:5px;border-radius:50%;background:var(--signal)}
-.day.today .dn{text-decoration:underline 3px var(--signal);text-underline-offset:4px}
-.day.on{background:var(--ink);color:var(--paper)}
+.day .dc i{width:5px;;height:5px;;border-radius:50%;}
+.day.today .dn{text-underline-offset:4px;}
 .day.on .dw{color:inherit;opacity:.75}
-
 /* controls */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border-radius:var(--r);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-weight:600;cursor:pointer;text-decoration:none;text-align:center;line-height:1.15}
+.btn{display:inline-flex;;align-items:center;;justify-content:center;;gap:8px;;min-height:46px;;padding:0 18px;;color:var(--ink);;cursor:pointer;;text-decoration:none;;text-align:center;;line-height:1.15;}
 .btn.sm{min-height:38px;padding:0 12px;font-size:15px;white-space:nowrap}
-.btn.primary{background:var(--signal);border-color:var(--signal);color:var(--on-signal)}
-.btn.steel{background:var(--steel);border-color:var(--steel);color:var(--on-steel)}
-.btn.danger{color:var(--bad);border-color:var(--bad);background:transparent}
-.btn.danger.solid{background:var(--bad);color:var(--surface)}
-.btn.ghost{border-color:transparent;background:transparent}
+.btn.danger{color:var(--bad);}
 .btn.block{width:100%}
 .btn[disabled]{opacity:.5;cursor:not-allowed}
-.iconbtn{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer;flex:none;font-size:20px;line-height:1}
+.iconbtn{display:inline-grid;;place-items:center;;width:40px;;height:40px;;cursor:pointer;;flex:none;;font-size:20px;;line-height:1;}
 .linkbtn{background:none;border:0;color:var(--steel);font-weight:600;cursor:pointer;padding:6px 4px;text-decoration:underline;text-underline-offset:3px}
-:focus-visible{outline:3px solid var(--steel);outline-offset:2px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{border:1px solid var(--line-strong);background:var(--surface);border-radius:999px;padding:7px 14px;font-weight:600;font-size:15px;cursor:pointer;min-height:38px}
-.chip.on{background:var(--sel-bg);color:var(--sel-ink);border-color:transparent}
+.chip{border-radius:999px;;padding:7px 14px;;font-weight:600;;font-size:15px;;cursor:pointer;;min-height:38px;}
 .chip.add{border-style:dashed}
-
 .field{display:grid;gap:6px;min-width:0}
-.field>label{font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-input,select,textarea{font-size:16px;width:100%;min-height:46px;padding:10px 12px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);min-width:0}
-input[disabled],select[disabled],textarea[disabled]{background:var(--sunk);color:var(--muted)}
+.field>label{font-family:var(--f-display);;font-weight:600;;font-size:14px;}
+input,select,textarea{font-size:16px;;width:100%;;min-height:46px;;padding:10px 12px;;color:var(--ink);;min-width:0;}
+input[disabled],select[disabled],textarea[disabled]{color:var(--muted);}
 textarea{min-height:80px;resize:vertical}
 input.mono{text-transform:uppercase}
 input.mono::placeholder{text-transform:none;font-family:var(--f-body);letter-spacing:0}
@@ -99,60 +67,51 @@ input.mono::placeholder{text-transform:none;font-family:var(--f-body);letter-spa
 @media (max-width:440px){.grid2.stack-sm{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:370px){.veh{grid-template-columns:84px minmax(0,1fr)}.veh .field:last-child{grid-column:1/-1}}
 .check{display:flex;align-items:center;gap:10px;font-weight:500;cursor:pointer;min-height:40px}
-.check input{width:22px;height:22px;min-height:0;accent-color:var(--steel)}
-.err{background:var(--bad-bg);color:var(--bad);border-radius:8px;padding:10px 12px;font-weight:500}
+.check input{width:22px;;height:22px;;min-height:0;}
+.err{background:var(--bad-bg);;color:var(--bad);;padding:10px 12px;;font-weight:500;}
 .actions{display:grid;gap:10px}
-
 /* sections & cards */
-.sect{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:14px;min-width:0}
+.sect{display:grid;;gap:14px;;min-width:0;}
 .sect-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.banner{border-radius:10px;padding:12px 14px;background:var(--steel-soft);color:var(--ink);display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
-.banner.warn{background:var(--warn-bg)}
+.banner{padding:12px 14px;;color:var(--ink);;display:flex;;gap:10px;;align-items:flex-start;;justify-content:space-between;;flex-wrap:wrap;}
 .banner p{min-width:0;flex:1 1 220px}
 main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .daytitle{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
 .daytitle h2::first-letter{text-transform:uppercase}
-
 .sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
-.stat b{display:block;font-family:var(--f-display);font-size:clamp(18px,5vw,22px);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.stat{padding:10px 12px;;min-width:0;}
+.stat b{display:block;;font-size:clamp(18px,5vw,22px);;font-weight:700;;font-variant-numeric:tabular-nums;;white-space:nowrap;}
 .stat span{font-size:13px;color:var(--muted)}
-
 .list{display:grid;gap:10px}
-.ticket{display:grid;grid-template-columns:78px minmax(0,1fr);width:100%;text-align:left;padding:0;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer;overflow:hidden;color:var(--ink)}
-.stub{display:grid;align-content:center;justify-items:center;gap:3px;padding:12px 6px;background:var(--sunk);border-right:2px dashed var(--line-strong)}
-.stub b{font-family:var(--f-display);font-size:20px;white-space:nowrap;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.ticket{display:grid;;grid-template-columns:78px minmax(0,1fr);;width:100%;;text-align:left;;padding:0;;cursor:pointer;;overflow:hidden;;color:var(--ink);}
+.stub{display:grid;;align-content:center;;justify-items:center;;gap:3px;;padding:12px 6px;}
+.stub b{font-family:var(--f-display);;white-space:nowrap;;font-weight:700;;line-height:1;;font-variant-numeric:tabular-nums;}
 .stub small{font-size:12.5px;color:var(--muted)}
-.ticket.s-route .stub{background:var(--info-bg)}
-.ticket.s-place .stub{background:var(--warn-bg)}
-.ticket.s-termine .stub{background:var(--ok-bg)}
+
 .ticket.s-annule,.ticket.s-noshow{opacity:.62}
 .ticket.s-annule .tk-name,.ticket.s-noshow .tk-name{text-decoration:line-through}
 .tk{padding:12px 14px;display:grid;gap:2px;min-width:0}
 .tk-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
 .tk-name{font-weight:600;font-size:17px;overflow-wrap:anywhere;min-width:0}
-.tk-veh{font-family:var(--f-display);font-size:18px;font-weight:600;letter-spacing:.02em}
+.tk-veh{font-family:var(--f-display);}
 .tk-sub{color:var(--muted);font-size:14.5px;overflow-wrap:anywhere}
 .tk-foot{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-
-.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap;background:var(--idle-bg);color:var(--idle)}
+.pill{display:inline-flex;;align-items:center;;gap:6px;;padding:3px 10px;;border-radius:999px;;font-size:13px;;font-weight:600;;white-space:nowrap;;color:var(--idle);}
 .pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
 .pill.route{background:var(--info-bg);color:var(--info)}
 .pill.place{background:var(--warn-bg);color:var(--warn)}
 .pill.termine,.pill.paid{background:var(--ok-bg);color:var(--ok)}
 .pill.annule,.pill.noshow{background:var(--bad-bg);color:var(--bad)}
 .pill.unpaid{background:var(--warn-bg);color:var(--warn)}
-
-.empty-card{background:var(--surface);border:2px dashed var(--line-strong);border-radius:14px;padding:22px 18px;display:grid;gap:12px;justify-items:start}
+.empty-card{padding:22px 18px;;display:grid;;gap:12px;;justify-items:start;}
 .empty-card p{max-width:60ch;color:var(--muted)}
 .steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%}
-.steps div{background:var(--sunk);border-radius:10px;padding:10px;font-size:14px}
+.steps div{padding:10px;;font-size:14px;}
 .steps b{display:block;font-family:var(--f-display);font-size:16px}
 @media (max-width:480px){.steps{grid-template-columns:minmax(0,1fr)}}
-
 /* job detail */
 .seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-.seg button{min-height:52px;border-radius:10px;border:1px solid var(--line-strong);background:var(--surface);font-weight:600;font-size:14.5px;cursor:pointer;padding:4px 2px;line-height:1.1}
+.seg button{min-height:52px;;font-weight:600;;font-size:14.5px;;cursor:pointer;;padding:4px 2px;;line-height:1.1;}
 .seg button.on.planifie{background:var(--sel-bg);color:var(--sel-ink);border-color:transparent}
 .seg button.on.route{background:var(--info);color:var(--surface);border-color:var(--info)}
 .seg button.on.place{background:var(--warn);color:var(--surface);border-color:var(--warn)}
@@ -160,7 +119,7 @@ main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .kv{display:grid;gap:10px}
 .kv>div{display:grid;gap:2px;min-width:0}
 .kv dd{margin:0;overflow-wrap:anywhere}
-.kv dt{font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kv dt{font-family:var(--f-display);;font-weight:600;;font-size:13px;}
 .inline-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .sel{user-select:all;-webkit-user-select:all}
 .vin{font-family:var(--f-mono);font-size:17px;letter-spacing:.08em;overflow-wrap:anywhere}
@@ -169,9 +128,8 @@ main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .invbox{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .invbox b{font-family:var(--f-display);font-size:26px;font-variant-numeric:tabular-nums}
 .when{font-family:var(--f-display);font-size:22px;font-weight:600}
-
 /* invoice editor */
-.line{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:10px;background:var(--paper)}
+.line{padding:12px;;display:grid;;gap:10px;}
 .line-top{display:flex;gap:8px;align-items:center}
 .line-top select{flex:1}
 .line-nums{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr);gap:10px;align-items:end}
@@ -183,12 +141,10 @@ main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .tot .grand{border-top:2px solid var(--ink);padding-top:8px;margin-top:4px}
 .tot .grand dt,.tot .grand dd{color:var(--ink);font-family:var(--f-display);font-size:26px;font-weight:700}
 .radio2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.radio2 label{display:flex;align-items:center;gap:8px;border:1px solid var(--line-strong);border-radius:10px;padding:10px 12px;cursor:pointer;font-weight:600;min-height:48px}
-.radio2 input{width:20px;height:20px;min-height:0;accent-color:var(--steel)}
-.radio2 label:has(input:checked){border-color:var(--steel);background:var(--steel-soft)}
-
+.radio2 label{display:flex;;align-items:center;;gap:8px;;border:1px solid var(--line-strong);;padding:10px 12px;;cursor:pointer;;font-weight:600;;min-height:48px;}
+.radio2 input{width:20px;;height:20px;;min-height:0;}
 /* invoice paper */
-.paper{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;display:grid;gap:18px}
+.paper{padding:20px;;display:grid;;gap:18px;}
 .paper-head{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:3px solid var(--signal);padding-bottom:14px}
 .paper-head>div{min-width:0}
 .paper-head h2{font-size:26px;overflow-wrap:anywhere}
@@ -201,32 +157,30 @@ main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .stamp{border-radius:10px;padding:12px 14px;font-family:var(--f-display);font-size:20px;font-weight:700;letter-spacing:.03em}
 .stamp.ok{background:var(--ok-bg);color:var(--ok)} .stamp.warn{background:var(--warn-bg);color:var(--warn)}
 .payrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
-
 /* invoices list */
-.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;color:var(--ink)}
+.row{display:grid;;grid-template-columns:minmax(0,1fr) auto;;gap:4px 12px;;width:100%;;text-align:left;;padding:12px 14px;;cursor:pointer;;color:var(--ink);}
 .row .r-no{font-family:var(--f-mono);font-size:14px;color:var(--muted)}
 .row .r-name{font-weight:600;overflow-wrap:anywhere;min-width:0}
 .row .r-amt{font-family:var(--f-display);font-size:21px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
 .row .r-meta{font-size:14px;color:var(--muted)}
-
 /* service picker */
-.picker{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);padding:6px;min-height:46px}
+.picker{display:flex;;flex-wrap:wrap;;gap:6px;;align-items:center;;border:1px solid var(--line-strong);;padding:6px;;min-height:46px;}
 .picker:focus-within{outline:3px solid var(--steel);outline-offset:2px}
 .picker input{border:0;min-height:36px;padding:4px 6px;flex:1 1 170px;background:transparent}
 .picker input:focus-visible{outline:none}
 .picked{display:contents}
-.pchip{display:inline-flex;align-items:center;gap:6px;background:var(--steel-soft);color:var(--ink);border-radius:999px;padding:3px 3px 3px 12px;font-weight:600;font-size:15px;max-width:100%;overflow-wrap:anywhere}
+.pchip{display:inline-flex;;align-items:center;;gap:6px;;color:var(--ink);;border-radius:999px;;padding:3px 3px 3px 12px;;font-weight:600;;font-size:15px;;max-width:100%;;overflow-wrap:anywhere;}
 .pchip small{font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .pchip button{flex:none;width:30px;height:30px;border-radius:50%;border:0;background:transparent;cursor:pointer;color:var(--muted);font-size:15px}
 .pchip button:hover{background:var(--surface);color:var(--ink)}
-.opts{display:grid;grid-auto-rows:max-content;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);overflow:hidden}
+.opts{display:grid;;grid-auto-rows:max-content;;overflow:hidden;}
 #svc-opts{position:relative;max-height:min(55vh,420px);overflow-y:auto;overscroll-behavior:contain}
 label[for="f-svc-in"]{scroll-margin-top:96px}
 #sheet-body label[for="f-svc-in"]{scroll-margin-top:12px}
-#svc-est .est{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-top:8px;padding:10px 12px;border-radius:10px;background:var(--steel-soft);color:var(--ink)}
+#svc-est .est{display:flex;;flex-wrap:wrap;;align-items:center;;justify-content:space-between;;gap:8px 12px;;margin-top:8px;;padding:10px 12px;;color:var(--ink);}
 #svc-est .est > div{display:grid;gap:2px;min-width:0}
 #svc-est .est-miss{color:var(--warn)}
-.opts .opt-count{position:sticky;top:0;z-index:1;padding:7px 14px;font-size:13px;font-weight:600;color:var(--muted);background:var(--sunk);border-bottom:1px solid var(--line)}
+.opts .opt-count{position:sticky;;top:0;;z-index:1;;padding:7px 14px;;font-size:13px;;font-weight:600;;color:var(--muted);;border-bottom:1px solid var(--line);}
 .opt mark{background:var(--signal-soft, rgba(242,178,0,.32));color:inherit;border-radius:3px;padding:0 1px}
 .opt{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 14px;border:0;border-bottom:1px solid var(--line);background:transparent;cursor:pointer;font-size:16px;min-height:48px;color:var(--ink)}
 .opt:last-child{border-bottom:0}
@@ -239,23 +193,21 @@ label[for="f-svc-in"]{scroll-margin-top:96px}
 .draftmsg.ok::before{background:var(--ok)} .draftmsg.bad::before{background:var(--bad)}
 .draftmsg:empty{display:none}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
-.tag{background:var(--sunk);border-radius:999px;padding:4px 12px;font-weight:600;font-size:15px}
-
+.tag{border-radius:999px;;padding:4px 12px;;font-weight:600;;font-size:15px;}
 /* day schedule grid (dental-agenda style) */
 .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
 .hoursline{color:var(--muted);font-size:15px}
 .hoursline b{color:var(--ink)}
-.cal{overflow:auto;max-height:max(340px,calc(100vh - 410px));max-height:max(340px,calc(100dvh - 410px));border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.cal{overflow:auto;;max-height:max(340px,calc(100vh - 410px));;max-height:max(340px,calc(100dvh - 410px));}
 .cal-in{min-width:calc(52px + var(--n) * var(--cw,124px))}
 .cal-head,.cal-body{display:grid;grid-template-columns:52px repeat(var(--n),minmax(var(--cw,124px),1fr))}
-.cal-head{border-bottom:1px solid var(--line-strong);position:sticky;top:0;z-index:4;background:var(--surface)}
-.cal-head>div:first-child{position:sticky;left:0;z-index:5;background:var(--surface)}
-.colh{padding:9px 8px;font-family:var(--f-display);font-weight:700;font-size:17px;text-align:center;border-left:1px solid var(--line);overflow-wrap:anywhere}
+.cal-head{position:sticky;;top:0;;z-index:4;}
+.cal-head>div:first-child{position:sticky;;left:0;;z-index:5;}
+.colh{padding:9px 8px;;font-family:var(--f-display);;text-align:center;;border-left:1px solid var(--line);;overflow-wrap:anywhere;}
 .colh small{display:block;font-family:var(--f-body);font-weight:500;font-size:12.5px;color:var(--muted)}
-.gutter{position:relative;position:sticky;left:0;z-index:3;background:var(--surface)}
+.gutter{position:relative;;position:sticky;;left:0;;z-index:3;}
 .dayh{background:transparent;border:0;border-left:1px solid var(--line);cursor:pointer;color:var(--ink);line-height:1.15}
 .dayh:hover{background:var(--sunk)}
-.dayh.today{background:var(--sel-bg);color:var(--sel-ink)}
 .dayh.today small{color:inherit;opacity:.8}
 .dayh.closedday{color:var(--muted)}
 .cal.week .appt{padding:3px 5px;font-size:12px}
@@ -263,7 +215,7 @@ label[for="f-svc-in"]{scroll-margin-top:96px}
 .cal.week .slot{font-size:12px}
 .hl{position:absolute;left:0;right:6px;text-align:right;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;padding-top:3px}
 .col{position:relative;border-left:1px solid var(--line)}
-.slot{display:block;width:100%;border:0;border-top:1px solid var(--line-faint);background:transparent;padding:0;cursor:pointer;color:var(--steel);font-weight:700;font-size:12.5px;line-height:1}
+.slot{display:block;;width:100%;;border:0;;border-top:1px solid var(--line-faint);;background:transparent;;padding:0;;cursor:pointer;;font-weight:700;;font-size:12.5px;;line-height:1;}
 .slot.half{border-top-color:var(--line)}
 .slot.hr{border-top-color:var(--line-strong)}
 .slot:first-child{border-top-color:transparent}
@@ -275,33 +227,32 @@ label[for="f-svc-in"]{scroll-margin-top:96px}
 .cal.editing .slot.open{background:var(--ok-bg)}
 .cal.editing .slot.open:hover::after{content:"Fermer"}
 .cal.editing .slot.closed:hover::after{content:"Ouvrir"}
-.appt{position:absolute;display:grid;align-content:start;gap:1px;padding:4px 7px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);text-align:left;overflow:hidden;font-size:13px;line-height:1.25;cursor:pointer;color:var(--ink);z-index:1;min-width:0}
+.appt{position:absolute;;display:grid;;align-content:start;;gap:1px;;padding:4px 7px;;text-align:left;;overflow:hidden;;font-size:13px;;line-height:1.25;;cursor:pointer;;color:var(--ink);;z-index:1;;min-width:0;}
 .appt b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .appt span{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.appt.s-planifie{background:var(--steel-soft);border-color:var(--steel)}
-.appt.s-route{background:var(--info-bg);border-color:var(--info)}
-.appt.s-place{background:var(--warn-bg);border-color:var(--warn)}
-.appt.s-termine{background:var(--ok-bg);border-color:var(--ok)}
+.appt.s-planifie{border-color:var(--steel);}
+.appt.s-route{border-color:var(--info);}
+.appt.s-place{border-color:var(--warn);}
+.appt.s-termine{border-color:var(--ok);}
 .cal.editing .appt{pointer-events:none;opacity:.4}
 .now{position:absolute;left:0;right:0;height:2px;background:var(--bad);z-index:2;pointer-events:none}
 .now::before{content:"";position:absolute;left:-1px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--bad)}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
-.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:6px;border:1px solid var(--line-strong);background:var(--surface)}
+.legend i{display:inline-block;;width:14px;;height:14px;;vertical-align:-2px;;margin-right:6px;;border:1px solid var(--line-strong);;background:var(--surface);}
 .legend i.cl{background:repeating-linear-gradient(135deg,var(--closed-a) 0 3px,var(--closed-b) 3px 6px)}
-.hours-panel{background:var(--warn-bg);border:1px solid var(--warn);border-radius:12px;padding:14px;display:grid;gap:12px}
+.hours-panel{border:1px solid var(--warn);;padding:14px;;display:grid;;gap:12px;}
 .hours-panel .row2{display:flex;flex-wrap:wrap;gap:8px}
 .hrow{display:grid;grid-template-columns:minmax(0,1fr) 96px auto 96px;gap:8px;align-items:center}
 .hrow select{min-height:42px;padding:6px 8px}
 body.locked{overflow:hidden}
 .sheet-wrap{position:fixed;inset:0;z-index:30;display:flex;align-items:flex-end;justify-content:center}
 .sheet-back{position:absolute;inset:0;background:var(--scrim)}
-.sheet{position:relative;width:100%;max-width:620px;max-height:calc(100% - env(safe-area-inset-top,0px) - 20px);background:var(--paper);border-radius:16px 16px 0 0;display:flex;flex-direction:column;box-shadow:0 -10px 40px rgba(0,0,0,.25)}
+.sheet{position:relative;;width:100%;;max-width:620px;;max-height:calc(100% - env(safe-area-inset-top,0px) - 20px);;display:flex;;flex-direction:column;}
 .sheet-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
 .sheet-head h2{font-size:22px}
 .sheet-body{overflow-y:auto;padding:14px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));overscroll-behavior:contain}
-@media (min-width:700px){.sheet-wrap{align-items:center;padding:24px}.sheet{border-radius:16px;max-height:calc(100% - 48px)}}
+@media (min-width:700px){.sheet-wrap{align-items:center;padding:24px}.sheet{max-height:calc(100% - 48px);}}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .2s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}}
-
 /* postal-code optimisation */
 .addrwrap{position:relative}
 .addrsug{margin-top:6px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:min(60vh,440px);overflow-y:auto;overscroll-behavior:contain}
@@ -312,20 +263,19 @@ body.locked{overflow:hidden}
 .addrsug .opt.street small{color:var(--steel)}
 #c-addrfix .banner,#c-sameaddr .banner{margin-top:8px}
 .addrsug .opt.local small{color:var(--ok)}
-.addrsug .opt-head{position:sticky;top:0;z-index:1;padding:8px 14px 6px;font:600 12.5px/1.2 var(--f-body);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--sunk);border-bottom:1px solid var(--line)}
+.addrsug .opt-head{position:sticky;;top:0;;z-index:1;;padding:8px 14px 6px;;font:600 12.5px/1.2 var(--f-body);;letter-spacing:.04em;;text-transform:uppercase;;color:var(--muted);;border-bottom:1px solid var(--line);}
 .addrsug .opt-wait{display:flex;align-items:center;gap:10px;padding:12px 14px;color:var(--muted);font-size:15px;border-bottom:1px solid var(--line)}
 .addrsug .spin{width:16px;height:16px;flex:none;border:2px solid var(--line-strong);border-top-color:var(--steel);border-radius:50%;animation:gmspin .7s linear infinite}
 @keyframes gmspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion: reduce){.addrsug .spin{animation-duration:2s}}
-.addrsug .src{padding:6px 14px;font-size:12px;color:var(--muted);border-top:1px solid var(--line);background:var(--sunk)}
+.addrsug .src{padding:6px 14px;;font-size:12px;;color:var(--muted);;border-top:1px solid var(--line);}
 .ttnote{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .ttnote:empty{display:none}
-.sugbox{border:1px solid var(--steel);background:var(--steel-soft);border-radius:12px;padding:12px;display:grid;gap:10px}
+.sugbox{padding:12px;;display:grid;;gap:10px;}
 .sug-head{display:flex;flex-wrap:wrap;gap:2px 10px;align-items:baseline}
 .sugs{display:grid;gap:8px}
-.sug{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;text-align:left;width:100%;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);padding:10px 12px;cursor:pointer;color:var(--ink);font-size:16px}
+.sug{display:grid;;grid-template-columns:minmax(0,1fr) auto;;gap:2px 10px;;align-items:center;;text-align:left;;width:100%;;padding:10px 12px;;cursor:pointer;;color:var(--ink);;font-size:16px;}
 .sug:hover{border-color:var(--steel)}
-.sug.on{border-color:var(--steel);box-shadow:inset 0 0 0 2px var(--steel)}
 .sug-when{grid-column:1;grid-row:1;font-weight:600}
 .sug-when .nw{white-space:nowrap}
 .sug-when small{color:var(--muted);font-weight:500;margin-left:6px;font-size:14px}
@@ -342,7 +292,6 @@ body.locked{overflow:hidden}
 .stops{margin:0;padding-left:22px;display:grid;gap:5px;font-size:15px}
 .stops .mono{font-size:13px;background:var(--sunk);border-radius:6px;padding:1px 6px;margin-right:6px}
 .tight{color:var(--warn);font-size:14px;font-weight:600;margin:0}
-
 /* duration in units */
 .stepper{display:grid;grid-template-columns:46px minmax(0,1fr) 46px;gap:6px;align-items:center}
 .stepper .iconbtn{width:46px;height:46px;font-size:22px}
@@ -350,57 +299,48 @@ body.locked{overflow:hidden}
 .period{display:grid;gap:8px;border-top:1px solid var(--warn);padding-top:12px}
 .prow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .prow select{width:auto;min-width:96px;min-height:42px;padding:6px 8px;flex:1 1 96px}
-
 /* clients */
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.crow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;color:var(--ink)}
-.crow:hover{border-color:var(--line-strong)}
+.crow{display:grid;;grid-template-columns:minmax(0,1fr) auto;;gap:4px 12px;;align-items:center;;width:100%;;text-align:left;;padding:11px 14px;;cursor:pointer;;color:var(--ink);}
 .crow-main{display:grid;gap:1px;min-width:0}
 .crow-main b{font-size:17px;overflow-wrap:anywhere}
 .crow-main span{overflow-wrap:anywhere}
 .crow-side{display:grid;gap:4px;justify-items:end}
-.ccard{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px}
+.ccard{display:flex;;justify-content:space-between;;align-items:flex-start;;gap:12px;;padding:12px;}
 .ccard-main{display:grid;gap:2px;min-width:0}
 .ccard-main b{font-size:18px}
 .ccard-main span{overflow-wrap:anywhere}
 .tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.tile{display:grid;gap:4px;align-content:center;justify-items:start;text-align:left;min-height:84px;padding:12px 14px;border-radius:12px;border:1px solid var(--line-strong);background:var(--surface);cursor:pointer;color:var(--ink);font-family:var(--f-display);font-size:19px;font-weight:700;line-height:1.1}
+.tile{display:grid;;gap:4px;;align-content:center;;justify-items:start;;text-align:left;;min-height:84px;;padding:12px 14px;;cursor:pointer;;color:var(--ink);;font-family:var(--f-display);;line-height:1.1;}
 .tile small{font-family:var(--f-body);font-size:13.5px;font-weight:500;color:var(--muted)}
-.tile.book{background:var(--signal);border-color:var(--signal);color:var(--on-signal)}
-.tile.book small{color:var(--on-signal);opacity:.8}
-.tile.on{border-color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}
+
 .tile svg{width:22px;height:22px}
-.vrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:center;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;color:var(--ink)}
+.vrow{display:grid;;grid-template-columns:auto minmax(0,1fr) auto;;gap:4px 12px;;align-items:center;;width:100%;;text-align:left;;padding:10px 12px;;cursor:pointer;;color:var(--ink);}
 .vrow .vdate{font-family:var(--f-display);font-weight:700;font-size:16px;white-space:nowrap}
 .vrow .vmain{min-width:0;display:grid;gap:1px}
 .vrow .vmain span{overflow-wrap:anywhere}
 .note{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:start;border-top:1px solid var(--line);padding-top:10px}
 .note p{white-space:pre-wrap;overflow-wrap:anywhere}
 .due-big{font-family:var(--f-display);font-size:34px;font-weight:700;font-variant-numeric:tabular-nums}
-.rec{display:grid;gap:8px;border:1px solid var(--line);border-radius:10px;padding:12px}
+.rec{display:grid;;gap:8px;;padding:12px;}
 .rec-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
 .dayboxes{display:flex;flex-wrap:wrap;gap:2px 14px}
 .daybox{min-height:36px}
-
 /* settings */
-.promo-row{display:grid;gap:6px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--sunk)}
-.promo-tag{display:inline-block;margin-right:6px;padding:1px 6px;border-radius:4px;background:var(--signal);color:var(--on-signal);font:700 11px/1.5 var(--f-body);font-style:normal;letter-spacing:.06em;text-transform:uppercase;vertical-align:1px}
+.promo-row{display:grid;;gap:6px;;padding:10px;}
+.promo-tag{display:inline-block;;margin-right:6px;;padding:1px 6px;;border-radius:4px;;font:700 11px/1.5 var(--f-body);;font-style:normal;;letter-spacing:.06em;;text-transform:uppercase;;vertical-align:1px;}
 .promo-inc{display:block;margin-top:2px;font-size:13px;color:var(--muted)}
 .opt.promo{flex-direction:column;align-items:stretch;gap:4px}
 .opt.promo small{color:var(--ink);font-weight:600}
-.chip.add.promo{border-color:var(--signal);background:var(--signal);color:var(--on-signal);font-weight:600}
+.chip.add.promo{font-weight:600;}
 .svc-row{display:grid;grid-template-columns:minmax(0,1fr) 110px 40px;gap:8px;align-items:center}
 .copyfb textarea{min-height:160px;font-family:var(--f-mono);font-size:14px}
-
 /* tab bar + toast */
-.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
-.tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px;padding-block:6px}
-.tab{display:grid;justify-items:center;gap:2px;background:none;border:0;border-radius:10px;padding:6px 0;font-weight:600;font-size:13.5px;color:var(--muted);cursor:pointer;min-height:52px}
-.tab[aria-current="page"]{color:var(--ink);background:var(--sunk)}
-.tab[aria-current="page"] svg{color:var(--signal)}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:40;background:var(--ink);color:var(--paper);padding:11px 16px;border-radius:10px;font-weight:600;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.tabbar{position:fixed;;bottom:0;;z-index:6;;border-top:1px solid var(--line);}
+.tabs{display:grid;;grid-auto-flow:column;;grid-auto-columns:minmax(0,1fr);}
+.tab{display:grid;;justify-items:center;;gap:2px;;background:none;;border:0;;color:var(--muted);;cursor:pointer;}
+.toast{position:fixed;;left:50%;;transform:translateX(-50%);;bottom:calc(84px + env(safe-area-inset-bottom,0px));;z-index:40;;padding:11px 16px;;font-weight:600;;max-width:calc(100% - 32px);;box-shadow:0 6px 20px rgba(0,0,0,.18);}
 @media (prefers-reduced-motion:no-preference){.toast{animation:pop .18s ease-out}@keyframes pop{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}}
-
 /* ===================== Glass look =====================
    Frosted panels over a warm, softly lit backdrop (light) or a smoky night garage (dark).
    Big panels blur what is behind them; repeated small cards are translucent without blur (lighter for phones). */
@@ -417,6 +357,7 @@ body.locked{overflow:hidden}
   --glass-shadow:0 1px 0 rgba(255,255,255,.85) inset, 0 0 0 .5px rgba(150,110,60,.16), 0 14px 38px rgba(80,48,22,.13);
   --card-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 4px 14px rgba(80,48,22,.08);
   --blur:saturate(180%) blur(26px);
+  --blur-soft:saturate(160%) blur(12px);
   --accent:linear-gradient(135deg,#F7974F 0%,#E9572A 100%);
   --r:14px;
   --f-lux:"Playfair Display",Georgia,"Times New Roman",serif;
@@ -487,11 +428,11 @@ h1{font-family:var(--f-lux);font-weight:600;letter-spacing:-.006em;line-height:1
 .field>label{font:600 14px/1.3 var(--f-body);letter-spacing:0;text-transform:none;color:var(--ink)}
 .kv dt{font:500 13px/1.3 var(--f-body);letter-spacing:0;text-transform:none;color:var(--muted)}
 :focus-visible{outline:2.5px solid var(--ink);outline-offset:2px;box-shadow:0 0 0 6px rgba(238,106,47,.28);box-shadow:0 0 0 6px color-mix(in srgb,var(--signal) 30%,transparent)}
-
 /* frosted panels */
-.top,.sect,.stat,.empty-card,.cal,.sheet,.hours-panel,.gpanel{-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
+.ui-phone .sect,.ui-phone .stat,.ui-phone .empty-card{-webkit-backdrop-filter:var(--blur-soft);backdrop-filter:var(--blur-soft)}   /* phone: many panels on one page, a lighter glass so it scrolls smoothly */
+.top,.sect,.stat,.empty-card,.cal,.sheet,.hours-panel{-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
 .top{top:calc(env(safe-area-inset-top,0px) + 8px);margin:8px 10px 0;background:var(--glass);border:1px solid var(--glass-edge);border-radius:24px;box-shadow:var(--glass-shadow)}
-.sect,.gpanel{background:var(--glass);border:1px solid var(--glass-edge);border-radius:22px;padding:18px;box-shadow:var(--glass-shadow)}
+.sect{background:var(--glass);border:1px solid var(--glass-edge);border-radius:22px;padding:18px;box-shadow:var(--glass-shadow)}
 .stat{background:var(--glass);border:1px solid var(--glass-edge);border-radius:18px;box-shadow:var(--card-shadow)}
 .stat b{font-family:var(--f-display);letter-spacing:-.02em}
 .empty-card{background:var(--glass);border:1.5px dashed var(--line-strong);border-radius:22px}
@@ -500,7 +441,6 @@ h1{font-family:var(--f-lux);font-weight:600;letter-spacing:-.006em;line-height:1
 .banner.warn{background:var(--warn-bg);border-color:transparent}
 .hours-panel{background:var(--warn-bg);border-color:rgba(245,158,45,.45);border-radius:18px}
 .err{border-radius:12px}
-
 /* cards in lists: translucent, no blur */
 .ticket,.row,.crow,.tile,.vrow,.sug,.ccard,.rec,.line,.promo-row{background:var(--card);border:1px solid var(--glass-edge);box-shadow:var(--card-shadow)}
 .ticket{border-radius:18px} .row,.crow{border-radius:18px} .tile{border-radius:18px} .vrow,.sug,.ccard,.rec,.line,.promo-row{border-radius:14px}
@@ -514,7 +454,6 @@ h1{font-family:var(--f-lux);font-weight:600;letter-spacing:-.006em;line-height:1
 .tile.book{background:var(--btn-bg);border-color:transparent;color:var(--btn-ink)}
 .tile.book small{color:var(--btn-ink);opacity:.75}
 .tile.on{border-color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}
-
 /* controls */
 .btn{border-radius:999px;border:1px solid var(--glass-edge);background:var(--card);box-shadow:var(--card-shadow);font-weight:600;transition:transform .12s ease,box-shadow .12s ease}
 .btn:active{transform:scale(.98)}
@@ -545,7 +484,6 @@ input[disabled],select[disabled],textarea[disabled]{background:var(--sunk)}
 #svc-est .est{background:var(--glass-strong);border:1px solid var(--glass-edge);border-radius:14px}
 .sugbox{background:var(--steel-soft);border:1px solid var(--glass-edge);border-radius:18px}
 .sug.on{border-color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}
-
 /* week strip */
 .day{border-radius:16px}
 .day.on{background:var(--sel-bg);color:var(--sel-ink);box-shadow:0 8px 18px rgba(30,20,12,.22)}
@@ -554,7 +492,6 @@ input[disabled],select[disabled],textarea[disabled]{background:var(--sunk)}
 .day.on .dc i{background:var(--sel-dot,var(--signal))}
 .day.today .dn{text-decoration:none}
 .day.today:not(.on) .dn{color:var(--signal)}
-
 /* schedule grid */
 .cal{background:var(--glass);border:1px solid var(--glass-edge);border-radius:22px;box-shadow:var(--glass-shadow)}
 .cal-head,.cal-head>div:first-child,.gutter{background:var(--glass-strong);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
@@ -569,12 +506,10 @@ input[disabled],select[disabled],textarea[disabled]{background:var(--sunk)}
 .appt.s-place{background:rgba(253,240,222,.94);border-left-color:var(--warn)}
 .appt.s-termine{background:rgba(226,244,233,.92);border-left-color:var(--ok)}
 .legend i{border-radius:4px}
-
 /* invoice paper stays like paper */
 .paper{background:var(--surface-solid);border:1px solid var(--glass-edge);border-radius:22px;box-shadow:var(--glass-shadow)}
 .paper-head{border-bottom-color:var(--signal)}
 .tot .grand{border-top-color:var(--ink)}
-
 /* sheet, tab bar, toast */
 .sheet{background:var(--glass-strong);border:1px solid var(--glass-edge);border-radius:26px 26px 0 0;box-shadow:0 -14px 50px rgba(30,18,8,.28)}
 .sheet-back{-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
@@ -589,7 +524,6 @@ input[disabled],select[disabled],textarea[disabled]{background:var(--sunk)}
 .tab[aria-current="page"] svg{color:var(--signal)}
 .toast{border-radius:18px;background:rgba(28,22,18,.88);color:#F7F1EA;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);bottom:calc(88px + env(safe-area-inset-bottom,0px))}
 body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
-
 /* dark mode: inputs and grid colours */
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]) .stub{background:rgba(255,255,255,.04)}
@@ -606,7 +540,6 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
 :root[data-theme="dark"] .appt.s-place{background:rgba(60,44,24,.94)}
 :root[data-theme="dark"] .appt.s-termine{background:rgba(26,52,38,.94)}
 :root[data-theme="dark"] .toast{background:rgba(245,239,233,.92);color:#15110E}
-
 /* ===================== Couleurs de luxe (Réglages → Couleurs de l'app) =====================
    One attribute on <html>: data-lux. Light palettes force the light look, dark palettes the dark look; « Sable » follows the phone. */
 :root[data-lux="champagne"]{
@@ -762,7 +695,6 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
   :root,:root[data-lux]{--glass:var(--surface-solid);--glass-strong:var(--surface-solid)}
 }
 @media (prefers-reduced-motion: reduce){.btn{transition:none}.btn:active{transform:none}}
-
 /* ===================== Téléphone ===================== */
 .ui-phone{font-size:17px}
 .ui-phone .top-in{padding-block:12px 10px;gap:10px}
@@ -911,7 +843,6 @@ form:not(.ph-sets) .ph-secback{display:none}
 .paybtns{display:flex;flex-wrap:wrap;gap:8px}
 .paybtns .chip{min-height:48px;padding:10px 16px;font-size:16px}
 @media (prefers-reduced-motion: reduce){.switch i,.fold summary::after{transition:none}}
-
 /* ===================== Tableau de bord ===================== */
 .dash{display:grid;gap:14px}
 .quick{display:flex;flex-wrap:wrap;gap:8px}
@@ -980,7 +911,6 @@ form:not(.ph-sets) .ph-secback{display:none}
 .two{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
 @media (min-width:760px){.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 .money-due{font:700 30px/1 var(--f-display);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
-
 /* ===================== Aide « ? » et simplicité ===================== */
 .qhelp{position:relative;display:inline-grid;place-items:center;width:24px;height:24px;margin:0 0 0 6px;padding:0;border-radius:50%;border:1.5px solid var(--line-strong);background:var(--surface);color:var(--muted);font:700 13px/1 var(--f-body);cursor:pointer;vertical-align:middle;flex:none}
 .qhelp::after{content:"";position:absolute;inset:-10px}
@@ -1012,7 +942,7 @@ details.adv[open] > summary{margin-bottom:8px}
 .qrbox{width:200px;height:200px;padding:10px;border-radius:14px;background:#fff;justify-self:center;border:1px solid var(--line)}
 .qrbox svg{width:100%;height:100%;display:block}
 .inst-url{text-align:center;font-size:19px;font-weight:700;word-break:break-all;letter-spacing:.01em}
-.touring{overflow:hidden}
+.touring{overflow:hidden}.touring.tt-free{overflow:visible}
 /* the schedule window (glass) */
 #sched{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:16px}
 #sched .sch-back{position:absolute;inset:0;background:rgba(20,14,10,.32);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
@@ -1048,22 +978,34 @@ details.adv[open] > summary{margin-bottom:8px}
 #tour-ov.out,#tour-ov.out *{pointer-events:none!important}
 #tour-ov.out{opacity:0}
 #tour-ov .tt-block{position:absolute;inset:0;pointer-events:auto}
-#tour-ov .tt-hole{position:absolute;border-radius:18px;pointer-events:none;will-change:left,top,width,height;
-  box-shadow:0 0 0 200vmax rgba(12,9,6,.56),0 0 0 2px var(--signal),0 0 26px 6px rgba(238,106,47,.35);
-  box-shadow:0 0 0 200vmax rgba(12,9,6,.56),0 0 0 2px var(--signal),0 0 26px 6px color-mix(in srgb,var(--signal) 40%,transparent);
-  transition:left .42s cubic-bezier(.4,0,.2,1),top .42s cubic-bezier(.4,0,.2,1),width .42s cubic-bezier(.4,0,.2,1),height .42s cubic-bezier(.4,0,.2,1),box-shadow .24s ease}
-#tour-ov .tt-hole::after{content:"";position:absolute;inset:-1px;border-radius:inherit;background:rgba(12,9,6,.56);opacity:0;transition:opacity .22s ease}
+/* moved with transform (the phone's graphics chip does it), and a halo without blur: smooth on iPhone too */
+#tour-ov .tt-hole{position:absolute;left:0;top:0;width:0;height:0;border-radius:18px;pointer-events:none;will-change:transform;transform:translate3d(var(--hx,50vw),var(--hy,50vh),0);
+  box-shadow:0 0 0 200vmax rgba(12,9,6,.56),0 0 0 2px var(--signal),0 0 0 7px rgba(238,106,47,.2);
+  box-shadow:0 0 0 200vmax rgba(12,9,6,.56),0 0 0 2px var(--signal),0 0 0 7px color-mix(in srgb,var(--signal) 22%,transparent);
+  transition:transform .42s cubic-bezier(.4,0,.2,1),width .42s cubic-bezier(.4,0,.2,1),height .42s cubic-bezier(.4,0,.2,1),box-shadow .24s ease}
+#tour-ov .tt-hole::after{content:"";position:absolute;inset:0;border-radius:inherit;background:rgba(12,9,6,.56);opacity:0;transition:opacity .22s ease}
 #tour-ov .tt-hole.shut{box-shadow:0 0 0 200vmax rgba(12,9,6,.56),0 0 0 0 rgba(238,106,47,0),0 0 0 0 rgba(238,106,47,0)}
 #tour-ov .tt-hole.shut::after{opacity:1}
 #tour-ov .tt-hole.jump{transition:none}
-#tour-ov .tt-tip{position:absolute;left:12px;top:40%;pointer-events:auto;color:var(--ink);border-radius:24px;padding:14px 18px 14px;background:var(--glass-strong,rgba(255,253,250,.9));border:1px solid var(--glass-edge,rgba(255,255,255,.7));-webkit-backdrop-filter:saturate(170%) blur(26px);backdrop-filter:saturate(170%) blur(26px);box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 24px 60px rgba(0,0,0,.38);
-  transition:top .42s cubic-bezier(.4,0,.2,1),left .42s cubic-bezier(.4,0,.2,1),opacity .24s ease,transform .3s cubic-bezier(.2,.8,.2,1)}
-#tour-ov .tt-tip.gone{opacity:0;transform:translateY(10px)}
+/* a step where the person does it: the lit part can be touched (the rest of the screen still waits) */
+#tour-ov.open .tt-block{pointer-events:none}
+#tour-ov.scrolling .tt-hole,#tour-ov.scrolling .tt-tip{transition:none}
+#tour-ov .tt-hole.tap::before{content:"";position:absolute;inset:-3px;border-radius:inherit;border:2px solid var(--signal);opacity:0;animation:ttPulse 1.6s cubic-bezier(.2,.6,.3,1) .35s infinite}
+@keyframes ttPulse{0%{transform:scale(1);opacity:.9}100%{transform:scale(1.14);opacity:0}}
+#tour-ov .tt-tip{position:absolute;left:0;top:0;will-change:transform,opacity;transform:translate3d(var(--tx,12px),calc(var(--ty,40vh) + var(--dy,0px)),0);pointer-events:auto;color:var(--ink);border-radius:24px;padding:14px 18px 14px;background:var(--glass-strong,rgba(255,253,250,.9));border:1px solid var(--glass-edge,rgba(255,255,255,.7));-webkit-backdrop-filter:saturate(170%) blur(26px);backdrop-filter:saturate(170%) blur(26px);box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 24px 60px rgba(0,0,0,.38);
+  transition:transform .42s cubic-bezier(.4,0,.2,1),opacity .24s ease}
+#tour-ov .tt-tip.gone{opacity:0;--dy:10px}
+/* phone: a solid glass bubble (no live blur behind a moving bubble: that is what stutters on iPhone) */
+.ui-phone #tour-ov .tt-tip{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--surface-solid,#FFFDF8)}
 #tour-ov .tt-tip.still{transition:none}
 #tour-ov .tt-in{display:grid;gap:9px;transition:opacity .22s ease}
 #tour-ov .tt-tip.fade .tt-in{opacity:0;transition-duration:.12s}
 #tour-ov .tt-tip.swap .tt-in{opacity:0;transition:none}
 #tour-ov .tt-tip.fade{pointer-events:none}
+.tt-do,.tt-try{font-size:14.5px;line-height:1.45;font-weight:600;padding:9px 12px;border-radius:14px;background:rgba(238,106,47,.12);background:color-mix(in srgb,var(--signal) 13%,transparent)}
+.tt-done{display:none;font-size:14.5px;line-height:1.45;padding:9px 12px;border-radius:14px;background:rgba(43,168,74,.13);font-weight:600}
+#tour-ov .tt-tip.tried .tt-try{display:none}#tour-ov .tt-tip.tried .tt-done{display:block}
+#tour-ov .tt-tip.compact .tt-p,#tour-ov .tt-tip.compact .tt-x2{display:none}
 .tt-top{display:flex;align-items:center;gap:10px;min-height:24px}
 .tt-ch{flex:1;min-width:0;font-size:12.5px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--signal)}
 .tt-n{font-size:12.5px;color:var(--muted);white-space:nowrap}
@@ -1075,7 +1017,7 @@ details.adv[open] > summary{margin-bottom:8px}
 .tt-x2{font-size:14px;line-height:1.45;color:var(--muted);padding-left:10px;border-left:2px solid var(--signal)}
 .tt-btns{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px}
 .tt-btns .btn.primary{min-width:132px}
-@media (prefers-reduced-motion:reduce){#tour-ov,#tour-ov .tt-hole,#tour-ov .tt-hole::after,#tour-ov .tt-tip,#tour-ov .tt-in{transition:none!important}}
+@media (prefers-reduced-motion:reduce){#tour-ov,#tour-ov .tt-hole,#tour-ov .tt-hole::after,#tour-ov .tt-tip,#tour-ov .tt-in{transition:none!important}#tour-ov .tt-hole.tap::before{animation:none;opacity:.9}}
 .guide{display:grid;gap:10px}
 .guide ol{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .guide li a,.guide li button.g-go{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:10px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);color:var(--ink);text-decoration:none;font:inherit;font-weight:600;text-align:left;cursor:pointer}
@@ -1086,7 +1028,6 @@ details.adv[open] > summary{margin-bottom:8px}
 .guide .g-t span{font-size:14px;color:var(--muted);font-weight:400;text-decoration:none}
 .guide .g-bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
 .guide .g-bar i{display:block;height:100%;background:var(--ok);border-radius:99px}
-
 /* ===================== Ordinateur =====================
    A computer gets its own frame: the sections in a menu on the left, and the page uses the width of the screen.
    Below 900 px (a small window) it keeps the bar at the bottom. */
@@ -1449,7 +1390,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function kvGet(k){ return tx('kv', 'readonly', function(st){ return st.get(k); }).catch(function(){ return undefined; }); }
   function kvSet(k, v){ return tx('kv', 'readwrite', function(st){ return v === undefined ? st.delete(k) : st.put(v, k); }).catch(function(){}); }
   var OB = [], failed = [], flushing = false, flushT = null, netL = [];
-  var NET = {online:navigator.onLine !== false, offlineMode:false, pending:0, sending:false, failed:failed, lastOk:null, queuedAt:null};
+  var NET = {online:navigator.onLine !== false, offlineMode:false, pending:0, sending:false, failed:failed, storeErr:''};
   T.net = NET;
   T.onNet = function(f){ netL.push(f); };
   function netChanged(){ NET.pending = OB.length; netL.slice().forEach(function(f){ try { f(NET); } catch(e){} }); }
@@ -1465,7 +1406,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (c.loaded || c.hydrated || !T.uid) return Promise.resolve();
     c.hydrated = kvGet(cacheKey(col)).then(function(v){
       if (!v || c.loaded || !v.docs) return;
-      c.docs = v.docs; c.since = v.since || null; c.loaded = true; c.fromCache = true;
+      c.docs = v.docs; c.since = v.since || null; c.loaded = true;
       overlay(col); notify(col, null);
     });
     return c.hydrated;
@@ -1489,7 +1430,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   /* ---------- the shared notebook: same calls as claude.use('db') ---------- */
   var cols = {};       // col -> {docs:{id:data}, loaded, since, listeners:[], docListeners:{id:[fn]}, loading}
-  var seq = 0;
   function colOf(path){ return path.split('/').slice(0, -1).join('/'); }
   function idOf(path){ return path.split('/').pop(); }
   function C(col){ return cols[col] || (cols[col] = {docs:{}, loaded:false, since:null, listeners:[], docListeners:{}, loading:null, full:0}); }
@@ -1524,7 +1464,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   /* first time: everything (page by page); after: only what changed, plus what was deleted */
   function load(col, full){
     var c = C(col);
-    if (c.loading) return c.loading.then(function(){ return full ? load(col, true) : null; });
+    if (c.loading){ if (!full) c.again = true; return c.loading.then(function(){ return full ? load(col, true) : null; }); }
     var sb = T.sb, start = (full || !c.loaded) ? null : since(c), changed = {}, maxAt = c.since;
     function page(from){
       var q = sb.from('docs').select('id,data,updated_at').eq('col', col).order('updated_at', {ascending:true}).order('path', {ascending:true}).range(from, from + 999);
@@ -1550,14 +1490,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       gone.forEach(function(g){ if (c.docs[g.id] !== undefined && !(g.id in changed)){ delete c.docs[g.id]; ids.push(g.id); } });
       if (OB.length) ids = ids.concat(overlay(col));
       c.since = maxAt || c.since || new Date().toISOString();
-      var first = !c.loaded; c.loaded = true; c.fromCache = false; if (!start) c.full = Date.now();
+      var first = !c.loaded; c.loaded = true; if (!start) c.full = Date.now();
       if (ids.length || first) notify(col, first ? null : ids);
-      c.err = null; NET.lastOk = Date.now();
       if (ids.length || first || !start) saveCol(col);
-    }, function(e){ c.err = e; if (!c.loaded) c.listeners.forEach(function(f){ if (f.__onErr) f.__onErr(e); }); throw e; });
+    }, function(e){ if (!c.loaded) c.listeners.forEach(function(f){ if (f.__onErr) f.__onErr(e); }); throw e; });
     c.loading = p.then(function(){ c.loading = null; }, function(){ c.loading = null; });
+    p.then(function(){ if (c.again){ c.again = false; load(col, false).catch(function(){}); } }, function(){ c.again = false; });   /* a change came in meanwhile */
     return p;
   }
+  /* the first load of a collection is shared by everyone who starts listening to it (not one full download each) */
+  function firstLoad(col){ var c = C(col); return c.first || (c.first = hydrate(col).then(function(){ return load(col, true); }).catch(function(e){ c.first = null; throw e; })); }
   var timers = {};
   function soon(col){ clearTimeout(timers[col]); timers[col] = setTimeout(function(){ if (C(col).listeners.length || Object.keys(C(col).docListeners).length) load(col, false).catch(function(){}); }, 150); }
   function watched(){ return Object.keys(cols).filter(function(k){ var c = cols[k]; return c.listeners.length || Object.keys(c.docListeners).some(function(i){ return c.docListeners[i].length; }); }); }
@@ -1591,7 +1533,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       acquire:function(){ return Promise.resolve({acquired:true, version:1}); },
       onSnapshot:function(n, onErr){
         var c = C(col); (c.docListeners[id] = c.docListeners[id] || []).push(n);
-        if (c.loaded) setTimeout(function(){ n(snapDoc(col, id)); }, 0); else hydrate(col).then(function(){ return load(col, true); }).catch(function(e){ if (onErr && !c.loaded) onErr(e); });
+        if (c.loaded) setTimeout(function(){ n(snapDoc(col, id)); }, 0); else firstLoad(col).catch(function(e){ if (onErr && !c.loaded) onErr(e); });
         return function(){ c.docListeners[id] = (c.docListeners[id] || []).filter(function(f){ return f !== n; }); };
       },
       collection:function(p){ return colRef(path + '/' + p); }
@@ -1610,17 +1552,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (OB.length) overlay(col);
     notify(col, [id]); saveCol(col);
   }
-  function persistOp(op){ return tx('outbox', 'readwrite', function(st){ return st.add({uid:op.uid, kind:op.kind, path:op.path, data:op.data, at:op.at}); }).then(function(n){ op.n = n; }).catch(function(e){ NET.storeErr = String(e && e.message || e); }); }
+  function persistOp(op){ return tx('outbox', 'readwrite', function(st){ return st.add({uid:op.uid, kind:op.kind, path:op.path, data:op.data, at:op.at}); }).then(function(n){ op.n = n; }).catch(function(e){ NET.storeErr = String(e && e.message || e); netChanged(); }); }
   function dropOp(op){ if (op.n != null) tx('outbox', 'readwrite', function(st){ return st.delete(op.n); }).catch(function(){}); }
   function queue(op){
     applyLocal(op); notify(colOf(op.path), [idOf(op.path)]); saveCol(colOf(op.path));
-    OB.push(op); persistOp(op); NET.queuedAt = Date.now(); netChanged(); flushSoon(1500);
+    OB.push(op); persistOp(op); netChanged(); flushSoon(1500);
     return Promise.resolve({queued:true});
   }
   function write(kind, path, d){
     var op = {uid:T.uid, kind:kind, path:path, data:d == null ? null : clone(d), at:Date.now()};
     if (OB.length || NET.offlineMode || navigator.onLine === false) return queue(op);
-    return withTimeout(send(op), 12000).then(function(out){ NET.lastOk = Date.now(); landed(op, out); }, function(e){
+    return withTimeout(send(op), 12000).then(function(out){ landed(op, out); }, function(e){
       if (e && e.code === 'unavailable') return queue(op);
       throw e;
     });
@@ -1644,12 +1586,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           netChanged(); return next();
         });
       })();
-    }).then(function(){ flushing = false; NET.sending = false; NET.lastOk = Date.now(); netChanged(); T.resync(false); },
+    }).then(function(){ flushing = false; NET.sending = false; netChanged(); T.resync(false); },
             function(){ flushing = false; NET.sending = false; netChanged(); flushSoon(20000); });
   }
   T.flush = flush;
   T.pending = function(){ return OB.length; };
-  T.outbox = function(){ return OB.map(function(op){ return {n:op.n, kind:op.kind, path:op.path, at:op.at}; }); };
   T.clearFailed = function(){ failed.length = 0; netChanged(); };
   function loadOutbox(){
     return tx('outbox', 'readonly', function(st){ return st.getAll(); }).then(function(all){
@@ -1665,7 +1606,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       doc:function(id){ return docRef(path + '/' + (id || newId())); },
       onSnapshot:function(n, onErr){
         var c = C(path); if (onErr) n.__onErr = onErr; c.listeners.push(n);
-        if (c.loaded) setTimeout(function(){ n(snapCol(path)); }, 0); else hydrate(path).then(function(){ return load(path, true); }).catch(function(e){ if (onErr && !c.loaded) onErr(e); });
+        if (c.loaded) setTimeout(function(){ n(snapCol(path)); }, 0); else firstLoad(path).catch(function(e){ if (onErr && !c.loaded) onErr(e); });
         return function(){ c.listeners = c.listeners.filter(function(f){ return f !== n; }); };
       },
       get:function(){ return load(path, !C(path).loaded).then(function(){ return snapCol(path); }); }
@@ -1691,7 +1632,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (document.visibilityState === 'hidden'){ hiddenAt = Date.now(); return; }
       T.resync(hiddenAt && Date.now() - hiddenAt > 5 * 60000);
     });
-    window.addEventListener('online', function(){ NET.online = true; netChanged(); flush(); T.resync(false); });
+    window.addEventListener('online', function(){ NET.online = true; netChanged(); if (NET.offlineMode) return; flush(); T.resync(false); });
     window.addEventListener('offline', function(){ NET.online = false; netChanged(); });
     setInterval(function(){ if (OB.length && !flushing) flush(); }, 30000);
   }
@@ -1720,7 +1661,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       '#gate .g-f{display:grid;gap:6px}#gate .g-msg{border-radius:10px;padding:10px 12px;background:var(--bad-bg);color:var(--bad);font-weight:600}#gate .g-msg.ok{background:var(--ok-bg);color:var(--ok)}' +
       '#gate .g-help{color:var(--muted);font-size:14.5px}#gate .g-link{background:none;border:0;color:var(--steel);font-weight:600;text-decoration:underline;padding:6px 0;cursor:pointer;justify-self:start;min-height:40px}' +
       '#gate .g-go{min-height:50px;border-radius:10px;border:1px solid var(--signal);background:var(--signal);color:var(--on-signal);font-weight:700;font-size:17px;cursor:pointer}' +
-      '#gate .g-go[disabled]{opacity:.6;cursor:wait}';
+      '#gate .g-go[disabled]{opacity:.6;cursor:wait}' +
+      '#gate .g-or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px}#gate .g-or::before,#gate .g-or::after{content:"";flex:1;height:1px;background:var(--line)}' +
+      '#gate .g-gg{min-height:50px;border-radius:10px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-weight:700;font-size:16.5px;cursor:pointer;width:100%}#gate .g-gg[disabled]{opacity:.6;cursor:wait}';
     document.head.appendChild(st);
   }
   var LOGO = '<svg viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><path d="M18 44l8-8m10-10l10-10M26 36a8 8 0 1 0 10-10" stroke="#F2B200" stroke-width="6" fill="none" stroke-linecap="round"/></svg>';
@@ -1729,13 +1672,50 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!g){ g = document.createElement('div'); g.id = 'gate'; g.setAttribute('role', 'dialog'); g.setAttribute('aria-modal', 'true'); g.setAttribute('aria-labelledby', 'g-title'); document.body.appendChild(g); }
     g.innerHTML = '<div class="g-box"><div class="g-brand"><div class="g-logo">' + LOGO + '</div><div><div class="eyebrow">Garage mobile · équipe</div><h1 id="g-title">' + html.title + '</h1></div></div>' + html.body + '</div>';
     g.hidden = false; document.body.classList.add('locked');
-    var f = g.querySelector('input'); if (f) setTimeout(function(){ try { f.focus(); } catch(e){} }, 30);
+    var f = g.querySelector('input:not([readonly])'); if (f) setTimeout(function(){ try { f.focus(); } catch(e){} }, 30);
     return g;
   }
   function closeGate(){ var g = document.getElementById('gate'); if (g) g.remove(); document.body.classList.remove('locked'); }
   function msg(text, ok){ var m = document.getElementById('g-msg'); if (!m) return; m.textContent = text || ''; m.hidden = !text; m.className = 'g-msg' + (ok ? ' ok' : ''); }
   function busy(on){ var b = document.getElementById('g-go'); if (b){ b.disabled = on; b.textContent = on ? 'Un instant…' : b.dataset.label; } }
 
+  /* ---- sign in with Google (Gmail): only for people the owner invited with that same address.
+     The button shows only once Google is turned on for the garage's server (Supabase → Authentication → Google). ---- */
+  var GOOGLE = null;
+  function googleOn(){
+    if (GOOGLE) return GOOGLE;
+    GOOGLE = withTimeout(fetch(CFG.url + '/auth/v1/settings', {headers:{apikey:CFG.key}}).then(function(r){ return r.ok ? r.json() : {}; }), 5000)
+      .then(function(j){ return !!(j && j.external && j.external.google); }, function(){ GOOGLE = null; return false; });
+    return GOOGLE;
+  }
+  function googleBlock(id, note){
+    return '<div id="' + id + '" hidden><p class="g-or">ou</p><button type="button" class="g-gg" id="' + id + '-go">Continuer avec Google</button>' + (note ? '<p class="g-help">' + note + '</p>' : '') + '</div>';
+  }
+  function googleWire(id){
+    var box = document.getElementById(id), b = document.getElementById(id + '-go'); if (!box || !b) return;
+    googleOn().then(function(on){ if (on && box.isConnected) box.hidden = false; });
+    b.onclick = function(){
+      b.disabled = true; b.textContent = 'Un instant…';
+      T.sb.auth.signInWithOAuth({provider:'google', options:{redirectTo:location.origin + location.pathname, queryParams:{prompt:'select_account'}}}).then(function(r){
+        if (r && r.error){ b.disabled = false; b.textContent = 'Continuer avec Google'; msg('Google ne répond pas : ' + r.error.message); }
+      }, function(){ b.disabled = false; b.textContent = 'Continuer avec Google'; msg('Pas de connexion au serveur. Vérifie Internet.'); });
+    };
+  }
+  /* back from Google: ?code=… (or an error) in the address */
+  function googleReturn(){
+    var q = new URLSearchParams(location.search), hq = new URLSearchParams(String(location.hash).replace(/^#/, ''));
+    var code = q.get('code'), er = q.get('error_description') || q.get('error') || (hq.get('error') ? hq.get('error_description') || hq.get('error') : '');
+    if (!code && !er) return false;
+    try { history.replaceState(null, '', location.pathname); } catch(e){}
+    if (er){ showLogin(/not enabled|unsupported provider/i.test(er) ? 'La connexion avec Google n\'est pas encore activée pour le garage.' : /signup|sign ups|not allowed/i.test(er) ? 'Ce compte Google n\'est pas invité au garage. Demande au propriétaire de t\'inviter avec ce courriel.' : /access_denied|cancel/i.test(er) ? 'Connexion avec Google annulée.' : 'La connexion avec Google n\'a pas marché (' + er + ').'); return true; }
+    gate({title:'Connexion', body:'<p class="g-help">Connexion avec Google…</p>'});
+    withTimeout(T.sb.auth.exchangeCodeForSession(code), 12000).then(function(r){
+      if (r.error || !r.data || !r.data.session){ showLogin('La connexion avec Google n\'a pas marché. Réessaie.'); return; }
+      T.viaGoogle = true; lsSet('gm.team.email', r.data.session.user.email || '');
+      afterSession(r.data.session);
+    }, function(){ showLogin('Pas de connexion au serveur. Vérifie Internet.'); });
+    return true;
+  }
   function standalone(){ try { return !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)); } catch(e){ return false; } }
   function showLogin(note){
     gate({title:'Connexion', body:
@@ -1743,8 +1723,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       '<form id="g-form" novalidate><div class="g-f"><label for="g-email">Courriel</label><input id="g-email" type="email" autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false" value="' + esc(lsGet('gm.team.email') || '') + '"></div>' +
       '<div class="g-f"><label for="g-pw">Mot de passe</label><input id="g-pw" type="password" autocomplete="current-password"></div>' +
       '<p class="g-msg" id="g-msg" role="alert" hidden></p><button class="g-go" id="g-go" data-label="Se connecter" type="submit">Se connecter</button>' +
-      '<button type="button" class="g-link" id="g-forgot">Mot de passe oublié ?</button><p class="g-help" id="g-forgot-help" hidden>Demande au propriétaire du garage : il te donne un nouveau mot de passe dans Réglages → Équipe et accès.</p></form>'});
+      '<button type="button" class="g-link" id="g-forgot">Mot de passe oublié ?</button><p class="g-help" id="g-forgot-help" hidden>Demande au propriétaire du garage : il te donne un nouveau mot de passe dans Réglages → Équipe et accès.</p>' +
+      googleBlock('g-google', '') + '</form>'});
     if (note) msg(note, false);
+    googleWire('g-google');
     document.getElementById('g-forgot').onclick = function(){ document.getElementById('g-forgot-help').hidden = false; };
     document.getElementById('g-form').onsubmit = function(e){
       e.preventDefault();
@@ -1797,7 +1779,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         '<form id="g-form" novalidate><div class="g-f"><label for="g-email">Ton courriel</label><input id="g-email" type="email" autocomplete="username" value="' + esc(d.email) + '" readonly></div>' +
         '<div class="g-f"><label for="g-pw">Choisis ton mot de passe <span class="g-help">(8 caractères ou plus)</span></label><input id="g-pw" type="password" autocomplete="new-password"></div>' +
         '<div class="g-f"><label for="g-pw2">Écris-le encore une fois</label><input id="g-pw2" type="password" autocomplete="new-password"></div>' +
-        '<p class="g-msg" id="g-msg" role="alert" hidden></p><button class="g-go" id="g-go" data-label="Activer mon compte" type="submit">Activer mon compte</button></form>'});
+        '<p class="g-msg" id="g-msg" role="alert" hidden></p><button class="g-go" id="g-go" data-label="Activer mon compte" type="submit">Activer mon compte</button>' +
+        googleBlock('g-google', 'Seulement si <b>' + esc(d.email) + '</b> est ton compte Google : pas besoin de mot de passe.') + '</form>'});
+      googleWire('g-google');
       document.getElementById('g-form').onsubmit = function(e){
         e.preventDefault();
         var pw = document.getElementById('g-pw').value, pw2 = document.getElementById('g-pw2').value;
@@ -1817,7 +1801,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }, function(){ bad('Pas de connexion au serveur. Vérifie Internet, puis rouvre le lien.'); });
   }
   function showNoAccess(){
-    gate({title:'Pas d\'accès', body:'<div class="g-msg">Ce compte n\'a pas (ou plus) accès au carnet du garage. Parle au propriétaire.</div><button class="g-go" id="g-go" data-label="Changer de compte" type="button">Changer de compte</button>'});
+    var em = T.session && T.session.user && T.session.user.email;
+    gate({title:'Pas d\'accès', body:'<div class="g-msg">' + (em ? 'Le compte <b>' + esc(em) + '</b>' : 'Ce compte') + ' n\'a pas (ou plus) accès au carnet du garage.</div>' +
+      '<p class="g-help">' + (T.viaGoogle ? 'Avec Google, il faut que le propriétaire t\'invite avec ce même courriel (Réglages → Équipe et accès).' : 'Parle au propriétaire du garage.') + '</p><button class="g-go" id="g-go" data-label="Changer de compte" type="button">Changer de compte</button>'});
     document.getElementById('g-go').onclick = function(){ T.sb.auth.signOut().then(function(){ showLogin(); }, function(){ showLogin(); }); };
   }
   function showConfigMissing(){
@@ -1884,8 +1870,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function start(){
     css();
     if (!CFG.url || !CFG.key || !window.supabase){ showConfigMissing(); failReady(err('no_config')); return; }
-    T.sb = window.supabase.createClient(CFG.url, CFG.key, {auth:{persistSession:true, autoRefreshToken:true, storageKey:'gm.team.auth', detectSessionInUrl:false}});
+    T.sb = window.supabase.createClient(CFG.url, CFG.key, {auth:{persistSession:true, autoRefreshToken:true, storageKey:'gm.team.auth', detectSessionInUrl:false, flowType:'pkce'}});
     T.sb.auth.onAuthStateChange(function(ev){ if (ev === 'SIGNED_OUT' && started) location.reload(); });
+    if (googleReturn()) return;
     var inv = (String(location.hash).match(/^#invite=([A-Za-z0-9_-]{20,80})$/) || [])[1];
     if (inv){ try { history.replaceState(null, '', location.pathname + location.search); } catch(e){} showInvite(inv); return; }
     var su = storedUser();
@@ -1926,7 +1913,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     var rs = VA.roles && VA.roles.length ? VA.roles.slice() : [VA.role || 'mecano'];
     return {role:mainRole(rs), roles:rs, mechanic:VA.mechanic || null, name:VA.name, perms:VA.perms || {}, user_id:me.user_id, active:true, preview:true};
   }
-  var X = {tracks:{}, trackLoading:{}, busy:{}, live:[], members:[], active:[], mapSel:null, showPath:{}, paths:{}, eq:{list:null, err:'', created:null, secrets:null, confirm:null, editing:null}, enRoute:null, near:false, warnedNear:false, roles:{}};
+  var X = {tracks:{}, trackLoading:{}, trackSt:{}, busy:{}, live:[], members:[], active:[], showPath:{}, paths:{}, pathBusy:{}, eq:{list:null, err:'', created:null, secrets:null, confirm:null, editing:null, draft:{}}, enRoute:null, near:false, warnedNear:false, roles:{}};
   var ROLE = {owner:'Propriétaire', bureau:'Bureau', mecano:'Mécano', tresorier:'Trésorier'};
 
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -1941,8 +1928,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function km(x){ return (Math.round(x * 10) / 10).toLocaleString('fr-CA') + ' km'; }
   function dist(a, b){ var R = 6371000, r = Math.PI / 180, x = Math.pow(Math.sin((b.lat - a.lat) * r / 2), 2) + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.pow(Math.sin((b.lon - a.lon) * r / 2), 2); return 2 * R * Math.asin(Math.sqrt(x)); }
   function first(s){ return String(s || '').trim().split(/\s+/)[0] || ''; }
+  /* no answer after 15 s: stop waiting, so a stuck request never blocks the screen (« Envoi du texto… ») or the position.
+     ac (optional): the request is also cancelled. */
+  var WAIT_MS = 15000;
+  function timed(p, ac){
+    var t, late = new Promise(function(res, rej){ t = setTimeout(function(){
+      if (ac) try { ac.abort(); } catch(x){}
+      var e = new Error('pas de réponse du serveur après 15 secondes'); e.code = 'timeout'; rej(e);
+    }, WAIT_MS); });
+    return Promise.race([Promise.resolve(p), late]).then(function(v){ clearTimeout(t); return v; }, function(e){ clearTimeout(t); throw e; });
+  }
   function invoke(name, body){
-    return T.sb.functions.invoke(name, {body:body}).then(function(r){
+    return timed(T.sb.functions.invoke(name, {body:body})).then(function(r){
       if (!r.error) return r.data;
       var ctx = r.error.context;
       return (ctx && typeof ctx.json === 'function' ? ctx.json().catch(function(){ return null; }) : Promise.resolve(null)).then(function(j){
@@ -1975,7 +1972,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     {k:'map', t:'Voir la carte de l\'équipe', s:'Les mécanos, leurs trajets et tous les rendez-vous du jour (avec le nom du client).', on:[], r:['bureau', 'mecano', 'tresorier'], d:{bureau:true, mecano:true, tresorier:true}},
     {k:'hours_others', t:'Changer l\'horaire du garage et des autres', s:'Heures d\'ouverture et disponibilités de chaque mécano.', on:[], r:['bureau', 'mecano'], d:{bureau:true}}
   ];
-  var PERMS = {};   /* (old name, kept for the guided tour) */
   function right(k){ return RIGHTS.filter(function(x){ return x.k === k; })[0] || null; }
   /* what a role gives: the owner everything; then « always », then the role template (config/roles), then the start */
   function perm(role, k){
@@ -2023,8 +2019,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     var due = force ? now : G.sentAt + (moved >= 60 ? 4000 : iv);
     clearTimeout(G.later);
     if (now < due){ G.later = setTimeout(function(){ maybeSend(false); }, due - now + 50); return; }
-    var pos = G.last; G.sending = true;
-    T.sb.rpc('report_position', {p_lat:pos.lat, p_lon:pos.lon, p_acc:pos.acc == null ? null : Math.round(pos.acc), p_speed:pos.speed, p_heading:pos.heading}).then(function(r){
+    var pos = G.last, ac = window.AbortController ? new AbortController() : null;
+    var q = T.sb.rpc('report_position', {p_lat:pos.lat, p_lon:pos.lon, p_acc:pos.acc == null ? null : Math.round(pos.acc), p_speed:pos.speed, p_heading:pos.heading});
+    if (ac && q && typeof q.abortSignal === 'function') q = q.abortSignal(ac.signal); else ac = null;
+    G.sending = true;
+    /* a send stuck on a weak signal is dropped after 15 s: the next position can go out */
+    timed(q, ac).then(function(r){
       G.sending = false;
       if (r.error){ G.sendErr = r.error.message; shiftLine(); return; }
       G.sendErr = null; G.sentAt = Date.now(); G.sentPos = pos;
@@ -2054,12 +2054,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function shiftStart(){
     if (G.starting) return Promise.resolve();
     G.starting = true;
-    return T.sb.rpc('shift_start').then(function(r){
+    return timed(T.sb.rpc('shift_start')).then(function(r){
       G.starting = false;
-      if (r.error){ toast('La journée n\'a pas commencé : ' + r.error.message); return; }
+      if (r.error){ toast('La journée n\'a pas commencé : ' + r.error.message); render(); return; }
       G.on = true; G.since = r.data && r.data.shift_started_at; lsSet('gm.team.gpsok', '1');
       gpsStart(); render();
-    }, function(){ G.starting = false; toast('Pas de connexion au serveur. Réessaie.'); });
+    }, function(e){ G.starting = false; toast(e && e.code === 'timeout' ? 'Pas de réponse du serveur après 15 secondes. Réessaie.' : 'Pas de connexion au serveur. Réessaie.'); render(); });
   }
   function shiftEnd(){
     return T.sb.rpc('shift_end').then(function(r){
@@ -2092,7 +2092,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     var w = document.getElementById('sh-wake'); if (w){ w.setAttribute('aria-pressed', String(!!G.wake)); w.textContent = G.wake ? 'Écran gardé allumé ✓' : 'Garder l\'écran allumé'; }
   }
   setInterval(shiftLine, 5000);
-  window.__garageTeamState = function(){ return {on:G.on, last:G.last, sentAt:G.sentAt, sending:G.sending, err:G.err, sendErr:G.sendErr, asking:!!G.asking, watch:G.watch != null, enRoute:X.enRoute}; };
 
   /* while on the way: faster position, route redone if he leaves it, « arrivé ? » when he is there */
   function offRoute(p, route){
@@ -2116,14 +2115,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   /* ================= « En route » ================= */
+  /* true when a read started (false: one is already on its way) */
   function fetchTrack(jobId){
-    if (X.trackLoading[jobId]) return;
+    if (X.trackLoading[jobId]) return false;
     X.trackLoading[jobId] = true;
-    T.sb.from('tracks').select('*').eq('job_id', jobId).order('created_at', {ascending:false}).limit(1).then(function(r){
+    timed(T.sb.from('tracks').select('*').eq('job_id', jobId).order('created_at', {ascending:false}).limit(1)).then(function(r){
       X.trackLoading[jobId] = false;
       if (r.error) return;
       X.tracks[jobId] = r.data[0] || null; render();
     }, function(){ X.trackLoading[jobId] = false; });
+    return true;
   }
   function smsText(j, t){
     var c = A().cl(j), name = first(c.firstName || c.name), mech = first((t && t.mech_name) || j.mechanic || (me && me.name)) || 'Votre mécano';
@@ -2149,7 +2150,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       fetchTrack(j.id);
     }, function(e){
       X.busy[j.id] = false;
-      toast('Le client n\'a pas été avisé : ' + e.message + '.');
+      /* no answer: the text may have left anyway, so read the real state again (a second try does not text him twice) */
+      if (e && e.code === 'timeout'){ toast('Pas de réponse du serveur après 15 secondes : le client n\'a peut-être pas été avisé. Vérifie ta connexion, puis réessaie.'); fetchTrack(j.id); }
+      else toast('Le client n\'a pas été avisé : ' + e.message + '.');
       render();
     });
   }
@@ -2160,11 +2163,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       fetchTrack(j.id);
     }, function(){});
   }
+  /* the tracking kept here no longer matches the job (changed on another phone): « En route » goes with an active tracking.
+     Read again when the status changed since the last read, otherwise not more than once every 15 s. */
+  function trackStale(j, st, t){
+    if (t === undefined) return true;
+    if (!!(t && t.status === 'active') === (st === 'route')) return false;
+    var w = X.trackSt[j.id];
+    return !w || w.st !== st || Date.now() - w.at > 15000;
+  }
   function jobExtra(j){
     if (!me || !A().canWrite()) return '';
     var st = j.status || 'planifie', t = X.tracks[j.id];
-    if (t === undefined) fetchTrack(j.id);
-    if (st === 'annule' || st === 'noshow' || st === 'termine') return '';
+    if (st === 'annule' || st === 'noshow' || st === 'termine') return '';   /* finished or cancelled: nothing to follow, nothing to read */
+    if (trackStale(j, st, t) && fetchTrack(j.id)) X.trackSt[j.id] = {st:st, at:Date.now()};
     var c = A().cl(j), who = first(c.firstName || c.name) || 'le client', phone = c.phone || '', mine = mineView(j), busy = X.busy[j.id];
     var h = '<section class="sect er" aria-labelledby="er-h"><h3 id="er-h">' + (st === 'route' ? 'En route vers ' + esc(who) : st === 'place' ? 'Sur place' : 'Départ vers le client') + '</h3>';
     if (st === 'planifie'){
@@ -2197,7 +2208,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function onStatus(j, v, was){
     var ST = A().ST;
     if (v === 'route') return startEnRoute(j);
-    if (was === 'route') endTrack(j, (v === 'annule' || v === 'noshow') ? 'cancelled' : 'arrived');
+    /* « arrivé » only when he is there (or done); back to « Planifié », cancelled or absent: the client's page says the trip stopped */
+    if (was === 'route') endTrack(j, (v === 'place' || v === 'termine') ? 'arrived' : 'cancelled');
     toast(ST[v]);
   }
 
@@ -2227,7 +2239,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         var trip = X.enRoute && A().findJob(X.enRoute.jobId), tt = trip && X.tracks[trip.id];
         h += '<section class="sect shift on" aria-labelledby="sh-h"><div class="sh-head"><span class="sh-dot" aria-hidden="true"></span><h3 id="sh-h">Journée en cours' + (G.since ? ' depuis ' + esc(clock(G.since)) : '') + '</h3></div>' +
           '<p class="sh-line" id="sh-line" aria-live="polite"></p>' +
-          (trip ? '<div class="banner"><p><b>En route vers ' + esc(first(A().cl(trip).firstName || A().cl(trip).name)) + '</b>' + (tt && tt.eta_at ? ' · arrivée prévue ' + esc(clock(tt.eta_at)) : '') + '</p><button type="button" class="btn sm" data-act="er-open" data-id="' + esc(trip.id) + '">Ouvrir la job</button></div>' : '') +
+          (trip ? '<div class="banner"><p><b>En route vers ' + esc(first(A().cl(trip).firstName || A().cl(trip).name)) + '</b>' + (tt && tt.eta_at ? ' · arrivée prévue ' + esc(clock(tt.eta_at)) : '') + '</p><button type="button" class="btn sm" data-act="open" data-id="' + esc(trip.id) + '">Ouvrir la job</button></div>' : '') +
           '<p class="muted small">Garde l\'app ouverte pendant ta journée.</p>' +
           '<div class="er-acts"><button type="button" class="btn sm" id="sh-wake" data-act="sh-wake" aria-pressed="false">Garder l\'écran allumé</button><button type="button" class="btn sm" data-act="sh-end">Fin de journée</button></div></section>';
         setTimeout(shiftLine, 0);
@@ -2241,7 +2253,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   /* ================= carte des mécanos ================= */
-  var M = {el:null, map:null, pins:{}, jobs:null, routes:null, path:null, fitted:false, timer:null};
+  var M = {el:null, map:null, pins:{}, jobs:null, routes:null, path:null, fitted:false, sig:null};
   var STATE = {route:{lbl:'En route', cls:'p-route'}, shift:{lbl:'En journée', cls:'p-shift'}, stale:{lbl:'Signal perdu', cls:'p-stale'}, off:{lbl:'Hors service', cls:'p-off'}};
   function mechState(l){
     if (!l || !l.on_shift) return 'off';
@@ -2270,7 +2282,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     var order = {route:0, shift:1, stale:2, off:3};
     return out.sort(function(a, b){ return order[mechState(a.l)] - order[mechState(b.l)] || String(a.m.name).localeCompare(b.m.name, 'fr'); });
   }
-  function todaysJobs(){ var a = A(), d = a.today(); return a.S.jobs.filter(function(j){ return j.date === d && j.status !== 'annule' && j.status !== 'noshow'; }).sort(function(x, y){ return String(x.time).localeCompare(String(y.time)); }); }
   function ensureMap(){
     if (M.map || !window.L) return !!M.map;
     M.el = document.createElement('div'); M.el.id = 'gm-map'; M.el.className = 'gm-map'; M.el.setAttribute('role', 'region'); M.el.setAttribute('aria-label', 'Carte des mécanos');
@@ -2288,7 +2299,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!M.map){ if (ensureMap()){ drawMap(); } return; }
     if (M.el.parentNode !== slot){ slot.appendChild(M.el); setTimeout(function(){ M.map.invalidateSize(); }, 0); }
   }).observe(document.documentElement, {childList:true, subtree:true});
-  function pinIcon(cls, txt, big){ return L.divIcon({className:'gm-pin-wrap', html:'<span class="gm-pin ' + cls + '">' + esc(txt) + '</span>', iconSize:big ? [40, 40] : [30, 30], iconAnchor:big ? [20, 20] : [15, 15]}); }
   /* ---- the team map: everybody sees the mechanics, their route of the day and every appointment (numbered, client's name) ---- */
   var CENTRALE = {name:'Centrale', address:'8255 Avenue Mountain Sights, Montréal QC H4P 2B5', lat:45.5005053, lon:-73.6577429};
   function centrale(){ var c = (A() && A().cfg().central) || {}; return c.geo && isFinite(+c.geo.lat) && isFinite(+c.geo.lon) ? {name:c.name || 'Centrale', address:c.address || '', lat:+c.geo.lat, lon:+c.geo.lon} : CENTRALE; }
@@ -2298,10 +2308,34 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (X.tmLoading) return X.tmLoading;
     return X.tmLoading = T.sb.rpc('team_map', {p_day:A().today()}).then(function(r){
       X.tmLoading = null;
-      if (r.error){ X.tmErr = /not_granted|42501/.test(r.error.message + (r.error.code || '')) ? 'Tu n\'as pas accès à la carte. Parle au propriétaire.' : 'La carte ne répond pas (' + r.error.message + ').'; render(); return; }
+      if (r.error){ X.tmErr = /not_granted|42501/.test(r.error.message + (r.error.code || '')) ? 'Tu n\'as pas accès à la carte. Parle au propriétaire.' : 'La carte ne répond pas (' + r.error.message + ').'; X.tmSig = null; render(); return; }
       X.tm = r.data; X.tmAt = Date.now(); X.tmErr = '';
-      drawMap(); if (A().S.tab === 'carte' && !A().S.screen) render();
-    }, function(e){ X.tmLoading = null; X.tmErr = 'La carte ne répond pas (' + (e && e.message || e) + ').'; render(); });
+      tmRefresh();
+    }, function(e){ X.tmLoading = null; X.tmErr = 'La carte ne répond pas (' + (e && e.message || e) + ').'; X.tmSig = null; render(); });
+  }
+  /* what the map and the list under it are drawn from. When none of it changed, nothing is redrawn:
+     the pins stay, an open popup stays open and the screen does not jump.
+     Positions are rounded to about 10 m (a phone standing still wobbles); an age is counted once it reads in minutes. */
+  function tmSig(){
+    var a = A(), now = Date.now();
+    var gs = teams().map(function(g){
+      var l = g.live, line = dayLine(g), t = trackOf(g), ll = l && l.lat != null ? [+l.lat, +l.lon] : null, age = l && l.at ? now - Date.parse(l.at) : null;
+      var next = g.jobs.filter(function(j){ return j.status !== 'termine' && geoOf(j); })[0];
+      return [g.key, g.name, g.color, g.member && g.member.name, g.member && g.member.user_id,
+        g.jobs.map(function(j){ var c = j.client || {}; return [j.id, j.n, j.time, j.status, c.name, c.address, geoOf(j), !!a.findJob(j.id)]; }),
+        line.length > 1 ? [!!X.roads[roadKey(line)], X.roadsMeta[roadKey(line)] || null] : null,
+        l ? [ll && [Math.round(ll[0] * 1e4), Math.round(ll[1] * 1e4)], age == null || age > 5 * 60000, age != null && age < 45000 ? 'live' : ago(l.at)] : null,
+        t ? [t.job_id, t.eta_at, t.route || null] : null,
+        ll && next ? !!X.roads[roadKey([ll, geoOf(next)])] : null];
+    });
+    var ps = Object.keys(X.showPath).filter(function(u){ return X.showPath[u]; }).map(function(u){ var p = X.paths[u] || []; return [u, p.length, p.length ? p[p.length - 1].at : null]; });
+    return JSON.stringify([centrale(), X.tmHide || {}, X.tmErr || '', gs, ps]);
+  }
+  /* new data arrived: redraw the map and the screen only if something they show changed */
+  function tmRefresh(){
+    var s = tmSig(); if (s === X.tmSig) return;
+    X.tmSig = s; drawMap();
+    var a = A(); if (a && a.S.tab === 'carte' && !a.S.screen) render();
   }
   /* each mechanic: his color, his live position, his appointments of the day in order (1, 2, 3…) */
   function teams(){
@@ -2330,7 +2364,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (c && c.length > 1){
         X.roads[key] = c.map(function(x){ return [x[1], x[0]]; });
         if (isFinite(+rt.distance) && isFinite(+rt.duration)) X.roadsMeta[key] = {km:+rt.distance / 1000, min:+rt.duration / 60};
-        drawMap(); if (A().S.tab === 'carte' && !A().S.screen) render();
+        tmRefresh();
       }
     }, function(){});
     cb(pts);
@@ -2352,13 +2386,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function mechIcon(txt, color, cls){ return L.divIcon({className:'gm-pin-wrap', html:'<span class="tm-mech ' + (cls || '') + '" style="--c:' + color + '">' + esc(txt) + '</span>', iconSize:[42, 42], iconAnchor:[21, 21]}); }
   function drawMap(){
     if (!M.map || !X.tm) return;
-    var a = A(), pts = [], hq = centrale();
+    var sig = tmSig(); if (sig === M.sig) return;   /* nothing new to draw: the map is left as it is */
+    M.sig = sig;
+    var a = A(), pts = [], hq = centrale(), open = null;
+    /* the popup someone opened is opened again after the redraw, if its pin is still there */
+    M.jobs.eachLayer(function(l){ if (l.gmKey && l.isPopupOpen && l.isPopupOpen()) open = l.gmKey; });
     M.jobs.clearLayers(); M.routes.clearLayers(); M.path.clearLayers();
     Object.keys(M.pins).forEach(function(k){ M.map.removeLayer(M.pins[k]); }); M.pins = {};
     /* the Centrale (the owner's place) */
     pts.push([hq.lat, hq.lon]);
     L.marker([hq.lat, hq.lon], {icon:L.divIcon({className:'gm-pin-wrap', html:'<span class="tm-hq">🏢</span>', iconSize:[44, 44], iconAnchor:[22, 22]}), title:hq.name, zIndexOffset:500}).addTo(M.jobs)
-      .bindTooltip('<b>' + esc(hq.name) + '</b>', {permanent:true, direction:'right', offset:[18, 0], className:'tm-hq-tip'}).bindPopup('<b>' + esc(hq.name) + '</b>' + (hq.address ? '<br>' + esc(hq.address) : ''));
+      .bindTooltip('<b>' + esc(hq.name) + '</b>', {permanent:true, direction:'right', offset:[18, 0], className:'tm-hq-tip'}).bindPopup('<b>' + esc(hq.name) + '</b>' + (hq.address ? '<br>' + esc(hq.address) : '')).gmKey = 'hq';
     teams().forEach(function(g){
       if (X.tmHide && X.tmHide[g.key]) return;
       var line = dayLine(g);
@@ -2366,9 +2404,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         var ll = geoOf(j); if (!ll) return; pts.push(ll);
         var st = j.status || 'planifie', mine = !!a.findJob(j.id);
         var pop = '<div class="tm-pop"><b>' + j.n + ' · ' + esc(a.hm(j.time)) + '</b> <span class="tm-st">' + esc((a.ST && a.ST[st]) || st) + '</span><br><b>' + esc(j.client.name || 'Client') + '</b>' + (j.client.address ? '<br>' + esc(j.client.address) : '') +
-          '<br><span style="color:' + g.color + '">●</span> ' + esc(g.name) + (mine ? '<br><button type="button" class="btn sm" data-act="er-open" data-id="' + esc(j.id) + '">Ouvrir la job</button>' : '') + '</div>';
+          '<br><span style="color:' + g.color + '">●</span> ' + esc(g.name) + (mine ? '<br><button type="button" class="btn sm" data-act="open" data-id="' + esc(j.id) + '">Ouvrir la job</button>' : '') + '</div>';
         L.marker(ll, {icon:stopIcon(j.n, g.color, st === 'termine' ? 'done' : st === 'route' ? 'go' : st === 'place' ? 'here' : ''), title:j.n + ' · ' + (j.client.name || ''), riseOnHover:true}).addTo(M.jobs)
-          .bindTooltip(esc(j.n + ' · ' + a.hm(j.time) + ' · ' + (j.client.name || 'Client')), {direction:'top', offset:[0, -14]}).bindPopup(pop);
+          .bindTooltip(esc(j.n + ' · ' + a.hm(j.time) + ' · ' + (j.client.name || 'Client')), {direction:'top', offset:[0, -14]}).bindPopup(pop).gmKey = 'j' + j.id;
       });
       if (line.length > 1) roads(line, function(path){ L.polyline(path, {color:g.color, weight:5, opacity:.85, lineCap:'round', lineJoin:'round'}).addTo(M.routes); });
       /* the mechanic himself (only during his workday) and the way to his next stop */
@@ -2386,17 +2424,33 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     Object.keys(X.showPath).forEach(function(uid){ var p = X.paths[uid]; if (X.showPath[uid] && p && p.length > 1) L.polyline(p.map(function(x){ return [x.lat, x.lon]; }), {color:'#1E1915', weight:3, opacity:.55}).addTo(M.path); });
     M.pts = pts;
     if (!M.fitted && pts.length){ M.fitted = true; fit(pts); }
+    if (open) M.jobs.eachLayer(function(l){ if (l.gmKey === open) l.openPopup(); });
   }
   function fit(pts){ if (!M.map) return; pts = pts || M.pts || []; if (pts.length === 1) M.map.setView(pts[0], 13); else if (pts.length) M.map.fitBounds(L.latLngBounds(pts).pad(0.15), {maxZoom:15}); }
-  function selectMech(uid, fromMap){
-    X.mapSel = uid; var g = teams().filter(function(x){ return x.member && x.member.user_id === uid; })[0];
+  function selectMech(uid){
+    var g = teams().filter(function(x){ return x.member && x.member.user_id === uid; })[0];
     if (M.map && g && g.live) M.map.setView([+g.live.lat, +g.live.lon], Math.max(M.map.getZoom(), 14));
     render();
-    if (!fromMap && M.el) M.el.scrollIntoView({block:'nearest'});
+    if (M.el) M.el.scrollIntoView({block:'nearest'});
   }
+  /* « Trajet fait aujourd'hui » : the server gives at most 1000 points at a time, so read page by page.
+     After the first time, only the points newer than the last one already here. */
   function loadPath(uid){
+    if (X.pathBusy[uid]) return Promise.resolve();
     var d = new Date(); d.setHours(0, 0, 0, 0);
-    return T.sb.from('mech_positions').select('lat,lon,at').eq('user_id', uid).gte('at', d.toISOString()).order('at', {ascending:true}).limit(5000).then(function(r){ if (!r.error){ X.paths[uid] = r.data; drawMap(); render(); } });
+    var had = (X.paths[uid] || []).filter(function(p){ return Date.parse(p.at) >= d.getTime(); }), since = had.length ? had[had.length - 1].at : null, got = [];
+    function page(from){
+      var q = T.sb.from('mech_positions').select('lat,lon,at').eq('user_id', uid);
+      q = since ? q.gt('at', since) : q.gte('at', d.toISOString());
+      return timed(q.order('at', {ascending:true}).range(from, from + 999)).then(function(r){
+        if (r.error) return;
+        got = got.concat(r.data || []);
+        if ((r.data || []).length >= 1000) return page(from + 1000);
+        X.paths[uid] = had.concat(got); tmRefresh();
+      });
+    }
+    X.pathBusy[uid] = true;
+    return page(0).then(function(){ X.pathBusy[uid] = false; }, function(){ X.pathBusy[uid] = false; });
   }
   function viewMap(){
     var a = A();
@@ -2419,10 +2473,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (g.jobs.length) body += '<ol class="tm-stops">' + g.jobs.map(function(j){
         var mine = !!a.findJob(j.id), st = j.status || 'planifie';
         return '<li><span class="tm-stop mini' + (st === 'termine' ? ' done' : '') + '" style="--c:' + g.color + '">' + j.n + '</span><div><b>' + esc(a.hm(j.time)) + ' · ' + esc(j.client.name || 'Client') + '</b><span class="small muted">' + esc(j.client.address || 'Adresse inconnue') + (geoOf(j) ? '' : ' · pas sur la carte') + '</span></div>' +
-          '<span class="pillx">' + esc((a.ST && a.ST[st]) || st) + '</span>' + (mine ? '<button type="button" class="btn sm" data-act="er-open" data-id="' + esc(j.id) + '">Ouvrir</button>' : '') + '</li>'; }).join('') + '</ol>';
+          '<span class="pillx">' + esc((a.ST && a.ST[st]) || st) + '</span>' + (mine ? '<button type="button" class="btn sm" data-act="open" data-id="' + esc(j.id) + '">Ouvrir</button>' : '') + '</li>'; }).join('') + '</ol>';
       else body += '<p class="small muted">Aucun rendez-vous aujourd\'hui.</p>';
       body += routeText(g);
-      if (uid && (l || isStaff()) && isStaff()) body += '<div class="er-acts">' + (l ? '<button type="button" class="btn sm" data-act="map-sel" data-v="' + esc(uid) + '">Voir sur la carte</button>' : '') +
+      if (uid && staffView()) body += '<div class="er-acts">' + (l ? '<button type="button" class="btn sm" data-act="map-sel" data-v="' + esc(uid) + '">Voir sur la carte</button>' : '') +
         '<button type="button" class="btn sm" data-act="map-path" data-v="' + esc(uid) + '" aria-pressed="' + (!!X.showPath[uid]) + '">' + (X.showPath[uid] ? 'Cacher le trajet fait' : 'Trajet fait aujourd\'hui') + '</button></div>';
       body += '</div>';
     });
@@ -2491,15 +2545,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         '<span class="small muted">' + (always ? 'Toujours, avec son rôle' : o === null ? 'Comme son rôle' : o ? '<b class="r-add">Ajouté pour cette personne</b>' : '<b class="r-del">Enlevé pour cette personne</b>') + (p.s ? ' · ' + esc(p.s) : '') + '</span></span></label>'; }).join('') +
       '<p class="small muted">Ça ne change que pour cette personne.</p></fieldset>';
   }
-  function rightsList(m){ return rightsHTML('ed', m, rolesOf(m), first(m.name)); }
+  /* what was ticked in a form ('nw' = invite, 'ed' = change a person) is kept in X.eq.draft: when the screen is drawn again
+     (the people list arriving, a colleague's change, the network banner), the boxes come from it, not from the start values.
+     Forgotten after a save or an invitation, on « Annuler », and when leaving the screen. */
+  function draftOf(pre, uid){ var d = X.eq.draft[pre]; return d && (pre !== 'ed' || d.uid === uid) ? d : null; }
+  function rightsList(m){ var d = draftOf('ed', m.user_id); return rightsHTML('ed', d ? {perms:d.perms} : m, d ? d.roles : rolesOf(m), first(m.name)); }
   /* roles or a box changed: the list follows (what the boxes say now is what counts) */
   function rightsRedraw(pre, focusId){
     var bx = document.getElementById(pre + '-rights'); if (!bx) return;
     var who = pre === 'ed' ? (X.eq.list || []).filter(function(x){ return x.user_id === X.eq.editing; })[0] : null;
     var keep = {}; bx.querySelectorAll('input[data-k]').forEach(function(e){ if (!e.disabled && e.checked !== (e.dataset.def === '1')) keep[e.dataset.k] = e.checked; });
-    bx.outerHTML = rightsHTML(pre, {perms:keep}, rolesFrom(pre), who ? first(who.name) : '');
+    var rs = rolesFrom(pre);
+    bx.outerHTML = rightsHTML(pre, {perms:keep}, rs, who ? first(who.name) : '');
+    X.eq.draft[pre] = {roles:rs, perms:keep, uid:pre === 'ed' ? X.eq.editing : null};
     var f = focusId && document.getElementById(focusId); if (f) try { f.focus({preventScroll:true}); } catch(e){}
   }
+  window.addEventListener('hashchange', function(){ if (location.hash.slice(1) !== 'equipe') X.eq.draft = {}; });
   document.addEventListener('toggle', function(ev){ if (ev.target && ev.target.id === 'eq-roles') X.rolesOpen = ev.target.open; }, true);   /* the table stays open while you tick boxes */
   document.addEventListener('change', function(ev){ var e = ev.target; if (e && e.matches && e.matches('.rights input[data-k]')){ var bx = e.closest('.rights'); rightsRedraw(bx.id.replace(/-rights$/, ''), e.id); } });
   function permsFrom(rs, pre){
@@ -2507,7 +2568,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     rightKeys(rs).forEach(function(p){ var e = document.getElementById((pre || 'ed') + '-p-' + p.k); if (!e || e.disabled) return; if (e.checked !== roleDefault(rs, p.k)) out[p.k] = e.checked; });
     return out;
   }
-  function roleSelect(id, val){ return '<select id="' + id + '">' + ['mecano', 'bureau', 'tresorier', 'owner'].map(function(r){ return '<option value="' + r + '"' + (r === val ? ' selected' : '') + '>' + ROLE[r] + '</option>'; }).join('') + '</select>'; }
   function mechSelect(id, val){
     var ms = A().mechanics(), opts = '<option value="">' + (ms.length ? 'Aucun' : 'Ajoute les mécanos dans Réglages') + '</option>' + ms.map(function(m){ return '<option' + (norm(m) === norm(val) ? ' selected' : '') + '>' + esc(m) + '</option>'; }).join('');
     if (val && !ms.some(function(m){ return norm(m) === norm(val); })) opts += '<option selected>' + esc(val) + '</option>';
@@ -2545,7 +2605,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         '<p class="small muted">' + (m.mechanic ? 'Dans l\'agenda : ' + esc(m.mechanic) + ' · ' : '') + (m.active ? (m.last_sign_in_at ? 'dernière connexion ' + esc(ago(m.last_sign_in_at)) : m.invite ? '<b>' + (m.invite.expired ? 'Invitation expirée' : 'Invitation envoyée ' + esc(ago(m.invite.at))) + '</b> · pas encore activé' : 'jamais connecté') : '<b>Accès désactivé</b>') + '</p>';
       if (X.eq.editing === m.user_id){
         b += '<div class="eq-form"><div class="field"><label for="ed-name">Nom</label><input id="ed-name" value="' + esc(m.name) + '" autocomplete="off"></div>' +
-          roleBoxes('ed', rolesOf(m)) + '<div class="field"><label for="ed-mech">Nom dans l\'agenda <span class="small muted">(s\'il fait des jobs)</span></label>' + mechSelect('ed-mech', m.mechanic) + '</div>' +
+          roleBoxes('ed', (draftOf('ed', m.user_id) || {roles:rolesOf(m)}).roles) + '<div class="field"><label for="ed-mech">Nom dans l\'agenda <span class="small muted">(s\'il fait des jobs)</span></label>' + mechSelect('ed-mech', m.mechanic) + '</div>' +
           rightsList(m) +
           '<div class="er-acts"><button type="button" class="btn sm primary" data-act="eq-save" data-v="' + esc(m.user_id) + '">Enregistrer</button><button type="button" class="btn sm" data-act="eq-cancel">Annuler</button></div></div>';
       } else if (X.eq.confirm === m.user_id){
@@ -2559,11 +2619,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       b += '</div>';
     });
     b += '</section>';
+    var nwd = draftOf('nw'), nwr = nwd ? nwd.roles : ['mecano'];
     b += '<section class="sect" id="eq-new"><h3>Inviter une personne</h3><p class="small">Écris son courriel : elle reçoit un lien, choisit elle-même son mot de passe, et son compte est activé.</p>' +
       '<div class="field"><label for="nw-name">Nom</label><input id="nw-name" autocomplete="off"></div>' +
       '<div class="field"><label for="nw-email">Courriel</label><input id="nw-email" type="email" inputmode="email" autocapitalize="off" spellcheck="false" autocomplete="off"></div>' +
-      roleBoxes('nw', ['mecano']) + '<div class="field"><label for="nw-mech">Nom dans l\'agenda <span class="small muted">(pour un mécano)</span></label>' + mechSelect('nw-mech', '') + '</div>' +
-      rightsHTML('nw', null, ['mecano'], '') +
+      roleBoxes('nw', nwr) + '<div class="field"><label for="nw-mech">Nom dans l\'agenda <span class="small muted">(pour un mécano)</span></label>' + mechSelect('nw-mech', '') + '</div>' +
+      rightsHTML('nw', nwd ? {perms:nwd.perms} : null, nwr, '') +
       '<ul class="roles small"><li><b>Mécano</b> : seulement ses jobs, le bouton « En route », la facture sur place. Sa position est partagée pendant sa journée.</li><li><b>Bureau</b> : agenda, clients, factures et carte des mécanos. Pas les réglages.</li><li><b>Trésorier</b> : son propre écran, la trésorerie (dépenses avec photo des reçus, rapport, taxes à remettre, Excel).</li><li><b>Propriétaire</b> : tout, y compris les accès.</li></ul><p class="small muted">Ce que le mécano et le trésorier voient de plus : plus haut, « Ce que chaque rôle peut faire ».</p>' +
       '<p class="formerr" id="nw-err" role="alert" hidden></p><button type="button" class="btn primary block" data-act="eq-invite">Envoyer l\'invitation</button>' +
       '<details class="small eq-more"><summary>Autre façon : créer un mot de passe temporaire</summary><p class="small">Pour quelqu\'un qui ne lit pas ses courriels : tu lui donnes toi-même un mot de passe.</p><button type="button" class="btn block" data-act="eq-add">Créer le compte avec un mot de passe temporaire</button></details></section>';
@@ -2681,6 +2742,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     var m = eff(); if (!m) return [];
     var own = hasR(m, 'owner'), mec = hasR(m, 'mecano'), tre = hasR(m, 'tresorier'), bur = hasR(m, 'bureau') || own, ph = onPhone(), nm = first(m.name);
     var can = function(k){ return own || permOf(m, k); };
+    var HELP_GO = mec ? 'home' : (own || bur || can('agenda')) && !ph ? 'tab:agenda' : 'home';   /* a screen that has a « ? » */
     var P = {
       hello:['Bienvenue', [{icon:'👋', go:'home', t:'Bienvenue' + (nm ? ', ' + nm : '') + ' !',
         p:'Je te fais visiter l\'app, écran par écran : à quoi sert chaque bouton, et quand t\'en servir. ' + (own ? 'C\'est la visite complète, environ 4 minutes.' : 'Ça prend environ 3 minutes.'),
@@ -2691,10 +2753,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       day:mec && ['Ta journée', [
         {icon:'📅', go:'home', sel:'.dayhead, #top', t:'Le jour affiché', p:'En haut : la date. Touche ‹ ou › pour voir hier ou demain, ou touche la date pour en choisir une autre.' + (ph ? ' Tu peux aussi glisser l\'écran vers la gauche ou la droite.' : '')},
         {icon:'☀️', sel:'.shift', t:'Commencer ma journée', p:'Le matin, en partant, touche <b>« Commencer ma journée »</b>. Pendant ta journée seulement, ta position est partagée : le bureau te voit sur la carte. Le soir, <b>« Fin de journée »</b> arrête tout.', x:'Rien n\'est envoyé avant le début ni après la fin de ta journée.'},
-        {icon:'🔧', sel:'.ph-list, .cal, .list, .nrow', t:'Tes rendez-vous', p:'Chaque ligne, c\'est un client : l\'heure, l\'auto et le travail à faire. L\'étiquette dit où tu en es : <b>Planifié</b>, <b>En route</b>, <b>Sur place</b>, <b>Terminé</b>.'}]],
+        {icon:'🔧', sel:'.ph-list, .cal, .list, .nrow', t:'Tes rendez-vous', p:'Chaque ligne, c\'est un client : l\'heure, l\'auto et le travail à faire. L\'étiquette dit où tu en es : <b>Planifié</b>, <b>En route</b>, <b>Sur place</b>, <b>Terminé</b>.'},
+        {icon:'👆', tap:'.ph-job, .ticket, #main .nrow', need:true, t:'Ouvre un rendez-vous', p:'Pour voir une job, tu touches sa ligne.', do:'Touche le rendez-vous éclairé.'}]],
       job:mec && ['Une job, du début à la fin', [
         {icon:'📋', go:'job', sel:'.pjob, main .sect', t:'La fiche de la job', p:'Touche un rendez-vous pour ouvrir sa fiche : l\'auto, les travaux à faire, et les boutons pour <b>appeler</b> le client, lui <b>texter</b> ou ouvrir l\'<b>itinéraire</b> dans ton GPS.'},
-        {icon:'⚫', sel:'.nextbtn', t:'Le gros bouton', p:'Il te dit toujours la prochaine étape. <b>« Je pars »</b> : le client reçoit un texto avec ton heure d\'arrivée et peut suivre ton camion. Ensuite <b>« Je suis arrivé »</b>, puis <b>« Travaux terminés »</b>.'},
+        {icon:'⚫', sel:'.nextbtn', t:'Le gros bouton', p:'Il te dit toujours la prochaine étape. <b>« Je pars »</b> : le client reçoit un texto avec ton heure d\'arrivée et peut suivre ton camion. Ensuite <b>« Je suis arrivé »</b>, puis <b>« Travaux terminés »</b>.', x:'Pendant la visite, on n\'y touche pas : il enverrait un vrai texto au client.'},
+        {icon:'👆', tap:'#veh-fold:not([open]) > summary', need:true, t:'Les sections', p:'Chaque section de la fiche s\'ouvre d\'un toucher.', do:'Touche « Véhicule et fiche technique ».'},
         {icon:'🔎', sel:'#veh-fold', t:'Le VIN et la fiche du moteur', p:'Scanne le VIN avec la caméra : l\'année, la marque, le modèle et le moteur se remplissent tout seuls. La fiche du moteur (huile, filtres, pièces) est gardée pour la prochaine fois.'},
         {icon:'📸', sel:'#ph-fold', t:'Photos et signature', p:'Prends des photos avant et après les travaux. À la fin, le client signe directement sur ton écran.'},
         {icon:'➕', sel:'#xp-fold', t:'Travaux supplémentaires', p:'Tu trouves autre chose à réparer ? Écris-le avec son prix. Le client accepte en signant ou par texto, et ça s\'ajoute à la facture. Rien n\'est fait sans son accord.'},
@@ -2702,25 +2766,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       agenda:(own || bur || can('agenda') || can('book')) && ['L\'agenda', [
         {icon:'📅', go:'tab:agenda', sel:'.cal, .list, main', need:!own && !bur && !can('agenda'), t:'L\'agenda', p:(own || bur ? 'Chaque colonne, c\'est un camion (ou un mécano). Touche une case libre pour réserver à cette heure-là ; touche un rendez-vous pour l\'ouvrir.' : 'Les rendez-vous de toute l\'équipe' + (can('book') ? '.' : ', en lecture seulement.'))},
         (own || bur || can('book')) && {icon:'➕', go:'tab:agenda', sel:'#top [data-act="new"]', need:true, t:'« + Réservation »', p:'Choisis le client et le service : l\'app propose les moments libres, près des autres jobs du même coin. Le client reçoit sa confirmation.'},
-        can('hours_others') && {icon:'🗓', go:'tab:agenda', sel:'[data-act="sched"][data-v="garage"]', need:true, t:'Modifier l\'horaire', p:'Les heures d\'ouverture du garage, dans une grande grille.'},
-        can('hours_others') && {icon:'👆', go:'sched:garage', sel:'#sched .sch-scroll', need:true, t:'La grille de l\'horaire', p:(ph ? 'Glisse ton doigt sur les cases' : 'Clique et glisse vers le bas sur les cases') + ' pour ouvrir des heures, ou pour les fermer (une pause, un congé).'},
-        can('hours_others') && {icon:'✅', go:'sched:garage', sel:'#sched .sch-apply', need:true, t:'Pour combien de temps ?', p:'<b>Seulement cette semaine</b> (un congé), <b>pendant quelques semaines</b> (l\'horaire d\'été) ou <b>en permanence</b> (ton horaire habituel). Puis « Enregistrer ».'}]],
-      clients:can('clients') && ['Clients et factures', [{icon:'👤', go:'tab:clients', sel:'main', t:mec && !bur ? 'Tes clients' : 'Les clients', p:'La fiche de chaque client : téléphone, adresse, ses autos et l\'historique de ses visites. Cherche par nom ou par téléphone.'}]],
-      factures:can('factures') && ['Clients et factures', [{icon:'💵', go:'tab:factures', sel:'main', t:mec && !bur && !tre ? 'Tes factures' : 'Les factures', p:'Celles à recevoir et celles déjà payées. ' + (own || bur || can('editinv') ? 'Ouvre une facture pour la revoir, la renvoyer au client ou la marquer payée.' : 'Ouvre une facture pour la revoir ou la renvoyer au client.')}]],
+        can('hours_others') && {icon:'🗓', go:'tab:agenda', tap:'[data-act="sched"][data-v="garage"]', need:true, t:'Modifier l\'horaire', p:'Les heures d\'ouverture du garage s\'ouvrent dans une grande grille.', do:'Touche « Modifier l\'horaire ».'},
+        can('hours_others') && {icon:'👆', go:'sched:garage', try:'#sched .sch-scroll', need:true, t:'La grille de l\'horaire', p:'Une case foncée est ouverte, une case pâle est fermée.', tryT:(ph ? 'Essaie : glisse ton doigt vers le bas sur quelques cases.' : 'Essaie : clique et glisse vers le bas sur quelques cases.') + ' C\'est un essai, rien n\'est enregistré.', done:'Voilà : tu viens d\'ouvrir ou de fermer des heures (une pause, un congé). Rien n\'est enregistré pendant la visite.'},
+        can('hours_others') && {icon:'✅', go:'sched:garage', sel:'#sched .sch-apply', need:true, t:'Pour combien de temps ?', p:'<b>Seulement cette semaine</b> (un congé), <b>pendant quelques semaines</b> (l\'horaire d\'été) ou <b>en permanence</b> (ton horaire habituel). Puis « Enregistrer ».', x:'On n\'enregistre pas maintenant : en continuant, la grille se ferme sans rien changer.'}]],
+      clients:can('clients') && ['Clients et factures', [{icon:'👆', tap:'.tab[data-t="clients"]:not([hidden])', need:true, t:mec && !bur ? 'Tes clients' : 'Les clients', p:'Pour changer d\'écran, tu touches le menu ' + (ph ? 'en bas' : 'à gauche') + '.', do:'Touche « Clients ».'}, {icon:'👤', go:'tab:clients', sel:'main', t:mec && !bur ? 'Tes clients' : 'Les clients', p:'La fiche de chaque client : téléphone, adresse, ses autos et l\'historique de ses visites. Cherche par nom ou par téléphone.'}]],
+      factures:can('factures') && ['Clients et factures', [{icon:'👆', tap:'.tab[data-t="factures"]:not([hidden])', need:true, t:mec && !bur && !tre ? 'Tes factures' : 'Les factures', p:'Les factures ont leur propre écran.', do:'Touche « Factures ».'}, {icon:'💵', go:'tab:factures', sel:'main', t:mec && !bur && !tre ? 'Tes factures' : 'Les factures', p:'Celles à recevoir et celles déjà payées. ' + (own || bur || can('editinv') ? 'Ouvre une facture pour la revoir, la renvoyer au client ou la marquer payée.' : 'Ouvre une facture pour la revoir ou la renvoyer au client.')}]],
       plusbtn:mec && ph && ['Clients et factures', [{icon:'➕', go:'home', sel:'.tab-new:not([hidden])', need:true, t:'Le bouton « + »', p:'Pour un client sans rendez-vous : <b>« Facture sur place »</b>. Aussi : <b>« Nouveau client »</b>' + (can('book') ? ' et <b>« Nouvelle réservation »</b>' : '') + '.'}]],
       tresor:can('tresor') && ['La trésorerie', [
         {icon:'💼', go:'view:dep', sel:'#top', t:'La trésorerie', p:'L\'argent du garage : ce qui entre (les factures payées), ce qui sort (les dépenses) et ce qui reste. Choisis la période en haut : le mois, le trimestre ou l\'année.'},
         {icon:'🧾', go:'view:dep', sel:'[data-act="exp-new"]', t:'Ajouter une dépense', p:'Touche <b>« + Dépense »</b> : prends le reçu en photo, écris le montant et choisis la catégorie (pièces, essence, outils…). La TPS et la TVQ payées sont calculées pour toi.'},
         {icon:'📑', go:'view:dep', sel:'main', t:'Les dépenses', p:'Toutes les dépenses de la période, avec la photo de leurs reçus. Touche une ligne pour la voir, la corriger ou la supprimer.'},
+        {icon:'👆', go:'view:dep', tap:'[data-act="tr-view"][data-v="rap"]', need:true, t:'Le rapport', p:'Le rapport est juste à côté des dépenses.', do:'Touche « Rapport et taxes ».'},
         {icon:'📊', go:'view:rap', sel:'main', t:'Le rapport et les taxes', p:'Revenus, dépenses et profit de la période. Et les <b>taxes à remettre</b> : la TPS et la TVQ perçues sur les factures, moins celles payées sur les dépenses.'},
+        {icon:'🗓', go:'view:rap', try:'.trbar', need:true, t:'La période', p:'Le rapport se fait pour le mois, le trimestre ou l\'année. ‹ et › reculent ou avancent d\'une période.', tryT:'Essaie : touche « Trimestre » ou « Année ».', done:'Les chiffres suivent la période que tu choisis.'},
         {icon:'📥', go:'view:rap', sel:'[data-act="tr-xlsx"]', need:true, t:'Pour le comptable', p:'Un fichier Excel avec tout le détail (revenus, dépenses, taxes), prêt à envoyer.'}]],
       map:can('map') && ['La carte de l\'équipe', [
-        {icon:'🗺️', go:'carte', sel:'#map-slot', t:'La carte de l\'équipe', p:'La <b>Centrale</b>, d\'où partent les camions. Chaque mécano a sa couleur, ses rendez-vous <b>numérotés dans l\'ordre</b> (1, 2, 3…) et son trajet de la journée, par les routes.', x:'Touche un numéro pour voir le client, l\'adresse et l\'heure.'},
+        {icon:'🗺️', go:'carte', try:'#map-slot', t:'La carte de l\'équipe', p:'La <b>Centrale</b>, d\'où partent les camions. Chaque mécano a sa couleur, ses rendez-vous <b>numérotés dans l\'ordre</b> (1, 2, 3…) et son trajet de la journée, par les routes.', tryT:'Essaie : touche un numéro, ou glisse la carte avec ton doigt.', done:'Le numéro montre le client, l\'adresse et l\'heure.'},
         {icon:'📍', go:'carte', sel:'.tm-mc', need:true, t:'La journée de chacun', p:'Sous la carte : les arrêts de chaque mécano, la longueur de son trajet depuis la Centrale, et qui est en route vers quel client (avec l\'heure d\'arrivée).'}]],
       avail:mec && ['Ton horaire', [
-        {icon:'🗓', go:'dispos', sel:'[data-act="sched"][data-v="avail"]', t:'Tes disponibilités', p:'Dis au bureau quand tu travailles : touche <b>« Modifier mes disponibilités »</b>.'},
-        {icon:'👆', go:'sched:avail', sel:'#sched .sch-scroll', need:true, t:'La grille', p:(ph ? 'Glisse ton doigt sur les cases, vers le bas,' : 'Clique et glisse vers le bas sur les cases') + ' pour choisir tes heures (ou pour les enlever).'},
-        {icon:'✅', go:'sched:avail', sel:'#sched .sch-apply', need:true, t:'Pour combien de temps ?', p:'<b>Seulement ce jour-là</b> (un rendez-vous chez le dentiste), <b>pendant quelques semaines</b> ou <b>en permanence</b> (ton horaire habituel). Puis « Enregistrer ».'}]],
+        {icon:'🗓', go:'dispos', tap:'[data-act="sched"][data-v="avail"]', t:'Tes disponibilités', p:'Tu dis au bureau quand tu travailles.', do:'Touche « Modifier mes disponibilités ».'},
+        {icon:'👆', go:'sched:avail', try:'#sched .sch-scroll', need:true, t:'La grille', p:'Une case foncée, c\'est une heure où tu travailles.', tryT:(ph ? 'Essaie : glisse ton doigt vers le bas sur quelques cases.' : 'Essaie : clique et glisse vers le bas sur quelques cases.') + ' C\'est un essai, rien n\'est enregistré.', done:'Voilà : tu viens de choisir des heures (ou de les enlever). Rien n\'est enregistré pendant la visite.'},
+        {icon:'✅', go:'sched:avail', sel:'#sched .sch-apply', need:true, t:'Pour combien de temps ?', p:'<b>Seulement ce jour-là</b> (un rendez-vous chez le dentiste), <b>pendant quelques semaines</b> ou <b>en permanence</b> (ton horaire habituel). Puis « Enregistrer ».', x:'On n\'enregistre pas maintenant : en continuant, la grille se ferme sans rien changer.'}]],
       dispos:(own || bur) && ['L\'équipe', [{icon:'🗓', go:'dispos', sel:'main', t:'Les disponibilités des mécanos', p:'Quand chaque mécano travaille. L\'agenda ne propose que ses heures.' + (can('hours_others') ? ' Tu peux changer l\'horaire de chacun, avec la même grille.' : '')}]],
       stock:can('stock') && [mec && !bur ? 'Le camion' : 'L\'équipe', [{icon:'📦', go:'stock', sel:'main', need:true, t:'Le stock des camions', p:'Les pièces dans chaque camion. Quand une pièce va sur une facture, elle se retire toute seule du stock.'}]],
       team:own && ['L\'équipe et les accès', [
@@ -2729,10 +2795,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         {icon:'👁', go:'equipe', sel:'#eq-viewas', t:'Voir l\'app comme…', p:'Tu vois exactement l\'écran d\'un mécano ou du trésorier, et sa visite guidée. Un bandeau en haut te ramène à ton compte.'},
         {icon:'☑️', go:'equipe', sel:'#eq-roles', t:'Ce que chaque rôle donne au départ', p:'Les cases de départ de chaque rôle. Un changement ici vaut pour toutes les personnes de ce rôle (sauf ce que tu as changé pour une personne).'}]],
       settings:own && ['Les réglages', [
-        {icon:'🎨', go:'set:Couleurs', sel:'#lux-sect', t:'Les couleurs de l\'app', p:'Le mode vitrine : des panneaux en verre sur un fond de couleur. Choisis Sable, Champagne, Platine, Noir et or, Émeraude, Saphir ou Bordeaux : toute l\'équipe le voit.'},
+        {icon:'🎨', go:'set:Couleurs', try:'#lux-sect', t:'Les couleurs de l\'app', p:'Le mode vitrine : des panneaux en verre sur un fond de couleur. Sable, Champagne, Platine, Noir et or, Émeraude, Saphir ou Bordeaux : toute l\'équipe voit celle que tu choisis.', tryT:'Essaie : touche une couleur pour la voir sur toute l\'app.', done:'C\'est un essai : à l\'étape suivante, la couleur revient comme avant. Pour la garder, reviens ici après la visite et touche-la.'},
         {icon:'⚙️', go:'set:', sel:'#ph-setlist, #setform', t:'Le reste des réglages', p:'Le nom du garage, les taxes, ton taux horaire, ta liste de prix, l\'horaire, les mécanos et les camions, le bas des factures.'}]],
       help:['Pour finir', [
-        {icon:'❓', go:'home', sel:'.qhelp', t:'Les petits « ? »', p:'Partout dans l\'app, touche un <b>?</b> à côté d\'un mot pour une explication simple.'},
+        {icon:'❓', go:HELP_GO, try:'.qhelp', after:'.helptip', t:'Les petits « ? »', p:'Partout dans l\'app, un <b>?</b> à côté d\'un mot donne une explication simple.', tryT:'Essaie : touche le ?.', done:'Touche-le encore pour fermer l\'explication.'},
         {icon:'✅', go:'home', t:'C\'est tout !', p:'Tu connais l\'app. Si tu oublies quelque chose : <b>' + (ph ? 'Plus' : 'en bas du menu') + ' → « ' + (own ? 'Visite guidée de l\'app' : 'Revoir la visite guidée') + ' »</b>.' + (mec ? ' Bonne journée sur la route !' : '')}]]
     };
     /* the person's main job first, then what the other roles add (each part once) */
@@ -2785,16 +2851,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       case 'er-start': { var j1 = api.findJob(id); if (j1) startEnRoute(j1); break; }
       case 'er-resend': { var j2 = api.findJob(id); if (j2) startEnRoute(j2, {resend:true}); break; }
       case 'er-copy': { var t = X.tracks[id]; if (t && navigator.clipboard) navigator.clipboard.writeText(trackLink(t)).then(function(){ toast('Lien copié'); }, function(){ toast(trackLink(t)); }); else if (t) toast(trackLink(t)); break; }
-      case 'er-open': api.S.jobId = id; api.S.screen = 'job'; api.S.backTo = null; render(); window.scrollTo(0, 0); break;
       case 'map-fit': fit(); break;
       case 'tm-mech': X.tmHide = X.tmHide || {}; X.tmHide[v] = !X.tmHide[v]; drawMap(); render(); break;
-      case 'map-sel': selectMech(v, false); break;
+      case 'map-sel': selectMech(v); break;
       case 'map-path': X.showPath[v] = !X.showPath[v]; if (X.showPath[v]) loadPath(v); else { drawMap(); render(); } break;
       case 'eq-back': location.hash = onPhone() ? 'plus' : 'reglages'; break;
       case 'eq-reload': X.eq.err = ''; X.eq.list = null; eqLoad(); render(); break;
-      case 'eq-edit': X.eq.editing = v; X.eq.confirm = null; render(); break;
-      case 'eq-confirm': X.eq.confirm = v; X.eq.editing = null; render(); break;
-      case 'eq-cancel': X.eq.editing = null; X.eq.confirm = null; render(); break;
+      case 'eq-edit': X.eq.editing = v; X.eq.confirm = null; delete X.eq.draft.ed; render(); break;
+      case 'eq-confirm': X.eq.confirm = v; X.eq.editing = null; delete X.eq.draft.ed; render(); break;
+      case 'eq-cancel': X.eq.editing = null; X.eq.confirm = null; delete X.eq.draft.ed; render(); break;
       case 'eq-hidecred': X.eq.created = null; render(); break;
       case 'eq-copycred': { var pre = document.querySelector('.cred'); if (pre && navigator.clipboard) navigator.clipboard.writeText(pre.textContent).then(function(){ toast('Copié'); }, function(){}); break; }
       case 'eq-save': {
@@ -2803,7 +2868,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (ers.indexOf('mecano') >= 0 && !mech){ toast('Choisis son nom dans l\'agenda.'); break; }
         if (v === me.user_id && ers.indexOf('owner') < 0){ toast('Tu ne peux pas enlever ton propre rôle de propriétaire.'); break; }
         b.disabled = true;
-        invoke('members', {action:'update', user_id:v, name:name, roles:ers, perms:permsFrom(ers, 'ed'), mechanic:mech}).then(function(r){ X.eq.list = r.members; X.eq.editing = null; toast('Enregistré'); if (v === me.user_id) refreshMe(); render(); }, function(e){ b.disabled = false; toast(e.message); });
+        invoke('members', {action:'update', user_id:v, name:name, roles:ers, perms:permsFrom(ers, 'ed'), mechanic:mech}).then(function(r){ X.eq.list = r.members; X.eq.editing = null; delete X.eq.draft.ed; toast('Enregistré'); if (v === me.user_id) refreshMe(); render(); }, function(e){ b.disabled = false; toast(e.message); });
         break;
       }
       case 'eq-active': {
@@ -2825,7 +2890,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (irs.indexOf('mecano') >= 0 && !imc) return eqErr(api.mechanics().length ? 'Choisis son nom dans l\'agenda (liste des mécanos).' : 'Ajoute d\'abord le nom de ce mécano dans Réglages → Mécanos.');
         eqErr(''); b.disabled = true; b.textContent = 'Envoi…';
         invoke('members', {action:'invite', name:inm, email:iem, roles:irs, perms:permsFrom(irs, 'nw'), mechanic:imc, base:trackBase()}).then(function(r){
-          X.eq.list = r.members; X.eq.created = null; X.eq.invited = {name:inm, email:r.email || iem, link:r.link, mail:r.mail, message:r.message}; X.liveAt = 0;
+          X.eq.list = r.members; X.eq.created = null; X.eq.invited = {name:inm, email:r.email || iem, link:r.link, mail:r.mail, message:r.message}; X.liveAt = 0; delete X.eq.draft.nw;
           ['nw-name', 'nw-email', 'nw-mech'].forEach(function(i){ var e = document.getElementById(i); if (e) e.value = ''; });
           render(); window.scrollTo(0, 0);
         }, function(e){ b.disabled = false; b.textContent = 'Envoyer l\'invitation'; eqErr(e.message); });
@@ -2850,7 +2915,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (rls.indexOf('mecano') >= 0 && !mc) return eqErr(api.mechanics().length ? 'Choisis son nom dans l\'agenda (liste des mécanos).' : 'Ajoute d\'abord le nom de ce mécano dans Réglages → Mécanos.');
         eqErr(''); b.disabled = true; b.textContent = 'Création…';
         invoke('members', {action:'create', name:nm, email:em, roles:rls, perms:permsFrom(rls, 'nw'), mechanic:mc}).then(function(r){
-          X.eq.list = r.members; X.eq.invited = null; X.eq.created = {name:nm, email:em, password:r.password}; X.liveAt = 0;
+          X.eq.list = r.members; X.eq.invited = null; X.eq.created = {name:nm, email:em, password:r.password}; X.liveAt = 0; delete X.eq.draft.nw;
           ['nw-name', 'nw-email', 'nw-mech'].forEach(function(i){ var e = document.getElementById(i); if (e) e.value = ''; });
           render(); window.scrollTo(0, 0);
         }, function(e){ b.disabled = false; b.textContent = 'Créer le compte'; eqErr(e.message); });
@@ -2923,12 +2988,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     '.tm-leg b.mini{width:22px;height:22px;flex:none;margin:0}.tm-leg b.tm-mech.mini{border-radius:7px;font-size:9px;box-shadow:0 0 0 2px var(--c)}.tm-leg b.tm-dash{width:26px;height:0}' +
     '.tm-pop{display:grid;gap:2px;font-size:14px}.tm-pop .btn{margin-top:6px;justify-self:start}.tm-st{color:#6B5E55;font-size:12.5px}' +
     '.tm-stops{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:8px}.tm-stops li{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:4px 10px;align-items:center}.tm-stops li>div{display:grid;min-width:0}.tm-stops .tm-stop.mini{margin:0;width:26px;height:26px;font-size:12px}' +
-    '.gm-pin-wrap{background:none;border:0}.gm-pin{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;font:700 13px/1 var(--f-body);color:#fff;background:#1D4B77;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}' +
-    '.gm-pin.p-route{background:#B26B00}.gm-pin.p-shift{background:#1D4B77}.gm-pin.p-stale{background:#7A8794}.gm-pin.p-off{background:#B4BEC8}.gm-pin.sel{outline:3px solid #F2B200;outline-offset:1px}' +
-    '.gm-pin.p-job{border-radius:8px;background:#fff;color:#14202B;border:2px solid #14202B;font-size:11px}.gm-pin.p-job.done{opacity:.55}.gm-pin.p-dest{background:#F2B200;color:#1E1600;border-radius:8px;font-size:15px}' +
-    '.mc .gm-pin,.legend .gm-pin{width:36px;height:36px;flex:none}.legend{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--muted);margin:0 0 12px}.legend span{display:inline-flex;align-items:center;gap:6px}' +
-    '.legend .gm-pin.mini{width:16px;height:16px;border-width:2px;display:inline-block;border-radius:50%}.legend .gm-pin.mini.p-job{border-radius:4px}' +
-    '.mc{border-top:1px solid var(--line);padding-top:12px;display:grid;gap:6px}.mc:first-of-type{border-top:0;padding-top:0}.mc.sel{background:var(--steel-soft);margin:0 -10px;padding:12px 10px;border-radius:10px}' +
+    '.gm-pin-wrap{background:none;border:0}' +
+    '.legend{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--muted);margin:0 0 12px}.legend span{display:inline-flex;align-items:center;gap:6px}' +
+    '.mc{border-top:1px solid var(--line);padding-top:12px;display:grid;gap:6px}.mc:first-of-type{border-top:0;padding-top:0}' +
     '.mc-head{display:flex;align-items:center;gap:10px}.mc-who{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}' +
     '.pillx{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;font-weight:600;background:var(--idle-bg);color:var(--idle)}' +
     '.pillx.p-route{background:var(--warn-bg);color:var(--warn)}.pillx.p-shift{background:var(--steel-soft);color:var(--steel)}.pillx.p-stale{background:var(--idle-bg);color:var(--idle)}' +
@@ -2945,7 +3007,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     '.rt-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px}.rt{width:100%;border-collapse:collapse;font-size:14px}.rt th,.rt td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:center}' +
     '.rt thead th{font-weight:700;background:var(--sunk)}.rt tbody th{text-align:left;font-weight:600}.rt tr:last-child>*{border-bottom:0}.rt input{width:22px;height:22px;min-height:0;accent-color:var(--signal)}.rt-on{color:var(--ok);font-weight:800}.rt-na{color:var(--muted)}' +
     '.r-add{color:var(--ok)}.r-del{color:var(--bad)}.pills{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}.pillx.r-tresorier{background:var(--ok-bg);color:var(--ok)}' +
-    '.pv-btns{display:flex;flex-wrap:wrap;gap:8px}.rp{border:1px solid var(--line);border-radius:14px;padding:10px 14px 6px;margin:0;display:grid;gap:2px}.rp legend{font-weight:700;padding:0 6px}' +
+    '.pv-btns{display:flex;flex-wrap:wrap;gap:8px}' +
     '.rp-row{align-items:flex-start;padding:6px 0}.rp-row input{margin-top:2px;flex:none}.rp-row>span{display:grid;gap:1px}' +
     '#pv-bar{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;justify-content:center;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:#1E1915;color:#F7F1EA;font-size:14.5px;box-shadow:0 4px 14px rgba(0,0,0,.25)}' +
     '#pv-bar .btn{min-height:34px;padding:0 12px;background:#F7F1EA;color:#1E1915;border-color:#F7F1EA}#pv-bar b{color:#FFB37A}.pv-short{display:none}' +
@@ -2970,6 +3032,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         n.failed.slice(-3).map(function(f){ var c = f.path.split('/')[0]; return (COLNAME[c] || c) + ' (' + esc(/permission|row-level|not_granted/i.test(f.msg) ? 'pas permis' : /not_found/i.test(f.msg) ? 'n\'existe plus' : f.msg.slice(0, 60)) + ')'; }).join(', ') +
         '. Le carnet montre la version du serveur.</p><button type="button" class="btn sm" data-act="net-ok">OK</button></div>';
     }
+    /* the phone could not keep a change made without signal (private browsing, memory full) */
+    if (n.storeErr && (n.offlineMode || n.online === false || p))
+      h += '<div class="banner warn net" role="alert"><p><b>Ce téléphone ne peut pas garder tes changements</b> (navigation privée ou mémoire pleine). Ne ferme pas l\'app avant le retour du signal : ils seraient perdus.</p></div>';
     return h;
   }
   var netT = null, lastNet = '';
@@ -2998,9 +3063,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       var m = eff(); if (!m) return undefined;
       return gate(m, w);
     },
-    roleOf:function(){ var m = eff(); return m ? rolesOf(m) : []; },
-    hoursOthers:function(){ return permOf(eff(), 'hours_others'); },
-
     netBanner:netBanner,
     /* the client's page: invoice (and « Payer »), work to approve; texted through GoHighLevel */
     clientLink:function(j, what, extraId){ return invoke('client', {action:'link', jobId:j.id, send:what || null, extraId:extraId || null, base:trackBase()}); },
@@ -3034,25 +3096,41 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     nextInvoiceNo:function(start){ return T.sb.rpc('next_invoice_number', {p_start:start}).then(function(r){ if (r.error || typeof r.data !== 'number') throw r.error || new Error('no number'); return r.data; }); }
   };
 
+  /* at the start: is his workday already running (app reopened during the day)? With a weak signal the answer may not come:
+     ask again when the network is back and every 30 s, until the server answers */
+  var shiftAsk = {done:false, busy:false, timer:null};
+  function shiftCheck(){
+    if (shiftAsk.done || shiftAsk.busy || !me) return;
+    shiftAsk.busy = true;
+    timed(T.sb.from('mech_live').select('*').eq('user_id', me.user_id).maybeSingle()).then(function(r){
+      shiftAsk.busy = false;
+      if (r.error){ shiftRetry(); return; }
+      shiftAsk.done = true; clearInterval(shiftAsk.timer); window.removeEventListener('online', shiftCheck);
+      var l = r.data; if (!l || !l.on_shift) { render(); return; }
+      if (!G.on){ G.on = true; G.since = l.shift_started_at; gpsStart(); }   /* (he may have started it by hand in the meantime) */
+      if (l.job_id && !X.enRoute){ X.enRoute = {jobId:l.job_id, refreshedAt:0}; fetchTrack(l.job_id); }
+      render();
+    }, function(){ shiftAsk.busy = false; shiftRetry(); });
+  }
+  function shiftRetry(){
+    if (shiftAsk.timer) return;
+    shiftAsk.timer = setInterval(shiftCheck, 30000);
+    window.addEventListener('online', shiftCheck);
+  }
+
   /* once signed in: role, workday already running, address keys of the garage */
   T.onReady(function(){
     me = T.member;
     if (VA && !hasR(me, 'owner')){ VA = null; try { sessionStorage.removeItem('gm.viewas'); } catch(e){} }
     T.db.doc('config/roles').onSnapshot(function(s){ X.roles = s.exists ? (s.data() || {}) : {}; X.rolesLoaded = true; render(); }, function(){ X.rolesLoaded = true; render(); });
     if (previewing()) setTimeout(applyView, 0);
-    T.db.doc('config/keys').get().then(function(s){ X.payOnline = !!(s.exists && s.data().payOnline); }, function(){});
-    if (worksShifts()){
-      T.sb.from('mech_live').select('*').eq('user_id', me.user_id).maybeSingle().then(function(r){
-        var l = r.data; if (!l || !l.on_shift) { render(); return; }
-        G.on = true; G.since = l.shift_started_at; gpsStart();
-        if (l.job_id){ X.enRoute = {jobId:l.job_id, refreshedAt:0}; fetchTrack(l.job_id); }
-        render();
-      });
-    }
+    if (worksShifts()) shiftCheck();
+    /* one listener for the garage's keys: « Payer » on the invoices (Stripe) and the address keys */
     T.db.doc('config/keys').onSnapshot(function(s){
-      var d = s.exists ? s.data() : {};
+      var d = s.exists ? (s.data() || {}) : {}, pay = !!d.payOnline;
       lsSet('gm.web.ttkey', d.tomtom || null);
       if (d.google !== undefined) lsSet('gm.web.gkey', d.google || null);
+      if (pay !== X.payOnline){ X.payOnline = pay; render(); }
     });
     if (isStaff()) loadLive();
     render();
@@ -3738,14 +3816,17 @@ function renderNav(){
   var cur = phone() && tabOk('jour') && ['accueil','reglages','heures','equipe','dispos','tresor','stock'].concat(extTabs().map(function(t){ return t.key; })).indexOf(S.tab) >= 0 ? 'plus' : S.tab;
   $$('.tab[data-t]').forEach(function(b){ if (b.dataset.t === cur) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
 }
+var renderT = 0;
+function renderSoon(){ if (renderT) return; renderT = requestAnimationFrame(function(){ renderT = 0; render(); }); }   /* data arriving: one redraw per frame at most */
 function render(){
-  if (S.cfgLoaded) applyLux(S.cfg.lux);   /* until the garage's settings arrive, the device's last colors stay (no flash) */
+  if (renderT){ cancelAnimationFrame(renderT); renderT = 0; }
+  if (S.cfgLoaded && !(TOUR && TOUR.luxBack != null)) applyLux(S.cfg.lux);   /* (a color being tried in the guided tour stays) */   /* until the garage's settings arrive, the device's last colors stay (no flash) */
   if (!tabOk(S.tab)) S.tab = defTab();
   fitTab();
   var lm = lockedMech(); if (lm) S.mech = truckMode() ? '' : lm;
   renderNav();
   if (S.screen === 'edit' || S.screen === 'invoice' || S.screen === 'cform') return;
-  if (S.tab === 'reglages' && !S.screen && S.settingsDirty) return;
+  if (S.tab === 'reglages' && !S.screen && S.settingsDirty && $('#setform')) return;   /* don't wipe what is being typed in the settings */
   var v;
   if (S.screen === 'job') v = phone() ? viewJobPhone() : viewJob();
   else if (S.screen === 'preview') v = viewPreview();
@@ -4196,10 +4277,14 @@ function clientDraftSave(){
 }
 function clientDraftChanged(){ if (S.cformEdit || S.linkJob || !clientDraftPath()) return; clearTimeout(cdT); cdT = setTimeout(clientDraftSave, 700); }
 function flushClientDraft(){ return cdT ? clientDraftSave() : Promise.resolve(); }
+/* where the person is now (a form that opens after a short wait checks it first) */
+function here(){ return location.hash + '|' + (S.screen || '') + '|' + (S.jobId || '') + '|' + (S.sheet ? 1 : 0); }
 function openClientNew(mode){
   var path = clientDraftPath();
   if (!path) return buildClientForm(null, mode, null);
-  S.db.doc(path).get().then(function(sn){ buildClientForm(null, mode, sn.exists ? clone(sn.data()) : null); }, function(){ buildClientForm(null, mode, null); });
+  var at = here(), done = false, go = function(d){ if (done) return; done = true; clearTimeout(t); if (here() === at) buildClientForm(null, mode, d); };
+  var t = setTimeout(function(){ go(null); }, 1500);
+  S.db.doc(path).get().then(function(sn){ go(sn.exists ? clone(sn.data()) : null); }, function(){ go(null); });
 }
 function linkJobs(cid, c){
   var lj = S.linkJob, d = digits(c.phone); S.linkJob = null;
@@ -4707,16 +4792,9 @@ function closeSheet(){
   try { if (sheetReturn && document.contains(sheetReturn)) sheetReturn.focus(); } catch(e){}
 }
 function unitsLabelUpdate(){ var l = $('#f-units-lbl'); if (!l) return; var u = parseInt(val('f-units'), 10); l.textContent = u > 0 ? '= ' + dur(Math.min(u, 96) * unitMin()) + ' (' + unitsLabel(Math.min(u, 96)) + ')' : 'Touche + ou − pour choisir la durée.'; }
-function unitsChanged(){ unitsLabelUpdate(); renderSug(); updateMoment(); }
-function renderPostal(){
-  var el = $('#f-postal'), box = $('#pcmsg'); if (!el || !box) return;
-  var v = el.value.trim();
-  if (!v){ box.className = 'hint'; box.textContent = 'Sert à proposer les moments où un mécano est déjà dans le coin.'; return; }
-  var p = ptOf(v);
-  if (p){ box.className = 'hint ok'; box.textContent = 'Zone ' + p.fsa + ' · ' + frZone(p.name) + (PC_RE.test(normPostal(v)) ? '' : ' (code incomplet, la zone suffit pour les distances)'); }
-  else if (fsaOf(v)){ box.className = 'hint warn'; box.textContent = 'Zone ' + fsaOf(v) + ' introuvable (hors Québec ?) : pas de calcul de distance.'; }
-  else { box.className = 'hint warn'; box.textContent = 'Format attendu : H4P 2B5.'; }
-}
+var sugT = 0;
+function renderSugSoon(){ clearTimeout(sugT); sugT = setTimeout(renderSug, 180); }   /* recomputed once the typing or the ± taps pause */
+function unitsChanged(){ unitsLabelUpdate(); renderSugSoon(); updateMoment(); }
 function renderSug(){
   var box = $('#sugbox'); if (!box) return;
   var pc = formPostal(), p = ptOf(pc);
@@ -4986,13 +5064,14 @@ function openEdit(id, quick, preset, inSheet, client){
   S.editId = id || null; S.quick = !!quick; clearTimeout(draftT); draftExists = false;
   var path = draftPath();
   if (!path) return buildEdit(id, quick, null, preset, inSheet, client);
-  var done = false;
-  var t = setTimeout(function(){ if (!done){ done = true; buildEdit(id, quick, null, preset, inSheet, client); } }, 1500);
+  var done = false, at = here();
+  var t = setTimeout(function(){ if (!done){ done = true; if (here() === at) buildEdit(id, quick, null, preset, inSheet, client); } }, 1500);
   S.db.doc(path).get().then(function(snap){
     if (done) return; done = true; clearTimeout(t);
+    if (here() !== at) return;   /* the person went elsewhere meanwhile */
     var d = snap.exists ? snap.data() : null;
     buildEdit(id, quick, d ? clone(d) : null, preset, inSheet, client);
-  }, function(){ if (done) return; done = true; clearTimeout(t); buildEdit(id, quick, null, preset, inSheet, client); });
+  }, function(){ if (done) return; done = true; clearTimeout(t); if (here() === at) buildEdit(id, quick, null, preset, inSheet, client); });
 }
 function clientCardHTML(c, canChange){
   var p = ptOf(c.postal || findPostal(c.address));
@@ -5006,7 +5085,7 @@ function bookNoShow(j, draft){
 }
 function formPostal(){ var c = S.formClient; return c ? (c.postal || findPostal(c.address)) : ''; }
 function buildEdit(id, quick, draft, preset, inSheet, clientArg){
-  var j = id ? findJob(id) : null;
+  var j = id ? findJob(id) : null; stopScan();
   /* on the phone the booking is a full page (the client-choice sheet closes) */
   if (phone()){ inSheet = false; if (S.sheet){ S.sheet = false; $('#sheet').hidden = true; $('#sheet-body').innerHTML = ''; document.body.classList.remove('locked'); } }
   if (!j){
@@ -5288,7 +5367,7 @@ function bindForm(){
 }
 function val(id){ var e = $('#' + id); return e ? String(e.value || '').trim() : ''; }
 function submitJob(e){
-  e.preventDefault();
+  e.preventDefault(); stopScan();
   if (val('f-svc-in')){ var left = val('f-svc-in'); if (!PK.picked.some(function(n){ return norm(n) === norm(left); })) PK.picked.push(left); $('#f-svc-in').value = ''; renderPicked(); }
   var data = collectForm();
   data.service = data.services.join(', '); data.updatedAt = Date.now();
@@ -5401,7 +5480,7 @@ function addLine(type){
   var d = $('#l' + (S.inv.lines.length-1) + '-' + (l.desc ? 'price' : 'desc')); if (d) d.focus();
 }
 function hideInvErr(){ var e = $('#inverr'); if (e && !e.hidden) e.hidden = true; }
-function invErr(msg){ var e = $('#inverr'); e.textContent = msg; e.hidden = false; e.scrollIntoView({block:'center'}); }
+function invErr(msg){ var e = $('#inverr'); if (!e){ toast(msg); return; } e.textContent = msg; e.hidden = false; e.scrollIntoView({block:'center'}); }
 function claimNumber(){
   var pre = prefix(), start = Math.max(1, parseInt(cfg().startNo, 10) || 1), ref = S.db.doc('meta/invoices');
   if (ext() && typeof ext().nextInvoiceNo === 'function') return ext().nextInvoiceNo(start).then(function(n){ return pre + String(n).padStart(4, '0'); }, function(){ return fallback(); });
@@ -5441,6 +5520,7 @@ function saveInvoice(finalize){
     return write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update(patch); }, finalize ? 'Facture ' + number + ' enregistrée' : 'Facture gardée : tu pourras la finir plus tard');
   }).then(function(ok){
     if (!ok){ bF.disabled = false; if (bD) bD.disabled = false; return; }
+    if (S.screen !== 'invoice' || S.invJob !== j.id) return;   /* saved; the person is already on another screen */
     S.inv = null; S.jobId = j.id; S.screen = finalize ? 'preview' : 'job'; render(); window.scrollTo(0, 0);
   }).catch(function(){ bF.disabled = false; if (bD) bD.disabled = false; invErr("La facture n'a pas pu s'enregistrer. Réessaie."); });
 }
@@ -5449,7 +5529,7 @@ function saveInvoice(finalize){
 function viewPreview(){
   var j = findJob(S.jobId);
   if (!j || !j.invoice) return viewJob();
-  var v = j.invoice, b = biz(), c = cl(j), veh = j.vehicle || {}, is = invState(j), w = canWrite(), wi = canInvoice(), cf = cfg();
+  var v = j.invoice, b = biz(), c = cl(j), veh = j.vehicle || {}, is = invState(j), wi = canInvoice(), cf = cfg();
   var lines = (v.lines || []).map(function(l){
     return '<div class="il"><div class="il-d"><b>' + esc(l.desc) + '</b><span class="muted small">' + esc(LT[l.type] || '') + ' · ' + esc(fmtQty(l.qty)) + (l.type === 'mo' ? ' h' : '') + ' × ' + esc(money(l.price)) + '</span></div><div class="il-a">' + esc(money(lineAmt(l))) + '</div></div>';
   }).join('');
@@ -5690,6 +5770,7 @@ function viewSettings(){
   return {top:top, body:body};
 }
 /* rarely used settings: folded under « Options avancées » */
+/* window.__allSettings: the automatic tests open every settings section at once (never set in normal use) */
 function advOpen(){ return '<details class="adv"' + (window.__allSettings ? ' open' : '') + '><summary>Options avancées</summary><div class="stack">'; }
 function advClose(){ return '</div></details>'; }
 function bindSettings(){
@@ -5748,6 +5829,7 @@ document.addEventListener('click', function(e){
       var lxk = luxOf(v).k, lxp = cfg().lux, lxref = S.db.doc('config/main'), lxt = Date.now();
       var lxMark = function(k){ $$('.lux-sw').forEach(function(x){ x.setAttribute('aria-pressed', String(x.dataset.v === luxOf(k).k)); }); };
       applyLux(lxk); lxMark(lxk);
+      if (TOUR && TOUR.steps[TOUR.i] && TOUR.steps[TOUR.i].try){ if (TOUR.luxBack == null) TOUR.luxBack = luxOf(lxp).k; break; }   /* the guided tour: only tried, not saved */
       write('config/main', function(){ return S.cfg && Object.keys(S.cfg).length ? lxref.update({lux:lxk, updatedAt:lxt}) : lxref.set(Object.assign(clone(cfg()), {lux:lxk, updatedAt:lxt})); }, 'Couleurs de l\'app : ' + luxOf(lxk).n).then(function(ok){
         if (ok){ S.cfg = Object.assign(clone(cfg()), {lux:lxk}); S.cfgLoaded = true; }
         else { applyLux(lxp); lxMark(lxp); }
@@ -5839,7 +5921,7 @@ document.addEventListener('click', function(e){
       if (ft) ft.value = b.dataset.t;
       if (truckMode()){ var ftk = $('#f-truck'); if (ftk && mv) ftk.value = mv; syncMech(); }
       else if (fm){ if (fm.tagName === 'SELECT' && mv && !Array.prototype.some.call(fm.options, function(o){ return o.value === mv; })) fm.insertAdjacentHTML('beforeend', opt(mv, mv, false)); fm.value = mv; }
-      checkHours(); renderSug(); updateMoment(); updateSheetSub(); formChanged();
+      checkHours(); renderSugSoon(); updateMoment(); updateSheetSub(); formChanged();
       var mm = $('#momentmsg'); if (mm && mm.scrollIntoView) mm.scrollIntoView({block:'nearest'});
       break;
     }
@@ -5867,7 +5949,7 @@ document.addEventListener('click', function(e){
     case 'quick': openEdit(null, true); break;
     case 'open': S.screen = 'job'; S.jobId = id; S.confirmDel = false; S.backTo = null; render(); window.scrollTo(0, 0); break;
     case 'back': if (S.backTo === 'client' && S.screen === 'job' && findClient(S.clientId)){ S.screen = 'client'; S.backTo = null; } else if (S.backTo === 'job' && S.screen === 'client' && findJob(S.jobId)){ S.screen = 'job'; S.backTo = null; } else { S.screen = null; S.backTo = null; } render(); window.scrollTo(0, 0); break;
-    case 'back-edit': flushDraft(); if (S.sheet){ closeSheet(); break; } S.screen = S.editId ? 'job' : null; S.quick = false; render(); window.scrollTo(0, 0); break;
+    case 'back-edit': flushDraft(); stopScan(); if (S.sheet){ closeSheet(); break; } S.screen = S.editId ? 'job' : null; S.quick = false; render(); window.scrollTo(0, 0); break;
     case 'pick': pickSvc(v); break;
     case 'addr-pick': addrPick(+v); break;
     case 'addr-fix': addrFix(); break;
@@ -5962,7 +6044,6 @@ document.addEventListener('click', function(e){
     case 'delsvc': { var row = b.closest('.svc-row'); if (row){ row.remove(); S.settingsDirty = true; var rr = $('#s-reset'); if (rr) rr.hidden = false; } break; }
     case 'setreset': S.settingsDirty = false; render(); break;
     case 'ph-day': S.day = addDays(S.day || today(), +v); render(); break;
-    case 'ph-today': S.day = today(); render(); break;
     case 'ph-book': openEdit(null, false, {date:S.day || today(), time:b.dataset.t, col:b.dataset.m || ''}, false); break;
     case 'ph-new': openSheet('Ajouter', 'Que veux-tu faire ?', phoneNewMenu()); break;
     case 'ph-go': { closeSheet(); if (v === 'new') openEdit(null, false, {date:S.tab === 'jour' ? (S.day || today()) : today()}, false); else if (v === 'quick') openEdit(null, true); else if (v === 'client') { S.linkJob = null; openClientNew('page'); } else if (v === 'exp') openExpense(null); break; }
@@ -6012,7 +6093,8 @@ document.addEventListener('input', function(e){
 });
 window.addEventListener('hashchange', function(){
   if (S.screen === 'edit' || S.sheet) flushDraft();
-  flushClientDraft(); S.backTo = null;
+  flushClientDraft(); S.backTo = null; stopScan();   /* the camera stops when you leave the screen */
+  if (location.hash.slice(1) !== 'reglages') S.settingsDirty = false;   /* settings left without saving */
   if (S.sheet){ S.sheet = false; $('#sheet').hidden = true; $('#sheet-body').innerHTML = ''; document.body.classList.remove('locked'); }
   S.hoursEdit = false;
   var h = location.hash.slice(1);
@@ -6020,7 +6102,7 @@ window.addEventListener('hashchange', function(){
   S.screen = null; S.inv = null; render(); window.scrollTo(0, 0);
 });
 
-document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'hidden' && (S.screen === 'edit' || S.sheet)) flushDraft(); });
+document.addEventListener('visibilitychange', function(){ if (document.visibilityState !== 'hidden') return; if (S.screen === 'edit' || S.sheet) flushDraft(); flushClientDraft(); });
 
 /* ---------- boot ---------- */
 function boot(){
@@ -6036,14 +6118,14 @@ function boot(){
       if (!db){ S.noDb = true; render(); return; }
       S.db = db;
       db.collection('jobs').onSnapshot(function(snap){
-        S.jobs = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); }); S.loaded = true; S.loadErr = false; render();
-      }, function(){ S.loadErr = true; render(); });
-      db.doc('config/main').onSnapshot(function(snap){ S.cfg = snap.exists ? snap.data() : {}; S.cfgLoaded = true; render(); }, function(){});
-      db.collection('clients').onSnapshot(function(snap){ S.clients = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); }); render(); if (S.sheet && $('#cs-results')) renderClientResults(); }, function(){});
-      db.collection('days').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ m[d.id] = d.data(); }); S.days = m; render(); }, function(){});
-      db.collection('stock').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ m[d.id] = Object.assign({id:d.id}, d.data()); }); S.stock = m; render(); }, function(){});
-      db.collection('specs').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ m[d.id] = Object.assign({id:d.id}, d.data()); }); S.specs = m; render(); }, function(){});
-      db.collection('avail').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ var x = d.data(); if (x && x.mechanic) m[slug(x.mechanic)] = Object.assign({id:d.id}, x); }); S.avail = m; render(); }, function(){});
+        S.jobs = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); }); S.loaded = true; S.loadErr = false; renderSoon();
+      }, function(){ S.loadErr = true; renderSoon(); });
+      db.doc('config/main').onSnapshot(function(snap){ S.cfg = snap.exists ? snap.data() : {}; S.cfgLoaded = true; renderSoon(); }, function(){});
+      db.collection('clients').onSnapshot(function(snap){ S.clients = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); }); renderSoon(); if (S.sheet && $('#cs-results')) renderClientResults(); }, function(){});
+      db.collection('days').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ m[d.id] = d.data(); }); S.days = m; renderSoon(); }, function(){});
+      db.collection('stock').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ m[d.id] = Object.assign({id:d.id}, d.data()); }); S.stock = m; renderSoon(); }, function(){});
+      db.collection('specs').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ m[d.id] = Object.assign({id:d.id}, d.data()); }); S.specs = m; renderSoon(); }, function(){});
+      db.collection('avail').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ var x = d.data(); if (x && x.mechanic) m[slug(x.mechanic)] = Object.assign({id:d.id}, x); }); S.avail = m; renderSoon(); }, function(){});
       render();
     });
   });
@@ -6076,7 +6158,7 @@ function viewDay(){
     '<label class="daypick"><span class="dp-t">' + esc(cap(DPH.format(parseISO(d)).replace('.', ''))) + '</span><span class="dp-s">' + (d === t ? 'Aujourd\'hui · ' : '') + (live.length ? live.length + ' job' + (live.length > 1 ? 's' : '') + (done ? ' · ' + done + ' terminée' + (done > 1 ? 's' : '') : '') : 'Aucune job') + '</span>' +
     '<input type="date" id="ph-date" value="' + esc(d) + '" aria-label="Choisir une date"></label>' +
     '<button type="button" class="iconbtn" data-act="ph-day" data-v="1" aria-label="Jour suivant">›</button></div>' +
-    ((!tm && ms.length > 1 && !lm) || d !== t ? '<div class="dayopts">' + (!tm && ms.length > 1 && !lm ? '<select id="ph-mech" aria-label="Mécano"><option value="">Tous les mécanos</option>' + ms.map(function(m){ return '<option' + (m === sel ? ' selected' : '') + '>' + esc(m) + '</option>'; }).join('') + '</select>' : '') + (d !== t ? '<button type="button" class="chip" data-act="ph-today">Aujourd\'hui</button>' : '') + '</div>' : '') +
+    ((!tm && ms.length > 1 && !lm) || d !== t ? '<div class="dayopts">' + (!tm && ms.length > 1 && !lm ? '<select id="ph-mech" aria-label="Mécano"><option value="">Tous les mécanos</option>' + ms.map(function(m){ return '<option' + (m === sel ? ' selected' : '') + '>' + esc(m) + '</option>'; }).join('') + '</select>' : '') + (d !== t ? '<button type="button" class="chip" data-act="today">Aujourd\'hui</button>' : '') + '</div>' : '') +
     (tm && !lm ? '<div class="chips trucks" role="group" aria-label="Camion">' + chip('mech', '', 'Tous', !sel) + ms.map(function(k){ var tr = truckById(k), dv = driverOf(d, k); return chip('mech', k, colName(k) + (tr.on === false ? ' · fermé' : dv ? ' · ' + dv : ''), sel === k); }).join('') + '</div>' : '') + '</div>';
   var b = banners();
   if (d === t && e && typeof e.phoneTop === 'function') b += e.phoneTop() || '';
@@ -6272,7 +6354,7 @@ function tourSteps(){ var e = ext(); try { return e && typeof e.tourSteps === 'f
 function tourPath(){ return S.db && S.uid ? 'data/users/' + S.uid + '/tour' : null; }
 function tourCheck(){
   var e = ext();
-  if (S.tourAsked || !S.loaded || !tourPath() || !e || (e.previewing && e.previewing()) || !tourSteps().length || (typeof e.tourAuto === 'function' && !e.tourAuto())) return;
+  if (S.tourAsked || !S.loaded || !tourPath() || !e || (e.previewing && e.previewing()) || (typeof e.tourAuto === 'function' && !e.tourAuto()) || !tourSteps().length) return;
   S.tourAsked = true;
   S.db.doc(tourPath()).get().then(function(sn){
     if (sn.exists && sn.data() && sn.data().seenAt) return;
@@ -6297,7 +6379,9 @@ function tourStart(replay){
   if (S.sheet) closeSheet();
   if (SCH) schedClose();
   if (TOUR) tourEnd(true, true);
-  TOUR = {steps:st, i:0, dir:1, replay:!!replay, seq:0, busy:true, rk:''};
+  st.forEach(function(x){ if (!x.sel) x.sel = x.tap || x.try || null; });
+  TOUR = {steps:st, i:0, dir:1, replay:!!replay, seq:0, busy:true, rk:'', tried:false, luxBack:null};
+  clearInterval(ttWatch); ttWatch = setInterval(function(){ if (TOUR) tourFollow(false); else { clearInterval(ttWatch); ttWatch = 0; } }, 300);
   tourMount();
   tourShow();
 }
@@ -6306,14 +6390,16 @@ function tourMount(){
   ov = document.createElement('div'); ov.id = 'tour-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-labelledby', 'tt-t'); ov.dataset.ready = '0';
   ov.innerHTML = '<div class="tt-block"></div><div class="tt-hole shut"></div><div class="tt-tip fade"><div class="tt-in" aria-live="polite"></div></div>';
   document.body.appendChild(ov); document.body.classList.add('touring');
-  var h = ov.querySelector('.tt-hole'); h.style.left = Math.round(window.innerWidth / 2) + 'px'; h.style.top = Math.round(window.innerHeight / 2) + 'px'; h.style.width = '0px'; h.style.height = '0px';
+  var h = ov.querySelector('.tt-hole'); h.style.setProperty('--hx', Math.round(window.innerWidth / 2) + 'px'); h.style.setProperty('--hy', Math.round(window.innerHeight / 2) + 'px'); h.style.width = '0px'; h.style.height = '0px';
   ov.getBoundingClientRect();   /* the dim fades in from nothing */
   ov.classList.add('on');
 }
 function tourEl(sel){   /* the first selector that is on the screen wins (in the order written) */
   if (!sel) return null;
   var parts = String(sel).split(',');
-  for (var p = 0; p < parts.length; p++){ var l = $$(parts[p].trim()); for (var k = 0; k < l.length; k++){ var r = l[k].getBoundingClientRect(); if (r.width > 0 && r.height > 0 && getComputedStyle(l[k]).visibility !== 'hidden' && !l[k].closest('#tour-ov')) return l[k]; } }
+  for (var p = 0; p < parts.length; p++){ var l = $$(parts[p].trim()); for (var k = 0; k < l.length; k++){
+    var d = l[k].closest('details:not([open])'); if (d && !l[k].closest('summary')) l[k] = d;   /* inside a closed section: light the section */
+    var r = l[k].getBoundingClientRect(); if (r.width > 0 && r.height > 0 && getComputedStyle(l[k]).visibility !== 'hidden' && !l[k].closest('#tour-ov')) return l[k]; } }
   return null;
 }
 function tourJob(){
@@ -6324,20 +6410,21 @@ function tourJob(){
 function tourHash(h){ S.screen = null; S.inv = null; if (location.hash.slice(1) !== h) location.hash = h; else { S.tab = h; render(); } }
 /* will this step change what is on the screen? (then the light closes while it changes) */
 function tourMoves(go){
-  if (!go) return false;
+  if (!go) return !!SCH;   /* a step on the screen as it is: only the schedule window has to close */
   var h = location.hash.slice(1) || S.tab;
   if (go.indexOf('sched:') === 0) return !SCH || SCH.kind !== go.slice(6);
   if (SCH) return true;
   if (go === 'home') return !!S.screen || h !== defTab();
   if (go.indexOf('tab:') === 0) return !!S.screen || h !== go.slice(4);
-  if (go === 'job'){ var j = tourJob(); return !!j && (S.screen !== 'job' || S.jobId !== j.id); }
+  if (go === 'job'){ if (S.screen === 'job' && findJob(S.jobId)) return false; return !!tourJob(); }
   if (go.indexOf('view:') === 0) return !!S.screen || h !== 'tresor' || S.trView !== go.slice(5);
   if (go.indexOf('set:') === 0){ var nm = go.slice(4); return !!S.screen || h !== 'reglages' || (nm ? S.setSec == null : S.setSec != null); }
   return !!S.screen || h !== go;
 }
 function tourGo(go){
-  if (!go || !tourMoves(go)) return;
-  if (SCH && go.indexOf('sched:') !== 0) schedClose();
+  if (!tourMoves(go)) return;
+  if (SCH && (!go || go.indexOf('sched:') !== 0)) schedClose();   /* closed without saving what was tried */
+  if (!go) return;
   if (go === 'home') tourHash(defTab());
   else if (go.indexOf('tab:') === 0){ var t = go.slice(4); if (tabOk(t)) tourHash(t); }
   else if (go === 'job'){ var j = tourJob(); if (j){ S.jobId = j.id; S.screen = 'job'; S.backTo = null; render(); } }
@@ -6357,18 +6444,25 @@ function ttSettle(sel, seq, maxMs){
       var el = sel ? tourEl(sel) : null, m = $('#main'), probe = el || m, r = probe ? probe.getBoundingClientRect() : null;
       var k = r ? [r.left, r.top, r.width, r.height].map(Math.round).join(',') + '|' + (m ? m.childElementCount : 0) + '|' + (SCH ? 1 : 0) : '';
       if (k === last) same++; else { same = 0; last = k; }
-      if (((sel ? !!el : true) && same >= 2) || Date.now() - t0 > maxMs) return res(el || null);
+      /* the screen is ready and still: the part is there, or it is not on this screen (no use waiting longer) */
+      if (((sel ? !!el : true) && same >= 2) || (sel && !el && same >= 4 && m && m.childElementCount) || Date.now() - t0 > maxMs) return res(el || null);
       setTimeout(tick, 60);
     })();
   });
 }
+/* the screen's free band: under the top bar, above the phone's tab bar */
+function ttSafe(el){
+  if (el && el.closest && el.closest('#sched')) return {top:8, bot:8};   /* the schedule window covers the whole screen */
+  var H = window.innerHeight, tb = $('#top'), bar = $('#tabbar'), tr = tb ? tb.getBoundingClientRect() : null, br = bar ? bar.getBoundingClientRect() : null;
+  return {top: tr && tr.height && tr.bottom < H * .4 ? Math.max(0, tr.bottom) + 10 : 16, bot: br && br.height && br.top > H * .6 ? H - br.top + 10 : 16};
+}
+/* too tall to fit with the words under it */
+function ttTall(h, el){ var sf = ttSafe(el); return h + 16 + 14 + ((TOUR && TOUR.th) || 230) + 8 > window.innerHeight - sf.top - sf.bot; }
 /* where the page should be so the part is well in view, with room for the words (null = it already is) */
 function ttScrollFor(el){
   if (!el || el.closest('#sched') || el.closest('#top') || el.closest('#tabbar')) return null;
-  var r = el.getBoundingClientRect(), H = window.innerHeight, tb = $('#top'), bar = $('#tabbar');
-  var topSafe = tb ? Math.max(0, tb.getBoundingClientRect().bottom) + 10 : 16;
-  var botSafe = bar && bar.getBoundingClientRect().top > H * .6 ? H - bar.getBoundingClientRect().top + 10 : 16;
-  var tall = r.height > H * .62, roomBelow = H - botSafe - r.bottom, roomAbove = r.top - topSafe;
+  var r = el.getBoundingClientRect(), H = window.innerHeight, sf = ttSafe(), topSafe = sf.top, botSafe = sf.bot;
+  var tall = ttTall(r.height), roomBelow = H - botSafe - r.bottom, roomAbove = r.top - topSafe;
   if (!tall && r.top >= topSafe && r.bottom <= H - botSafe && (roomBelow > 240 || roomAbove > 240)) return null;
   var want = tall ? r.top - topSafe : r.top - Math.max(topSafe, Math.round(H * .16));
   var max = Math.max(0, document.documentElement.scrollHeight - H), y = Math.max(0, Math.min(max, Math.round(window.scrollY + want)));
@@ -6388,7 +6482,7 @@ function ttScrolled(seq){   /* the soft scroll is done (or a short time passed) 
 function tourShow(){
   if (!TOUR) return;
   var seq = ++TOUR.seq, x = TOUR.steps[TOUR.i], ov = $('#tour-ov');
-  TOUR.busy = true; if (ov) ov.dataset.ready = '0';
+  TOUR.busy = true; TOUR.tried = false; tourUndo(); document.body.classList.remove('tt-free'); if (ov){ ov.dataset.ready = '0'; ov.classList.remove('open'); var hl0 = ov.querySelector('.tt-hole'); if (hl0) hl0.classList.remove('tap'); }
   var tip = ov && ov.querySelector('.tt-tip'), moves = tourMoves(x.go), red = ttReduced();
   if (tip){ tip.classList.add('fade'); if (moves) tip.classList.add('gone'); }   /* another screen: the bubble leaves too, and comes back where it belongs */
   if (moves) tourLight(null);   /* close the light: the screen changes in the dark */
@@ -6407,27 +6501,63 @@ function tourShow(){
     if (y == null) return tourDraw(el, seq);
     if (moves || red){ window.scrollTo(0, y); return ttWait(40).then(function(){ tourDraw(el, seq); }); }
     /* soft scroll; a lit part: the light leaves now for where the part will be, both arrive together */
-    if (!shut){ var d = y - window.scrollY, r = el.getBoundingClientRect(); tourLight({left:r.left, top:r.top - d, width:r.width, height:r.height, bottom:r.bottom - d}); }
+    if (!shut){ var d = y - window.scrollY, r = el.getBoundingClientRect(); tourLight({left:r.left, top:r.top - d, width:r.width, height:r.height, bottom:r.bottom - d, right:r.right}, el, d); }
     try { window.scrollTo({top:y, behavior:'smooth'}); } catch(e){ window.scrollTo(0, y); }
     return ttScrolled(seq).then(function(){ tourDraw(el, seq); });
   });
 }
 function ttq(t){ return String(t).replace(/« /g, '« ').replace(/ »/g, ' »').replace(/ ([?!:;])/g, ' $1'); }
-/* the lit rectangle for this part (a very tall part: its top only) */
-function ttHole(r){
+/* a clean place to stop the light in a tall part: under a whole card or row, never through one (null = none) */
+function ttCut(el, top, limit, d){
+  var avail = limit - top; if (!el || avail < 140) return null;
+  if (el.matches('.leaflet-container, canvas, img, iframe, video') || el.querySelector('.leaflet-container, canvas, iframe')) return null;   /* a map or a picture is never cut in two */
+  var sc = [el].concat($$('*', el).slice(0, 400)).some(function(e){ var cs = getComputedStyle(e); return /auto|scroll/.test(cs.overflowY) && e.scrollHeight > e.clientHeight + 4 && e.clientHeight > avail * .5; });
+  if (sc) return null;   /* a grid that scrolls by itself (the agenda): it is shown whole */
+  var all = el.querySelectorAll('*'), n = Math.min(all.length, 1500), box = [], i, b, t, bt, cand = [];
+  for (i = 0; i < n; i++){
+    b = all[i].getBoundingClientRect(); if (!b.height || !b.width) continue;
+    t = b.top - d; bt = b.bottom - d;
+    if (bt <= top + 1 || t >= limit - 1) continue;   /* outside the lit band */
+    if (t < top + 2 && b.height >= avail * .9) continue;   /* a frame around the whole part, not a card in it */
+    box.push([t, bt]);
+    if (bt <= limit && bt >= top + avail * .4) cand.push(bt);   /* under a card */
+    if (t > top + 2 && t - 6 >= top + avail * .4) cand.push(t - 6);   /* or just above the next one */
+  }
+  cand.sort(function(a, c){ return c - a; });
+  for (i = 0; i < cand.length; i++){ var y = cand[i]; if (!box.some(function(q){ return q[0] < y - 2 && q[1] > y + 2; })) return y; }
+  return null;
+}
+/* the lit rectangle for this part. Too tall for the words under it: the words go beside it if there is room,
+   or the light stops under a whole card / row, or (a map, one big picture) it lights what shows and the words sit over its bottom */
+function ttHole(r, el, d){
   if (!r) return null;
-  var W = window.innerWidth, H = window.innerHeight, pad = 8;
-  if (r.height > H * .62){ var t0 = Math.max(r.top, 70); r = {left:r.left, top:t0, width:r.width, height:Math.min(r.bottom - t0, H * .5)}; }
-  return {x:Math.round(Math.max(4, r.left - pad)), y:Math.round(Math.max(4, r.top - pad)), w:Math.round(Math.min(W - 8, r.width + pad * 2)), h:Math.round(r.height + pad * 2)};
+  var W = window.innerWidth, H = window.innerHeight, pad = 8, side = false, over = false;
+  var tw = Math.min(400, W - 24), th = (TOUR && TOUR.th) || 230;
+  if (ttTall(r.height, el) && !(el && el.closest && el.closest('#tabbar'))){
+    var sf = ttSafe(el), t0 = Math.max(r.top, sf.top), right = W - (r.right || r.left + r.width) - pad, x = TOUR && TOUR.steps[TOUR.i];
+    side = Math.max(right, r.left - pad) >= 328;   /* the words beside it (a bit narrower if needed) */
+    var limit = side ? H - sf.bot - pad : H - sf.bot - th - 14 - pad, b0 = Math.min(r.bottom, H - sf.bot - pad), cut = null;
+    if (!side && r.bottom > limit && !(x && (x.try || x.tap))) cut = ttCut(el, t0, limit, d || 0);   /* something to try is never cut */
+    if (cut == null && !side && r.bottom > limit) over = true;
+    var bot = side ? Math.min(r.bottom, limit) : cut != null ? cut : Math.min(r.bottom, b0);
+    r = {left:r.left, top:t0, width:r.width, height:Math.max(40, bot - t0)};
+  }
+  return {x:Math.round(Math.max(4, r.left - pad)), y:Math.round(Math.max(4, r.top - pad)), w:Math.round(Math.min(W - 8, r.width + pad * 2)), h:Math.round(r.height + pad * 2), side:side, over:over};
 }
 /* the light: on a part (it glides from the last one), or shut (null: the whole screen dims evenly, in place) */
-function tourLight(r){
+function tourLight(r, el, d){
   var ov = $('#tour-ov'); if (!ov) return null;
-  var h = ov.querySelector('.tt-hole'), hole = ttHole(r);
-  if (!hole){ h.classList.add('shut'); return null; }
+  var h = ov.querySelector('.tt-hole'), hole = ttHole(r, el, d);
+  if (!hole){
+    h.classList.add('shut');
+    /* nothing to light: once dark, the light folds away to nothing (no empty frame left on the screen) */
+    clearTimeout(h._fold); h._fold = setTimeout(function(){ if (!h.classList.contains('shut')) return; h.classList.add('jump'); h.style.width = '0px'; h.style.height = '0px'; h.style.setProperty('--hx', (window.innerWidth / 2) + 'px'); h.style.setProperty('--hy', (window.innerHeight / 2) + 'px'); h.getBoundingClientRect(); h.classList.remove('jump'); }, ttReduced() ? 0 : 240);
+    return null;
+  }
+  clearTimeout(h._fold);
   var shut = h.classList.contains('shut');
   if (shut) h.classList.add('jump');   /* shut: it moves in the dark, then fades open there */
-  h.style.left = hole.x + 'px'; h.style.top = hole.y + 'px'; h.style.width = hole.w + 'px'; h.style.height = hole.h + 'px';
+  h.style.setProperty('--hx', hole.x + 'px'); h.style.setProperty('--hy', hole.y + 'px'); h.style.width = hole.w + 'px'; h.style.height = hole.h + 'px';
   if (shut){ h.getBoundingClientRect(); h.classList.remove('jump'); h.classList.remove('shut'); }
   return hole;
 }
@@ -6438,35 +6568,55 @@ function ttTipHTML(x){
     '<div class="tt-bar" aria-hidden="true"><i style="width:' + Math.round((TOUR.i + 1) / n * 100) + '%"></i></div>' +
     '<div class="tt-head">' + (x.icon ? '<span class="tt-ic" aria-hidden="true">' + x.icon + '</span>' : '') + '<h3 id="tt-t">' + ttq(esc(x.t)) + '</h3></div><p class="tt-p">' + ttq(x.p) + '</p>' +
     (x.x ? '<p class="tt-x2">' + ttq(x.x) + '</p>' : '') +
+    (x.tap && !TOUR.noEl ? '<p class="tt-do"><span aria-hidden="true">👆 </span>' + ttq(x.do || 'Touche la partie éclairée.') + '</p>' : '') +
+    (x.try && !TOUR.noEl ? '<p class="tt-try"><span aria-hidden="true">👉 </span>' + ttq(x.tryT || 'Essaie-le.') + '</p><p class="tt-done"><span aria-hidden="true">✓ </span>' + ttq(x.done || 'C\'est ça.') + '</p>' : '') +
     '<div class="tt-btns">' + (first ? '<button type="button" class="btn sm ghost" data-act="tt-skip">Plus tard</button>' : '<button type="button" class="btn sm ghost" data-act="tt-prev">‹ Retour</button>') +
-    (last ? '<button type="button" class="btn sm primary" data-act="tt-end">Terminer</button>' : '<button type="button" class="btn sm primary" data-act="tt-next">' + (first ? 'Commencer la visite' : 'Suivant ›') + '</button>') + '</div>';
+    (last ? '<button type="button" class="btn sm primary" data-act="tt-end">Terminer</button>' : x.tap && !TOUR.noEl ? '<button type="button" class="btn sm ghost" data-act="tt-next">Passer ›</button>' : '<button type="button" class="btn sm primary" data-act="tt-next">' + (first ? 'Commencer la visite' : 'Suivant ›') + '</button>') + '</div>';
 }
 /* put the light and the bubble where they belong (the bubble glides; its words stay as they are) */
 function tourPlace(el){
   var ov = $('#tour-ov'); if (!ov || !TOUR) return;
-  var r = el ? el.getBoundingClientRect() : null, hole = tourLight(r), t = ov.querySelector('.tt-tip');
-  var W = window.innerWidth, H = window.innerHeight, tw = Math.min(400, W - 24), th;
-  t.style.width = tw + 'px'; th = t.offsetHeight;
-  var left, top;
+  var t = ov.querySelector('.tt-tip'), W = window.innerWidth, H = window.innerHeight, tw = Math.min(400, W - 24), th;
+  var x0 = TOUR.steps[TOUR.i];
+  if (el && !el.isConnected) el = x0 && x0.sel ? tourEl(x0.sel) : null;   /* the screen was redrawn meanwhile (the map refreshes itself) */
+  t.classList.remove('compact'); t.style.width = tw + 'px'; th = t.offsetHeight; TOUR.th = th;   /* the words' size first: the light makes room for them */
+  var r = el ? el.getBoundingClientRect() : null, ra = TOUR.tried && x0 && x0.after ? tourEl(x0.after) : null, left, top;
+  if (r && ra){ ra = ra.getBoundingClientRect(); r = {left:Math.min(r.left, ra.left), top:Math.min(r.top, ra.top), right:Math.max(r.right, ra.right), bottom:Math.max(r.bottom, ra.bottom)}; r.width = r.right - r.left; r.height = r.bottom - r.top; }   /* the part and what it opened */
+  var hole = tourLight(r, el);
+  if (hole && x0 && x0.tap && !phone() && hole.w < 340 && hole.h < 140 && (W - hole.x - hole.w >= tw + 28 || hole.x >= tw + 28)) hole.side = true;   /* a menu item: the words beside it, not over the menu */
   if (!hole){ left = (W - tw) / 2; top = Math.max(16, (H - th) / 2); }
+  else if (hole.side){   /* beside the part, level with its top (narrower when the room is tight) */
+    var room = Math.max(W - (hole.x + hole.w), hole.x) - 28;
+    if (room < tw){ tw = Math.max(300, room); t.style.width = tw + 'px'; th = t.offsetHeight; TOUR.th = th; }
+    left = W - (hole.x + hole.w) >= tw + 28 ? hole.x + hole.w + 14 : hole.x - 14 - tw;
+    top = Math.max(8, Math.min(H - th - 8, hole.h < 140 ? hole.y + hole.h / 2 - th / 2 : hole.y));
+  }
+  else if (hole.over){
+    if (x0 && (x0.try || x0.tap)){ t.classList.add('compact'); th = t.offsetHeight; }   /* a map to try: short words over its bottom */
+    top = Math.max(8, Math.min(H - th - 8, hole.y + hole.h - th - 16)); left = Math.max(12, Math.min(W - tw - 12, hole.x + hole.w / 2 - tw / 2)); }
   else {
     var below = hole.y + hole.h + 14, above = hole.y - 14 - th;
-    top = below + th <= H - 8 ? below : above >= 8 ? above : Math.max(8, H - th - 8);
+    if ((x0.try || x0.tap) && !TOUR.noEl && below + th > H - 8 && above < 8){   /* something to do: the words get short so they don't cover it */
+      t.classList.add('compact'); th = t.offsetHeight; above = hole.y - 14 - th;
+    }
+    top = below + th <= H - 8 ? below : above >= 8 ? above : H - (hole.y + hole.h) > hole.y ? Math.max(8, H - th - 8) : 8;
     left = Math.max(12, Math.min(W - tw - 12, hole.x + hole.w / 2 - tw / 2));
   }
-  t.style.left = Math.round(left) + 'px'; t.style.top = Math.round(top) + 'px';
+  t.style.setProperty('--tx', Math.round(left) + 'px'); t.style.setProperty('--ty', Math.round(top) + 'px');
   TOUR.rk = r ? [r.left, r.top, r.width, r.height].map(Math.round).join(',') : 'mid';
 }
 function tourDraw(el, seq){
   var ov = $('#tour-ov'); if (!ov || !TOUR || (seq && TOUR.seq !== seq)) return;
   var x = TOUR.steps[TOUR.i], t = ov.querySelector('.tt-tip'), inn = t.querySelector('.tt-in'), hidden = !t.dataset.placed || t.classList.contains('gone');
-  t.classList.add('swap'); t.classList.add('fade'); inn.innerHTML = ttTipHTML(x); t.getBoundingClientRect(); t.classList.remove('swap');   /* the new words come in hidden, then fade in */
+  TOUR.noEl = !el;   /* nothing to touch on this screen: the step only explains */
+  t.classList.add('swap'); t.classList.add('fade'); t.classList.remove('tried'); inn.innerHTML = ttTipHTML(x); t.getBoundingClientRect(); t.classList.remove('swap');   /* the new words come in hidden, then fade in */
   if (hidden){ t.classList.add('still'); t.classList.add('gone'); }   /* a bubble that was away appears in place (no glide from elsewhere) */
   tourPlace(el);
   if (hidden){ t.getBoundingClientRect(); t.classList.remove('still'); t.dataset.placed = '1'; }
   var s = TOUR.seq, red = ttReduced();
   setTimeout(function(){ if (TOUR && TOUR.seq === s){ t.classList.remove('gone'); t.classList.remove('fade'); var f = ov.querySelector('[data-act="tt-next"], [data-act="tt-end"]'); if (f) try { f.focus({preventScroll:true}); } catch(e){} } }, red ? 0 : hidden ? 200 : 170);
-  setTimeout(function(){ if (TOUR && TOUR.seq === s){ TOUR.busy = false; ov.dataset.ready = '1'; } }, red ? 0 : TT_MS + 40);
+  if (x.tap && el) ov.querySelector('.tt-hole').classList.add('tap');
+  setTimeout(function(){ if (TOUR && TOUR.seq === s){ TOUR.busy = false; ov.classList.toggle('open', !!((x.tap || x.try) && el)); document.body.classList.toggle('tt-free', ov.classList.contains('open')); ov.dataset.ready = '1'; } }, red ? 0 : TT_MS + 40);
 }
 /* while you read: if the page moves (data arriving, a picture loading), the light follows */
 function tourFollow(force){
@@ -6475,15 +6625,15 @@ function tourFollow(force){
   var k = r ? [r.left, r.top, r.width, r.height].map(Math.round).join(',') : 'mid';
   if (force || k !== TOUR.rk) tourPlace(el);
 }
-setInterval(function(){ tourFollow(false); }, 300);
+var ttWatch = 0;   /* while a tour is open: the light follows the page if it moves (data arriving, a picture loading) */
 function tourNext(){ if (!TOUR || TOUR.busy) return; TOUR.dir = 1; if (TOUR.i < TOUR.steps.length - 1){ TOUR.i++; tourShow(); } else tourEnd(false); }
 function tourPrev(){ if (!TOUR || TOUR.busy || !TOUR.i) return; TOUR.dir = -1; TOUR.i--; tourShow(); }
 function tourEnd(skipped, quiet){
   if (!TOUR) return;
   var replay = TOUR.replay, p = tourPath(), ov = $('#tour-ov'), home;
-  TOUR = null;
+  tourUndo(); TOUR = null;
   if (ov){ ov.removeAttribute('id'); ov.classList.remove('on'); ov.classList.add('out'); setTimeout(function(){ ov.remove(); }, ttReduced() ? 0 : 260); }
-  document.body.classList.remove('touring');
+  document.body.classList.remove('touring'); document.body.classList.remove('tt-free');
   if (quiet) return;
   if (SCH) schedClose();
   S.screen = null; S.setSec = null; home = defTab(); if (location.hash.slice(1) !== home) location.hash = home; else { S.tab = home; render(); }
@@ -6508,6 +6658,46 @@ document.addEventListener('keydown', function(ev){
   else if (ev.key === 'ArrowRight'){ ev.preventDefault(); tourNext(); }
   else if (ev.key === 'ArrowLeft'){ ev.preventDefault(); tourPrev(); }
 }, true);
+/* a step where the person does it himself: only the lit part answers (and the bubble); a touch elsewhere does nothing.
+   « tap »: touching it does what it always does, then the visit goes on by itself. « try »: play with it, nothing is saved. */
+function ttGuard(ev){
+  if (!TOUR) return;
+  var ov = $('#tour-ov'), t = ev.target;
+  if (!ov || !ov.classList.contains('open') || !t || !t.closest) return;
+  var x = TOUR.steps[TOUR.i], sel = x.tap || x.try, ok = false;
+  if (ev.type === 'pointerup'){   /* the end of a touch is never stopped (a swipe on the grid must end where it ends) */
+    if (TOUR.downIn && x.try) setTimeout(tourTried, 60);
+    TOUR.downIn = false; return;
+  }
+  if (t.closest('#tour-ov .tt-tip')) return;
+  try { ok = !!(sel && t.closest(sel)); } catch(e){}
+  if (!ok){ ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); return; }
+  if (ev.type === 'pointerdown') TOUR.downIn = true;
+  if (x.tap && ev.type === 'click'){
+    var s = TOUR.seq; ov.classList.remove('open');
+    setTimeout(function(){ if (TOUR && TOUR.seq === s) tourNext(); }, 90);   /* the app does what the button does, then the next step */
+  }
+  else if (x.try && ev.type === 'click') setTimeout(tourTried, 60);
+}
+['pointerdown', 'mousedown', 'pointerup', 'click'].forEach(function(n){ document.addEventListener(n, ttGuard, true); });
+function tourTried(){
+  var tip = $('#tour-ov .tt-tip');
+  if (!TOUR || !tip || TOUR.tried) return;
+  TOUR.tried = true; tip.classList.add('tried');
+  setTimeout(function(){ tourFollow(true); }, 40);   /* the bubble's words changed, and what was tried may have opened something */
+}
+/* what was only tried goes back as it was (a color tried during the visit is not kept) */
+function tourUndo(){
+  if (!TOUR || TOUR.luxBack == null) return;
+  var k = TOUR.luxBack; TOUR.luxBack = null; applyLux(k);
+  $$('.lux-sw').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.v === luxOf(k).k)); });
+}
+/* the person scrolls: the light and the words stay on the part, without lagging behind */
+var ttSc = 0, ttScT = 0;
+window.addEventListener('scroll', function(){
+  if (!TOUR || TOUR.busy || ttSc) return;
+  ttSc = requestAnimationFrame(function(){ ttSc = 0; var ov = $('#tour-ov'); if (!ov) return; ov.classList.add('scrolling'); tourFollow(false); clearTimeout(ttScT); ttScT = setTimeout(function(){ ov.classList.remove('scrolling'); }, 160); });
+}, {passive:true});
 /* the phone's address bar showing / hiding, turning the phone: move things, do not redraw them */
 var ttRz = 0;
 window.addEventListener('resize', function(){ if (!TOUR || ttRz) return; ttRz = requestAnimationFrame(function(){ ttRz = 0; tourFollow(true); }); });
@@ -6631,7 +6821,7 @@ function schedSave(){
       var hrs = {}; [0, 1, 2, 3, 4, 5, 6].forEach(function(dw){ var w = weekHours(dw); hrs[String(dw)] = {open:!!w.open, start:w.start, end:w.end}; if (w.breaks && w.breaks.length) hrs[String(dw)].breaks = w.breaks; });
       var dws = [];
       ch.forEach(function(d){ var dw = parseISO(d).getDay(), sp = spec(d); dws.push(dw); hrs[String(dw)] = sp.open ? {open:true, start:sp.start, end:sp.end, breaks:sp.breaks} : Object.assign({}, hrs[String(dw)], {open:false}); });
-      ps.push(write('config/main', function(){ return S.db.doc('config/main').set(Object.assign({}, cfg(), {hours:hrs})); }, ''));
+      ps.push(write('config/main', function(){ return S.cfg && Object.keys(S.cfg).length ? S.db.doc('config/main').update({hours:hrs, updatedAt:Date.now()}) : S.db.doc('config/main').set(Object.assign({}, cfg(), {hours:hrs})); }, ''));
       /* from today on, those weekdays follow the new hours (closed days — holidays — stay closed) */
       Object.keys(S.days).forEach(function(dd){ if (dd < t0 || dws.indexOf(parseISO(dd).getDay()) < 0) return; var x = S.days[dd]; if (x.closed === true) return; if (x.start || x.end || x.breaks || x.closed === false){ var nd = Object.assign({}, x); delete nd.start; delete nd.end; delete nd.breaks; delete nd.closed; ps.push(saveDay(dd, nd)); } });
     } else ch.forEach(function(d){
@@ -6859,11 +7049,11 @@ function deleteExpense(){
 }
 function showReceipt(id){
   var x = findExp(id); if (!x || !x.receipt) return;
-  openSheet('Reçu', [x.vendor, cap(dateMed(x.date)), money(x.total)].filter(Boolean).join(' · '), '<p class="muted">Ouverture de la photo…</p>');
+  openSheet('Reçu', [x.vendor, cap(dateMed(x.date)), money(x.total)].filter(Boolean).join(' · '), '<p class="muted" id="rc-wait">Ouverture de la photo…</p>');
   S.db.doc(x.receipt).get().then(function(sn){
-    var d = sn.exists ? sn.data() : null, bd = $('#sheet-body'); if (!bd || !S.sheet) return;
+    var d = sn.exists ? sn.data() : null, bd = $('#sheet-body'); if (!bd || !S.sheet || !$('#rc-wait')) return;
     bd.innerHTML = (d && d.img ? '<img src="' + d.img + '" alt="Photo du reçu" class="rcimg" id="rc-img">' : '<p class="muted">La photo n\'est plus là.</p>') + '<button type="button" class="btn block" data-act="exp-open" data-id="' + esc(x.id) + '">Retour à la dépense</button>';
-  }, function(){ var bd = $('#sheet-body'); if (bd) bd.innerHTML = '<p class="muted">La photo n\'a pas pu s\'ouvrir. Vérifie ta connexion.</p>'; });
+  }, function(){ var w = $('#rc-wait'); if (w) w.textContent = 'La photo n\'a pas pu s\'ouvrir. Vérifie ta connexion.'; });
 }
 /* ---------- Excel for the accountant ---------- */
 var xlsxP = null;
@@ -6997,6 +7187,7 @@ function phoneInvoice(){
     else if (el.dataset && el.dataset.crew){ setCrew(S.day || today(), el.dataset.crew, el.value); }
     else if (el.dataset && el.dataset.av){ var dwv = el.dataset.dw, fld = el.dataset.av, vv = el.value; editAvail(function(cur){ var x = cur.week[dwv] || {on:true, start:'08:00', end:'17:00'}; x[fld] = vv; cur.week[dwv] = x; if (x.end <= x.start){ toast('La fin doit être après le début.'); render(); return false; } }); }
     else if (el.dataset && el.dataset.hz){
+      if (!canHours()){ toast('Tu n\'as pas le droit de changer l\'horaire du garage.'); render(); return; }
       var d = el.dataset.d, info = dayInfo(d), nd = Object.assign({}, info.doc), other = $('select[data-hz="' + (el.dataset.hz === 'start' ? 'end' : 'start') + '"][data-d="' + d + '"]');
       nd[el.dataset.hz] = el.value; nd[el.dataset.hz === 'start' ? 'end' : 'start'] = other ? other.value : (el.dataset.hz === 'start' ? info.end : info.start);
       if (nd.end <= nd.start){ toast('La fermeture doit être après l\'ouverture.'); render(); return; }
@@ -7009,7 +7200,6 @@ function phoneInvoice(){
 function changeStatus(v, extra){
   var j = findJob(S.jobId); if (!j || !ST[v] || (j.status === v && !extra)) return Promise.resolve(false);
   var was = j.status || 'planifie', ex = ext();
-  if (ex && typeof ex.beforeStatus === 'function' && ex.beforeStatus(j, v, was) === false) return Promise.resolve(false);
   var patch = Object.assign({status:v, updatedAt:Date.now()}, extra || {});
   if (!isOffSt(v) && (j.lost || j.noshowAt)){ patch.lost = null; patch.noshowAt = null; }
   return write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update(patch); }, ex && typeof ex.onStatus === 'function' ? '' : ST[v]).then(function(ok){ if (ok && ex && typeof ex.onStatus === 'function') ex.onStatus(j, v, was); return ok; });
@@ -7243,10 +7433,16 @@ function photoSrc(id){
   if (!id) return null;
   if (PHOTO.cache[id] !== undefined) return PHOTO.cache[id];
   if (!PHOTO.loading[id] && S.db){
-    PHOTO.loading[id] = S.db.doc('photos/' + id).get().then(function(s){ PHOTO.cache[id] = s.exists ? (s.data().img || '') : ''; PHOTO.loading[id] = null; render(); },
-      function(){ setTimeout(function(){ PHOTO.loading[id] = null; }, 15000); });
+    PHOTO.loading[id] = S.db.doc('photos/' + id).get().then(function(s){ PHOTO.cache[id] = s.exists ? (s.data().img || '') : ''; PHOTO.loading[id] = null; photoBig(id); renderSoon(); },
+      function(){ photoBig(id, true); setTimeout(function(){ PHOTO.loading[id] = null; }, 15000); });
   }
   return null;
+}
+/* the enlarged photo, if it is open and was still loading */
+function photoBig(id, failed){
+  var big = $('.pbig[data-pid="' + id + '"]'); if (!big) return;
+  var src = PHOTO.cache[id];
+  big.innerHTML = src ? '<img src="' + src + '" alt="Photo du travail">' : '<p class="muted">' + (failed ? 'La photo n\'a pas pu se charger. Vérifie Internet, puis rouvre-la.' : 'Cette photo n\'est plus là.') + '</p>';
 }
 function whenTxt(at){ var d = new Date(at); return dateMed(isoDate(d)) + ' à ' + hm(pad(d.getHours()) + ':' + pad(d.getMinutes())); }
 function canPhotos(j){ return canWrite() && allow('photos') && !isOff(j); }
@@ -7294,7 +7490,7 @@ function openPhoto(id){
   var p = jobPhotos(j).filter(function(x){ return x.id === id; })[0]; if (!p) return;
   var src = photoSrc(id);
   openSheet(p.kind === 'avant' ? 'Photo avant' : 'Photo après', whenTxt(p.at) + (p.by ? ' · ' + p.by : ''),
-    '<div class="stack"><div class="pbig">' + (src ? '<img src="' + src + '" alt="Photo ' + (p.kind === 'avant' ? 'avant' : 'après') + ' du travail">' : '<p class="muted">Chargement de la photo…</p>') + '</div>' +
+    '<div class="stack"><div class="pbig" data-pid="' + esc(id) + '">' + (src ? '<img src="' + src + '" alt="Photo ' + (p.kind === 'avant' ? 'avant' : 'après') + ' du travail">' : '<p class="muted">Chargement de la photo…</p>') + '</div>' +
     (canPhotos(j) ? '<button type="button" class="btn danger block" data-act="photo-del" data-id="' + esc(id) + '">Supprimer cette photo</button>' : '') + '</div>');
 }
 function delPhoto(id){

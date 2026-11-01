@@ -38,7 +38,6 @@ h1{font:700 28px/1.05 var(--f-display);margin:4px 0 0;text-wrap:balance}
 .pin-wrap{background:none;border:0}
 .pin{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;background:#1D4B77;color:#fff;border:3px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.4);font:700 18px/1 var(--f-body)}
 .pin.home{border-radius:10px;background:#F2B200;color:#1E1600}
-.msg{max-width:640px;margin:40px auto;padding:0 16px;display:grid;gap:10px;text-align:center}
 .leaflet-container{font:inherit}
 @media (prefers-reduced-motion:no-preference){ .state i{animation:p 2s ease-in-out infinite} @keyframes p{50%{box-shadow:0 0 0 8px var(--ok-bg)}} }
 </style>
@@ -60,7 +59,7 @@ h1{font:700 28px/1.05 var(--f-display);margin:4px 0 0;text-wrap:balance}
   var CFG = window.GARAGE_CFG || {}, token = (location.hash.match(/t=([A-Za-z0-9_-]{20,})/) || [])[1];
   var $ = function(id){ return document.getElementById(id); };
   var TF = new Intl.DateTimeFormat('fr-CA', {hour:'numeric', minute:'2-digit'});
-  var map = null, me = null, home = null, line = null, fitted = false, last = null, timer = null, stopped = false;
+  var map = null, me = null, home = null, line = null, fitted = false, timer = null, stopped = false, asking = false;
   function clock(d){ return TF.format(d).replace(/\s/g, ' '); }
   function dist(a, b){ var R = 6371000, r = Math.PI / 180, x = Math.pow(Math.sin((b.lat - a.lat) * r / 2), 2) + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.pow(Math.sin((b.lon - a.lon) * r / 2), 2); return 2 * R * Math.asin(Math.sqrt(x)); }
   function show(id, on){ $(id).hidden = !on; }
@@ -129,15 +128,21 @@ h1{font:700 28px/1.05 var(--f-display);margin:4px 0 0;text-wrap:balance}
     if (map && pts.length && !fitted){ fitted = true; if (pts.length === 1) map.setView(pts[0], 14); else map.fitBounds(L.latLngBounds(pts).pad(0.25), {maxZoom:16}); }
     $('foot').textContent = 'Mis à jour à ' + clock(new Date()) + ' · la page se met à jour toute seule.';
   }
+  /* one request at a time: coming back to the page while one is on its way does not start a second loop.
+     A request with no answer after 15 s is dropped (otherwise the page would never update again). */
   function poll(){
-    if (stopped) return;
+    if (stopped || asking) return;
+    asking = true;
     var h = {'Content-Type':'application/json', apikey:CFG.key};
     if (/^eyJ/.test(CFG.key || '')) h.Authorization = 'Bearer ' + CFG.key;
-    fetch(CFG.url + '/rest/v1/rpc/get_track', {method:'POST', headers:h, body:JSON.stringify({p_token:token}), cache:'no-store'}).then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); }).then(function(d){
+    var ac = window.AbortController ? new AbortController() : null, cut = ac ? setTimeout(function(){ ac.abort(); }, 15000) : null;
+    fetch(CFG.url + '/rest/v1/rpc/get_track', {method:'POST', headers:h, body:JSON.stringify({p_token:token}), cache:'no-store', signal:ac ? ac.signal : undefined}).then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); }).then(function(d){
+      asking = false; clearTimeout(cut);
       if (!d) return stop('Lien de suivi introuvable', 'Vérifiez le lien reçu par texto.');
-      last = d; draw(d);
+      draw(d);
       timer = setTimeout(poll, document.visibilityState === 'hidden' ? 30000 : 10000);
     }, function(){
+      asking = false; clearTimeout(cut);
       $('foot').textContent = 'Connexion perdue : on réessaie…';
       timer = setTimeout(poll, 15000);
     });
