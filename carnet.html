@@ -859,6 +859,8 @@ details.adv[open] > summary{margin-bottom:8px}
 .qrbox{width:200px;height:200px;padding:10px;border-radius:14px;background:#fff;justify-self:center;border:1px solid var(--line)}
 .qrbox svg{width:100%;height:100%;display:block}
 .inst-url{text-align:center;font-size:19px;font-weight:700;word-break:break-all;letter-spacing:.01em}
+.tour{display:grid;gap:12px;justify-items:center;text-align:center;padding:4px 0 2px}.tour .tour-ic{font-size:46px;line-height:1}.tour h3{font-size:21px}.tour p{max-width:46ch;color:var(--ink)}.tour .grid2{width:100%}
+.tour-dots{display:flex;gap:6px}.tour-dots i{width:8px;height:8px;border-radius:50%;background:var(--line-strong)}.tour-dots i.on{background:var(--signal);width:20px;border-radius:4px}
 .guide{display:grid;gap:10px}
 .guide ol{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .guide li a,.guide li button.g-go{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:10px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);color:var(--ink);text-decoration:none;font:inherit;font-weight:600;text-align:left;cursor:pointer}
@@ -1564,7 +1566,7 @@ function render(){
   if (vkey === S._vkey) $$('#main input[id], #main textarea[id], #main select[id]').forEach(function(el){ if (el.type !== 'checkbox' && el.type !== 'radio' && el.type !== 'hidden') vals[el.id] = el.value; });
   try { if (aeId){ selS = ae.selectionStart; selE = ae.selectionEnd; } } catch(x){}
   setView(v);
-  appInstCheck(); welcomeCheck();
+  appInstCheck(); welcomeCheck(); tourCheck();
   if (phone() || S.tab === 'reglages') phoneAfter();
   if (vkey === S._vkey) Object.keys(vals).forEach(function(id){ var el = document.getElementById(id); if (el && el.value !== vals[id] && el.dataset.keep !== 'no') el.value = vals[id]; });
   S._vkey = vkey;
@@ -3766,6 +3768,9 @@ document.addEventListener('click', function(e){
     case 'ui-phone': setUiOverride(null); S.tab = defTab(); if (location.hash) location.hash = S.tab; render(); window.scrollTo(0, 0); if (ext() && typeof ext().onUi === 'function') ext().onUi(); break;
     case 'ph-install': installApp(); break;
     case 'app-install': installSheet(); break;
+    case 'tour-go': tourOpen(v); break;
+    case 'tour-end': tourEnd(); break;
+    case 'tour-replay': tourOpen(0, true); break;
     case 'inst-copy': { var iu = realAppUrl(); if (navigator.clipboard) navigator.clipboard.writeText(iu).then(function(){ toast('Adresse copiée : colle-la dans Safari ou Chrome'); }, function(){ toast(iu); }); else toast(iu); break; }
     case 'app-done': appInstMark('manuel'); closeSheet(); toast('Bravo ! L\'app est sur ton téléphone.'); render(); break;
     case 'inst-later': try { localStorage.setItem('gm.inst.later', '1'); } catch(x){} render(); break;
@@ -3955,6 +3960,7 @@ function viewPlus(){
   if (tabOk('reglages')) items.push({href:'#reglages', label:'Réglages', sub:'Garage, prix, taxes, services, mécanos'});
   var top = '<div class="wrap top-in"><div class="brandrow"><div><div class="eyebrow">' + esc(bizName()) + '</div><h1>Plus</h1></div></div></div>';
   var b = banners() + '<nav class="ph-menu" aria-label="Plus">' + items.map(function(it){ return '<a class="ph-row" href="' + esc(it.href) + '"><span><b>' + esc(it.label) + '</b>' + (it.sub ? '<span>' + esc(it.sub) + '</span>' : '') + '</span>' + RI.chev + '</a>'; }).join('') + '</nav>';
+  if (tourSteps().length) b += '<button type="button" class="ph-row" data-act="tour-replay"><span><b>Revoir la visite guidée</b><span>Comment marche l\'app, en quelques étapes</span></span>' + RI.chev + '</button>';
   if (window.__webDownloads && !isStandalone()) b += '<button type="button" class="ph-row" data-act="app-install"><span><b>Mettre l\'app sur l\'écran d\'accueil</b><span>' + (S.appInst ? 'Déjà fait sur un téléphone · revoir comment' : 'Elle s\'ouvre comme une vraie app') + '</span></span>' + RI.chev + '</button>';
   b += '<button type="button" class="ph-row" data-act="ui-full"><span><b>Version ordinateur</b><span>Pour cette visite : grille de l\'agenda, semaine, tous les détails</span></span>' + RI.chev + '</button>';
   if (e && typeof e.accountRow === 'function') b += e.accountRow() || '';
@@ -4036,7 +4042,40 @@ function welcomeCheck(){
   if (w !== '1' || !S.loaded) return;
   try { localStorage.removeItem('gm.welcome'); } catch(e){}
   toast('Ton compte est activé. Bienvenue !');
+  if (tourSteps().length) return;   /* the guided tour shows the app first, and ends with how to put it on the phone */
   if (window.__webDownloads && phone() && !isStandalone()) setTimeout(installSheet, 700);
+}
+/* team version: a short guided tour the first time a mechanic, the treasurer or the office opens the app
+   (the owner has his « Par où commencer » guide). Seen once per person; « Revoir la visite guidée » in Plus;
+   the owner replays it in « Voir comme… » (nothing is recorded then). */
+function tourSteps(){ var e = ext(); try { return e && typeof e.tourSteps === 'function' ? (e.tourSteps() || []) : []; } catch(x){ return []; } }
+function tourPath(){ return S.db && S.uid ? 'data/users/' + S.uid + '/tour' : null; }
+function tourCheck(){
+  var e = ext();
+  if (S.tourAsked || !S.loaded || !tourPath() || !e || (e.previewing && e.previewing()) || !tourSteps().length) return;
+  S.tourAsked = true;
+  S.db.doc(tourPath()).get().then(function(sn){
+    if (sn.exists && sn.data() && sn.data().seenAt) return;
+    var go = function(){ if (S.sheet) return setTimeout(go, 1500); tourOpen(0, false); };
+    setTimeout(go, 600);
+  }, function(){});
+}
+function tourOpen(i, replay){
+  var st = tourSteps(); if (!st.length) return;
+  i = Math.max(0, Math.min(+i || 0, st.length - 1));
+  S.tour = {i:i, replay:replay === undefined ? !!(S.tour && S.tour.replay) : !!replay};
+  var x = st[i], last = i === st.length - 1, e = ext(), who = e && typeof e.greetName === 'function' ? e.greetName() : '';
+  var h = '<div class="tour" id="tour" data-i="' + i + '"><div class="tour-ic" aria-hidden="true">' + x.icon + '</div><h3>' + esc(x.t) + '</h3><p>' + x.p + '</p>' +
+    '<div class="tour-dots" role="img" aria-label="Étape ' + (i + 1) + ' sur ' + st.length + '">' + st.map(function(_, k){ return '<i' + (k === i ? ' class="on"' : '') + '></i>'; }).join('') + '</div>' +
+    '<div class="grid2">' + (i ? '<button type="button" class="btn" data-act="tour-go" data-v="' + (i - 1) + '">Retour</button>' : '<button type="button" class="btn ghost" data-act="tour-end">Passer</button>') +
+    (last ? '<button type="button" class="btn primary" data-act="tour-end">C\'est parti</button>' : '<button type="button" class="btn primary" data-act="tour-go" data-v="' + (i + 1) + '">Suivant</button>') + '</div></div>';
+  openSheet('Bienvenue' + (who ? ', ' + who : ''), 'Visite guidée · étape ' + (i + 1) + ' sur ' + st.length, h);
+}
+function tourEnd(){
+  var replay = S.tour && S.tour.replay, p = tourPath(); S.tour = null; closeSheet();
+  if (replay) return;
+  if (p) S.db.doc(p).set({seenAt:Date.now()}).then(function(){}, function(){});
+  if (window.__webDownloads && phone() && !isStandalone() && !S.appInst) setTimeout(installSheet, 450);
 }
 /* opening hours, one day at a time */
 function viewHours(){
@@ -4819,7 +4858,7 @@ function invoiceSendHTML(j){
 window.__garageApi = Object.freeze({S:S, render:render, toast:toast, findJob:findJob, findClient:findClient, cfg:cfg, mechanics:mechanics, esc:esc, hm:hm, money:money,
   bizName:bizName, dayLong:dayLong, dShort:dShort, today:today, jobServices:jobServices, cl:cl, addrFull:addrFull, clientName:clientName, telHref:telHref, fmtPhone:fmtPhone,
   topBack:topBack, banners:banners, pill:pill, norm:norm, canWrite:canWrite, canAdmin:canAdmin, lockedMech:lockedMech, ST:ST, phone:phone, changeStatus:changeStatus, help:help,
-  defTab:defTab, setUi:setUiOverride, phoneDevice:function(){ return PHONE_DEV; }});
+  defTab:defTab, setUi:setUiOverride, phoneDevice:function(){ return PHONE_DEV; }, isStandalone:isStandalone});
 boot();
 })();
 </script>

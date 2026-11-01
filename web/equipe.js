@@ -588,6 +588,7 @@
     if (!el){ el = document.createElement('div'); el.id = 'pv-bar'; el.setAttribute('role', 'status'); document.body.insertBefore(el, document.body.firstChild); }
     var v = eff();
     el.innerHTML = '<span class="pv-t"><span aria-hidden="true">👁 </span><span class="pv-long">Tu vois l\'app comme </span><span class="pv-short">Comme </span><b>' + esc(v.name) + '</b> (' + esc(ROLE[v.role].toLowerCase()) + ')</span>' +
+      '<button type="button" class="btn sm pv-fmt" data-act="tour-replay">👋 <span class="pv-long">Sa première visite</span><span class="pv-short">1re visite</span></button>' +
       (A().phoneDevice() ? '' : '<button type="button" class="btn sm pv-fmt" data-act="pv-fmt">' + (A().phone() ? '🖥 Voir sur ordinateur' : '📱 Voir sur téléphone') + '</button>') +
       '<button type="button" class="btn sm" data-act="pv-exit">Revenir à mon compte</button>';
     pvFit();
@@ -595,6 +596,35 @@
   /* the page starts below the bar, whatever its height */
   function pvFit(){ var el = document.getElementById('pv-bar'); if (el) document.documentElement.style.setProperty('--pvh', el.offsetHeight + 'px'); }
   window.addEventListener('resize', pvFit);
+  /* the guided tour of the first visit, for each role (what that person can really do) */
+  function tourSteps(){
+    var m = eff(); if (!m || m.role === 'owner') return [];
+    var a = A(), inst = !(a && a.isStandalone && a.isStandalone()), out = [];
+    var hi = function(icon, t, p){ out.push({icon:icon, t:t, p:p}); };
+    if (m.role === 'mecano'){
+      hi('👋', 'L\'app du garage', 'Ici, tu vois tes jobs, tu avises le client quand tu pars et tu fais la facture sur place. Voici l\'essentiel, en quelques étapes.');
+      hi('☀️', 'Le matin : « Commencer ma journée »', 'Touche ce bouton en partant. Le bureau voit où tu es <b>seulement pendant ta journée</b> : rien n\'est envoyé avant, ni après « Fin de journée ».');
+      hi('🔧', 'Une job, un seul gros bouton', 'Ouvre une job : le gros bouton noir te dit quoi faire. <b>« Je pars »</b> (le client reçoit un texto pour suivre ton trajet), <b>« Je suis arrivé »</b>, <b>« Terminer la job »</b>, puis <b>« Faire la facture »</b>.');
+      hi('➕', 'Le « + » en bas', 'Pour une <b>facture sur place</b> (client sans rendez-vous)' + (perm('mecano', 'book') ? ', une <b>nouvelle réservation</b>' : '') + ' ou un <b>nouveau client</b>. Les petits <b>?</b> expliquent chaque chose.');
+    } else if (m.role === 'tresorier'){
+      var see = [];
+      if (perm('tresorier', 'factures')) see.push(perm('tresorier', 'editinv') ? 'les factures (et les marquer payées)' : 'les factures');
+      if (perm('tresorier', 'clients')) see.push('les clients');
+      if (perm('tresorier', 'agenda')) see.push('l\'agenda');
+      if (perm('tresorier', 'stock')) see.push('le stock des camions');
+      hi('👋', 'Ta trésorerie', 'Ton écran, c\'est la <b>Trésorerie</b> : l\'argent qui rentre et l\'argent qui sort du garage.');
+      hi('🧾', 'Une dépense = une photo du reçu', 'Touche <b>« + Dépense »</b>, prends le reçu en photo, choisis la catégorie. Tout est gardé pour les impôts.');
+      hi('📊', 'Rapport et taxes', 'Le rapport du mois, du trimestre ou de l\'année, les taxes à remettre, et le fichier Excel pour le comptable.');
+      if (see.length) hi('👀', 'Tu peux aussi voir', see.join(', ').replace(/, ([^,]*)$/, ' et $1') + '.');
+    } else if (m.role === 'bureau'){
+      hi('👋', 'L\'app du garage', 'Tu vois l\'agenda de tous les mécanos, les clients et les factures.');
+      hi('📅', '« + Réservation »', 'Elle trouve un moment libre près des autres jobs du coin. Choisis le client et le service : c\'est réservé.');
+      hi('🗺️', 'La carte des mécanos', 'Où est chaque mécano pendant sa journée, et qui est en route vers un client.');
+      hi('🧾', 'Factures et clients', 'Les factures à encaisser, et la fiche de chaque client avec ses véhicules et ses visites. Les petits <b>?</b> expliquent chaque chose.');
+    }
+    if (inst && (onPhone() || previewing())) hi('📱', 'Dernière chose', 'Mets l\'app sur ton écran d\'accueil : elle s\'ouvrira d\'un seul geste, comme une vraie app. On te montre comment juste après.');
+    return out;
+  }
   function val(id){ var e = document.getElementById(id); return e ? e.value.trim() : ''; }
   function eqErr(m){ var e = document.getElementById('nw-err'); if (e){ e.textContent = m; e.hidden = !m; if (m) e.scrollIntoView({block:'nearest'}); } else if (m) toast(m); }
   function keysDoc(patch){ return T.db.doc('config/keys').get().then(function(s){ var d = Object.assign({}, s.exists ? s.data() : {}, patch); return T.db.doc('config/keys').set(d); }); }
@@ -849,7 +879,7 @@
     myMechanic:function(){ var m = eff(); return m && m.role === 'mecano' ? m.mechanic : null; },
     homeTab:function(){ var m = eff(); return m && m.role === 'tresorier' ? 'tresor' : null; },
     greetName:function(){ var m = eff(); return m ? first(m.name) : ''; },
-    tellsClient:true, isMine:mineView, previewing:previewing, onUi:onUi,
+    tellsClient:true, isMine:mineView, previewing:previewing, onUi:onUi, tourSteps:tourSteps,
     decodeVin:function(vin){ return invoke('vehicle', {vin:vin}).then(function(d){ return (d && d.r) || {}; }); },
     phoneTop:function(){ return me ? shiftCard() : ''; },
     navFoot:navFoot,

@@ -52,6 +52,8 @@ def seed(stripe=False):
         r = fn(otok, 'members', {'action': 'create', 'name': who, 'email': email, 'role': role, 'mechanic': mech, 'password': 'Passe-' + email.split('@')[0] + '-26'})
         assert r and r.get('ok'), r
         pw[email.split('@')[0]] = 'Passe-' + email.split('@')[0] + '-26'
+    # people who already know the app: their first-visit guided tour is done (test_tour.py removes this to see it)
+    psql("insert into public.docs (path, data) select 'data/users/' || user_id || '/tour', '{\"seenAt\": 1}' from public.members on conflict (path) do nothing")
     fn(otok, 'members', {'action': 'secrets-set', 'ghlToken': 'pit-good-token', 'ghlLocation': 'loc123'})
     doc_set(otok, 'config/main', {'biz': {'name': 'Garage NextLine', 'phone': '514 555-0000'}, 'mechanics': ['Hassan', 'Saleh', 'Ali'], 'trucks': [{'id': 'c1', 'name': 'Camion 1', 'on': True, 'mech': 'Saleh'}, {'id': 'c2', 'name': 'Camion 2', 'on': True, 'mech': 'Ali'}, {'id': 'c3', 'name': 'Camion 3', 'on': False, 'mech': ''}],
                                   'rate': 120, 'taxesOn': True, 'startNo': 1, 'prefix': 'F-', 'services': [{'name': "Changement d'huile et filtre", 'price': 89.95}, {'name': 'Freins avant (plaquettes)', 'price': 249.0}, {'name': 'Inspection multipoints', 'price': 59.0}]})
@@ -81,7 +83,9 @@ def page(c, name):
     p.on('pageerror', lambda e: ERRS.append(name + ': ' + str(e)))
     p.on('console', lambda m: ERRS.append(name + ': ' + m.text) if m.type == 'error' and not re.search(r'realtime|websocket|WebSocket|ERR_|404|Failed to load resource|Failed to fetch|NetworkError|net::', m.text) else None)
     return p
-def login(p, email, pw, wait='.acct, .ph-top, #tabbar'):
+def login(p, email, pw, wait='.acct, .ph-top, #tabbar', tour=False):
+    # someone who already knows the app: no first-visit tour (test_tour.py passes tour=True to see it)
+    if not tour: psql("insert into public.docs (path, data) select 'data/users/' || id || '/tour', '{\"seenAt\": 1}' from auth.users where email='%s' on conflict (path) do nothing" % email)
     p.goto(BASE + '#agenda'); p.wait_for_selector('#gate #g-email', timeout=15000)
     p.fill('#g-email', email); p.fill('#g-pw', pw); p.click('#g-go')
     p.wait_for_selector('#gate', state='detached', timeout=20000); p.wait_for_timeout(800)

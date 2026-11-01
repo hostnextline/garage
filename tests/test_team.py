@@ -59,6 +59,7 @@ def toast_has(p, text, ms=8000):
         p.wait_for_function('t => { const e = document.getElementById("toast"); return e && !e.hidden && e.textContent.includes(t); }', arg=text, timeout=ms); return True
     except Exception: return False
 def login(p, email, pw):
+    psql("insert into public.docs (path, data) select 'data/users/' || id || '/tour', '{\"seenAt\": 1}' from auth.users where email='%s' on conflict (path) do nothing" % email)   # knows the app already (tour: test_tour.py)
     p.goto(BASE + '#agenda'); p.wait_for_selector('#gate #g-email', timeout=10000)
     p.fill('#g-email', email); p.fill('#g-pw', pw); p.click('#g-go')
 def resync(p): p.evaluate('window.__supa.resync(true)'); p.wait_for_timeout(600)
