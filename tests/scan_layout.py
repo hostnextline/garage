@@ -10,7 +10,7 @@ PROBE = r"""() => {
   const inScroller = e => { for (let x = e.parentElement; x && x !== document.body; x = x.parentElement) { const s = getComputedStyle(x); if (/(auto|scroll|hidden|clip)/.test(s.overflowX) || x.classList.contains('leaflet-container')) return true; } return false; };
   const scope = [document.getElementById('top'), document.getElementById('main'), document.querySelector('#sheet:not([hidden])'), document.getElementById('tabbar')].filter(Boolean);
   scope.forEach(sc => sc.querySelectorAll('*').forEach(e => {
-    if (!vis(e) || e.closest('.leaflet-container') || e.closest('[hidden]') || e.closest('details:not([open])') && !e.closest('summary')) return;
+    if (!vis(e) || e.closest('.sr-only') || e.closest('.leaflet-container') || e.closest('[hidden]') || e.closest('details:not([open])') && !e.closest('summary')) return;
     const r = e.getBoundingClientRect();
     if ((r.right > W + 1 || r.left < -1) && !inScroller(e)) out.wide.push((e.tagName + '.' + String(e.className).split(' ')[0] + ' ' + (e.innerText || '').trim().slice(0, 30)).replace(/\s+/g, ' ') + ' [' + Math.round(r.left) + '→' + Math.round(r.right) + ']');
     const s = getComputedStyle(e);

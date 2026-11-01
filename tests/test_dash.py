@@ -104,7 +104,7 @@ with sync_playwright() as p:
     check('empty notebook: no errors, no sideways scroll', not errs and no_hscroll(pg), errs[:3])
     ctx.close()
     ctx, pg, errs = open_page(br, {'seed': seed, 'readOnly': True})
-    check('read-only viewer: no booking or invoice shortcuts', pg.locator('[data-act="new"]').count() == 0 and pg.locator('.quick [data-act="quick"]').count() == 0 and pg.locator('.quick [data-act="tab"]').count() == 1)
+    check('read-only viewer: no booking or invoice shortcuts', pg.locator('[data-act="new"]').count() == 0 and pg.locator('.quick [data-act="quick"]').count() == 0 and pg.locator('.quick [data-act="tab"]').count() == pg.locator('.quick [data-act="tab"][data-t="agenda"], .quick [data-act="tab"][data-t="stock"]').count() >= 1)   # (only views: the agenda, and the trucks' stock on the computer)
     ctx.close()
     ctx, pg, errs = open_page(br, {'seed': seed}, width=320)
     check('320 px wide: no sideways scroll on dashboard', no_hscroll(pg))

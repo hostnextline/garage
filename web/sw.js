@@ -7,7 +7,7 @@ var CORE = ['./', 'config.js', 'manifest.webmanifest', 'vendor/supabase.js', 've
 var LIBS = ['https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js',
             'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
             'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'];
-var KEEP = /^https:\/\/(cdn\.jsdelivr\.net\/npm\/@zxing\/|cdnjs\.cloudflare\.com\/ajax\/libs\/(jspdf|xlsx)\/|fonts\.googleapis\.com\/|fonts\.gstatic\.com\/)/;
+var KEEP = /^https:\/\/(cdn\.jsdelivr\.net\/npm\/(@zxing\/|tesseract\.js|@tesseract\.js-data\/)|cdnjs\.cloudflare\.com\/ajax\/libs\/(jspdf|xlsx)\/|fonts\.googleapis\.com\/|fonts\.gstatic\.com\/)/;
 
 self.addEventListener('install', function(e){
   e.waitUntil(caches.open('app-' + V).then(function(c){
@@ -48,7 +48,7 @@ self.addEventListener('fetch', function(e){
     }
     return;   /* client pages (suivi, client…) always come from the network */
   }
-  /* barcode reader, PDF, Excel, fonts: kept after the first use */
+  /* barcode reader, receipt reader, PDF, Excel, fonts: kept after the first use */
   if (KEEP.test(req.url)){
     e.respondWith(caches.match(req).then(function(hit){
       return hit || fetch(req).then(function(r){ return put(req, r); });

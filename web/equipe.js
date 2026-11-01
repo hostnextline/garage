@@ -34,18 +34,19 @@
   function km(x){ return (Math.round(x * 10) / 10).toLocaleString('fr-CA') + ' km'; }
   function dist(a, b){ var R = 6371000, r = Math.PI / 180, x = Math.pow(Math.sin((b.lat - a.lat) * r / 2), 2) + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.pow(Math.sin((b.lon - a.lon) * r / 2), 2); return 2 * R * Math.asin(Math.sqrt(x)); }
   function first(s){ return String(s || '').trim().split(/\s+/)[0] || ''; }
-  /* no answer after 15 s: stop waiting, so a stuck request never blocks the screen (« Envoi du texto… ») or the position.
-     ac (optional): the request is also cancelled. */
-  var WAIT_MS = 15000;
-  function timed(p, ac){
-    var t, late = new Promise(function(res, rej){ t = setTimeout(function(){
+  /* no answer after a while: stop waiting, so a stuck request never blocks the screen (« Envoi du texto… ») or the position.
+     ac (optional): the request is also cancelled. ms: 15 s for a quick read; the server's own work (an invitation, a client link,
+     a courriel or a texto sent from there) gets 40 s, as it can start slowly after a quiet moment. */
+  var WAIT_MS = 15000, WORK_MS = 40000;
+  function timed(p, ac, ms){
+    var w = ms || WAIT_MS, t, late = new Promise(function(res, rej){ t = setTimeout(function(){
       if (ac) try { ac.abort(); } catch(x){}
-      var e = new Error('pas de réponse du serveur après 15 secondes'); e.code = 'timeout'; rej(e);
-    }, WAIT_MS); });
+      var e = new Error('pas de réponse du serveur après ' + Math.round(w / 1000) + ' secondes'); e.code = 'timeout'; rej(e);
+    }, w); });
     return Promise.race([Promise.resolve(p), late]).then(function(v){ clearTimeout(t); return v; }, function(e){ clearTimeout(t); throw e; });
   }
   function invoke(name, body){
-    return timed(T.sb.functions.invoke(name, {body:body})).then(function(r){
+    return timed(T.sb.functions.invoke(name, {body:body}), null, WORK_MS).then(function(r){
       if (!r.error) return r.data;
       var ctx = r.error.context;
       return (ctx && typeof ctx.json === 'function' ? ctx.json().catch(function(){ return null; }) : Promise.resolve(null)).then(function(j){
@@ -840,83 +841,137 @@
   /* the page starts below the bar, whatever its height */
   function pvFit(){ var el = document.getElementById('pv-bar'); if (el) document.documentElement.style.setProperty('--pvh', el.offsetHeight + 'px'); }
   window.addEventListener('resize', pvFit);
-  /* the guided tour of the whole app, for each role (a person with several roles gets each part once).
-     Each step opens its screen (go), lights up the part it explains (sel) and says what it is for and when to use it.
-     need: skip the step when that part is not on the screen for this person. No points, no game: a calm visit. */
+  /* ---- the guided tour, for each role (a person with several roles gets each part once) ----
+     The person does it. To go to another screen, HE touches it: the menu, « Plus », a tab, a button. The tour lights where to
+     touch and says where it leads; the visit goes on when he touches it (no « Passer »). On each screen he tries things
+     (search, filters, sections, the schedule grid, the colors…): nothing tried is saved, and his view comes back as it was.
+     A step: t title, p words, icon, x a tip, sel what is lit, go its screen (put back when he goes back with ‹ Retour; going forward it
+     is already open after his touch, except the job and the schedule window, opened for him where nothing can be touched), tap he touches it, nav that touch opens this screen (skipped if he is already there),
+     try he plays with it (tryT what to try, done what it showed), after lit with it once tried, need skip it when not there. */
   function tourAuto(){ var m = eff(); return !!m && !hasR(m, 'owner'); }
   function tourSteps(){
     var m = eff(); if (!m) return [];
     var own = hasR(m, 'owner'), mec = hasR(m, 'mecano'), tre = hasR(m, 'tresorier'), bur = hasR(m, 'bureau') || own, ph = onPhone(), nm = first(m.name);
-    var can = function(k){ return own || permOf(m, k); };
-    var HELP_GO = mec ? 'home' : (own || bur || can('agenda')) && !ph ? 'tab:agenda' : 'home';   /* a screen that has a « ? » */
+    var can = function(k){ return own || permOf(m, k); }, mr = mainRole(rolesOf(m));
+    var solo = mec && !bur;   /* a mechanic alone sees his own jobs, clients and invoices */
+    var inBar = function(t){ var e = document.querySelector('#tabbar .tab[data-t="' + t + '"]'); return !!e && !e.hidden && e.getBoundingClientRect().width > 0; };
+    var barName = function(t, d){ var e = document.querySelector('#tabbar .tab[data-t="' + t + '"] span'); return (e && e.textContent.trim()) || d; };
+    var PLUS = {accueil:'Tableau de bord', carte:'Carte de l\'équipe', dispos:solo ? 'Mes disponibilités' : 'Disponibilités des mécanos', tresor:'Trésorerie', stock:'Stock des camions', reglages:'Réglages', equipe:'Équipe et accès', heures:'Heures d\'ouverture'};
+    var where = ph ? 'en bas' : 'dans le menu à gauche';
+    /* going to a screen, by touching: the bar (or the menu on the computer); on the phone, « Plus » then the line;
+       on the computer, a screen without a menu item is reached from the screen that links to it */
+    function nav(t, label, why){
+      if (inBar(t)) return [{icon:'👆', nav:t, tap:'#tabbar .tab[data-t="' + t + '"]', t:label, p:why, do:'Touche « ' + barName(t, label) + ' » ' + where + '.'}];
+      if (ph && inBar('plus')) return [
+        {icon:'👆', nav:t, tap:'#tabbar .tab[data-t="plus"]', t:label, p:why + ' C\'est rangé dans « Plus ».', do:'Touche « Plus » en bas.'},
+        {icon:'👆', nav:t, tap:'.ph-menu a.ph-row[href="#' + t + '"]', need:true, t:label, p:'« Plus » : tout ce qui n\'est pas dans la barre du bas.', do:'Touche « ' + (PLUS[t] || label) + ' ».'}];
+      var via = t === 'equipe' ? 'reglages' : t === 'stock' && can('tresor') ? 'tresor' : 'accueil', vn = {reglages:'Réglages', tresor:'Trésorerie', accueil:'Accueil'}[via];
+      if (via === t) return [];   /* (never round in circles) */
+      return nav(via, label, '« ' + (PLUS[t] || label) + ' » se trouve dans « ' + vn + ' ».').concat([
+        {icon:'👆', nav:t, tap:'#main [data-act="tab"][data-t="' + t + '"], #main a[href="#' + t + '"], #top a[href="#' + t + '"]', need:true, t:label, p:why, do:'Touche « ' + (PLUS[t] || label) + ' ».'}]);
+    }
+    /* the schedule window: he opens it, tries the grid with his finger, then closes it himself (nothing saved) */
+    function sched(kind, openSel, openDo, title, words){
+      return [
+        {icon:'🗓', tap:openSel, need:true, t:title, p:words, do:openDo},
+        {icon:'👆', go:'sched:' + kind, try:'#sched .sch-scroll', need:true, t:'La grille', p:kind === 'avail' ? 'Une case foncée, c\'est une heure où tu travailles.' : 'Une case foncée est ouverte, une case pâle est fermée.',
+          tryT:(ph ? 'Essaie : glisse ton doigt vers le bas sur quelques cases.' : 'Essaie : clique et glisse vers le bas sur quelques cases.') + ' C\'est un essai.', done:'Voilà : des heures ouvertes ou fermées d\'un seul geste (une pause, un congé). Rien n\'est enregistré pendant la visite.'},
+        {icon:'✅', go:'sched:' + kind, sel:'#sched .sch-apply', need:true, t:'Pour combien de temps ?', p:kind === 'avail' ? '<b>Seulement ce jour-là</b> (un rendez-vous chez le dentiste), <b>pendant quelques semaines</b> ou <b>en permanence</b> (ton horaire habituel). Puis « Enregistrer ».' : (ph ? '<b>Seulement ce jour-là</b> (un congé)' : '<b>Seulement cette semaine</b> (un congé)') + ', <b>pendant quelques semaines</b> (l\'horaire d\'été) ou <b>en permanence</b>. Puis « Enregistrer ».'},
+        {icon:'👆', go:'sched:' + kind, tap:'#sched .btn[data-act="sc-close"]', need:true, t:'Fermer sans enregistrer', p:'Pendant la visite, on n\'enregistre rien.', do:'Touche « Annuler ».'}];
+    }
+    var dayTry = ph ? [
+        {icon:'👉', go:'home', try:'[data-act="ph-day"][data-v="1"]', need:true, t:'Changer de jour', p:'‹ et › changent de jour. Après la visite, tu pourras aussi glisser l\'écran du doigt.', tryT:'Essaie : touche › pour voir demain.', done:'Voilà demain.'},
+        {icon:'👆', go:'home', tap:'[data-act="today"]', need:true, t:'Revenir à aujourd\'hui', p:'Pas perdu : un bouton te ramène toujours à la journée en cours.', do:'Touche « Aujourd\'hui ».'}]
+      : [{icon:'👉', go:'tab:agenda', try:'#top .days', need:true, t:'Changer de jour', p:'La semaine en haut : touche un jour pour le voir ; ‹ et › changent de semaine.', tryT:'Essaie : touche un autre jour.', done:'L\'agenda montre ce jour-là.'}];
     var P = {
       hello:['Bienvenue', [{icon:'👋', go:'home', t:'Bienvenue' + (nm ? ', ' + nm : '') + ' !',
-        p:'Je te fais visiter l\'app, écran par écran : à quoi sert chaque bouton, et quand t\'en servir. ' + (own ? 'C\'est la visite complète, environ 4 minutes.' : 'Ça prend environ 3 minutes.'),
-        x:'Tu peux arrêter quand tu veux (✕ en haut). La visite reste dans « Plus » pour la revoir.'}]],
-      dash:(own || bur) && ['Le tableau de bord', [
-        {icon:'🏠', go:'tab:accueil', sel:'main .ringcard, main .kpi-big, main', t:'D\'un coup d\'œil', p:'Les jobs du jour, ce qui est réservé cette semaine, l\'argent encaissé ce mois-ci et ce qui reste à recevoir.' + (own ? ' Seuls toi et le bureau voyez les chiffres (sauf si tu le permets à quelqu\'un).' : '')},
-        {icon:'🚚', sel:'.mcard, .qrow', need:true, t:'Tes mécanos aujourd\'hui', p:'Une carte par mécano : ses jobs du jour, ce qui est fait, et s\'il est en route vers un client.'}]],
+        p:'On fait le tour de l\'app ensemble. Ici, c\'est toi qui touches : je t\'éclaire le bouton, tu le touches, et je t\'explique ce qui s\'ouvre.',
+        x:'Rien de ce que tu essaies pendant la visite n\'est enregistré. Le ✕ en haut arrête la visite ; elle reste dans « Plus ».'}]],
+      dash:(own || bur) && ['Le tableau de bord', nav('accueil', 'Le tableau de bord', 'Ton tableau de bord : la journée et le mois d\'un coup d\'œil.').concat([
+        {icon:'🏠', go:'tab:accueil', sel:'main .rings, main .ringcard, main', t:'D\'un coup d\'œil', p:'Les jobs du jour, ce qui est réservé cette semaine, l\'argent encaissé ce mois-ci et ce qui reste à recevoir.' + (own ? ' Seuls toi et le bureau voyez ces chiffres (sauf si tu le permets à quelqu\'un).' : '')},
+        {icon:'🚚', go:'tab:accueil', sel:'.mcard, .qrow', need:true, t:'Tes mécanos aujourd\'hui', p:'Une carte par mécano : ses jobs du jour, ce qui est fait, et s\'il est en route vers un client.'}])],
       day:mec && ['Ta journée', [
-        {icon:'📅', go:'home', sel:'.dayhead, #top', t:'Le jour affiché', p:'En haut : la date. Touche ‹ ou › pour voir hier ou demain, ou touche la date pour en choisir une autre.' + (ph ? ' Tu peux aussi glisser l\'écran vers la gauche ou la droite.' : '')},
-        {icon:'☀️', sel:'.shift', t:'Commencer ma journée', p:'Le matin, en partant, touche <b>« Commencer ma journée »</b>. Pendant ta journée seulement, ta position est partagée : le bureau te voit sur la carte. Le soir, <b>« Fin de journée »</b> arrête tout.', x:'Rien n\'est envoyé avant le début ni après la fin de ta journée.'},
-        {icon:'🔧', sel:'.ph-list, .cal, .list, .nrow', t:'Tes rendez-vous', p:'Chaque ligne, c\'est un client : l\'heure, l\'auto et le travail à faire. L\'étiquette dit où tu en es : <b>Planifié</b>, <b>En route</b>, <b>Sur place</b>, <b>Terminé</b>.'},
-        {icon:'👆', tap:'.ph-job, .ticket, #main .nrow', need:true, t:'Ouvre un rendez-vous', p:'Pour voir une job, tu touches sa ligne.', do:'Touche le rendez-vous éclairé.'}]],
+        {icon:'📅', go:'home', sel:'.dayhead, #top', t:'Ta journée', p:'Ton écran de tous les jours : la date en haut, tes rendez-vous en dessous.'}].concat(ph ? dayTry : [], [
+        {icon:'☀️', go:'home', sel:'.shift', need:true, t:'Commencer ma journée', p:'Le matin, en partant : <b>« Commencer ma journée »</b>. Ta position est partagée pendant ta journée seulement ; le soir, <b>« Fin de journée »</b> arrête tout.', x:'Pendant la visite, on n\'y touche pas.'},
+        {icon:'🔧', go:'home', sel:'.ph-list, .cal, .list, #main .nrow', t:'Tes rendez-vous', p:'Une ligne par client : l\'heure, l\'auto, le travail. L\'étiquette dit où tu en es : <b>Planifié</b>, <b>En route</b>, <b>Sur place</b>, <b>Terminé</b>.'},
+        {icon:'👆', go:'home', tap:'.ph-job, .ticket, #main .nrow, .appt', need:true, t:'Ouvre un rendez-vous', p:'Pour voir une job, tu touches sa ligne.', do:'Touche le rendez-vous éclairé.'}])],
       job:mec && ['Une job, du début à la fin', [
-        {icon:'📋', go:'job', sel:'.pjob, main .sect', t:'La fiche de la job', p:'Touche un rendez-vous pour ouvrir sa fiche : l\'auto, les travaux à faire, et les boutons pour <b>appeler</b> le client, lui <b>texter</b> ou ouvrir l\'<b>itinéraire</b> dans ton GPS.'},
-        {icon:'⚫', sel:'.nextbtn', t:'Le gros bouton', p:'Il te dit toujours la prochaine étape. <b>« Je pars »</b> : le client reçoit un texto avec ton heure d\'arrivée et peut suivre ton camion. Ensuite <b>« Je suis arrivé »</b>, puis <b>« Travaux terminés »</b>.', x:'Pendant la visite, on n\'y touche pas : il enverrait un vrai texto au client.'},
-        {icon:'👆', tap:'#veh-fold:not([open]) > summary', need:true, t:'Les sections', p:'Chaque section de la fiche s\'ouvre d\'un toucher.', do:'Touche « Véhicule et fiche technique ».'},
-        {icon:'🔎', sel:'#veh-fold', t:'Le VIN et la fiche du moteur', p:'Scanne le VIN avec la caméra : l\'année, la marque, le modèle et le moteur se remplissent tout seuls. La fiche du moteur (huile, filtres, pièces) est gardée pour la prochaine fois.'},
-        {icon:'📸', sel:'#ph-fold', t:'Photos et signature', p:'Prends des photos avant et après les travaux. À la fin, le client signe directement sur ton écran.'},
-        {icon:'➕', sel:'#xp-fold', t:'Travaux supplémentaires', p:'Tu trouves autre chose à réparer ? Écris-le avec son prix. Le client accepte en signant ou par texto, et ça s\'ajoute à la facture. Rien n\'est fait sans son accord.'},
-        {icon:'🧾', sel:'[data-act="invoice"]', t:'La facture sur place', p:'Quand c\'est fini : <b>« Faire la facture »</b>. Les services, les pièces et les taxes se calculent tout seuls. Le client paie par carte, comptant ou virement, et reçoit sa facture par texto.'}]],
-      agenda:(own || bur || can('agenda') || can('book')) && ['L\'agenda', [
-        {icon:'📅', go:'tab:agenda', sel:'.cal, .list, main', need:!own && !bur && !can('agenda'), t:'L\'agenda', p:(own || bur ? 'Chaque colonne, c\'est un camion (ou un mécano). Touche une case libre pour réserver à cette heure-là ; touche un rendez-vous pour l\'ouvrir.' : 'Les rendez-vous de toute l\'équipe' + (can('book') ? '.' : ', en lecture seulement.'))},
-        (own || bur || can('book')) && {icon:'➕', go:'tab:agenda', sel:'#top [data-act="new"]', need:true, t:'« + Réservation »', p:'Choisis le client et le service : l\'app propose les moments libres, près des autres jobs du même coin. Le client reçoit sa confirmation.'},
-        can('hours_others') && {icon:'🗓', go:'tab:agenda', tap:'[data-act="sched"][data-v="garage"]', need:true, t:'Modifier l\'horaire', p:'Les heures d\'ouverture du garage s\'ouvrent dans une grande grille.', do:'Touche « Modifier l\'horaire ».'},
-        can('hours_others') && {icon:'👆', go:'sched:garage', try:'#sched .sch-scroll', need:true, t:'La grille de l\'horaire', p:'Une case foncée est ouverte, une case pâle est fermée.', tryT:(ph ? 'Essaie : glisse ton doigt vers le bas sur quelques cases.' : 'Essaie : clique et glisse vers le bas sur quelques cases.') + ' C\'est un essai, rien n\'est enregistré.', done:'Voilà : tu viens d\'ouvrir ou de fermer des heures (une pause, un congé). Rien n\'est enregistré pendant la visite.'},
-        can('hours_others') && {icon:'✅', go:'sched:garage', sel:'#sched .sch-apply', need:true, t:'Pour combien de temps ?', p:'<b>Seulement cette semaine</b> (un congé), <b>pendant quelques semaines</b> (l\'horaire d\'été) ou <b>en permanence</b> (ton horaire habituel). Puis « Enregistrer ».', x:'On n\'enregistre pas maintenant : en continuant, la grille se ferme sans rien changer.'}]],
-      clients:can('clients') && ['Clients et factures', [{icon:'👆', tap:'.tab[data-t="clients"]:not([hidden])', need:true, t:mec && !bur ? 'Tes clients' : 'Les clients', p:'Pour changer d\'écran, tu touches le menu ' + (ph ? 'en bas' : 'à gauche') + '.', do:'Touche « Clients ».'}, {icon:'👤', go:'tab:clients', sel:'main', t:mec && !bur ? 'Tes clients' : 'Les clients', p:'La fiche de chaque client : téléphone, adresse, ses autos et l\'historique de ses visites. Cherche par nom ou par téléphone.'}]],
-      factures:can('factures') && ['Clients et factures', [{icon:'👆', tap:'.tab[data-t="factures"]:not([hidden])', need:true, t:mec && !bur && !tre ? 'Tes factures' : 'Les factures', p:'Les factures ont leur propre écran.', do:'Touche « Factures ».'}, {icon:'💵', go:'tab:factures', sel:'main', t:mec && !bur && !tre ? 'Tes factures' : 'Les factures', p:'Celles à recevoir et celles déjà payées. ' + (own || bur || can('editinv') ? 'Ouvre une facture pour la revoir, la renvoyer au client ou la marquer payée.' : 'Ouvre une facture pour la revoir ou la renvoyer au client.')}]],
-      plusbtn:mec && ph && ['Clients et factures', [{icon:'➕', go:'home', sel:'.tab-new:not([hidden])', need:true, t:'Le bouton « + »', p:'Pour un client sans rendez-vous : <b>« Facture sur place »</b>. Aussi : <b>« Nouveau client »</b>' + (can('book') ? ' et <b>« Nouvelle réservation »</b>' : '') + '.'}]],
-      tresor:can('tresor') && ['La trésorerie', [
-        {icon:'💼', go:'view:dep', sel:'#top', t:'La trésorerie', p:'L\'argent du garage : ce qui entre (les factures payées), ce qui sort (les dépenses) et ce qui reste. Choisis la période en haut : le mois, le trimestre ou l\'année.'},
-        {icon:'🧾', go:'view:dep', sel:'[data-act="exp-new"]', t:'Ajouter une dépense', p:'Touche <b>« + Dépense »</b> : prends le reçu en photo, écris le montant et choisis la catégorie (pièces, essence, outils…). La TPS et la TVQ payées sont calculées pour toi.'},
+        {icon:'📋', go:'job', sel:'.pjob, #main .sect', t:'La fiche de la job', p:'L\'auto, les travaux à faire, et les boutons pour <b>appeler</b> le client, lui <b>texter</b> ou ouvrir l\'<b>itinéraire</b> dans ton GPS.'},
+        {icon:'⚫', go:'job', sel:'.nextbtn', need:true, t:'Le gros bouton', p:'Il dit toujours la prochaine étape : <b>« Je pars »</b> (le client reçoit un texto avec ton heure d\'arrivée), puis <b>« Je suis arrivé »</b>, puis <b>« Travaux terminés »</b>.', x:'Pendant la visite, on n\'y touche pas : il enverrait un vrai texto.'},
+        {icon:'👆', go:'job', tap:'#veh-fold:not([open]) > summary', need:true, t:'Les sections', p:'La fiche est rangée en sections : chacune s\'ouvre d\'un toucher.', do:'Touche « Véhicule et fiche technique ».'},
+        {icon:'🔎', go:'job', sel:'#veh-fold, #veh-sect', need:true, t:'Le VIN et la fiche du moteur', p:'<b>« Scanner le VIN »</b> : la caméra lit le numéro, et l\'année, la marque, le modèle et le moteur se remplissent. La fiche du moteur (huile, filtres) est gardée pour la prochaine fois.'},
+        {icon:'👆', go:'job', tap:'#ph-fold:not([open]) > summary', need:true, t:'Photos et signature', p:'À toi : la section des photos.', do:'Touche « Photos et signature ».'},
+        {icon:'📸', go:'job', sel:'#ph-fold, #ph-sect', need:true, t:'Photos et signature', p:'Une photo avant, une après : c\'est ta preuve si le client conteste. À la fin, le client signe directement sur ton écran.'},
+        {icon:'➕', go:'job', sel:'#xp-fold, #xp-sect', need:true, t:'Travaux supplémentaires', p:'Tu trouves autre chose à réparer ? Écris-le avec son prix : le client accepte en signant ou par texto, et ça s\'ajoute à la facture. Rien sans son accord.'},
+        {icon:'👆', go:'job', tap:'#inv-fold:not([open]) > summary', need:true, t:'La facture', p:'Dernière section : la facture.', do:'Touche « Facture ».'},
+        {icon:'🧾', go:'job', sel:'#inv-fold, [data-act="invoice"]', need:true, t:'La facture sur place', p:'Quand c\'est fini : <b>« Faire la facture »</b>. Services, pièces et taxes se calculent tout seuls ; le client paie par carte, comptant ou virement, et reçoit sa facture par texto.'}]],
+      plusbtn:mec && ph && ['Le bouton « + »', [
+        {icon:'👆', tap:'#tabbar .tab-new:not([hidden])', need:true, t:'Le bouton « + »', p:'Le « + » au milieu de la barre : pour un client qui arrive sans rendez-vous.', do:'Touche le « + ».'},
+        {icon:'➕', sel:'#sheet .ph-menu', need:true, t:'Ajouter', p:'<b>« Facture sur place »</b> pour un client sans rendez-vous, <b>« Nouveau client »</b> pour créer sa fiche' + (can('book') ? ', <b>« Nouvelle réservation »</b>' : '') + '.'},
+        {icon:'👆', tap:'#sheet .sheet-head [data-act="sheet-close"]', need:true, t:'Fermer', p:'On ne crée rien pendant la visite.', do:'Touche ✕ pour fermer.'}]],
+      /* (a mechanic who may only book: on the phone, the « + » already shows « Nouvelle réservation ») */
+      agenda:(own || bur || can('agenda') || (can('book') && !ph)) && ['L\'agenda', (ph ? nav('jour', 'L\'agenda', 'L\'agenda de l\'équipe.') : nav('agenda', 'L\'agenda', 'L\'agenda de l\'équipe.')).concat(
+        (own || bur || can('agenda')) ? (ph ? [
+          {icon:'📅', go:'home', sel:'.ph-list, #main .ph-job, #main', t:'L\'agenda', p:'La journée de toute l\'équipe : un rendez-vous par ligne, dans l\'ordre.' + (own || bur || can('book') ? ' Touche un moment libre pour réserver ; touche un rendez-vous pour l\'ouvrir.' : '')},
+          {icon:'👉', go:'home', try:'.chips.trucks', need:true, t:'Un camion à la fois', p:'Les boutons en haut montrent un seul camion, avec son mécano.', tryT:'Essaie : touche « Camion 1 », puis « Tous ».', done:'La journée suit le camion que tu choisis.'}]
+          : [{icon:'📅', go:'tab:agenda', sel:'.cal, .list, main', t:'L\'agenda', p:(own || bur ? 'Chaque colonne, c\'est un camion (ou un mécano). Touche une case libre pour réserver à cette heure-là ; touche un rendez-vous pour l\'ouvrir.' : 'Les rendez-vous de toute l\'équipe' + (can('book') ? '.' : ', en lecture seulement.'))}]) : [],
+        mec && ph ? [] : dayTry,   /* (the mechanic tried the days on his phone screen already) */
+        ph ? [] : [{icon:'👉', go:'tab:agenda', try:'[aria-label="Affichage"]', need:true, t:'Jour, semaine ou liste', p:'Trois façons de voir l\'agenda.', tryT:'Essaie : touche « Semaine », puis « Jour ».', done:'La vue change tout de suite.'}],
+        (own || bur || can('book')) ? [{icon:'➕', go:ph ? 'home' : 'tab:agenda', sel:'#top [data-act="new"]', need:true, t:'« + Réservation »', p:'Choisis le client et le service : l\'app propose les moments libres, près des autres jobs du même coin. Le client reçoit sa confirmation.', x:'On ne réserve pas pendant la visite.'}] : [],
+        can('hours_others') ? (ph ? nav('heures', 'Les heures d\'ouverture', 'Les heures d\'ouverture du garage.') : []).concat(sched('garage', '[data-act="sched"][data-v="garage"]', 'Touche « Modifier l\'horaire ».', 'Modifier l\'horaire', 'Les heures d\'ouverture du garage s\'ouvrent dans une grande grille.')) : [])],
+      clients:can('clients') && ['Les clients', nav('clients', solo ? 'Tes clients' : 'Les clients', 'Les fiches des clients.').concat([
+        {icon:'👤', go:'tab:clients', sel:'main', t:solo ? 'Tes clients' : 'Les clients', p:'La fiche de chaque client : téléphone, adresse, ses autos et l\'historique de ses visites.'},
+        {icon:'🔎', go:'tab:clients', try:'#cl-q', after:'#cl-list', need:true, t:'Chercher', p:'Par nom, téléphone ou code postal.', tryT:'Essaie : touche la case et écris les premières lettres d\'un nom.', done:'La liste se raccourcit pendant que tu écris.'},
+        {icon:'👆', go:'tab:clients', tap:'#cl-list .crow', need:true, t:'Ouvre une fiche', p:'Touche un client pour voir sa fiche.', do:'Touche un client de la liste.'},
+        {icon:'📇', sel:'#main .sect, #main', t:'La fiche du client', p:'Ses coordonnées, ses autos, ses visites et ce qu\'il doit. De là, tu l\'appelles ou tu lui textes d\'un toucher.', x:'Pour revenir à la liste : la flèche ‹ en haut.'}])],
+      factures:can('factures') && ['Les factures', nav('factures', solo && !tre ? 'Tes factures' : 'Les factures', 'Les factures ont leur propre écran.').concat([
+        {icon:'💵', go:'tab:factures', sel:'main', t:solo && !tre ? 'Tes factures' : 'Les factures', p:'Celles à recevoir et celles déjà payées. ' + (own || bur || can('editinv') ? 'Ouvre une facture pour la revoir, la renvoyer au client ou la marquer payée.' : 'Ouvre une facture pour la revoir ou la renvoyer au client.')},
+        {icon:'👉', go:'tab:factures', try:'[aria-label="Filtrer"] .chip', sel:'[aria-label="Filtrer"]', need:true, t:'Les filtres', p:'Tu choisis ce que tu veux voir.', tryT:'Essaie : touche « Payées », puis « Non payées ».', done:'La liste change selon le filtre.'},
+        {icon:'❓', go:'tab:factures', try:'[aria-label="Filtrer"] .qhelp', after:'.helptip', need:true, t:'Les petits « ? »', p:'Partout dans l\'app, un <b>?</b> à côté d\'un mot donne une explication simple.', tryT:'Essaie : touche le ? à côté des filtres.', done:'Touche-le encore pour fermer l\'explication.'}])],
+      tresor:can('tresor') && ['La trésorerie', nav('tresor', 'La trésorerie', 'L\'argent du garage.').concat([
+        {icon:'💼', go:'view:dep', sel:'#top', t:'La trésorerie', p:'Ce qui entre (les factures payées), ce qui sort (les dépenses) et ce qui reste.'},
+        {icon:'👆', go:'view:dep', tap:'[data-act="exp-new"]', need:true, t:'Ajouter une dépense', p:'Chaque reçu devient une dépense.', do:'Touche « + Dépense ».'},
+        {icon:'📷', sel:'.x-scan', need:true, t:'Scanner le reçu', p:'Le plus rapide : prends le reçu en photo, bien à plat. La date, le magasin, le total, la TPS, la TVQ et le paiement se remplissent ; tu vérifies les cases marquées et tu corriges au besoin.', x:'Pendant la visite, on ne prend pas de photo : essaie plutôt d\'écrire un montant.'},
+        {icon:'✍️', try:'#x-total', after:'#x-taxes', need:true, t:'Le montant', p:'Tu peux aussi l\'écrire toi-même : le total payé, taxes comprises.', tryT:'Essaie : écris 57,49 dans « Total payé ».', done:'La TPS et la TVQ se calculent toutes seules. Ici aussi : la photo du reçu, le fournisseur, la catégorie.'},
+        {icon:'👆', tap:'#sheet .sheet-head [data-act="sheet-close"]', need:true, t:'Fermer sans enregistrer', p:'On n\'enregistre rien pendant la visite.', do:'Touche ✕ pour fermer.'},
         {icon:'📑', go:'view:dep', sel:'main', t:'Les dépenses', p:'Toutes les dépenses de la période, avec la photo de leurs reçus. Touche une ligne pour la voir, la corriger ou la supprimer.'},
         {icon:'👆', go:'view:dep', tap:'[data-act="tr-view"][data-v="rap"]', need:true, t:'Le rapport', p:'Le rapport est juste à côté des dépenses.', do:'Touche « Rapport et taxes ».'},
-        {icon:'📊', go:'view:rap', sel:'main', t:'Le rapport et les taxes', p:'Revenus, dépenses et profit de la période. Et les <b>taxes à remettre</b> : la TPS et la TVQ perçues sur les factures, moins celles payées sur les dépenses.'},
-        {icon:'🗓', go:'view:rap', try:'.trbar', need:true, t:'La période', p:'Le rapport se fait pour le mois, le trimestre ou l\'année. ‹ et › reculent ou avancent d\'une période.', tryT:'Essaie : touche « Trimestre » ou « Année ».', done:'Les chiffres suivent la période que tu choisis.'},
-        {icon:'📥', go:'view:rap', sel:'[data-act="tr-xlsx"]', need:true, t:'Pour le comptable', p:'Un fichier Excel avec tout le détail (revenus, dépenses, taxes), prêt à envoyer.'}]],
-      map:can('map') && ['La carte de l\'équipe', [
+        {icon:'📊', go:'view:rap', sel:'main', t:'Le rapport et les taxes', p:'Revenus, dépenses et profit, par camion. Et les <b>taxes à remettre</b> : la TPS et la TVQ perçues sur les factures, moins celles payées sur les dépenses.'},
+        {icon:'👉', go:'view:rap', try:'.trbar', need:true, t:'La période', p:'Le mois, le trimestre ou l\'année ; ‹ et › reculent ou avancent d\'une période.', tryT:'Essaie : touche « Trimestre », puis ‹.', done:'Les chiffres suivent la période que tu choisis.'},
+        {icon:'📥', go:'view:rap', sel:'[data-act="tr-xlsx"]', need:true, t:'Pour le comptable', p:'Un fichier Excel avec tout le détail (revenus, dépenses, taxes), prêt à envoyer.'}])],
+      /* (right after the treasury, its own « Stock des camions » button is right there) */
+      stock:can('stock') && ['Le stock', (can('tresor') && (own || mr === 'tresorier') ? [{icon:'👆', nav:'stock', tap:'#top a[href="#stock"], #main a[href="#stock"]', need:true, t:'Le stock des camions', p:'Le stock est juste à côté, dans la trésorerie.', do:'Touche « Stock des camions ».'}] : nav('stock', 'Le stock des camions', 'Les pièces dans chaque camion.')).concat([
+        {icon:'📦', go:'stock', sel:'main', need:true, t:'Le stock des camions', p:'Les pièces dans chaque camion. Quand une pièce va sur une facture, elle se retire toute seule du stock.'}])],
+      map:can('map') && ['La carte de l\'équipe', nav('carte', 'La carte de l\'équipe', 'Où est chacun, et ses rendez-vous du jour.').concat([
         {icon:'🗺️', go:'carte', try:'#map-slot', t:'La carte de l\'équipe', p:'La <b>Centrale</b>, d\'où partent les camions. Chaque mécano a sa couleur, ses rendez-vous <b>numérotés dans l\'ordre</b> (1, 2, 3…) et son trajet de la journée, par les routes.', tryT:'Essaie : touche un numéro, ou glisse la carte avec ton doigt.', done:'Le numéro montre le client, l\'adresse et l\'heure.'},
-        {icon:'📍', go:'carte', sel:'.tm-mc', need:true, t:'La journée de chacun', p:'Sous la carte : les arrêts de chaque mécano, la longueur de son trajet depuis la Centrale, et qui est en route vers quel client (avec l\'heure d\'arrivée).'}]],
-      avail:mec && ['Ton horaire', [
-        {icon:'🗓', go:'dispos', tap:'[data-act="sched"][data-v="avail"]', t:'Tes disponibilités', p:'Tu dis au bureau quand tu travailles.', do:'Touche « Modifier mes disponibilités ».'},
-        {icon:'👆', go:'sched:avail', try:'#sched .sch-scroll', need:true, t:'La grille', p:'Une case foncée, c\'est une heure où tu travailles.', tryT:(ph ? 'Essaie : glisse ton doigt vers le bas sur quelques cases.' : 'Essaie : clique et glisse vers le bas sur quelques cases.') + ' C\'est un essai, rien n\'est enregistré.', done:'Voilà : tu viens de choisir des heures (ou de les enlever). Rien n\'est enregistré pendant la visite.'},
-        {icon:'✅', go:'sched:avail', sel:'#sched .sch-apply', need:true, t:'Pour combien de temps ?', p:'<b>Seulement ce jour-là</b> (un rendez-vous chez le dentiste), <b>pendant quelques semaines</b> ou <b>en permanence</b> (ton horaire habituel). Puis « Enregistrer ».', x:'On n\'enregistre pas maintenant : en continuant, la grille se ferme sans rien changer.'}]],
-      dispos:(own || bur) && ['L\'équipe', [{icon:'🗓', go:'dispos', sel:'main', t:'Les disponibilités des mécanos', p:'Quand chaque mécano travaille. L\'agenda ne propose que ses heures.' + (can('hours_others') ? ' Tu peux changer l\'horaire de chacun, avec la même grille.' : '')}]],
-      stock:can('stock') && [mec && !bur ? 'Le camion' : 'L\'équipe', [{icon:'📦', go:'stock', sel:'main', need:true, t:'Le stock des camions', p:'Les pièces dans chaque camion. Quand une pièce va sur une facture, elle se retire toute seule du stock.'}]],
-      team:own && ['L\'équipe et les accès', [
-        {icon:'✉️', go:'equipe', sel:'#eq-new', t:'Inviter une personne', p:'Écris son courriel et coche ses <b>rôles</b> (mécano, bureau, trésorier ; plusieurs à la fois si tu veux). En dessous, <b>ses droits</b> : coche ou décoche, pour elle seulement. Elle reçoit un lien et choisit son mot de passe.'},
-        {icon:'👥', go:'equipe', sel:'.eqp', need:true, t:'Les personnes', p:'Touche <b>« Modifier »</b> pour changer les rôles et les droits d\'une personne, ou bloquer son accès.'},
-        {icon:'👁', go:'equipe', sel:'#eq-viewas', t:'Voir l\'app comme…', p:'Tu vois exactement l\'écran d\'un mécano ou du trésorier, et sa visite guidée. Un bandeau en haut te ramène à ton compte.'},
-        {icon:'☑️', go:'equipe', sel:'#eq-roles', t:'Ce que chaque rôle donne au départ', p:'Les cases de départ de chaque rôle. Un changement ici vaut pour toutes les personnes de ce rôle (sauf ce que tu as changé pour une personne).'}]],
-      settings:own && ['Les réglages', [
-        {icon:'🎨', go:'set:Couleurs', try:'#lux-sect', t:'Les couleurs de l\'app', p:'Le mode vitrine : des panneaux en verre sur un fond de couleur. Sable, Champagne, Platine, Noir et or, Émeraude, Saphir ou Bordeaux : toute l\'équipe voit celle que tu choisis.', tryT:'Essaie : touche une couleur pour la voir sur toute l\'app.', done:'C\'est un essai : à l\'étape suivante, la couleur revient comme avant. Pour la garder, reviens ici après la visite et touche-la.'},
-        {icon:'⚙️', go:'set:', sel:'#ph-setlist, #setform', t:'Le reste des réglages', p:'Le nom du garage, les taxes, ton taux horaire, ta liste de prix, l\'horaire, les mécanos et les camions, le bas des factures.'}]],
-      help:['Pour finir', [
-        {icon:'❓', go:HELP_GO, try:'.qhelp', after:'.helptip', t:'Les petits « ? »', p:'Partout dans l\'app, un <b>?</b> à côté d\'un mot donne une explication simple.', tryT:'Essaie : touche le ?.', done:'Touche-le encore pour fermer l\'explication.'},
-        {icon:'✅', go:'home', t:'C\'est tout !', p:'Tu connais l\'app. Si tu oublies quelque chose : <b>' + (ph ? 'Plus' : 'en bas du menu') + ' → « ' + (own ? 'Visite guidée de l\'app' : 'Revoir la visite guidée') + ' »</b>.' + (mec ? ' Bonne journée sur la route !' : '')}]]
+        {icon:'📍', go:'carte', sel:'.tm-mc', need:true, t:'La journée de chacun', p:'Sous la carte : les arrêts de chaque mécano, la longueur de son trajet depuis la Centrale, et qui est en route vers quel client.'}])],
+      avail:mec && ['Ton horaire', nav('dispos', 'Tes disponibilités', 'Quand tu travailles.').concat(
+        sched('avail', '[data-act="sched"][data-v="avail"]', 'Touche « Modifier mes disponibilités ».', 'Tes disponibilités', 'Tu dis au bureau quand tu travailles : l\'agenda ne te donne des rendez-vous que dans tes heures.'))],
+      dispos:(own || bur) && ['Les disponibilités', nav('dispos', 'Les disponibilités', 'Quand chaque mécano travaille.').concat([
+        {icon:'🗓', go:'dispos', sel:'main', t:'Les disponibilités des mécanos', p:'Quand chaque mécano travaille. L\'agenda ne propose que ses heures.' + (can('hours_others') ? ' Tu changes l\'horaire de chacun avec la même grille.' : '')},
+        {icon:'👉', go:'dispos', try:'#main [aria-label="Mécano"]', need:true, t:'Un mécano à la fois', p:'Les noms en haut : la semaine de chacun.', tryT:'Essaie : touche le nom d\'un autre mécano.', done:'Voilà sa semaine : ses jours, ses heures, ses congés.'}])],
+      settings:own && ['Les réglages', nav('reglages', 'Les réglages', 'Les réglages du garage.').concat([
+        {icon:'👆', go:'set:', tap:'[data-act="ph-sec"][data-for="lux-sect"]', need:true, t:'Les couleurs de l\'app', p:'Les réglages sont rangés en sections.', do:'Touche « Couleurs de l\'app ».'},
+        {icon:'🎨', go:'set:Couleurs', try:'#lux-sect', t:'Les couleurs', p:'Le mode vitrine : des panneaux en verre sur un fond de couleur. Toute l\'équipe voit celle que tu choisis.', tryT:'Essaie : touche une couleur pour la voir sur toute l\'app.', done:'C\'est un essai : elle revient comme avant à l\'étape suivante. Pour la garder, reviens ici après la visite et touche-la.'},
+        {icon:'👆', go:'set:Couleurs', tap:'#lux-sect .ph-secback', need:true, t:'Tous les réglages', p:'Pour revenir à la liste des sections.', do:'Touche « ‹ Tous les réglages ».'},
+        {icon:'⚙️', go:'set:', sel:'#ph-setlist, #setform', t:'Le reste des réglages', p:'Le nom du garage, les taxes, ton taux horaire, tes prix, l\'horaire, les mécanos et les camions, le bas des factures.'}])],
+      team:own && ['L\'équipe et les accès', nav('equipe', 'L\'équipe et les accès', 'Les comptes de ton équipe.').concat([
+        {icon:'✉️', go:'equipe', sel:'#eq-new', t:'Inviter une personne', p:'Son nom et son courriel, puis ses rôles. Elle reçoit un lien et choisit son mot de passe (ou se connecte avec Google).'},
+        {icon:'👉', go:'equipe', try:'#eq-new .rbox', need:true, t:'Les rôles', p:'Plusieurs rôles à la fois si tu veux (mécano et trésorier, par exemple).', tryT:'Essaie : coche « Trésorier ».', done:'Juste en dessous, « Ses droits » montre ce que ça lui donne : tu peux cocher ou décocher pour cette personne seulement. On n\'invite personne pendant la visite.'},
+        {icon:'👥', go:'equipe', sel:'.eqp', need:true, t:'Les personnes', p:'<b>« Modifier »</b> change les rôles et les droits d\'une personne, ou bloque son accès.'},
+        {icon:'👁', go:'equipe', sel:'#eq-viewas', need:true, t:'Voir l\'app comme…', p:'Tu vois exactement l\'écran d\'un mécano ou du trésorier, et sa visite guidée. Un bandeau en haut te ramène à ton compte.'},
+        {icon:'☑️', go:'equipe', sel:'#eq-roles', need:true, t:'Ce que chaque rôle donne au départ', p:'Les cases de départ de chaque rôle. Un changement ici vaut pour toutes les personnes de ce rôle.'}])],
+      end:['C\'est tout', [{icon:'✅', t:'C\'est tout !', p:'Tu connais l\'app. Si tu oublies quelque chose : <b>' + (ph ? 'Plus' : 'en bas du menu') + ' → « ' + (own ? 'Visite guidée de l\'app' : 'Revoir la visite guidée') + ' »</b>.' + (mec ? ' Bonne journée sur la route !' : '')}]]
     };
     /* the person's main job first, then what the other roles add (each part once) */
-    var ORDER = {owner:['dash', 'agenda', 'clients', 'factures', 'tresor', 'map', 'dispos', 'stock', 'team', 'settings'],
+    var ORDER = {owner:['dash', 'agenda', 'clients', 'factures', 'tresor', 'stock', 'map', 'dispos', 'settings', 'team'],
       bureau:['dash', 'agenda', 'clients', 'factures', 'map', 'dispos', 'stock'],
-      mecano:['day', 'job', 'clients', 'factures', 'plusbtn', 'map', 'avail', 'agenda', 'stock'],
-      tresorier:['tresor', 'factures', 'clients', 'agenda', 'map', 'stock']};
+      mecano:['day', 'job', 'plusbtn', 'clients', 'factures', 'map', 'avail', 'agenda', 'stock'],
+      tresorier:['tresor', 'stock', 'factures', 'clients', 'agenda', 'map']};
     var keys = ['hello'];
-    var mr = mainRole(rolesOf(m));
     rolesOf(m).slice().sort(function(a, b){ return (a === mr ? -1 : 0) - (b === mr ? -1 : 0); }).forEach(function(r){ (ORDER[r] || []).forEach(function(k){ if (keys.indexOf(k) < 0) keys.push(k); }); });
     ['tresor', 'agenda', 'map', 'stock'].forEach(function(k){ if (keys.indexOf(k) < 0) keys.push(k); });   /* rights given to this person */
-    keys.push('help');
+    keys.push('end');
     var out = [];
     keys.forEach(function(k){ var pt = P[k]; if (!pt) return; pt[1].filter(Boolean).forEach(function(x){ x.ch = pt[0]; out.push(x); }); });
     return out;
@@ -960,7 +1015,7 @@
       case 'map-fit': fit(); break;
       case 'tm-mech': X.tmHide = X.tmHide || {}; X.tmHide[v] = !X.tmHide[v]; drawMap(); render(); break;
       case 'map-sel': selectMech(v); break;
-      case 'map-path': X.showPath[v] = !X.showPath[v]; if (X.showPath[v]) loadPath(v); else { drawMap(); render(); } break;
+      case 'map-path': X.showPath[v] = !X.showPath[v]; drawMap(); render(); if (X.showPath[v]) loadPath(v); break;   /* (the button changes at once; the path is drawn when it arrives) */
       case 'eq-back': location.hash = onPhone() ? 'plus' : 'reglages'; break;
       case 'eq-reload': X.eq.err = ''; X.eq.list = null; eqLoad(); render(); break;
       case 'eq-edit': X.eq.editing = v; X.eq.confirm = null; delete X.eq.draft.ed; render(); break;

@@ -12,19 +12,19 @@
 :root[data-theme="dark"]{color-scheme:dark;}
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{color:var(--ink);;font-family:var(--f-body);;font-size:16px;;line-height:1.45;;padding-block:0 calc(92px + env(safe-area-inset-bottom,0px));}
-body::before{content:"";;position:fixed;;inset:0 0 auto;;height:env(safe-area-inset-top,0px);;z-index:10;}
+body{color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;padding-block:0 calc(92px + env(safe-area-inset-bottom,0px));}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;}
 .wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-h1,h2,h3{font-family:var(--f-display);;margin:0;;text-wrap:balance;}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;}
 p{margin:0}
 button,input,select,textarea{font:inherit;color:inherit}
 .muted{color:var(--muted)} .small{font-size:14px}
 .mono{font-family:var(--f-mono);letter-spacing:.03em}
 .num{font-variant-numeric:tabular-nums}
-.eyebrow,.lbl{font-family:var(--f-display);;font-weight:600;;font-size:13px;}
+.eyebrow,.lbl{font-family:var(--f-display);font-weight:600;font-size:13px;}
 .stack{display:grid;gap:14px}
 /* top band */
-.top{position:sticky;;top:env(safe-area-inset-top,0px);;z-index:5;;border-bottom:1px solid var(--line);}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;border-bottom:1px solid var(--line);}
 .top-in{display:grid;gap:12px;padding-block:14px 12px}
 .brandrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .brandrow>div{min-width:0}
@@ -34,27 +34,27 @@ button,input,select,textarea{font:inherit;color:inherit}
 .weeknav{display:flex;align-items:center;gap:6px}
 .weeknav .month{font-family:var(--f-display);font-weight:600;font-size:17px;flex:1;text-transform:capitalize}
 .days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
-.day{display:grid;;justify-items:center;;gap:1px;;padding:7px 0 6px;;border:1px solid transparent;;background:transparent;;cursor:pointer;}
+.day{display:grid;justify-items:center;gap:1px;padding:7px 0 6px;border:1px solid transparent;background:transparent;cursor:pointer;}
 .day .dw{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-.day .dn{font-family:var(--f-display);;font-weight:700;;line-height:1.1;}
+.day .dn{font-family:var(--f-display);font-weight:700;line-height:1.1;}
 .day .dc{display:flex;gap:3px;height:6px;align-items:center}
-.day .dc i{width:5px;;height:5px;;border-radius:50%;}
+.day .dc i{width:5px;height:5px;border-radius:50%;}
 .day.today .dn{text-underline-offset:4px;}
 .day.on .dw{color:inherit;opacity:.75}
 /* controls */
-.btn{display:inline-flex;;align-items:center;;justify-content:center;;gap:8px;;min-height:46px;;padding:0 18px;;color:var(--ink);;cursor:pointer;;text-decoration:none;;text-align:center;;line-height:1.15;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;color:var(--ink);cursor:pointer;text-decoration:none;text-align:center;line-height:1.15;}
 .btn.sm{min-height:38px;padding:0 12px;font-size:15px;white-space:nowrap}
 .btn.danger{color:var(--bad);}
 .btn.block{width:100%}
 .btn[disabled]{opacity:.5;cursor:not-allowed}
-.iconbtn{display:inline-grid;;place-items:center;;width:40px;;height:40px;;cursor:pointer;;flex:none;;font-size:20px;;line-height:1;}
+.iconbtn{display:inline-grid;place-items:center;width:40px;height:40px;cursor:pointer;flex:none;font-size:20px;line-height:1;}
 .linkbtn{background:none;border:0;color:var(--steel);font-weight:600;cursor:pointer;padding:6px 4px;text-decoration:underline;text-underline-offset:3px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{border-radius:999px;;padding:7px 14px;;font-weight:600;;font-size:15px;;cursor:pointer;;min-height:38px;}
+.chip{border-radius:999px;padding:7px 14px;font-weight:600;font-size:15px;cursor:pointer;min-height:38px;}
 .chip.add{border-style:dashed}
 .field{display:grid;gap:6px;min-width:0}
-.field>label{font-family:var(--f-display);;font-weight:600;;font-size:14px;}
-input,select,textarea{font-size:16px;;width:100%;;min-height:46px;;padding:10px 12px;;color:var(--ink);;min-width:0;}
+.field>label{font-family:var(--f-display);font-weight:600;font-size:14px;}
+input,select,textarea{font-size:16px;width:100%;min-height:46px;padding:10px 12px;color:var(--ink);min-width:0;}
 input[disabled],select[disabled],textarea[disabled]{color:var(--muted);}
 textarea{min-height:80px;resize:vertical}
 input.mono{text-transform:uppercase}
@@ -67,25 +67,25 @@ input.mono::placeholder{text-transform:none;font-family:var(--f-body);letter-spa
 @media (max-width:440px){.grid2.stack-sm{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:370px){.veh{grid-template-columns:84px minmax(0,1fr)}.veh .field:last-child{grid-column:1/-1}}
 .check{display:flex;align-items:center;gap:10px;font-weight:500;cursor:pointer;min-height:40px}
-.check input{width:22px;;height:22px;;min-height:0;}
-.err{background:var(--bad-bg);;color:var(--bad);;padding:10px 12px;;font-weight:500;}
+.check input{width:22px;height:22px;min-height:0;}
+.err{background:var(--bad-bg);color:var(--bad);padding:10px 12px;font-weight:500;}
 .actions{display:grid;gap:10px}
 /* sections & cards */
-.sect{display:grid;;gap:14px;;min-width:0;}
+.sect{display:grid;gap:14px;min-width:0;}
 .sect-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.banner{padding:12px 14px;;color:var(--ink);;display:flex;;gap:10px;;align-items:flex-start;;justify-content:space-between;;flex-wrap:wrap;}
+.banner{padding:12px 14px;color:var(--ink);display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;}
 .banner p{min-width:0;flex:1 1 220px}
 main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .daytitle{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
 .daytitle h2::first-letter{text-transform:uppercase}
 .sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.stat{padding:10px 12px;;min-width:0;}
-.stat b{display:block;;font-size:clamp(18px,5vw,22px);;font-weight:700;;font-variant-numeric:tabular-nums;;white-space:nowrap;}
+.stat{padding:10px 12px;min-width:0;}
+.stat b{display:block;font-size:clamp(18px,5vw,22px);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;}
 .stat span{font-size:13px;color:var(--muted)}
 .list{display:grid;gap:10px}
-.ticket{display:grid;;grid-template-columns:78px minmax(0,1fr);;width:100%;;text-align:left;;padding:0;;cursor:pointer;;overflow:hidden;;color:var(--ink);}
-.stub{display:grid;;align-content:center;;justify-items:center;;gap:3px;;padding:12px 6px;}
-.stub b{font-family:var(--f-display);;white-space:nowrap;;font-weight:700;;line-height:1;;font-variant-numeric:tabular-nums;}
+.ticket{display:grid;grid-template-columns:78px minmax(0,1fr);width:100%;text-align:left;padding:0;cursor:pointer;overflow:hidden;color:var(--ink);}
+.stub{display:grid;align-content:center;justify-items:center;gap:3px;padding:12px 6px;}
+.stub b{font-family:var(--f-display);white-space:nowrap;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;}
 .stub small{font-size:12.5px;color:var(--muted)}
 
 .ticket.s-annule,.ticket.s-noshow{opacity:.62}
@@ -96,22 +96,22 @@ main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .tk-veh{font-family:var(--f-display);}
 .tk-sub{color:var(--muted);font-size:14.5px;overflow-wrap:anywhere}
 .tk-foot{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.pill{display:inline-flex;;align-items:center;;gap:6px;;padding:3px 10px;;border-radius:999px;;font-size:13px;;font-weight:600;;white-space:nowrap;;color:var(--idle);}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap;color:var(--idle);}
 .pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
 .pill.route{background:var(--info-bg);color:var(--info)}
 .pill.place{background:var(--warn-bg);color:var(--warn)}
 .pill.termine,.pill.paid{background:var(--ok-bg);color:var(--ok)}
 .pill.annule,.pill.noshow{background:var(--bad-bg);color:var(--bad)}
 .pill.unpaid{background:var(--warn-bg);color:var(--warn)}
-.empty-card{padding:22px 18px;;display:grid;;gap:12px;;justify-items:start;}
+.empty-card{padding:22px 18px;display:grid;gap:12px;justify-items:start;}
 .empty-card p{max-width:60ch;color:var(--muted)}
 .steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%}
-.steps div{padding:10px;;font-size:14px;}
+.steps div{padding:10px;font-size:14px;}
 .steps b{display:block;font-family:var(--f-display);font-size:16px}
 @media (max-width:480px){.steps{grid-template-columns:minmax(0,1fr)}}
 /* job detail */
 .seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-.seg button{min-height:52px;;font-weight:600;;font-size:14.5px;;cursor:pointer;;padding:4px 2px;;line-height:1.1;}
+.seg button{min-height:52px;font-weight:600;font-size:14.5px;cursor:pointer;padding:4px 2px;line-height:1.1;}
 .seg button.on.planifie{background:var(--sel-bg);color:var(--sel-ink);border-color:transparent}
 .seg button.on.route{background:var(--info);color:var(--surface);border-color:var(--info)}
 .seg button.on.place{background:var(--warn);color:var(--surface);border-color:var(--warn)}
@@ -119,7 +119,7 @@ main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .kv{display:grid;gap:10px}
 .kv>div{display:grid;gap:2px;min-width:0}
 .kv dd{margin:0;overflow-wrap:anywhere}
-.kv dt{font-family:var(--f-display);;font-weight:600;;font-size:13px;}
+.kv dt{font-family:var(--f-display);font-weight:600;font-size:13px;}
 .inline-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .sel{user-select:all;-webkit-user-select:all}
 .vin{font-family:var(--f-mono);font-size:17px;letter-spacing:.08em;overflow-wrap:anywhere}
@@ -129,7 +129,7 @@ main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .invbox b{font-family:var(--f-display);font-size:26px;font-variant-numeric:tabular-nums}
 .when{font-family:var(--f-display);font-size:22px;font-weight:600}
 /* invoice editor */
-.line{padding:12px;;display:grid;;gap:10px;}
+.line{padding:12px;display:grid;gap:10px;}
 .line-top{display:flex;gap:8px;align-items:center}
 .line-top select{flex:1}
 .line-nums{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr);gap:10px;align-items:end}
@@ -141,10 +141,10 @@ main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .tot .grand{border-top:2px solid var(--ink);padding-top:8px;margin-top:4px}
 .tot .grand dt,.tot .grand dd{color:var(--ink);font-family:var(--f-display);font-size:26px;font-weight:700}
 .radio2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.radio2 label{display:flex;;align-items:center;;gap:8px;;border:1px solid var(--line-strong);;padding:10px 12px;;cursor:pointer;;font-weight:600;;min-height:48px;}
-.radio2 input{width:20px;;height:20px;;min-height:0;}
+.radio2 label{display:flex;align-items:center;gap:8px;border:1px solid var(--line-strong);padding:10px 12px;cursor:pointer;font-weight:600;min-height:48px;}
+.radio2 input{width:20px;height:20px;min-height:0;}
 /* invoice paper */
-.paper{padding:20px;;display:grid;;gap:18px;}
+.paper{padding:20px;display:grid;gap:18px;}
 .paper-head{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:3px solid var(--signal);padding-bottom:14px}
 .paper-head>div{min-width:0}
 .paper-head h2{font-size:26px;overflow-wrap:anywhere}
@@ -158,29 +158,29 @@ main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .stamp.ok{background:var(--ok-bg);color:var(--ok)} .stamp.warn{background:var(--warn-bg);color:var(--warn)}
 .payrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
 /* invoices list */
-.row{display:grid;;grid-template-columns:minmax(0,1fr) auto;;gap:4px 12px;;width:100%;;text-align:left;;padding:12px 14px;;cursor:pointer;;color:var(--ink);}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;width:100%;text-align:left;padding:12px 14px;cursor:pointer;color:var(--ink);}
 .row .r-no{font-family:var(--f-mono);font-size:14px;color:var(--muted)}
 .row .r-name{font-weight:600;overflow-wrap:anywhere;min-width:0}
 .row .r-amt{font-family:var(--f-display);font-size:21px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
 .row .r-meta{font-size:14px;color:var(--muted)}
 /* service picker */
-.picker{display:flex;;flex-wrap:wrap;;gap:6px;;align-items:center;;border:1px solid var(--line-strong);;padding:6px;;min-height:46px;}
+.picker{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px solid var(--line-strong);padding:6px;min-height:46px;}
 .picker:focus-within{outline:3px solid var(--steel);outline-offset:2px}
 .picker input{border:0;min-height:36px;padding:4px 6px;flex:1 1 170px;background:transparent}
 .picker input:focus-visible{outline:none}
 .picked{display:contents}
-.pchip{display:inline-flex;;align-items:center;;gap:6px;;color:var(--ink);;border-radius:999px;;padding:3px 3px 3px 12px;;font-weight:600;;font-size:15px;;max-width:100%;;overflow-wrap:anywhere;}
+.pchip{display:inline-flex;align-items:center;gap:6px;color:var(--ink);border-radius:999px;padding:3px 3px 3px 12px;font-weight:600;font-size:15px;max-width:100%;overflow-wrap:anywhere;}
 .pchip small{font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .pchip button{flex:none;width:30px;height:30px;border-radius:50%;border:0;background:transparent;cursor:pointer;color:var(--muted);font-size:15px}
 .pchip button:hover{background:var(--surface);color:var(--ink)}
-.opts{display:grid;;grid-auto-rows:max-content;;overflow:hidden;}
+.opts{display:grid;grid-auto-rows:max-content;overflow:hidden;}
 #svc-opts{position:relative;max-height:min(55vh,420px);overflow-y:auto;overscroll-behavior:contain}
 label[for="f-svc-in"]{scroll-margin-top:96px}
 #sheet-body label[for="f-svc-in"]{scroll-margin-top:12px}
-#svc-est .est{display:flex;;flex-wrap:wrap;;align-items:center;;justify-content:space-between;;gap:8px 12px;;margin-top:8px;;padding:10px 12px;;color:var(--ink);}
+#svc-est .est{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-top:8px;padding:10px 12px;color:var(--ink);}
 #svc-est .est > div{display:grid;gap:2px;min-width:0}
 #svc-est .est-miss{color:var(--warn)}
-.opts .opt-count{position:sticky;;top:0;;z-index:1;;padding:7px 14px;;font-size:13px;;font-weight:600;;color:var(--muted);;border-bottom:1px solid var(--line);}
+.opts .opt-count{position:sticky;top:0;z-index:1;padding:7px 14px;font-size:13px;font-weight:600;color:var(--muted);border-bottom:1px solid var(--line);}
 .opt mark{background:var(--signal-soft, rgba(242,178,0,.32));color:inherit;border-radius:3px;padding:0 1px}
 .opt{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 14px;border:0;border-bottom:1px solid var(--line);background:transparent;cursor:pointer;font-size:16px;min-height:48px;color:var(--ink)}
 .opt:last-child{border-bottom:0}
@@ -193,19 +193,19 @@ label[for="f-svc-in"]{scroll-margin-top:96px}
 .draftmsg.ok::before{background:var(--ok)} .draftmsg.bad::before{background:var(--bad)}
 .draftmsg:empty{display:none}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
-.tag{border-radius:999px;;padding:4px 12px;;font-weight:600;;font-size:15px;}
+.tag{border-radius:999px;padding:4px 12px;font-weight:600;font-size:15px;}
 /* day schedule grid (dental-agenda style) */
 .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
 .hoursline{color:var(--muted);font-size:15px}
 .hoursline b{color:var(--ink)}
-.cal{overflow:auto;;max-height:max(340px,calc(100vh - 410px));;max-height:max(340px,calc(100dvh - 410px));}
+.cal{overflow:auto;max-height:max(340px,calc(100vh - 410px));max-height:max(340px,calc(100dvh - 410px));}
 .cal-in{min-width:calc(52px + var(--n) * var(--cw,124px))}
 .cal-head,.cal-body{display:grid;grid-template-columns:52px repeat(var(--n),minmax(var(--cw,124px),1fr))}
-.cal-head{position:sticky;;top:0;;z-index:4;}
-.cal-head>div:first-child{position:sticky;;left:0;;z-index:5;}
-.colh{padding:9px 8px;;font-family:var(--f-display);;text-align:center;;border-left:1px solid var(--line);;overflow-wrap:anywhere;}
+.cal-head{position:sticky;top:0;z-index:4;}
+.cal-head>div:first-child{position:sticky;left:0;z-index:5;}
+.colh{padding:9px 8px;font-family:var(--f-display);text-align:center;border-left:1px solid var(--line);overflow-wrap:anywhere;}
 .colh small{display:block;font-family:var(--f-body);font-weight:500;font-size:12.5px;color:var(--muted)}
-.gutter{position:relative;;position:sticky;;left:0;;z-index:3;}
+.gutter{position:relative;position:sticky;left:0;z-index:3;}
 .dayh{background:transparent;border:0;border-left:1px solid var(--line);cursor:pointer;color:var(--ink);line-height:1.15}
 .dayh:hover{background:var(--sunk)}
 .dayh.today small{color:inherit;opacity:.8}
@@ -215,7 +215,7 @@ label[for="f-svc-in"]{scroll-margin-top:96px}
 .cal.week .slot{font-size:12px}
 .hl{position:absolute;left:0;right:6px;text-align:right;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;padding-top:3px}
 .col{position:relative;border-left:1px solid var(--line)}
-.slot{display:block;;width:100%;;border:0;;border-top:1px solid var(--line-faint);;background:transparent;;padding:0;;cursor:pointer;;font-weight:700;;font-size:12.5px;;line-height:1;}
+.slot{display:block;width:100%;border:0;border-top:1px solid var(--line-faint);background:transparent;padding:0;cursor:pointer;font-weight:700;font-size:12.5px;line-height:1;}
 .slot.half{border-top-color:var(--line)}
 .slot.hr{border-top-color:var(--line-strong)}
 .slot:first-child{border-top-color:transparent}
@@ -227,7 +227,7 @@ label[for="f-svc-in"]{scroll-margin-top:96px}
 .cal.editing .slot.open{background:var(--ok-bg)}
 .cal.editing .slot.open:hover::after{content:"Fermer"}
 .cal.editing .slot.closed:hover::after{content:"Ouvrir"}
-.appt{position:absolute;;display:grid;;align-content:start;;gap:1px;;padding:4px 7px;;text-align:left;;overflow:hidden;;font-size:13px;;line-height:1.25;;cursor:pointer;;color:var(--ink);;z-index:1;;min-width:0;}
+.appt{position:absolute;display:grid;align-content:start;gap:1px;padding:4px 7px;text-align:left;overflow:hidden;font-size:13px;line-height:1.25;cursor:pointer;color:var(--ink);z-index:1;min-width:0;}
 .appt b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .appt span{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .appt.s-planifie{border-color:var(--steel);}
@@ -238,16 +238,16 @@ label[for="f-svc-in"]{scroll-margin-top:96px}
 .now{position:absolute;left:0;right:0;height:2px;background:var(--bad);z-index:2;pointer-events:none}
 .now::before{content:"";position:absolute;left:-1px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--bad)}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
-.legend i{display:inline-block;;width:14px;;height:14px;;vertical-align:-2px;;margin-right:6px;;border:1px solid var(--line-strong);;background:var(--surface);}
+.legend i{display:inline-block;width:14px;height:14px;vertical-align:-2px;margin-right:6px;border:1px solid var(--line-strong);background:var(--surface);}
 .legend i.cl{background:repeating-linear-gradient(135deg,var(--closed-a) 0 3px,var(--closed-b) 3px 6px)}
-.hours-panel{border:1px solid var(--warn);;padding:14px;;display:grid;;gap:12px;}
+.hours-panel{border:1px solid var(--warn);padding:14px;display:grid;gap:12px;}
 .hours-panel .row2{display:flex;flex-wrap:wrap;gap:8px}
 .hrow{display:grid;grid-template-columns:minmax(0,1fr) 96px auto 96px;gap:8px;align-items:center}
 .hrow select{min-height:42px;padding:6px 8px}
 body.locked{overflow:hidden}
 .sheet-wrap{position:fixed;inset:0;z-index:30;display:flex;align-items:flex-end;justify-content:center}
 .sheet-back{position:absolute;inset:0;background:var(--scrim)}
-.sheet{position:relative;;width:100%;;max-width:620px;;max-height:calc(100% - env(safe-area-inset-top,0px) - 20px);;display:flex;;flex-direction:column;}
+.sheet{position:relative;width:100%;max-width:620px;max-height:calc(100% - env(safe-area-inset-top,0px) - 20px);display:flex;flex-direction:column;}
 .sheet-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
 .sheet-head h2{font-size:22px}
 .sheet-body{overflow-y:auto;padding:14px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));overscroll-behavior:contain}
@@ -263,18 +263,18 @@ body.locked{overflow:hidden}
 .addrsug .opt.street small{color:var(--steel)}
 #c-addrfix .banner,#c-sameaddr .banner{margin-top:8px}
 .addrsug .opt.local small{color:var(--ok)}
-.addrsug .opt-head{position:sticky;;top:0;;z-index:1;;padding:8px 14px 6px;;font:600 12.5px/1.2 var(--f-body);;letter-spacing:.04em;;text-transform:uppercase;;color:var(--muted);;border-bottom:1px solid var(--line);}
+.addrsug .opt-head{position:sticky;top:0;z-index:1;padding:8px 14px 6px;font:600 12.5px/1.2 var(--f-body);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);}
 .addrsug .opt-wait{display:flex;align-items:center;gap:10px;padding:12px 14px;color:var(--muted);font-size:15px;border-bottom:1px solid var(--line)}
 .addrsug .spin{width:16px;height:16px;flex:none;border:2px solid var(--line-strong);border-top-color:var(--steel);border-radius:50%;animation:gmspin .7s linear infinite}
 @keyframes gmspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion: reduce){.addrsug .spin{animation-duration:2s}}
-.addrsug .src{padding:6px 14px;;font-size:12px;;color:var(--muted);;border-top:1px solid var(--line);}
+.addrsug .src{padding:6px 14px;font-size:12px;color:var(--muted);border-top:1px solid var(--line);}
 .ttnote{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .ttnote:empty{display:none}
-.sugbox{padding:12px;;display:grid;;gap:10px;}
+.sugbox{padding:12px;display:grid;gap:10px;}
 .sug-head{display:flex;flex-wrap:wrap;gap:2px 10px;align-items:baseline}
 .sugs{display:grid;gap:8px}
-.sug{display:grid;;grid-template-columns:minmax(0,1fr) auto;;gap:2px 10px;;align-items:center;;text-align:left;;width:100%;;padding:10px 12px;;cursor:pointer;;color:var(--ink);;font-size:16px;}
+.sug{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;text-align:left;width:100%;padding:10px 12px;cursor:pointer;color:var(--ink);font-size:16px;}
 .sug:hover{border-color:var(--steel)}
 .sug-when{grid-column:1;grid-row:1;font-weight:600}
 .sug-when .nw{white-space:nowrap}
@@ -301,34 +301,34 @@ body.locked{overflow:hidden}
 .prow select{width:auto;min-width:96px;min-height:42px;padding:6px 8px;flex:1 1 96px}
 /* clients */
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.crow{display:grid;;grid-template-columns:minmax(0,1fr) auto;;gap:4px 12px;;align-items:center;;width:100%;;text-align:left;;padding:11px 14px;;cursor:pointer;;color:var(--ink);}
+.crow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;width:100%;text-align:left;padding:11px 14px;cursor:pointer;color:var(--ink);}
 .crow-main{display:grid;gap:1px;min-width:0}
 .crow-main b{font-size:17px;overflow-wrap:anywhere}
 .crow-main span{overflow-wrap:anywhere}
 .crow-side{display:grid;gap:4px;justify-items:end}
-.ccard{display:flex;;justify-content:space-between;;align-items:flex-start;;gap:12px;;padding:12px;}
+.ccard{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:12px;}
 .ccard-main{display:grid;gap:2px;min-width:0}
 .ccard-main b{font-size:18px}
 .ccard-main span{overflow-wrap:anywhere}
 .tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.tile{display:grid;;gap:4px;;align-content:center;;justify-items:start;;text-align:left;;min-height:84px;;padding:12px 14px;;cursor:pointer;;color:var(--ink);;font-family:var(--f-display);;line-height:1.1;}
+.tile{display:grid;gap:4px;align-content:center;justify-items:start;text-align:left;min-height:84px;padding:12px 14px;cursor:pointer;color:var(--ink);font-family:var(--f-display);line-height:1.1;}
 .tile small{font-family:var(--f-body);font-size:13.5px;font-weight:500;color:var(--muted)}
 
 .tile svg{width:22px;height:22px}
-.vrow{display:grid;;grid-template-columns:auto minmax(0,1fr) auto;;gap:4px 12px;;align-items:center;;width:100%;;text-align:left;;padding:10px 12px;;cursor:pointer;;color:var(--ink);}
+.vrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:center;width:100%;text-align:left;padding:10px 12px;cursor:pointer;color:var(--ink);}
 .vrow .vdate{font-family:var(--f-display);font-weight:700;font-size:16px;white-space:nowrap}
 .vrow .vmain{min-width:0;display:grid;gap:1px}
 .vrow .vmain span{overflow-wrap:anywhere}
 .note{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:start;border-top:1px solid var(--line);padding-top:10px}
 .note p{white-space:pre-wrap;overflow-wrap:anywhere}
 .due-big{font-family:var(--f-display);font-size:34px;font-weight:700;font-variant-numeric:tabular-nums}
-.rec{display:grid;;gap:8px;;padding:12px;}
+.rec{display:grid;gap:8px;padding:12px;}
 .rec-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
 .dayboxes{display:flex;flex-wrap:wrap;gap:2px 14px}
 .daybox{min-height:36px}
 /* settings */
-.promo-row{display:grid;;gap:6px;;padding:10px;}
-.promo-tag{display:inline-block;;margin-right:6px;;padding:1px 6px;;border-radius:4px;;font:700 11px/1.5 var(--f-body);;font-style:normal;;letter-spacing:.06em;;text-transform:uppercase;;vertical-align:1px;}
+.promo-row{display:grid;gap:6px;padding:10px;}
+.promo-tag{display:inline-block;margin-right:6px;padding:1px 6px;border-radius:4px;font:700 11px/1.5 var(--f-body);font-style:normal;letter-spacing:.06em;text-transform:uppercase;vertical-align:1px;}
 .promo-inc{display:block;margin-top:2px;font-size:13px;color:var(--muted)}
 .opt.promo{flex-direction:column;align-items:stretch;gap:4px}
 .opt.promo small{color:var(--ink);font-weight:600}
@@ -336,10 +336,10 @@ body.locked{overflow:hidden}
 .svc-row{display:grid;grid-template-columns:minmax(0,1fr) 110px 40px;gap:8px;align-items:center}
 .copyfb textarea{min-height:160px;font-family:var(--f-mono);font-size:14px}
 /* tab bar + toast */
-.tabbar{position:fixed;;bottom:0;;z-index:6;;border-top:1px solid var(--line);}
-.tabs{display:grid;;grid-auto-flow:column;;grid-auto-columns:minmax(0,1fr);}
-.tab{display:grid;;justify-items:center;;gap:2px;;background:none;;border:0;;color:var(--muted);;cursor:pointer;}
-.toast{position:fixed;;left:50%;;transform:translateX(-50%);;bottom:calc(84px + env(safe-area-inset-bottom,0px));;z-index:40;;padding:11px 16px;;font-weight:600;;max-width:calc(100% - 32px);;box-shadow:0 6px 20px rgba(0,0,0,.18);}
+.tabbar{position:fixed;bottom:0;z-index:6;border-top:1px solid var(--line);}
+.tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);}
+.tab{display:grid;justify-items:center;gap:2px;background:none;border:0;color:var(--muted);cursor:pointer;}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:40;padding:11px 16px;font-weight:600;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.18);}
 @media (prefers-reduced-motion:no-preference){.toast{animation:pop .18s ease-out}@keyframes pop{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}}
 /* ===================== Glass look =====================
    Frosted panels over a warm, softly lit backdrop (light) or a smoky night garage (dark).
@@ -762,6 +762,8 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
 .ok-t{color:var(--ok)}.neg{color:var(--bad)}
 .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:end}.grid3 .lbl{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
 table.rep{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}table.rep th,table.rep td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;font-weight:500}table.rep td.num,table.rep th.num{text-align:right}table.rep thead th{font-size:12px;color:var(--muted);font-weight:600}table.rep tr.rtot th,table.rep tr.rtot td{font-weight:700;border-bottom:none}
+.x-scan{display:grid;gap:6px;padding:12px;border-radius:16px;background:var(--sunk,rgba(0,0,0,.04))}.x-scan label.busy{opacity:.6;pointer-events:none}
+#expform .auto{box-shadow:0 0 0 2px var(--signal) inset;background:rgba(238,106,47,.07)}   /* filled from the receipt: to check */
 .rcthumb{max-width:120px;max-height:120px;border-radius:8px;border:1px solid var(--line);display:block;margin:6px 0}.rcimg{width:100%;height:auto;border-radius:10px;border:1px solid var(--line)}.x-prev{display:grid;gap:4px}
 @media (max-width:420px){.xrow{grid-template-columns:52px 1fr auto;padding:10px 12px}.trbar .chips{margin-left:0}table.rep{font-size:13.5px}table.rep th,table.rep td{padding:7px 3px}#tr-sum .stat b{font-size:16px}#tr-sum .stat span{font-size:12px}}
 .repwrap{overflow-x:auto}table.rep td.num{white-space:nowrap}
@@ -942,7 +944,7 @@ details.adv[open] > summary{margin-bottom:8px}
 .qrbox{width:200px;height:200px;padding:10px;border-radius:14px;background:#fff;justify-self:center;border:1px solid var(--line)}
 .qrbox svg{width:100%;height:100%;display:block}
 .inst-url{text-align:center;font-size:19px;font-weight:700;word-break:break-all;letter-spacing:.01em}
-.touring{overflow:hidden}.touring.tt-free{overflow:visible}
+.touring{overflow:hidden}.touring.tt-free:not(.locked){overflow:visible}
 /* the schedule window (glass) */
 #sched{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:16px}
 #sched .sch-back{position:absolute;inset:0;background:rgba(20,14,10,.32);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
@@ -1654,6 +1656,8 @@ function chip(act, val, label, on){ return '<button type="button" class="chip' +
 function pill(cls, label){ return '<span class="pill ' + cls + '">' + esc(label) + '</span>'; }
 /* ---------- petites bulles d'aide « ? » : une phrase simple à côté des mots qui peuvent bloquer ---------- */
 var HELP = {
+  factures:'Non payées : le client doit encore payer. À finir : une facture commencée, pas encore terminée. Payées : c\'est réglé. Toutes : tout ensemble. Touche une facture pour la revoir, la renvoyer au client ou la marquer payée.',
+  taxesdue:'La TPS et la TVQ reçues sur tes factures, moins celles payées sur tes dépenses (garde les reçus : c\'est ta preuve). C\'est une estimation pour ta déclaration à Revenu Québec.',
   couleurs:'Le mode vitrine, c\'est l\'app en panneaux de verre posés sur un fond de couleur. Choisis tes couleurs : Sable suit ton téléphone (clair le jour, foncé le soir) ; les autres restent toujours pareilles. C\'est pour tout le garage : chaque téléphone de l\'équipe change tout seul.',
   vin:'Le VIN, c\'est le numéro de série de l\'auto : 17 lettres et chiffres. Il est sur l\'autocollant dans le cadre de la porte du conducteur, ou en bas du pare-brise côté conducteur. Scanne-le : l\'année, la marque, le modèle et le moteur se remplissent tout seuls.',
   duree:function(){ return 'L\'agenda est découpé en cases de ' + dur(slotMin()) + '. Touche + ou − pour allonger ou raccourcir le rendez-vous : la durée en heures s\'affiche juste en dessous.'; },
@@ -2833,6 +2837,7 @@ function viewDash(){
   quick += '<button type="button" class="chip" data-act="tab" data-t="agenda">Ouvrir l\'agenda</button>';
   if (lm) quick += '<button type="button" class="chip" data-act="tab" data-t="dispos">Mes disponibilités</button>';
   else if (mechanics().length && canHours()) quick += '<button type="button" class="chip" data-act="tab" data-t="dispos">Disponibilités des mécanos</button>';
+  if (tabOk('stock') && !phone()) quick += '<button type="button" class="chip" data-act="tab" data-t="stock">Stock des camions</button>';   /* (on the computer, no menu item for it) */
   if (uiOverride() === 'full' && PHONE_DEV) quick += '<button type="button" class="chip" data-act="ui-phone">Version simple pour téléphone</button>';
   b += '<div class="dash"><div class="quick" role="group" aria-label="Raccourcis">' + quick + '</div>';
 
@@ -2930,7 +2935,7 @@ function viewJob(){
       : w ? '<div class="banner"><p>Ce client n\'a pas encore de fiche.</p><button type="button" class="btn sm" data-act="cl-link">Créer sa fiche client</button></div>' : '') + '</section>';
 
   var vc = v.vin ? vinCheck(v.vin) : null;
-  body += '<section class="sect"><div class="sect-head"><h3>Véhicule</h3>' + (w && !isOff(j) ? '<span><button type="button" class="btn sm" data-act="scan-job" data-id="' + esc(j.id) + '">' + (v.vin ? 'Rescanner le VIN' : 'Scanner le VIN') + '</button>' + help('vin', 'le VIN') + '</span>' : '') + '</div><dl class="kv">' +
+  body += '<section class="sect" id="veh-sect"><div class="sect-head"><h3>Véhicule</h3>' + (w && !isOff(j) ? '<span><button type="button" class="btn sm" data-act="scan-job" data-id="' + esc(j.id) + '">' + (v.vin ? 'Rescanner le VIN' : 'Scanner le VIN') + '</button>' + help('vin', 'le VIN') + '</span>' : '') + '</div><dl class="kv">' +
     '<div><dt>Modèle</dt><dd class="tk-veh">' + esc(vehLabel(j) || '—') + (jobVeh(j).engine || v.trim ? '<br><span class="small muted">' + esc([v.trim, jobVeh(j).engine, v.drive].filter(Boolean).join(' · ')) + '</span>' : '') + '</dd></div>' +
     (v.vin ? '<div><dt>VIN</dt><dd><span class="vin sel">' + esc(v.vin) + '</span><br><span class="badge ' + (vc.state === 'ok' ? 'ok' : 'warn') + '">' + (vc.state === 'ok' ? 'Chiffre de contrôle correct' : 'À vérifier : ' + esc(vc.msg)) + '</span><div class="inline-actions"><button type="button" class="btn sm" data-act="copy" data-v="' + esc(v.vin) + '">Copier le VIN</button></div></dd></div>' : '') +
     ((v.plate || v.km) ? '<div class="grid2"><div><dt>Plaque</dt><dd class="mono">' + esc(v.plate || '—') + '</dd></div><div><dt>Kilométrage</dt><dd class="num">' + (v.km ? esc(v.km) + ' km' : '—') + '</dd></div></div>' : '') +
@@ -3613,7 +3618,7 @@ function viewInvoices(){
   var top = '<div class="wrap top-in"><div class="brandrow"><div><div class="eyebrow">' + esc(bizName()) + '</div><h1>Factures</h1></div>' + (canWrite() ? '<button type="button" class="btn primary sm" data-act="quick">+ Facture sur place</button>' : '') + '</div></div>';
   var body = banners() +
     '<div class="sum"><div class="stat"><b>' + esc(money(due)) + '</b><span>à recevoir (' + nDue + ')</span></div><div class="stat"><b>' + esc(money(got)) + '</b><span>encaissé en ' + esc(DMONTH.format(new Date())) + '</span></div><div class="stat"><b>' + nDraft + '</b><span>à finir</span></div></div>' +
-    '<div class="chips" role="group" aria-label="Filtrer">' + chip('invf', 'unpaid', 'Non payées', f === 'unpaid') + chip('invf', 'paid', 'Payées', f === 'paid') + chip('invf', 'draft', 'À finir', f === 'draft') + chip('invf', 'all', 'Toutes', f === 'all') + '</div>';
+    '<div class="chips" role="group" aria-label="Filtrer">' + chip('invf', 'unpaid', 'Non payées', f === 'unpaid') + chip('invf', 'paid', 'Payées', f === 'paid') + chip('invf', 'draft', 'À finir', f === 'draft') + chip('invf', 'all', 'Toutes', f === 'all') + help('factures', 'les filtres des factures') + '</div>';
   if (!S.loaded && !S.noDb) body += '<p class="muted">Ouverture du carnet…</p>';
   else if (!list.length) body += '<div class="empty-card"><p>' + (all.length ? 'Aucune facture dans ce filtre.' : 'Pas encore de facture. Le mécano la fait depuis la job, sur place, ou avec « Facture sur place » pour un client sans réservation.') + '</p></div>';
   else body += '<div class="list">' + list.map(function(j){
@@ -3966,7 +3971,7 @@ document.addEventListener('click', function(e){
     case 'exp-receipt': showReceipt(id); break;
     case 'exp-del': deleteExpense(); break;
     case 'exp-del-no': { S.expDel = false; var xb = $('#x-delbox'); if (xb) xb.innerHTML = '<button type="button" class="btn ghost block danger-t" data-act="exp-del">Supprimer cette dépense</button>'; break; }
-    case 'x-pay': S.expPay = S.expPay === v ? '' : v; $$('[data-act="x-pay"]').forEach(function(x){ var on = x.dataset.v === S.expPay; x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on)); }); break;
+    case 'x-pay': S.expPay = S.expPay === v ? '' : v; S.expPayMine = true; $$('[data-act="x-pay"]').forEach(function(x){ var on = x.dataset.v === S.expPay; x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on)); }); break;
     case 'av-day': editAvail(function(cur){ var x = cur.week[v] || {on:false, start:'08:00', end:'17:00'}; x.on = !x.on; cur.week[v] = x; }); break;
     case 'av-off-add': { var dd = val('av-off'); if (!dd){ toast('Choisis une date.'); break; } editAvail(function(cur){ if (cur.off.indexOf(dd) < 0) cur.off.push(dd); cur.off.sort(); }); break; }
     case 'av-off-del': editAvail(function(cur){ cur.off = cur.off.filter(function(x){ return x !== v; }); }); break;
@@ -4133,7 +4138,7 @@ function viewJobPhone(){
   b += '<details class="sect fold" id="veh-fold"><summary><span>Véhicule et fiche technique' + (!v.vin && w && !isOff(j) ? ' <span class="small muted">· VIN à scanner</span>' : '') + help('vin', 'le VIN') + '</span></summary><div class="stack">' + (w && !isOff(j) ? '<button type="button" class="btn block" data-act="scan-job" data-id="' + esc(j.id) + '">' + (v.vin ? 'Rescanner le VIN' : 'Scanner le VIN') + '</button>' : '') +
     '<dl class="kv"><div><dt>Modèle</dt><dd>' + esc(vehLabel(j) || '—') + (jobVeh(j).engine || v.trim ? '<br><span class="small muted">' + esc([v.trim, jobVeh(j).engine, v.drive].filter(Boolean).join(' · ')) + '</span>' : '') + '</dd></div>' + (v.vin ? '<div><dt>VIN</dt><dd class="vin sel">' + esc(v.vin) + '</dd></div>' : '') + (v.plate ? '<div><dt>Plaque</dt><dd class="mono">' + esc(v.plate) + '</dd></div>' : '') + (v.km ? '<div><dt>Kilométrage</dt><dd>' + esc(v.km) + ' km</dd></div>' : '') + '</dl>' + specCardHTML(jobVeh(j), w, j.id) + '</div></details>';
   if (j.problem || j.notes) b += '<details class="sect fold" open><summary>Notes</summary><dl class="kv">' + (j.problem ? '<div><dt>Ce que le client décrit</dt><dd>' + esc(j.problem) + '</dd></div>' : '') + (j.notes ? '<div><dt>Notes pour le mécano</dt><dd>' + esc(j.notes) + '</dd></div>' : '') + '</dl></details>';
-  b += '<details class="sect fold"><summary>Facture <span class="muted small">' + (is === 'none' ? 'pas encore' : esc(INV_LBL[is]) + (j.invoice && j.invoice.total ? ' · ' + esc(money(j.invoice.total)) : '')) + '</span></summary>' +
+  b += '<details class="sect fold" id="inv-fold"><summary>Facture <span class="muted small">' + (is === 'none' ? 'pas encore' : esc(INV_LBL[is]) + (j.invoice && j.invoice.total ? ' · ' + esc(money(j.invoice.total)) : '')) + '</span></summary>' +
     (is === 'none' ? (wi ? '<button type="button" class="btn block" data-act="invoice" data-id="' + esc(j.id) + '">Faire la facture</button>' : '<p class="muted">Pas encore facturée.</p>') : '<button type="button" class="btn block" data-act="' + (is === 'draft' && w ? 'invoice' : 'preview') + '" data-id="' + esc(j.id) + '">' + (is === 'draft' ? 'Continuer la facture' : 'Voir la facture') + '</button>' + invoiceSendHTML(j)) + '</details>';
   if (w){
     b += '<div class="actions"><button type="button" class="btn block" data-act="edit" data-id="' + esc(j.id) + '">Modifier la réservation</button></div>';
@@ -4271,8 +4276,13 @@ function tourCheck(){
     setTimeout(go, 700);
   }, function(){});
 }
-/* ---- the guided tour: the app opens each screen by itself; a soft light around the part being explained, a bubble with the words.
-   Steps: {ch: chapter, icon, t: title, p: text, x: a tip (optional), sel: what to light up, go: which screen, need: skip it when that part is not there}.
+/* ---- the guided tour: a soft light around the part being explained, a bubble with the words. The person goes from screen to screen himself
+   (he touches the lit button), and tries things on the way; nothing he tries is saved.
+   Steps: {ch: chapter, icon, t: title, p: text, x: a tip (optional), sel: what to light up,
+     tap: the button to touch (the visit goes on after his touch; no « Suivant »), do: what to touch,
+     try: what he can play with (tryT: the invitation, done: the words once he did), after: what it opens (lit with it),
+     nav: the screen a tap step leads to (skipped when he is already there), go: a screen opened for him (only where nothing can be touched),
+     need: skip it when that part is not there}.
    When the part to light up is not on the screen, the bubble is shown in the middle (the explanation still counts). ---- */
 var TOUR = null;
 /* how it moves (smooth and in step):
@@ -4289,7 +4299,8 @@ function tourStart(replay){
   if (SCH) schedClose();
   if (TOUR) tourEnd(true, true);
   st.forEach(function(x){ if (!x.sel) x.sel = x.tap || x.try || null; });
-  TOUR = {steps:st, i:0, dir:1, replay:!!replay, seq:0, busy:true, rk:'', tried:false, luxBack:null};
+  TOUR = {steps:st, i:0, dir:1, replay:!!replay, seq:0, busy:true, rk:'', tried:false, luxBack:null,
+    keep:{view:S.view, invFilter:S.invFilter, cq:S.cq, trView:S.trView, trP:S.trP, day:S.day, mech:S.mech, avMech:S.avMech}};
   clearInterval(ttWatch); ttWatch = setInterval(function(){ if (TOUR) tourFollow(false); else { clearInterval(ttWatch); ttWatch = 0; } }, 300);
   tourMount();
   tourShow();
@@ -4326,7 +4337,7 @@ function tourMoves(go){
   if (go === 'home') return !!S.screen || h !== defTab();
   if (go.indexOf('tab:') === 0) return !!S.screen || h !== go.slice(4);
   if (go === 'job'){ if (S.screen === 'job' && findJob(S.jobId)) return false; return !!tourJob(); }
-  if (go.indexOf('view:') === 0) return !!S.screen || h !== 'tresor' || S.trView !== go.slice(5);
+  if (go.indexOf('view:') === 0) return !!S.screen || h !== 'tresor' || (S.trView || 'dep') !== go.slice(5);   /* (« Dépenses » is the view shown first) */
   if (go.indexOf('set:') === 0){ var nm = go.slice(4); return !!S.screen || h !== 'reglages' || (nm ? S.setSec == null : S.setSec != null); }
   return !!S.screen || h !== go;
 }
@@ -4343,6 +4354,7 @@ function tourGo(go){
   else if (tabOk(go)) tourHash(go);
   if (!SCH) window.scrollTo(0, 0);
 }
+function tourHere(t){ return !S.screen && !SCH && !S.sheet && (location.hash.slice(1) || S.tab) === t; }
 function ttWait(ms){ return new Promise(function(res){ setTimeout(res, ms); }); }
 /* wait until the part is there and has stopped moving (a screen that is still opening, data that arrives) */
 function ttSettle(sel, seq, maxMs){
@@ -4392,17 +4404,20 @@ function tourShow(){
   if (!TOUR) return;
   var seq = ++TOUR.seq, x = TOUR.steps[TOUR.i], ov = $('#tour-ov');
   TOUR.busy = true; TOUR.tried = false; tourUndo(); document.body.classList.remove('tt-free'); if (ov){ ov.dataset.ready = '0'; ov.classList.remove('open'); var hl0 = ov.querySelector('.tt-hole'); if (hl0) hl0.classList.remove('tap'); }
-  var tip = ov && ov.querySelector('.tt-tip'), moves = tourMoves(x.go), red = ttReduced();
+  var shut0 = S.sheet && !/#sheet|#expform|\.x-scan|#x-/.test(x.sel || ''), tip = ov && ov.querySelector('.tt-tip'), moves = tourMoves(x.go) || shut0, red = ttReduced();   /* (a step outside the open sheet: it closes) */
   if (tip){ tip.classList.add('fade'); if (moves) tip.classList.add('gone'); }   /* another screen: the bubble leaves too, and comes back where it belongs */
   if (moves) tourLight(null);   /* close the light: the screen changes in the dark */
   ttWait(red ? 0 : moves ? 260 : 110).then(function(){
     if (!TOUR || TOUR.seq !== seq) return;
+    if (shut0 && S.sheet) closeSheet();
     tourGo(x.go);
-    if (!moves){ var e0 = x.sel ? tourEl(x.sel) : null; if (!x.sel || e0) return e0; }   /* same screen, the part is there: go now */
-    return ttSettle(x.sel, seq, moves ? 2600 : 700);
+    var opened = TOUR.afterTap; TOUR.afterTap = false;
+    if (!moves && !opened){ var e0 = x.sel ? tourEl(x.sel) : null; if (!x.sel || e0) return e0; }   /* same screen, the part is there: go now */
+    /* (after his touch, what it opened may still be sliding in: wait until it stands still) */
+    return ttSettle(x.sel, seq, moves ? 2600 : opened ? 1200 : 700);
   }).then(function(el){
     if (!TOUR || TOUR.seq !== seq || el === undefined) return;
-    if (x.sel && !el && x.need){   /* that part is not there for this person: skip it, in the direction we are going */
+    if ((x.sel && !el && x.need) || (x.nav && tourHere(x.nav))){   /* that part is not there for this person (or he is already on that screen): skip it, in the direction we are going */
       if (TOUR.dir < 0 && TOUR.i > 0){ TOUR.i--; tourShow(); } else if (TOUR.dir >= 0 && TOUR.i < TOUR.steps.length - 1){ TOUR.i++; tourShow(); } else if (TOUR.dir >= 0) tourEnd(false); else { TOUR.dir = 1; tourShow(); }
       return;
     }
@@ -4416,6 +4431,7 @@ function tourShow(){
   });
 }
 function ttq(t){ return String(t).replace(/« /g, '« ').replace(/ »/g, ' »').replace(/ ([?!:;])/g, ' $1'); }
+function ttFramed(e){ var cs = getComputedStyle(e), bg = cs.backgroundColor; return (bg && bg !== 'transparent' && !/rgba\(.*,\s*0\)$/.test(bg)) || parseFloat(cs.borderTopWidth) > 0 || cs.boxShadow !== 'none'; }   /* looks like a card */
 /* a clean place to stop the light in a tall part: under a whole card or row, never through one (null = none) */
 function ttCut(el, top, limit, d){
   var avail = limit - top; if (!el || avail < 140) return null;
@@ -4427,7 +4443,7 @@ function ttCut(el, top, limit, d){
     b = all[i].getBoundingClientRect(); if (!b.height || !b.width) continue;
     t = b.top - d; bt = b.bottom - d;
     if (bt <= top + 1 || t >= limit - 1) continue;   /* outside the lit band */
-    if (t < top + 2 && b.height >= avail * .9) continue;   /* a frame around the whole part, not a card in it */
+    if (b.height >= avail * .9 && (t < top + 2 || !ttFramed(all[i]))) continue;   /* a frame around the whole part, or a plain container (no card look): not a card in it */
     box.push([t, bt]);
     if (bt <= limit && bt >= top + avail * .4) cand.push(bt);   /* under a card */
     if (t > top + 2 && t - 6 >= top + avail * .4) cand.push(t - 6);   /* or just above the next one */
@@ -4441,7 +4457,7 @@ function ttCut(el, top, limit, d){
 function ttHole(r, el, d){
   if (!r) return null;
   var W = window.innerWidth, H = window.innerHeight, pad = 8, side = false, over = false;
-  var tw = Math.min(400, W - 24), th = (TOUR && TOUR.th) || 230;
+  var th = (TOUR && TOUR.th) || 230;
   if (ttTall(r.height, el) && !(el && el.closest && el.closest('#tabbar'))){
     var sf = ttSafe(el), t0 = Math.max(r.top, sf.top), right = W - (r.right || r.left + r.width) - pad, x = TOUR && TOUR.steps[TOUR.i];
     side = Math.max(right, r.left - pad) >= 328;   /* the words beside it (a bit narrower if needed) */
@@ -4480,7 +4496,7 @@ function ttTipHTML(x){
     (x.tap && !TOUR.noEl ? '<p class="tt-do"><span aria-hidden="true">👆 </span>' + ttq(x.do || 'Touche la partie éclairée.') + '</p>' : '') +
     (x.try && !TOUR.noEl ? '<p class="tt-try"><span aria-hidden="true">👉 </span>' + ttq(x.tryT || 'Essaie-le.') + '</p><p class="tt-done"><span aria-hidden="true">✓ </span>' + ttq(x.done || 'C\'est ça.') + '</p>' : '') +
     '<div class="tt-btns">' + (first ? '<button type="button" class="btn sm ghost" data-act="tt-skip">Plus tard</button>' : '<button type="button" class="btn sm ghost" data-act="tt-prev">‹ Retour</button>') +
-    (last ? '<button type="button" class="btn sm primary" data-act="tt-end">Terminer</button>' : x.tap && !TOUR.noEl ? '<button type="button" class="btn sm ghost" data-act="tt-next">Passer ›</button>' : '<button type="button" class="btn sm primary" data-act="tt-next">' + (first ? 'Commencer la visite' : 'Suivant ›') + '</button>') + '</div>';
+    (last ? '<button type="button" class="btn sm primary" data-act="tt-end">Terminer</button>' : x.tap && !TOUR.noEl ? '' : '<button type="button" class="btn sm primary" data-act="tt-next">' + (first ? 'Commencer la visite' : 'Suivant ›') + '</button>') + '</div>';
 }
 /* put the light and the bubble where they belong (the bubble glides; its words stay as they are) */
 function tourPlace(el){
@@ -4518,19 +4534,21 @@ function tourDraw(el, seq){
   var ov = $('#tour-ov'); if (!ov || !TOUR || (seq && TOUR.seq !== seq)) return;
   var x = TOUR.steps[TOUR.i], t = ov.querySelector('.tt-tip'), inn = t.querySelector('.tt-in'), hidden = !t.dataset.placed || t.classList.contains('gone');
   TOUR.noEl = !el;   /* nothing to touch on this screen: the step only explains */
+  ov.dataset.kind = el && x.tap ? 'tap' : el && x.try ? 'try' : 'read'; ov.dataset.part = el ? (x.tap || x.try || '') : '';   /* (what the automatic tests act on) */
   t.classList.add('swap'); t.classList.add('fade'); t.classList.remove('tried'); inn.innerHTML = ttTipHTML(x); t.getBoundingClientRect(); t.classList.remove('swap');   /* the new words come in hidden, then fade in */
   if (hidden){ t.classList.add('still'); t.classList.add('gone'); }   /* a bubble that was away appears in place (no glide from elsewhere) */
   tourPlace(el);
   if (hidden){ t.getBoundingClientRect(); t.classList.remove('still'); t.dataset.placed = '1'; }
   var s = TOUR.seq, red = ttReduced();
   setTimeout(function(){ if (TOUR && TOUR.seq === s){ t.classList.remove('gone'); t.classList.remove('fade'); var f = ov.querySelector('[data-act="tt-next"], [data-act="tt-end"]'); if (f) try { f.focus({preventScroll:true}); } catch(e){} } }, red ? 0 : hidden ? 200 : 170);
-  if (x.tap && el) ov.querySelector('.tt-hole').classList.add('tap');
+  ov.querySelector('.tt-hole').classList.toggle('tap', !!(x.tap && el));   /* (pulses only where there is something to touch) */
   setTimeout(function(){ if (TOUR && TOUR.seq === s){ TOUR.busy = false; ov.classList.toggle('open', !!((x.tap || x.try) && el)); document.body.classList.toggle('tt-free', ov.classList.contains('open')); ov.dataset.ready = '1'; } }, red ? 0 : TT_MS + 40);
 }
 /* while you read: if the page moves (data arriving, a picture loading), the light follows */
 function tourFollow(force){
   if (!TOUR || TOUR.busy || !$('#tour-ov')) return;
   var x = TOUR.steps[TOUR.i], el = x.sel ? tourEl(x.sel) : null, r = el ? el.getBoundingClientRect() : null;
+  if (x.tap && !el && !TOUR.noEl && !TOUR.afterTap) return tourDraw(null);   /* the button to touch is gone: the step only explains, with « Suivant » */
   var k = r ? [r.left, r.top, r.width, r.height].map(Math.round).join(',') : 'mid';
   if (force || k !== TOUR.rk) tourPlace(el);
 }
@@ -4540,7 +4558,8 @@ function tourPrev(){ if (!TOUR || TOUR.busy || !TOUR.i) return; TOUR.dir = -1; T
 function tourEnd(skipped, quiet){
   if (!TOUR) return;
   var replay = TOUR.replay, p = tourPath(), ov = $('#tour-ov'), home;
-  tourUndo(); TOUR = null;
+  tourUndo(); var kp = TOUR.keep; TOUR = null;
+  if (kp){ Object.keys(kp).forEach(function(k){ S[k] = kp[k]; }); lsSet('gm.view', S.view); lsSet('gm.mech', S.mech); if (S.sheet) closeSheet(); }   /* what was tried (a view, a filter, a search) is put back */
   if (ov){ ov.removeAttribute('id'); ov.classList.remove('on'); ov.classList.add('out'); setTimeout(function(){ ov.remove(); }, ttReduced() ? 0 : 260); }
   document.body.classList.remove('touring'); document.body.classList.remove('tt-free');
   if (quiet) return;
@@ -4563,17 +4582,25 @@ document.addEventListener('click', function(ev){
 }, true);
 document.addEventListener('keydown', function(ev){
   if (!TOUR) return;
+  var tg = ev.target, typing = tg && (/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName) || tg.isContentEditable), x = TOUR.steps[TOUR.i];
+  if (typing && ev.key !== 'Escape') return;   /* the arrows move the cursor in a field being tried */
   if (ev.key === 'Escape'){ ev.preventDefault(); tourEnd(true); }
-  else if (ev.key === 'ArrowRight'){ ev.preventDefault(); tourNext(); }
+  else if (ev.key === 'ArrowRight'){ ev.preventDefault(); if (!(x && x.tap && !TOUR.noEl)) tourNext(); }   /* a « touch it » step waits for the touch */
   else if (ev.key === 'ArrowLeft'){ ev.preventDefault(); tourPrev(); }
 }, true);
 /* a step where the person does it himself: only the lit part answers (and the bubble); a touch elsewhere does nothing.
    « tap »: touching it does what it always does, then the visit goes on by itself. « try »: play with it, nothing is saved. */
+var TT_LEAVE = 'a[href]:not([href=""]), [data-act="open"], [data-act="cl-open"], [data-act="cl-job"], [data-act="cl-inv"], [data-act="preview"], [data-act="tab"]';
 function ttGuard(ev){
   if (!TOUR) return;
   var ov = $('#tour-ov'), t = ev.target;
   if (!ov || !ov.classList.contains('open') || !t || !t.closest) return;
   var x = TOUR.steps[TOUR.i], sel = x.tap || x.try, ok = false;
+  if (ev.type === 'focusin'){   /* a box outside the lit part does not open its keyboard or its list (the iPhone opens them on focus) */
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName) && !t.closest('#tour-ov')){ try { ok = !!(sel && t.closest(sel)); } catch(e){} if (!ok) try { t.blur(); } catch(e){} }
+    return;
+  }
+  if (ev.type === 'input'){ if (x.try){ try { if (t.closest(sel)) setTimeout(tourTried, 60); } catch(e){} } return; }
   if (ev.type === 'pointerup'){   /* the end of a touch is never stopped (a swipe on the grid must end where it ends) */
     if (TOUR.downIn && x.try) setTimeout(tourTried, 60);
     TOUR.downIn = false; return;
@@ -4582,13 +4609,14 @@ function ttGuard(ev){
   try { ok = !!(sel && t.closest(sel)); } catch(e){}
   if (!ok){ ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); return; }
   if (ev.type === 'pointerdown') TOUR.downIn = true;
-  if (x.tap && ev.type === 'click'){
-    var s = TOUR.seq; ov.classList.remove('open');
+  if (x.try && t.closest(TT_LEAVE)){ ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); if (ev.type === 'click') setTimeout(tourTried, 60); return; }   /* trying stays on this screen */
+  if (x.tap && ev.type === 'click' && !t.closest('.qhelp')){   /* (a « ? » inside the lit part opens its help: that touch does not count) */
+    var s = TOUR.seq; ov.classList.remove('open'); TOUR.afterTap = true;
     setTimeout(function(){ if (TOUR && TOUR.seq === s) tourNext(); }, 90);   /* the app does what the button does, then the next step */
   }
   else if (x.try && ev.type === 'click') setTimeout(tourTried, 60);
 }
-['pointerdown', 'mousedown', 'pointerup', 'click'].forEach(function(n){ document.addEventListener(n, ttGuard, true); });
+['pointerdown', 'mousedown', 'pointerup', 'click', 'input', 'focusin'].forEach(function(n){ document.addEventListener(n, ttGuard, true); });
 function tourTried(){
   var tip = $('#tour-ov .tt-tip');
   if (!TOUR || !tip || TOUR.tried) return;
@@ -4852,7 +4880,7 @@ function reportHTML(c, r){
       '</tbody></table></div><p class="muted small">Les dépenses générales (sans camion) ne sont pas réparties.</p></section>';
   }
   if (c.taxed){
-    h += '<section class="sect" id="rep-tax"><h3>Taxes à remettre</h3><table class="rep"><thead><tr><th></th><th class="num">TPS</th><th class="num">TVQ</th></tr></thead><tbody>' +
+    h += '<section class="sect" id="rep-tax"><h3>Taxes à remettre' + help('taxesdue', 'les taxes à remettre') + '</h3><table class="rep"><thead><tr><th></th><th class="num">TPS</th><th class="num">TVQ</th></tr></thead><tbody>' +
       '<tr><th>Perçues sur les factures</th><td class="num">' + esc(money(c.rev.tps)) + '</td><td class="num">' + esc(money(c.rev.tvq)) + '</td></tr>' +
       '<tr><th>Payées sur les dépenses</th><td class="num">−' + esc(money(c.exp.tps)) + '</td><td class="num">−' + esc(money(c.exp.tvq)) + '</td></tr>' +
       '<tr class="rtot"><th>' + (c.tpsDue < 0 || c.tvqDue < 0 ? 'À remettre (négatif = remboursement)' : 'À remettre') + '</th><td class="num">' + esc(money(c.tpsDue)) + '</td><td class="num">' + esc(money(c.tvqDue)) + '</td></tr></tbody></table>' +
@@ -4868,9 +4896,11 @@ function reportHTML(c, r){
 function openExpense(id){
   if (!canExpense() && !id) return;
   var x = id ? findExp(id) : null, w = canExpense(), dis = w ? '' : ' disabled';
-  S.expId = x ? x.id : null; S.expImg = null; S.expPay = x ? (x.method || '') : ''; S.taxEdited = false; S.expDel = false;
+  S.expId = x ? x.id : null; S.expImg = null; S.expPay = x ? (x.method || '') : ''; S.expPayMine = false; S.taxEdited = false; S.expDel = false;
   var vendors = {}; (S.exps || []).forEach(function(e){ if (e.vendor) vendors[e.vendor] = 1; });
   var h = '<form id="expform" class="stack" novalidate>' +
+    (w && !x ? '<div class="x-scan"><label class="btn primary block" for="x-scanf">📷 Scanner le reçu</label><input type="file" id="x-scanf" accept="image/*" capture="environment" class="sr-only">' +
+      '<p class="small muted" id="x-scanmsg" role="status">Prends le reçu en photo, bien à plat : la date, le magasin, le total, les taxes et le paiement se remplissent tout seuls. Tu peux tout corriger.</p></div>' : '') +
     '<div class="grid2">' + inputF('x-date', 'Date', x ? x.date : today(), 'type="date"' + dis) + inputF('x-total', 'Total payé ($)', x ? amtTxt(x.total) : '', 'inputmode="decimal" autocomplete="off" placeholder="0,00"' + dis) + '</div>' +
     inputF('x-vendor', 'Fournisseur', x ? x.vendor : '', 'list="x-vendors" autocomplete="off" placeholder="Ex. NAPA, Canadian Tire, Esso"' + dis) + '<datalist id="x-vendors">' + Object.keys(vendors).sort().map(function(v){ return '<option value="' + esc(v) + '">'; }).join('') + '</datalist>' +
     '<div class="grid2"><div class="field"><label for="x-cat">Catégorie</label><select id="x-cat"' + dis + '>' + EXP_CATS.map(function(cc){ return opt(cc[0], cc[1], (x ? x.cat : 'pieces') === cc[0]); }).join('') + '</select></div>' +
@@ -4889,8 +4919,11 @@ function openExpense(id){
   $('#x-total').addEventListener('input', expTaxes);
   $('#x-taxin').addEventListener('change', function(){ S.taxEdited = false; expTaxes(); });
   ['x-tps', 'x-tvq'].forEach(function(i){ $('#' + i).addEventListener('input', function(){ S.taxEdited = true; expSub(); }); });
+  var scf = $('#x-scanf'); if (scf) scf.addEventListener('change', function(ev){ var fl = ev.target.files && ev.target.files[0]; ev.target.value = ''; scanReceipt(fl); });   /* (emptied: the same photo can be chosen again) */
+  f.addEventListener('input', function(ev){ var e = ev.target; if (!e.classList || !e.id) return; e.classList.remove('auto'); e.dataset.mine = '1';   /* a box he writes in is his: no longer « read from the receipt », and a scan leaves it alone */
+    if (e.id === 'x-total'){ ['x-tps', 'x-tvq'].forEach(function(id){ var c = $('#' + id); if (c && c.dataset.calc){ c.classList.remove('auto'); delete c.dataset.calc; } }); } });   /* (taxes calculated from his total: his) */
   $('#x-file').addEventListener('change', function(ev){
-    var fl = ev.target.files && ev.target.files[0]; if (!fl) return;
+    var fl = ev.target.files && ev.target.files[0]; ev.target.value = ''; if (!fl) return;
     var pv = $('#x-prev'); pv.textContent = 'Préparation de la photo…';
     shrinkImage(fl).then(function(u){ S.expImg = u; pv.innerHTML = '<img src="' + u + '" alt="Aperçu du reçu" class="rcthumb"><span class="small ok-t">Photo prête (' + Math.round(u.length * 0.75 / 1024) + ' Ko)</span>'; },
       function(){ S.expImg = null; pv.innerHTML = '<span class="small tight">Cette photo n\'a pas pu être lue. Essaie une autre photo (JPEG ou PNG).</span>'; });
@@ -4904,30 +4937,188 @@ function expTaxes(){
   expSub();
 }
 function expSub(){ var el = $('#x-sub'); if (!el) return; var tt = r2(num(val('x-total'))), inc = $('#x-taxin').checked, sub = inc ? r2(tt - num(val('x-tps')) - num(val('x-tvq'))) : tt; el.textContent = tt ? money(sub) : '—'; }
-function shrinkImage(file){
+/* ---------- scanning a receipt: the photo is read on the phone itself (Tesseract, no account, nothing sent anywhere),
+   the expense fills in, and everything stays editable. The reading engine (about 8 MB) downloads on the first scan, then stays
+   on the phone. (An AI could read receipts instead one day: only readReceipt() would change.)
+   window.__ocrBase / __ocrLang: the automatic tests serve the engine from the test machine. ---------- */
+var OCR = {p:null, idle:0, step:null, tok:0};
+function ocrBase(){ return window.__ocrBase || 'https://cdn.jsdelivr.net/npm/'; }
+/* a step that never answers (a download stuck on a weak signal) gives up after a while */
+function ocrLimit(p, ms, code){ var t; return Promise.race([p, new Promise(function(res, rej){ t = setTimeout(function(){ rej(new Error(code)); }, ms); })]).then(function(v){ clearTimeout(t); return v; }, function(e){ clearTimeout(t); throw e; }); }
+function ocrDrop(){ var p = OCR.p; OCR.p = null; clearTimeout(OCR.idle); if (p) p.then(function(w){ try { w.terminate(); } catch(e){} }, function(){}); }
+function ocrWorker(){
+  clearTimeout(OCR.idle);
+  if (OCR.p) return OCR.p;
+  var inner = new Promise(function(res, rej){
+    if (window.Tesseract) return res(window.Tesseract);
+    var sc = document.createElement('script'); sc.src = ocrBase() + 'tesseract.js@7.0.0/dist/tesseract.min.js';
+    sc.onload = function(){ if (window.Tesseract) res(window.Tesseract); else rej(new Error('load')); };
+    sc.onerror = function(){ rej(new Error('load')); };
+    document.head.appendChild(sc);
+  }).then(function(T){
+    return T.createWorker(['fra', 'eng'], 1, {workerPath:ocrBase() + 'tesseract.js@7.0.0/dist/worker.min.js', corePath:ocrBase() + 'tesseract.js-core@7.0.0', langPath:window.__ocrLang || undefined,
+      logger:function(m){ if (OCR.step) OCR.step(m); }});
+  }).then(null, function(){ throw new Error('load'); });   /* (anything missing to prepare it: a download that failed) */
+  var p = OCR.p = ocrLimit(inner, 120000, 'load');   /* (about 8 MB the first time) */
+  p.catch(function(){ if (OCR.p === p) OCR.p = null; inner.then(function(w){ try { w.terminate(); } catch(e){} }, function(){}); });   /* (an engine arriving too late is let go) */
+  return p;
+}
+/* the photo, made easy to read: not too big, in shades of gray, the contrast stretched (a dim or grainy photo reads much better) */
+function photoImg(file){   /* the photo as a picture, straight from the file (no copy of the whole photo in memory) */
   return new Promise(function(res, rej){
-    var fr = new FileReader();
-    fr.onerror = function(){ rej(new Error('read')); };
-    fr.onload = function(){
-      var im = new Image();
-      im.onerror = function(){ rej(new Error('img')); };
-      im.onload = function(){
-        var w0 = im.naturalWidth, h0 = im.naturalHeight, k = Math.min(1, 1280 / Math.max(w0, h0, 1)), q = 0.7, out = '', cv = document.createElement('canvas');
-        for (var i = 0; i < 7; i++){
-          cv.width = Math.max(1, Math.round(w0 * k)); cv.height = Math.max(1, Math.round(h0 * k));
-          var cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); cx.drawImage(im, 0, 0, cv.width, cv.height);
-          out = cv.toDataURL('image/jpeg', q); if (out.length < 230000) break; k *= 0.8; q = Math.max(0.45, q - 0.07);
-        }
-        if (!out || out.length > 330000) rej(new Error('big')); else res(out);
-      };
-      im.src = fr.result;
-    };
-    fr.readAsDataURL(file);
+    var u = '', im = new Image(), done = function(){ if (u) try { URL.revokeObjectURL(u); } catch(e){} };
+    im.onload = function(){ done(); res(im); };
+    im.onerror = function(){ done(); rej(new Error('img')); };
+    try { u = URL.createObjectURL(file); } catch(e){ return rej(new Error('read')); }
+    im.src = u;
+  });
+}
+function receiptCanvas(file){
+  return photoImg(file).then(function(im){
+    var k = Math.min(1, 2000 / Math.max(im.width, im.height)), cv = document.createElement('canvas');   /* (enlarging blurs the digits: only the very big photos are made smaller) */
+    cv.width = Math.round(im.width * k); cv.height = Math.round(im.height * k);
+    var cx = cv.getContext('2d'); cx.drawImage(im, 0, 0, cv.width, cv.height);
+    var d = cx.getImageData(0, 0, cv.width, cv.height), a = d.data;
+    var hist = new Uint32Array(256), n = a.length / 4, i, g, lo = 0, hi = 255, acc;
+    for (i = 0; i < a.length; i += 4){ g = (0.299 * a[i] + 0.587 * a[i + 1] + 0.114 * a[i + 2]) | 0; a[i] = g; hist[g]++; }
+    for (acc = 0; lo < 255 && (acc += hist[lo]) < n * 0.01; lo++);
+    for (acc = 0; hi > 0 && (acc += hist[hi]) < n * 0.01; hi--);
+    var k2 = hi > lo ? 255 / (hi - lo) : 1;
+    for (i = 0; i < a.length; i += 4){ g = Math.max(0, Math.min(255, (a[i] - lo) * k2)); a[i] = a[i + 1] = a[i + 2] = g; }
+    cx.putImageData(d, 0, 0); return cv;
+  });
+}
+/* reads the receipt: {date, vendor, total, sub, tps, tvq, method, cat} (what was found) */
+function readReceipt(file, onStep){
+  OCR.step = function(m){ if (!onStep || !m) return; if (/recogniz/.test(m.status)) onStep('read', Math.round((m.progress || 0) * 100)); else onStep('load', 0); };   /* (set first: the engine's download shows too) */
+  var end = function(){ OCR.step = null; clearTimeout(OCR.idle); OCR.idle = setTimeout(ocrDrop, 90000); };   /* the engine leaves the memory after a while */
+  return Promise.all([receiptCanvas(file), ocrWorker()]).then(function(r){
+    return ocrLimit(r[1].recognize(r[0]), 90000, 'slow').then(function(o){ end(); return parseReceipt(o && o.data ? o.data.text : '', today()); },
+      function(e){ OCR.step = null; if (e && e.message === 'slow') ocrDrop(); throw e; });   /* stuck: a fresh engine next time */
+  }, function(e){ OCR.step = null; throw e; });
+}
+/* what a receipt says, from its text (Québec and Canadian receipts, French or English) */
+var RC_SHOPS = [['NAPA', 'NAPA', 'pieces'], ['CANADIAN TIRE', 'Canadian Tire', 'pieces'], ['PARTSOURCE', 'PartSource', 'pieces'], ['LORDCO', 'Lordco', 'pieces'], ['UAP', 'UAP', 'pieces'], ['BUMPER TO BUMPER', 'Bumper to Bumper', 'pieces'], ['CARQUEST', 'Carquest', 'pieces'],
+  ['ESSO', 'Esso', 'essence'], ['SHELL', 'Shell', 'essence'], ['PETRO-CANADA', 'Petro-Canada', 'essence'], ['PETRO CANADA', 'Petro-Canada', 'essence'], ['ULTRAMAR', 'Ultramar', 'essence'], ['IRVING', 'Irving', 'essence'], ['CROWN', 'Crown', 'essence'], ['COUCHE-TARD', 'Couche-Tard', 'essence'], ['SONIC', 'Sonic', 'essence'], ['OLCO', 'Olco', 'essence'],
+  ['COSTCO', 'Costco', ''], ['WALMART', 'Walmart', ''], ['AMAZON', 'Amazon', ''], ['HOME DEPOT', 'Home Depot', 'outils'], ['RONA', 'Rona', 'outils'], ['BMR', 'BMR', 'outils'], ['PRINCESS AUTO', 'Princess Auto', 'outils'], ['CANAC', 'Canac', 'outils'],
+  ['TIM HORTONS', 'Tim Hortons', 'repas'], ['MCDONALD', 'McDonald\'s', 'repas'], ['SUBWAY', 'Subway', 'repas'], ['A&W', 'A&W', 'repas'],
+  ['VIDEOTRON', 'Vidéotron', 'tel'], ['BELL', 'Bell', 'tel'], ['ROGERS', 'Rogers', 'tel'], ['TELUS', 'Telus', 'tel'], ['FIDO', 'Fido', 'tel'], ['FIZZ', 'Fizz', 'tel'], ['SAAQ', 'SAAQ', 'immat']];
+var RC_MON = {JAN:1, JANV:1, FEB:2, FEV:2, FEVR:2, MAR:3, MARS:3, APR:4, AVR:4, MAY:5, MAI:5, JUN:6, JUIN:6, JUL:7, JUIL:7, AUG:8, AOU:8, AOUT:8, SEP:9, SEPT:9, OCT:10, NOV:11, DEC:12};
+function parseReceipt(text, now){
+  var up = function(s){ return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase(); };
+  var lines = String(text || '').split(/\r?\n/).map(function(l){ return l.replace(/\s+/g, ' ').trim(); }).filter(Boolean), U = lines.map(up), all = U.join('\n'), out = {};
+  /* the amounts on a line: 57,49 · 57.49 · 1 234,56 · $57.49 (not a percentage, not a longer number) */
+  var amts = function(l){ var a = [], re = /(\d{1,3}(?:[  ]\d{3})+|\d+) ?[.,] ?(\d{2})(?![\d%]| ?%)/g, m; while ((m = re.exec(l))) a.push(parseFloat(m[1].replace(/[  ]/g, '') + '.' + m[2])); return a; };
+  var last = function(i){ var a = amts(U[i]); if (!a.length && U[i + 1] && !/[A-Z]{3}/.test(U[i + 1])) a = amts(U[i + 1]); return a.length ? a[a.length - 1] : null; };   /* (sometimes the amount is on the next line) */
+  var find = function(re, not){ var v = null; U.forEach(function(l, i){ if (re.test(l) && !(not && not.test(l))){ var x = last(i); if (x != null) v = x; } }); return v; };
+  /* the total: the biggest « TOTAL » line (not the cash given, not the change, not a sub-total) */
+  var tot = [], neg = false; U.forEach(function(l, i){ if (/\b(GRAND )?TOTAL\b|MONTANT (DU|TOTAL|A PAYER)|\bA PAYER\b|AMOUNT DUE|BALANCE DUE/.test(l) && !/SOUS|SUB|TAXE|TAX\b|TPS|TVQ|GST|QST|HST|ARTICLE|ITEM|POINT|ECONOMI|SAVING|RABAIS|ESCOMPTE|TENDER|REMIS|RENDU|CHANGE|MONNAIE|COMPTANT|CASH/.test(l)){
+    var x = last(i); if (x != null){ tot.push(x); if (/(^|\s)-\$?\d|\d[.,]\d{2} ?\$? ?-/.test(l)) neg = true; } } });   /* (« -57,49 » or « 57,49- »: a refund) */
+  if (tot.length) out.total = Math.max.apply(null, tot);
+  out.sub = find(/SOUS[- ]?TOTAL|SUB[- ]?TOTAL/);
+  out.tps = find(/\bT\.?P\.?S\b|\bGST\b/);
+  out.tvq = find(/\bT\.?V\.?Q\b|\bQST\b/);
+  if (out.tps == null && out.tvq == null){ var h = find(/\bT\.?V\.?H\b|\bHST\b/); if (h != null){ out.tps = h; out.tvq = 0; } }   /* (another province: one tax) */
+  ['sub', 'tps', 'tvq'].forEach(function(k){ if (out[k] == null) delete out[k]; });
+  var fits = out.total != null && out.sub != null && Math.abs(out.sub + (out.tps || 0) + (out.tvq || 0) - out.total) < 0.05;   /* everything adds up: all read right */
+  /* a refund, or a total smaller than its own sub-total (a 7 read as a 1): the total is the one misread */
+  if (out.total != null && !fits && (neg || out.total <= 0 || (out.sub != null && out.total < out.sub * 0.99))){ delete out.total; out.doubt = 'total'; }
+  if (out.total != null) ['sub', 'tps', 'tvq'].forEach(function(k){ if (out[k] > out.total) delete out[k]; });   /* a tax bigger than the total: that tax is misread */
+  /* one of the two Québec taxes unreadable: the other one gives it (TPS 5 %, TVQ 9,975 % of the same amount) — the TVQ only if the receipt has one */
+  if (out.tps != null && out.tvq == null && /\bT\.?V\.?Q\b|\bQST\b/.test(all)) out.tvq = Math.round(out.tps * 199.5) / 100;
+  else if (out.tvq != null && out.tps == null) out.tps = Math.round(out.tvq / 0.09975 * 5) / 100;
+  /* a total smaller than what its taxes need: misread too. Better empty than wrong (and then nothing is rebuilt from other lines) */
+  if (out.total != null && !fits && out.tvq > 0 && out.total < out.tvq / 0.09975 * 1.14975 * 0.97){ delete out.total; out.doubt = 'total'; }
+  if (!out.doubt){
+    if (out.total == null && out.sub != null) out.total = Math.round((out.sub + (out.tps || 0) + (out.tvq || 0)) * 100) / 100;
+    if (out.total == null){ var pay = find(/VISA|MASTER|\bMC\b|AMEX|DEBIT|INTERAC|CREDIT|PAIEMENT/); if (pay != null) out.total = pay; }
+  }
+  if (out.total == null) delete out.total;
+  /* the date (not in the future, not older than 2 years) */
+  var nowD = new Date((now || new Date().toISOString().slice(0, 10)) + 'T12:00:00'), iso = function(y, mo, d){
+    y = +y; if (y < 100) y += 2000; mo = +mo; d = +d; if (!(mo >= 1 && mo <= 12 && d >= 1 && d <= 31)) return null;
+    var t = new Date(y, mo - 1, d, 12); if (t.getMonth() !== mo - 1 || t - nowD > 86400000 || nowD - t > 730 * 86400000) return null;
+    return y + '-' + (mo < 10 ? '0' : '') + mo + '-' + (d < 10 ? '0' : '') + d; };
+  var m, dates = [];
+  var reIso = /\b(20\d{2})[-\/.](\d{1,2})[-\/.](\d{1,2})\b/g; while ((m = reIso.exec(all))) dates.push(iso(m[1], m[2], m[3]));
+  var reNum = /\b(\d{1,2})[-\/.](\d{1,2})[-\/.](20\d{2}|\d{2})\b/g; while ((m = reNum.exec(all))){
+    var dm = iso(m[3], m[2], m[1]), md = iso(m[3], m[1], m[2]);   /* 28/10/2026 or 10/28/2026: the one that can be a recent date */
+    dates.push(dm && md ? (Math.abs(new Date(dm) - nowD) <= Math.abs(new Date(md) - nowD) ? dm : md) : dm || md); }
+  var reTxt = /\b(\d{1,2}) ?([A-Z]{3,9})\.? ?,? ?(20\d{2})\b|\b([A-Z]{3,9})\.? ?(\d{1,2}),? ?(20\d{2})\b/g; while ((m = reTxt.exec(all))){
+    var w = m[2] || m[4], mn = RC_MON[w] || RC_MON[w.slice(0, 4)] || RC_MON[w.slice(0, 3)]; if (mn) dates.push(iso(m[3] || m[6], mn, m[1] || m[5])); }   /* 28 oct. 2026 · 28 octobre 2026 · OCT 28, 2026 */
+  dates = dates.filter(Boolean); if (dates.length) out.date = dates[0];
+  /* who sold it: a shop we know (its whole name, at the top or the bottom of the receipt, not in an item), or the first line that looks like a name */
+  var ends = U.slice(0, 8).concat(U.length > 8 ? U.slice(-4) : []).filter(function(l){ return !amts(l).length; }).join('\n');   /* (a line with a price is an item) */
+  RC_SHOPS.some(function(s){ if (new RegExp('(^|[^A-Z0-9])' + s[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![A-Z0-9])', 'm').test(ends)){ out.vendor = s[1]; if (s[2]) out.cat = s[2]; return true; } });
+  if (!out.vendor) for (var i = 0; i < Math.min(5, lines.length); i++){
+    var l = lines[i], le = (l.match(/[A-Za-zÀ-ÿ]/g) || []).length;
+    if (le >= 3 && le / l.length > 0.6 && !/BIENVENUE|WELCOME|MERCI|THANK|FACTURE|INVOICE|RECU|RECEIPT|\bTEL\b|WWW|HTTP|@|COPIE|CLIENT/.test(U[i])){ out.vendor = l.toLowerCase().replace(/(^|[\s'-])([a-zà-ÿ])/g, function(w, a, b){ return a + b.toUpperCase(); }).slice(0, 40); break; }
+  }
+  if (!out.cat){ if (/ESSENCE|DIESEL|CARBURANT|\bGAS\b|LITRES?\b|\bL @/.test(all)) out.cat = 'essence'; else if (/HUILE|\bOIL\b|FILTRE|FILTER|LAVE-GLACE|ANTIGEL|ANTIFREEZE/.test(all)) out.cat = 'fourn'; }
+  /* how it was paid */
+  if (/INTERAC|\bDEBIT\b/.test(all)) out.method = 'Débit'; else if (/VISA|MASTER ?CARD|\bMC\b|AMEX|AMERICAN EXPRESS|\bCREDIT\b/.test(all)) out.method = 'Crédit'; else if (/COMPTANT|\bCASH\b|ARGENT COMPTANT/.test(all)) out.method = 'Comptant';
+  return out;
+}
+/* the expense form, filled with what was read (each filled box is marked, everything can be changed; a box he already wrote in is left as he wrote it) */
+var RC_NOTAX = ['immat', 'assur', 'banque', 'salaires', 'loyer'];   /* (no TPS / TVQ on these) */
+function fillExpense(fd){
+  var got = [], his = function(e){ return !!e && e.dataset.mine === '1' && (e.type === 'checkbox' || e.value !== ''); };
+  var set = function(id, v, what){ var e = $('#' + id); if (!e || v == null || v === '' || his(e)) return; e.value = v; e.classList.add('auto'); if (what) got.push(what); };
+  set('x-date', fd.date, 'la date'); set('x-vendor', fd.vendor, 'le magasin'); set('x-total', fd.total != null ? amtTxt(fd.total) : null, 'le total');
+  if (fd.cat) set('x-cat', fd.cat, 'la catégorie');
+  if (fd.method && !S.expPayMine){ S.expPay = fd.method; $$('[data-act="x-pay"]').forEach(function(c){ var on = c.dataset.v === fd.method; c.classList.toggle('on', on); c.setAttribute('aria-pressed', String(on)); }); got.push('le paiement'); }
+  var tx = $('#x-taxin'), cat = val('x-cat'), read = fd.tps != null || fd.tvq != null;
+  if (!his($('#x-tps')) && !his($('#x-tvq'))){
+    if (tx && !his(tx)) tx.checked = read || RC_NOTAX.indexOf(cat) < 0;   /* no tax on the receipt and a kind of expense without tax: unticked */
+    S.taxEdited = false; expTaxes();
+    if (read){ set('x-tps', fd.tps != null ? amtTxt(fd.tps) : null, 'la TPS'); set('x-tvq', fd.tvq != null ? amtTxt(fd.tvq) : null, 'la TVQ'); S.taxEdited = true; expSub(); }
+    if (tx && tx.checked && (fd.tps == null || fd.tvq == null) && fd.total != null){   /* a tax not on the receipt: calculated from the total, marked to check */
+      ['x-tps', 'x-tvq'].forEach(function(id){ var e = $('#' + id); if (e && e.value && !e.classList.contains('auto')){ e.classList.add('auto'); e.dataset.calc = '1'; } });
+      got.push('les taxes calculées (à vérifier)');
+    }
+  }
+  return got;
+}
+function scanReceipt(fl){
+  var form = $('#expform'), tok = ++OCR.tok, kept = false;
+  var live = function(){ return OCR.tok === tok && $('#expform') === form; };   /* still this form, still the last photo chosen */
+  var say = function(h){ var m = $('#x-scanmsg'); if (m && live()) m.innerHTML = h; };
+  if (!fl || !form) return;
+  var lb = $('label[for="x-scanf"]'); if (lb) lb.classList.add('busy');
+  say('Préparation de la photo…');
+  /* one after the other (lighter on the phone): the photo kept as the receipt, then read */
+  shrinkImage(fl).then(function(u){ if (!live()) return; S.expImg = u; kept = true; var p = $('#x-prev'); if (p) p.innerHTML = '<img src="' + u + '" alt="Aperçu du reçu" class="rcthumb"><span class="small ok-t">Photo du reçu gardée</span>'; },
+    function(){ var p = $('#x-prev'); if (p && live()) p.innerHTML = '<span class="small tight">Cette photo n\'a pas pu être gardée comme reçu. Essaie une autre photo (JPEG ou PNG).</span>'; })
+  .then(function(){
+    if (!live()) return;
+    say('Lecture du reçu…');
+    var yours = kept ? 'La photo est gardée : écris le montant toi-même' : 'Écris le montant toi-même';
+    return readReceipt(fl, function(st, pct){ say(st === 'load' ? 'Première fois : l\'app prépare le lecteur de reçus (environ 8 Mo, une seule fois)…' : 'Lecture du reçu… ' + pct + ' %'); }).then(function(fd){
+      if (!live()) return;
+      var got = fillExpense(fd);
+      say(got.length ? '<b>Rempli à partir du reçu :</b> ' + esc(got.join(', ')) + '. ' + (fd.doubt === 'total' ? '<b>Le total n\'était pas clair : écris-le.</b> ' : '') + 'Vérifie (les cases marquées), corrige au besoin, puis « Enregistrer la dépense ».' : '<b>Je n\'ai pas pu lire ce reçu.</b> ' + yours + ' (ou reprends la photo, bien à plat et éclairée).');
+    }, function(e){
+      var why = e && e.message;
+      say(why === 'load' ? '<b>Le lecteur de reçus a besoin d\'Internet la première fois.</b> ' + yours + '.' : why === 'slow' ? '<b>La lecture a pris trop de temps.</b> ' + yours + ' (ou réessaie).' : '<b>Je n\'ai pas pu lire ce reçu.</b> ' + yours + '.');
+    });
+  }).then(function(){ if (OCR.tok === tok){ var l = $('label[for="x-scanf"]'); if (l) l.classList.remove('busy'); } });
+}
+function shrinkImage(file){
+  return photoImg(file).then(function(im){
+    var w0 = im.naturalWidth, h0 = im.naturalHeight, k = Math.min(1, 1280 / Math.max(w0, h0, 1)), q = 0.7, out = '', cv = document.createElement('canvas');
+    for (var i = 0; i < 7; i++){
+      cv.width = Math.max(1, Math.round(w0 * k)); cv.height = Math.max(1, Math.round(h0 * k));
+      var cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); cx.drawImage(im, 0, 0, cv.width, cv.height);
+      out = cv.toDataURL('image/jpeg', q); if (out.length < 230000) break; k *= 0.8; q = Math.max(0.45, q - 0.07);
+    }
+    if (!out || out.length > 330000) throw new Error('big');
+    return out;
   });
 }
 function expErr(t){ var e = $('#x-err'); if (!e) return; e.textContent = t; e.hidden = false; }
 function saveExpense(ev){
   ev.preventDefault();
+  if (TOUR){ expErr('Pendant la visite, rien n\'est enregistré : c\'était pour essayer.'); return; }
   if (!canExpense()) return;
   var tt = r2(num(val('x-total'))); if (!(tt > 0)){ expErr('Entre le total payé.'); $('#x-total').focus(); return; }
   var inc = $('#x-taxin').checked, tp = inc ? r2(num(val('x-tps'))) : 0, tq = inc ? r2(num(val('x-tvq'))) : 0;
@@ -5060,7 +5251,7 @@ function phoneSettings(){
   f.dataset.ph = '1'; f.classList.add('ph-sets');
   var secs = $$('#setform > section.sect');
   var title = function(sct){ var h = sct.querySelector('h3'); return h ? String(h.childNodes[0] ? h.childNodes[0].textContent : h.textContent).trim() : 'Réglages'; };
-  f.insertAdjacentHTML('afterbegin', '<nav class="ph-menu" id="ph-setlist" aria-label="Réglages">' + secs.map(function(sct, i){ return '<button type="button" class="ph-row" data-act="ph-sec" data-v="' + i + '"><span><b>' + esc(title(sct)) + '</b>' + (sct.dataset.sub ? '<span>' + esc(sct.dataset.sub) + '</span>' : '') + '</span>' + RI.chev + '</button>'; }).join('') + '</nav>');
+  f.insertAdjacentHTML('afterbegin', '<nav class="ph-menu" id="ph-setlist" aria-label="Réglages">' + secs.map(function(sct, i){ return '<button type="button" class="ph-row" data-act="ph-sec" data-v="' + i + '"' + (sct.id ? ' data-for="' + esc(sct.id) + '"' : '') + '><span><b>' + esc(title(sct)) + '</b>' + (sct.dataset.sub ? '<span>' + esc(sct.dataset.sub) + '</span>' : '') + '</span>' + RI.chev + '</button>'; }).join('') + '</nav>');
   secs.forEach(function(sct, i){ sct.dataset.sec = i; sct.insertAdjacentHTML('afterbegin', '<button type="button" class="linkbtn ph-secback" data-act="ph-sec" data-v="">‹ Tous les réglages</button>'); });
   if (S.setSecName){ secs.forEach(function(sct, i){ var h = sct.querySelector('h3'); if (h && h.textContent.indexOf(S.setSecName) === 0) S.setSec = i; }); S.setSecName = null; }
   phoneSecShow(S.setSec == null ? '' : S.setSec, true);
@@ -5084,7 +5275,7 @@ function phoneInvoice(){
 /* swipe left or right on the day to change day; date picker; small menus */
 (function(){
   var sx = 0, sy = 0, ok = false;
-  document.addEventListener('touchstart', function(ev){ var t0 = ev.touches[0]; ok = phone() && S.tab === 'jour' && !S.screen && !S.sheet && !ev.target.closest('input,select,textarea,.sheet'); sx = t0.clientX; sy = t0.clientY; }, {passive:true});
+  document.addEventListener('touchstart', function(ev){ var t0 = ev.touches[0]; ok = phone() && !TOUR && S.tab === 'jour' && !S.screen && !S.sheet && !ev.target.closest('input,select,textarea,.sheet'); sx = t0.clientX; sy = t0.clientY; }, {passive:true});
   document.addEventListener('touchend', function(ev){ if (!ok) return; var t1 = ev.changedTouches[0], dx = t1.clientX - sx, dy = t1.clientY - sy; ok = false; if (Math.abs(dx) > 70 && Math.abs(dy) < 50){ S.day = addDays(S.day || today(), dx < 0 ? 1 : -1); render(); } }, {passive:true});
   document.addEventListener('change', function(ev){
     var el = ev.target;

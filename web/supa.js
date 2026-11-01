@@ -155,7 +155,8 @@
       if (ids.length || first || !start) saveCol(col);
     }, function(e){ if (!c.loaded) c.listeners.forEach(function(f){ if (f.__onErr) f.__onErr(e); }); throw e; });
     c.loading = p.then(function(){ c.loading = null; }, function(){ c.loading = null; });
-    p.then(function(){ if (c.again){ c.again = false; load(col, false).catch(function(){}); } }, function(){ c.again = false; });   /* a change came in meanwhile */
+    p.then(function(){ if (c.again){ c.again = false; load(col, false).catch(function(){}); } },   /* a change came in meanwhile */
+      function(){ if (c.again){ c.again = false; setTimeout(function(){ load(col, false).catch(function(){}); }, 3000); } });   /* (even if this load failed: asked again a moment later) */
     return p;
   }
   /* the first load of a collection is shared by everyone who starts listening to it (not one full download each) */
@@ -353,6 +354,8 @@
   }
   function googleWire(id){
     var box = document.getElementById(id), b = document.getElementById(id + '-go'); if (!box || !b) return;
+    /* the app added to an iPhone's home screen keeps its own storage, apart from Safari where Google sends back: there, the courriel and password only */
+    if (window.navigator.standalone === true) return;
     googleOn().then(function(on){ if (on && box.isConnected) box.hidden = false; });
     b.onclick = function(){
       b.disabled = true; b.textContent = 'Un instant…';

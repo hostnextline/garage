@@ -1,5 +1,6 @@
 """Invitation par courriel (la personne choisit son mot de passe) + guide « Mettre l'app sur ton téléphone » — version équipe, copie locale de Supabase."""
 from team_seed import *
+from tour_walk import walk
 from playwright.sync_api import sync_playwright
 QRJS = open(os.path.join(SC, 'qrlib/node_modules/qrcode-generator/qrcode.js'), encoding='utf8').read()
 ANDROID = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Mobile Safari/537.36'
@@ -51,10 +52,8 @@ with sync_playwright() as pl:
     check('« Activer mon compte » → signed in to the garage', kp.locator('#tabbar').count() == 1 and kp.evaluate("!!window.__garageApi && window.__garageApi.S.loaded"))
     kp.wait_for_selector('#tour-ov[data-ready="1"]', timeout=12000); kp.wait_for_timeout(100)
     check('right after: the guided visit of the app starts by itself (« Bienvenue, Karim ! »)', 'Bienvenue, Karim' in txt(kp, '#tour-ov .tt-tip'), txt(kp, '#tour-ov .tt-tip')[:60])
-    for _ in range(40):
-        if kp.locator('#tour-ov [data-act="tt-end"]').count(): break
-        kp.click('#tour-ov [data-act="tt-next"]'); kp.wait_for_timeout(60); kp.wait_for_function("!!document.querySelector('#tour-ov[data-ready=\"1\"]')", timeout=9000)
-    check('…all the way to « C\'est tout ! » (a calm visit: no points, no trophy)', "C'est tout" in txt(kp, '#tour-ov .tt-tip') and kp.locator('#tour-ov .tt-win, #tour-ov .tt-pts, #tour-ov .tt-conf').count() == 0)
+    st = walk(kp)   # like a person: touches the lit button when asked, tries what is offered
+    check('…all the way to « C\'est tout ! » (%d steps, he touches to go from screen to screen; a calm visit: no points, no trophy)' % len(st), "C'est tout" in txt(kp, '#tour-ov .tt-tip') and kp.locator('#tour-ov .tt-win, #tour-ov .tt-pts, #tour-ov .tt-conf').count() == 0)
     kp.click('#tour-ov [data-act="tt-end"]'); kp.wait_for_timeout(1200)
     check('the tour is remembered for him', bool((doc('data/users/%s/tour' % uid) or {}).get('seenAt')))
     check('after the visit (« Terminer »): how to put the app on the phone opens by itself (iPhone first)', kp.locator('#sheet:not([hidden]) .inst').count() == 1 and kp.locator('.inst .inst-b').first.get_attribute('data-p') == 'ios-safari', kp.locator('.inst .inst-b').count())

@@ -2,6 +2,7 @@
 the words never cover it, nothing waits for a part that is not there, no empty frame at the end."""
 import time
 from team_seed import *
+from tour_walk import center, do_try
 from playwright.sync_api import sync_playwright
 
 PROBE = """(() => {
@@ -20,7 +21,7 @@ PROBE = """(() => {
   const ms = document.querySelector('#map-slot'), cal = document.querySelector('.cal');
   const covers = el => { if (!el) return null; const r = el.getBoundingClientRect(); return hr.top <= Math.max(r.top, 0) + 12 && hr.bottom >= Math.min(r.bottom, H - 8) - 30; };
   const over = !(tr.bottom <= hr.top + 1 || tr.top >= hr.bottom - 1 || tr.right <= hr.left + 1 || tr.left >= hr.right - 1);
-  return {title, shut, hole:[hr.left, hr.top, hr.width, hr.height].map(Math.round), tip:[tr.left, tr.top, tr.right, tr.bottom].map(Math.round),
+  return {title, kind: ov.dataset.kind, shut, hole:[hr.left, hr.top, hr.width, hr.height].map(Math.round), tip:[tr.left, tr.top, tr.right, tr.bottom].map(Math.round),
           inside: tr.top >= 0 && tr.bottom <= H && tr.left >= 0 && tr.right <= W, over, cut, map: covers(ms), cal: covers(cal),
           empty: shut && hr.width > 4, edge, H};
 })()"""
@@ -28,13 +29,25 @@ PROBE = """(() => {
 def walk(p, tag):
     p.wait_for_function("!!document.querySelector('#tour-ov[data-ready=\"1\"]')", timeout=9000)
     out = []
-    for k in range(40):
+    for k in range(90):
         p.wait_for_timeout(350)   # let the light follow anything still moving
         s = p.evaluate(PROBE); s['tag'] = tag; out.append(s)
         if p.locator('#tour-ov [data-act="tt-end"]').count(): break
-        t0 = time.time()
-        p.click('#tour-ov [data-act="tt-next"]')
-        p.wait_for_function("(() => { const t = document.querySelector('#tour-ov .tt-tip'); return t && !t.classList.contains('gone') && !t.classList.contains('fade'); })()", timeout=9000)
+        kind, part = p.evaluate("[document.querySelector('#tour-ov').dataset.kind, document.querySelector('#tour-ov').dataset.part]")
+        if kind == 'try':
+            try: s['did'] = do_try(p, {'part': part})
+            except TypeError: s['did'] = None; s['covered'] = part   # the thing to try could not be touched (covered by the bubble?)
+            p.wait_for_timeout(400); t_ = s['title']; s.update(p.evaluate(PROBE)); s['tag'] = tag   # (measured again: what was tried can open something)
+        t0 = time.time(); n0 = p.evaluate("document.querySelector('#tour-ov .tt-n').textContent")
+        if kind == 'tap':
+            pt = center(p, part)   # the person touches the lit button
+            if not pt:
+                s['covered'] = part; p.screenshot(path='fit_covered_%s.png' % tag.replace(' ', '_'))
+                print('COVERED', tag, s['title'], part, p.evaluate("(sel) => { const e = document.querySelector(sel.split(',')[0]); const r = e && e.getBoundingClientRect(); const t = document.querySelector('#tour-ov .tt-tip').getBoundingClientRect(); return [r && [r.left, r.top, r.right, r.bottom], [t.left, t.top, t.right, t.bottom], innerWidth, innerHeight]; }", part))
+                break
+            p.mouse.click(*pt)
+        else: p.click('#tour-ov [data-act="tt-next"]')
+        p.wait_for_function("(n) => { const t = document.querySelector('#tour-ov .tt-tip'); return t && t.querySelector('.tt-n').textContent !== n && !t.classList.contains('gone') && !t.classList.contains('fade'); }", arg=n0, timeout=9000)
         s['wait_next'] = round(time.time() - t0, 2)
         p.wait_for_function("!!document.querySelector('#tour-ov[data-ready=\"1\"]')", timeout=9000)
     return out
@@ -62,12 +75,13 @@ def by(tag, title): return next((s for t, st in runs if t == tag for s in st if 
 
 check('the light never stops through the middle of a card, a row or a field (%d steps, 6 screens)' % len(allst),
       all(not s['cut'] for s in allst), [(s['tag'], s['title'], s['cut'][:2], s['hole'], s['H']) for s in allst if s['cut']][:8])
+check('what the person is asked to try is never covered by the bubble', not [x for x in allst if x.get('covered')], [(x['tag'], x['title'], x.get('covered')) for x in allst if x.get('covered')])
 check('the words always stay on the screen', all(s['inside'] for s in allst), [(s['tag'], s['title'], s['tip']) for s in allst if not s['inside']][:5])
 r = by('nadia 1720x1283', 'Le rapport et les taxes')
 check('treasurer, report: the light stops cleanly under a whole card, the words under it', bool(r) and not r['cut'] and not r['over'], r)
 r = by('nadia 2000x1184', 'Le rapport et les taxes')
 check('…on a wide screen: the words go BESIDE the report (nothing covered)', bool(r) and not r['over'] and (r['tip'][2] <= r['hole'][0] or r['tip'][0] >= r['hole'][0] + r['hole'][2]), r)
-maps = [s for s in allst if s['title'] == "La carte de l'équipe"]
+maps = [s for s in allst if s['title'] == "La carte de l'équipe" and s.get('kind') == 'try']   # (not the « touch Carte in the menu » step)
 check('the map is always lit whole (never cut in two), on PC and phone', len(maps) >= 4 and all(s['map'] for s in maps), [(s['tag'], s['hole'], s['map']) for s in maps])
 ag = [s for s in allst if s['title'] == "L'agenda" and s['cal'] is not None]
 check('the agenda grid is lit whole', len(ag) >= 2 and all(s['cal'] for s in ag), [(s['tag'], s['hole'], s['cal']) for s in ag])
