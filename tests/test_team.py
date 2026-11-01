@@ -97,8 +97,7 @@ with sync_playwright() as pw:
     op.wait_for_selector('.eqp', timeout=8000)
     check('team list shows the owner', 'hassan@garage.test' in op.text_content('main') and '(toi)' in op.text_content('main'))
     op.fill('#nw-name', 'Saleh Haddad'); op.fill('#nw-email', 'saleh@garage.test'); pick_roles(op, 'nw', ['mecano'])
-    op.evaluate("document.querySelectorAll('#eq-new details').forEach(d => d.open = true)"); op.click('[data-act="eq-add"]'); op.wait_for_timeout(300)
-    check('mecano without agenda name refused', 'Choisis son nom' in (op.text_content('#nw-err') or ''))
+    check('invite form: his truck to choose, no name to type for the agenda', op.locator('#nw-truck').count() == 1 and op.locator('#nw-mech option[value="Saleh"]').count() == 1)
     op.select_option('#nw-mech', 'Saleh'); op.evaluate("document.querySelectorAll('#eq-new details').forEach(d => d.open = true)"); op.click('[data-act="eq-add"]')
     op.wait_for_selector('.created', timeout=10000)
     cred = op.text_content('.cred'); m = re.search(r'Mot de passe temporaire : (Garage-[A-Z0-9]{4}-[A-Z0-9]{4})', cred)
@@ -292,7 +291,7 @@ with sync_playwright() as pw:
     ap.click('[data-act="sh-end"]'); check('Ali ends day', toast_has(ap, 'Bonne soirée'))
 
     # ---------- 9b. simple phone version (real logins) ----------
-    def plus_rows(p): return p.evaluate("[...document.querySelectorAll('nav.ph-menu .ph-row b')].map(b=>b.textContent)")
+    def plus_rows(p): return sorted(p.evaluate("[...document.querySelectorAll('#tiles a.tile')].filter(a => !['#jour', '#agenda', '#clients', '#factures'].includes(a.getAttribute('href'))).map(a => a.querySelector('b').textContent)"))   # (« Plus »: the tiles of the screens not in the bottom bar)
     def ph_tabs(p): return p.evaluate("[...document.querySelectorAll('#tabbar .tab:not([hidden])')].sort((a,b)=>a.getBoundingClientRect().x-b.getBoundingClientRect().x).map(b=>b.dataset.t ? b.textContent.trim() : '+')")
     mc = ctx_for(br, perms=False, simple=True); mp = page_for(mc, 'ali-phone'); login(mp, 'ali@garage.test', ALI_PW); mp.wait_for_selector('.ph-list, .empty-card', timeout=15000)
     mp.wait_for_timeout(800)
@@ -317,7 +316,7 @@ with sync_playwright() as pw:
     mp.wait_for_timeout(500)
     check('phone · mechanic job: next = « Terminer la job »', (mp.text_content('.nextbtn') or '') == 'Terminer la job', mp.text_content('.nextbtn'))
     mp.click('.tab[data-t="plus"]'); mp.wait_for_timeout(400)
-    check('phone · mechanic Plus: dashboard, the team map, « Mes disponibilités », stock (no team, hours, money, settings)', plus_rows(mp) == ['Tableau de bord', "Carte de l'équipe", 'Mes disponibilités', 'Stock des camions'], plus_rows(mp))
+    check('phone · mechanic Plus: dashboard, the team map, « Mes disponibilités », stock (no team, hours, money, settings)', plus_rows(mp) == sorted(['Tableau de bord', "Carte de l'équipe", 'Mes disponibilités', 'Stock des camions']), plus_rows(mp))
     # his own availability, through the real rules
     mp.click('a[href="#dispos"]'); mp.wait_for_selector('#av-week', timeout=8000)
     check('phone · mechanic: « Mes disponibilités », his week only (no other mechanic)', 'Ma semaine' in mp.text_content('#av-week') and mp.locator('[data-act="av-mech"]').count() == 0)
@@ -344,7 +343,7 @@ with sync_playwright() as pw:
     check('phone · owner: tabs « Aujourd\'hui », Clients, +, Factures, Plus', ph_tabs(op2) == ["Aujourd'hui", 'Clients', '+', 'Factures', 'Plus'], ph_tabs(op2))
     check('phone · owner: sees both jobs + truck chips', op2.locator('.ph-job').count() == 2 and op2.locator('.chips.trucks [data-act="mech"]').count() == 4)
     op2.click('.tab[data-t="plus"]'); op2.wait_for_timeout(400)
-    check('phone · owner Plus: dashboard, map, team, hours, availability, treasury, settings', plus_rows(op2) == ['Tableau de bord', "Carte de l'équipe", 'Équipe et accès', "Heures d'ouverture", 'Disponibilités des mécanos', 'Trésorerie', 'Stock des camions', 'Réglages'], plus_rows(op2))
+    check('phone · owner Plus: dashboard, map, team, hours, availability, treasury, settings', plus_rows(op2) == sorted(['Tableau de bord', "Carte de l'équipe", 'Équipe et accès', "Heures d'ouverture", 'Disponibilités des mécanos', 'Trésorerie', 'Stock des camions', 'Réglages']), plus_rows(op2))
     op2.screenshot(path=os.path.join(SC, 'team_phone_plus.png'))
     op2.click('a[href="#carte"]'); op2.wait_for_selector('#map-slot', timeout=8000)
     check('phone · owner: map opens from Plus, back arrow to Plus', op2.locator('#map-slot').count() == 1 and op2.locator('[data-act="ph-back"]').count() == 1 and op2.locator('.tab[data-t="plus"][aria-current="page"]').count() == 1)

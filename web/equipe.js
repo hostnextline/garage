@@ -683,11 +683,24 @@
     rightKeys(rs).forEach(function(p){ var e = document.getElementById((pre || 'ed') + '-p-' + p.k); if (!e || e.disabled) return; if (e.checked !== roleDefault(rs, p.k)) out[p.k] = e.checked; });
     return out;
   }
-  function mechSelect(id, val){
-    var ms = A().mechanics(), opts = '<option value="">' + (ms.length ? 'Aucun' : 'Ajoute les mécanos dans Réglages') + '</option>' + ms.map(function(m){ return '<option' + (norm(m) === norm(val) ? ' selected' : '') + '>' + esc(m) + '</option>'; }).join('');
-    if (val && !ms.some(function(m){ return norm(m) === norm(val); })) opts += '<option selected>' + esc(val) + '</option>';
-    return '<select id="' + id + '">' + opts + '</select>';
+  /* the agenda goes by truck: a mechanic gets his truck here (one mechanic per truck); his name in the agenda is his own name */
+  function truckPick(id, mech){
+    var a = A(), ts = a.truckMode && a.truckMode() ? a.trucks() : [], cur = mech && a.truckOfUsual(mech);
+    if (!ts.length) return '';
+    var opts = '<option value=""' + (cur ? '' : ' selected') + '>Aucun camion</option>' + ts.map(function(t){
+      var mine = cur && cur.id === t.id, other = !mine && t.mech;
+      return '<option value="' + esc(t.id) + '"' + (mine ? ' selected' : '') + '>' + esc((t.name || 'Camion') + (mine ? '' : other ? ' · à la place de ' + t.mech : t.on === false ? ' · fermé' : ' · libre')) + '</option>';
+    }).join('');
+    return '<div class="field"><label for="' + id + '">Son camion <span class="small muted">(ses rendez-vous sont ceux du camion)</span></label><select id="' + id + '">' + opts + '</select></div>';
   }
+  /* names typed in the agenda before the accounts: pick one so the person gets the appointments already booked under that name */
+  function orphans(){ var list = X.eq.list || []; return A().mechanics().filter(function(n){ return !list.some(function(m){ return m.mechanic && norm(m.mechanic) === norm(n); }); }); }
+  function orphanPick(id){
+    var os = orphans(); if (!os.length) return '';
+    return '<div class="field"><label for="' + id + '">Déjà dans l\'agenda sous un autre nom ?</label><select id="' + id + '"><option value="">Non</option>' + os.map(function(n){ return '<option value="' + esc(n) + '">Oui : ' + esc(n) + '</option>'; }).join('') + '</select></div>';
+  }
+  function truckLine(m){ if (!m.mechanic) return ''; var t = A().truckMode() ? A().truckOfUsual(m.mechanic) : null; return (A().truckMode() ? '🚚 ' + (t ? esc(t.name || 'Camion') : 'Aucun camion') + ' · ' : '') + (norm(m.mechanic) !== norm(m.name) ? 'Dans l\'agenda : ' + esc(m.mechanic) + ' · ' : ''); }
+  function moveJobs(r){ try { if (r && r.moved && Object.keys(r.moved).length) A().retarget(r.moved); } catch (e){} }
   function viewEquipe(){
     var a = A();
     if (!eff() || !hasR(eff(), 'owner')) return {top:a.topBack('Équipe et accès', 'eq-back'), body:'<div class="banner"><p>Seul le propriétaire gère les accès.</p></div>'};
@@ -717,10 +730,10 @@
     else X.eq.list.forEach(function(m){
       var self = m.user_id === me.user_id;
       b += '<div class="eqp' + (m.active ? '' : ' off') + '"><div class="eqp-head"><div><b>' + esc(m.name) + '</b>' + (self ? ' <span class="muted small">(toi)</span>' : '') + '<div class="small muted sel">' + esc(m.email) + '</div></div><span class="pills">' + rolesOf(m).map(function(r){ return '<span class="pillx r-' + r + '">' + ROLE[r] + '</span>'; }).join('') + '</span></div>' +
-        '<p class="small muted">' + (m.mechanic ? 'Dans l\'agenda : ' + esc(m.mechanic) + ' · ' : '') + (m.active ? (m.last_sign_in_at ? 'dernière connexion ' + esc(ago(m.last_sign_in_at)) : m.invite ? '<b>' + (m.invite.expired ? 'Invitation expirée' : 'Invitation envoyée ' + esc(ago(m.invite.at))) + '</b> · pas encore activé' : 'jamais connecté') : '<b>Accès désactivé</b>') + '</p>';
+        '<p class="small muted">' + truckLine(m) + (m.active ? (m.last_sign_in_at ? 'dernière connexion ' + esc(ago(m.last_sign_in_at)) : m.invite ? '<b>' + (m.invite.expired ? 'Invitation expirée' : 'Invitation envoyée ' + esc(ago(m.invite.at))) + '</b> · pas encore activé' : 'jamais connecté') : '<b>Accès désactivé</b>') + '</p>';
       if (X.eq.editing === m.user_id){
         b += '<div class="eq-form"><div class="field"><label for="ed-name">Nom</label><input id="ed-name" value="' + esc(m.name) + '" autocomplete="off"></div>' +
-          roleBoxes('ed', (draftOf('ed', m.user_id) || {roles:rolesOf(m)}).roles) + '<div class="field"><label for="ed-mech">Nom dans l\'agenda <span class="small muted">(s\'il fait des jobs)</span></label>' + mechSelect('ed-mech', m.mechanic) + '</div>' +
+          roleBoxes('ed', (draftOf('ed', m.user_id) || {roles:rolesOf(m)}).roles) + truckPick('ed-truck', m.mechanic) + (m.mechanic ? '' : orphanPick('ed-mech')) +
           rightsList(m) +
           '<div class="er-acts"><button type="button" class="btn sm primary" data-act="eq-save" data-v="' + esc(m.user_id) + '">Enregistrer</button><button type="button" class="btn sm" data-act="eq-cancel">Annuler</button></div></div>';
       } else if (X.eq.confirm === m.user_id){
@@ -738,7 +751,7 @@
     b += '<section class="sect" id="eq-new"><h3>Inviter une personne</h3><p class="small">Écris son courriel : elle reçoit un lien, choisit elle-même son mot de passe, et son compte est activé.</p>' +
       '<div class="field"><label for="nw-name">Nom</label><input id="nw-name" autocomplete="off"></div>' +
       '<div class="field"><label for="nw-email">Courriel</label><input id="nw-email" type="email" inputmode="email" autocapitalize="off" spellcheck="false" autocomplete="off"></div>' +
-      roleBoxes('nw', nwr) + '<div class="field"><label for="nw-mech">Nom dans l\'agenda <span class="small muted">(pour un mécano)</span></label>' + mechSelect('nw-mech', '') + '</div>' +
+      roleBoxes('nw', nwr) + truckPick('nw-truck', '') + orphanPick('nw-mech') +
       rightsHTML('nw', nwd ? {perms:nwd.perms} : null, nwr, '') +
       '<ul class="roles small"><li><b>Mécano</b> : seulement ses jobs, le bouton « En route », la facture sur place. Sa position est partagée pendant sa journée.</li><li><b>Bureau</b> : agenda, clients, factures et carte des mécanos. Pas les réglages.</li><li><b>Trésorier</b> : son propre écran, la trésorerie (dépenses avec photo des reçus, rapport, taxes à remettre, Excel).</li><li><b>Propriétaire</b> : tout, y compris les accès.</li></ul><p class="small muted">Ce que le mécano et le trésorier voient de plus : plus haut, « Ce que chaque rôle peut faire ».</p>' +
       '<p class="formerr" id="nw-err" role="alert" hidden></p><button type="button" class="btn primary block" data-act="eq-invite">Envoyer l\'invitation</button>' +
@@ -875,7 +888,7 @@
       if (inBar(t)) return [{icon:'👆', nav:t, tap:'#tabbar .tab[data-t="' + t + '"]', t:label, p:why, do:'Touche « ' + barName(t, label) + ' » ' + where + '.'}];
       if (ph && inBar('plus')) return [
         {icon:'👆', nav:t, tap:'#tabbar .tab[data-t="plus"]', t:label, p:why + ' C\'est rangé dans « Plus ».', do:'Touche « Plus » en bas.'},
-        {icon:'👆', nav:t, tap:'.ph-menu a.ph-row[href="#' + t + '"]', need:true, t:label, p:'« Plus » : tout ce qui n\'est pas dans la barre du bas.', do:'Touche « ' + (PLUS[t] || label) + ' ».'}];
+        {icon:'👆', nav:t, tap:'#tiles a.tile[href="#' + t + '"]', need:true, t:label, p:'« Plus » : la journée en haut, puis une tuile pour chaque partie de l\'app.', do:'Touche « ' + (PLUS[t] || label) + ' ».'}];
       var via = t === 'equipe' ? 'reglages' : t === 'stock' && can('tresor') ? 'tresor' : 'accueil', vn = {reglages:'Réglages', tresor:'Trésorerie', accueil:'Accueil'}[via];
       if (via === t) return [];   /* (never round in circles) */
       return nav(via, label, '« ' + (PLUS[t] || label) + ' » se trouve dans « ' + vn + ' ».').concat([
@@ -910,7 +923,7 @@
           {icon:'👆', tap:'#sheet .sheet-head [data-act="sheet-close"]', need:true, t:'Fermer', p:'Ces étapes restent dans « ' + (ph ? 'Plus' : 'Installer l\'app') + ' » si tu veux les revoir.', do:'Touche ✕ en haut pour fermer.'}]).concat(ph ? nav(A().defTab(), 'Maintenant, la visite', 'On revient à ta page de départ : c\'est là que la visite commence.') : [])],   /* (back where the visit goes on: by his own touch) */
       dash:(own || bur) && ['Le tableau de bord', nav('accueil', 'Le tableau de bord', 'Ton tableau de bord : la journée et le mois d\'un coup d\'œil.').concat([
         {icon:'🏠', go:'tab:accueil', sel:'main .rings, main .ringcard, main', t:'D\'un coup d\'œil', p:'Les jobs du jour, ce qui est réservé cette semaine, l\'argent encaissé ce mois-ci et ce qui reste à recevoir.' + (own ? ' Seuls toi et le bureau voyez ces chiffres (sauf si tu le permets à quelqu\'un).' : '')},
-        {icon:'🚚', go:'tab:accueil', sel:'.mcard, .qrow', need:true, t:'Tes mécanos aujourd\'hui', p:'Une carte par mécano : ses jobs du jour, ce qui est fait, et s\'il est en route vers un client.'}])],
+        {icon:'🚚', go:'tab:accueil', sel:'.mcard, .qrow', need:true, t:'Tes mécanos aujourd\'hui', p:'Une carte par mécano : ses jobs du jour, ce qui est fait, et s\'il est en route vers un client.'}].concat(ph ? [] : [{icon:'🧩', go:'tab:accueil', sel:'#tiles', need:true, t:'Les tuiles', p:'Une tuile pour chaque partie de l\'app, avec ce qui attend : les factures à recevoir, le stock à racheter…'}]))],
       day:mec && ['Ta journée', [
         {icon:'📅', go:'home', sel:'.dayhead, #top', t:'Ta journée', p:'Ton écran de tous les jours : la date en haut, tes rendez-vous en dessous.'}].concat(ph ? dayTry : [], [
         {icon:'☀️', go:'home', sel:'.shift', need:true, t:'Commencer ma journée', p:'Le matin, en partant : <b>« Commencer ma journée »</b>. Ta position est partagée pendant ta journée seulement ; le soir, <b>« Fin de journée »</b> arrête tout.', x:'Pendant la visite, on n\'y touche pas.'},
@@ -978,7 +991,7 @@
         {icon:'👆', go:'set:Couleurs', tap:'#lux-sect .ph-secback', need:true, t:'Tous les réglages', p:'Pour revenir à la liste des sections.', do:'Touche « ‹ Tous les réglages ».'},
         {icon:'⚙️', go:'set:', sel:'#ph-setlist, #setform', t:'Le reste des réglages', p:'Le nom du garage, les taxes, ton taux horaire, tes prix, l\'horaire, les mécanos et les camions, le bas des factures.'}])],
       team:own && ['L\'équipe et les accès', nav('equipe', 'L\'équipe et les accès', 'Les comptes de ton équipe.').concat([
-        {icon:'✉️', go:'equipe', sel:'#eq-new', t:'Inviter une personne', p:'Son nom et son courriel, puis ses rôles. Elle reçoit un lien et choisit son mot de passe (ou se connecte avec Google).'},
+        {icon:'✉️', go:'equipe', sel:'#eq-new', t:'Inviter une personne', p:'Son nom et son courriel, ses rôles et, pour un mécano, son camion (ses rendez-vous sont ceux du camion). Elle reçoit un lien et choisit son mot de passe (ou se connecte avec Google).'},
         {icon:'👉', go:'equipe', try:'#eq-new .rbox', need:true, t:'Les rôles', p:'Plusieurs rôles à la fois si tu veux (mécano et trésorier, par exemple).', tryT:'Essaie : coche « Trésorier ».', done:'Juste en dessous, « Ses droits » montre ce que ça lui donne : tu peux cocher ou décocher pour cette personne seulement. On n\'invite personne pendant la visite.'},
         {icon:'👥', go:'equipe', sel:'.eqp', need:true, t:'Les personnes', p:'<b>« Modifier »</b> change les rôles et les droits d\'une personne, ou bloque son accès.'},
         {icon:'👁', go:'equipe', sel:'#eq-viewas', need:true, t:'Voir l\'app comme…', p:'Tu vois exactement l\'écran d\'un mécano ou du trésorier, et sa visite guidée. Un bandeau en haut te ramène à ton compte.'},
@@ -1011,7 +1024,7 @@
       case 'pv-start': startView({role:b.dataset.role, mechanic:b.dataset.mech || null, name:b.dataset.name}); break;
       case 'pv-role': {
         var r = b.dataset.role, list = X.eq.list || [], mm = list.filter(function(x){ return x.role === r && x.active; })[0];
-        if (r === 'mecano'){ var mn = mm && mm.mechanic ? mm.mechanic : api.mechanics()[0]; if (!mn){ toast('Ajoute d\'abord un mécano dans l\'agenda (Réglages).'); break; } startView({role:'mecano', mechanic:mn, name:mm && mm.mechanic === mn ? mm.name : mn}); }
+        if (r === 'mecano'){ var mn = mm && mm.mechanic ? mm.mechanic : api.mechanics()[0]; if (!mn){ toast('Invite d\'abord un mécano (Équipe et accès).'); break; } startView({role:'mecano', mechanic:mn, name:mm && mm.mechanic === mn ? mm.name : mn}); }
         else startView({role:r, name:mm ? mm.name : ROLE[r]});
         break;
       }
@@ -1053,12 +1066,13 @@
       case 'eq-hidecred': X.eq.created = null; render(); break;
       case 'eq-copycred': { var pre = document.querySelector('.cred'); if (pre && navigator.clipboard) navigator.clipboard.writeText(pre.textContent).then(function(){ toast('Copié'); }, function(){}); break; }
       case 'eq-save': {
-        var ers = rolesFrom('ed'), mech = val('ed-mech'), name = val('ed-name');
+        var ers = rolesFrom('ed'), name = val('ed-name'), eb = {action:'update', user_id:v, name:name, roles:ers, perms:permsFrom(ers, 'ed')};
         if (!ers.length){ toast('Coche au moins un rôle.'); break; }
-        if (ers.indexOf('mecano') >= 0 && !mech){ toast('Choisis son nom dans l\'agenda.'); break; }
+        if (document.getElementById('ed-truck')) eb.truck = val('ed-truck');
+        if (val('ed-mech')) eb.mechanic = val('ed-mech');
         if (v === me.user_id && ers.indexOf('owner') < 0){ toast('Tu ne peux pas enlever ton propre rôle de propriétaire.'); break; }
         b.disabled = true;
-        invoke('members', {action:'update', user_id:v, name:name, roles:ers, perms:permsFrom(ers, 'ed'), mechanic:mech}).then(function(r){ X.eq.list = r.members; X.eq.editing = null; delete X.eq.draft.ed; toast('Enregistré'); if (v === me.user_id) refreshMe(); render(); }, function(e){ b.disabled = false; toast(e.message); });
+        invoke('members', eb).then(function(r){ moveJobs(r); X.eq.list = r.members; X.eq.editing = null; delete X.eq.draft.ed; toast('Enregistré'); if (v === me.user_id) refreshMe(); render(); }, function(e){ b.disabled = false; toast(e.message); });
         break;
       }
       case 'eq-active': {
@@ -1071,17 +1085,16 @@
         invoke('members', {action:'password', user_id:v}).then(function(r){ X.eq.created = {name:mp.name, email:mp.email, password:r.password, reset:true}; render(); window.scrollTo(0, 0); }, function(e){ b.disabled = false; toast(e.message); });
         break;
       }
-      case 'eq-remove': b.disabled = true; invoke('members', {action:'remove', user_id:v}).then(function(r){ X.eq.list = r.members; X.eq.confirm = null; toast('Compte supprimé'); render(); }, function(e){ b.disabled = false; toast(e.message); }); break;
+      case 'eq-remove': b.disabled = true; invoke('members', {action:'remove', user_id:v}).then(function(r){ moveJobs(r); X.eq.list = r.members; X.eq.confirm = null; toast('Compte supprimé'); render(); }, function(e){ b.disabled = false; toast(e.message); }); break;
       case 'eq-invite': {
-        var inm = val('nw-name'), iem = val('nw-email'), irs = rolesFrom('nw'), imc = val('nw-mech');
+        var inm = val('nw-name'), iem = val('nw-email'), irs = rolesFrom('nw'), imc = val('nw-mech'), itk = document.getElementById('nw-truck') ? val('nw-truck') : undefined;
         if (!inm) return eqErr('Écris le nom de la personne.');
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(iem)) return eqErr('Écris un courriel valide.');
         if (!irs.length) return eqErr('Coche au moins un rôle.');
-        if (irs.indexOf('mecano') >= 0 && !imc) return eqErr(api.mechanics().length ? 'Choisis son nom dans l\'agenda (liste des mécanos).' : 'Ajoute d\'abord le nom de ce mécano dans Réglages → Mécanos.');
         eqErr(''); b.disabled = true; b.textContent = 'Envoi…';
-        invoke('members', {action:'invite', lang:lng(), name:inm, email:iem, roles:irs, perms:permsFrom(irs, 'nw'), mechanic:imc, base:trackBase()}).then(function(r){
-          X.eq.list = r.members; X.eq.created = null; X.eq.invited = {name:inm, email:r.email || iem, link:r.link, mail:r.mail, message:r.message}; X.liveAt = 0; delete X.eq.draft.nw;
-          ['nw-name', 'nw-email', 'nw-mech'].forEach(function(i){ var e = document.getElementById(i); if (e) e.value = ''; });
+        invoke('members', {action:'invite', lang:lng(), name:inm, email:iem, roles:irs, perms:permsFrom(irs, 'nw'), mechanic:imc || undefined, truck:itk, base:trackBase()}).then(function(r){
+          moveJobs(r); X.eq.list = r.members; X.eq.created = null; X.eq.invited = {name:inm, email:r.email || iem, link:r.link, mail:r.mail, message:r.message}; X.liveAt = 0; delete X.eq.draft.nw;
+          ['nw-name', 'nw-email', 'nw-mech', 'nw-truck'].forEach(function(i){ var e = document.getElementById(i); if (e) e.value = ''; });
           render(); window.scrollTo(0, 0);
         }, function(e){ b.disabled = false; b.textContent = 'Envoyer l\'invitation'; eqErr(e.message); });
         break;
@@ -1098,15 +1111,14 @@
       case 'eq-copylink': { var lk = X.eq.invited && X.eq.invited.link; if (lk && navigator.clipboard) navigator.clipboard.writeText(lk).then(function(){ toast('Lien copié'); }, function(){ toast(lk); }); else if (lk) toast(lk); break; }
       case 'eq-hideinv': X.eq.invited = null; render(); break;
       case 'eq-add': {
-        var nm = val('nw-name'), em = val('nw-email'), rls = rolesFrom('nw'), mc = val('nw-mech');
+        var nm = val('nw-name'), em = val('nw-email'), rls = rolesFrom('nw'), mc = val('nw-mech'), tk0 = document.getElementById('nw-truck') ? val('nw-truck') : undefined;
         if (!nm) return eqErr('Écris le nom de la personne.');
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)) return eqErr('Écris un courriel valide.');
         if (!rls.length) return eqErr('Coche au moins un rôle.');
-        if (rls.indexOf('mecano') >= 0 && !mc) return eqErr(api.mechanics().length ? 'Choisis son nom dans l\'agenda (liste des mécanos).' : 'Ajoute d\'abord le nom de ce mécano dans Réglages → Mécanos.');
         eqErr(''); b.disabled = true; b.textContent = 'Création…';
-        invoke('members', {action:'create', name:nm, email:em, roles:rls, perms:permsFrom(rls, 'nw'), mechanic:mc}).then(function(r){
-          X.eq.list = r.members; X.eq.invited = null; X.eq.created = {name:nm, email:em, password:r.password}; X.liveAt = 0; delete X.eq.draft.nw;
-          ['nw-name', 'nw-email', 'nw-mech'].forEach(function(i){ var e = document.getElementById(i); if (e) e.value = ''; });
+        invoke('members', {action:'create', name:nm, email:em, roles:rls, perms:permsFrom(rls, 'nw'), mechanic:mc || undefined, truck:tk0}).then(function(r){
+          moveJobs(r); X.eq.list = r.members; X.eq.invited = null; X.eq.created = {name:nm, email:em, password:r.password}; X.liveAt = 0; delete X.eq.draft.nw;
+          ['nw-name', 'nw-email', 'nw-mech', 'nw-truck'].forEach(function(i){ var e = document.getElementById(i); if (e) e.value = ''; });
           render(); window.scrollTo(0, 0);
         }, function(e){ b.disabled = false; b.textContent = 'Créer le compte'; eqErr(e.message); });
         break;

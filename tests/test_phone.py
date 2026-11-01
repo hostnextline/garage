@@ -201,8 +201,9 @@ with sync_playwright() as p:
     pg.click('[data-act="cform-back"]'); wait(pg, 300)
     # ---------- 6. Plus ----------
     pg.click('.tab[data-t="plus"]'); wait(pg)
-    pl = pg.evaluate("[...document.querySelectorAll('nav.ph-menu .ph-row b')].map(b=>b.textContent)")
-    check('6. Plus: Tableau de bord, Heures d\'ouverture, Disponibilités des mécanos, Réglages', pl == ['Tableau de bord', 'Heures d\'ouverture', 'Disponibilités des mécanos', 'Trésorerie', 'Stock des camions', 'Réglages'], pl)
+    pl = sorted(pg.evaluate("[...document.querySelectorAll('#tiles a.tile')].filter(a => !['#jour', '#agenda', '#clients', '#factures'].includes(a.getAttribute('href'))).map(a => a.querySelector('b').textContent)"))
+    check('6. Plus: Tableau de bord, Heures d\'ouverture, Disponibilités des mécanos, Réglages', pl == sorted(['Tableau de bord', 'Heures d\'ouverture', 'Disponibilités des mécanos', 'Trésorerie', 'Stock des camions', 'Réglages']), pl)
+    check('6. Plus: today on top, then the tiles', pg.locator('.tstrip').count() == 1 and pg.locator('#tiles .tile').count() >= 8)
     check('6. Plus: « Version ordinateur » row', pg.locator('[data-act="ui-full"]').count() == 1)
     check('6. no sideways scroll (Plus)', no_hscroll(pg))
     pg.click('a[href="#accueil"]'); wait(pg, 400)

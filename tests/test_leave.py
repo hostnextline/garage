@@ -27,6 +27,7 @@ with sync_playwright() as pl:
     c.close()
     # ---------- 3. a mechanic deletes his own account (phone) ----------
     jobs0 = psql("select count(*) from public.docs where path like 'jobs/%' and data->>'mechanic' = 'Ali'")
+    alljobs0 = psql("select count(*) from public.docs where path like 'jobs/%'")
     c = ctx(b, phone=True); p = page(c, 'ali'); login(p, 'ali@garage.test', pw['ali']); p.wait_for_timeout(1000)
     p.click('.tab[data-t="plus"]'); p.wait_for_timeout(500)
     lv = p.locator('#main [data-act="acct-leave"]')
@@ -38,7 +39,8 @@ with sync_playwright() as pl:
     p.locator('#main [data-act="acct-leave"]').click(); p.wait_for_timeout(200); p.locator('#main [data-act="acct-leave"]').click()
     p.wait_for_selector('#gate', timeout=10000); p.wait_for_timeout(500)
     check('…touched twice: « Ton compte est supprimé », back to the sign-in screen, his account gone', not uid('ali@garage.test') and p.locator('#gate #g-email').count() == 1)
-    check('…his jobs stay in the garage\'s logbook', psql("select count(*) from public.docs where path like 'jobs/%' and data->>'mechanic' = 'Ali'") == jobs0 != '0', jobs0)
+    check('…his jobs stay in the garage\'s logbook; the ones not started yet wait on his truck for its next mechanic', psql("select count(*) from public.docs where path like 'jobs/%'") == alljobs0 and psql("select data->>'mechanic' || '|' || (data->>'truck') from public.docs where path = 'jobs/j2'") == '|c2', [alljobs0, psql("select data->>'mechanic' || '|' || (data->>'truck') from public.docs where path = 'jobs/j2'")])
+    check('…and he is off the mechanics and off Camion 2', 'Ali' not in (doc('config/main') or {}).get('mechanics', []) and [t for t in doc('config/main')['trucks'] if t['id'] == 'c2'][0]['mech'] == '')
     p.fill('#g-email', 'ali@garage.test'); p.fill('#g-pw', pw['ali']); p.click('#g-go'); p.wait_for_timeout(2500)
     check('…he can no longer sign in', p.locator('#gate').count() == 1)
     c.close()

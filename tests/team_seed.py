@@ -63,6 +63,7 @@ def seed(stripe=False):
     snap = lambda c, cid: {'id': cid, 'firstName': c['firstName'], 'lastName': c['lastName'], 'name': c['firstName'] + ' ' + c['lastName'], 'phone': c['phone'], 'address': c['address'], 'postal': c['postal'], 'geo': c['geo']}
     doc_set(otok, 'jobs/j1', {'date': TODAY, 'time': '14:00', 'durationMin': 60, 'mechanic': 'Saleh', 'truck': 'c1', 'clientId': 'c1', 'client': snap(c1, 'c1'), 'vehicle': {'make': 'Honda', 'model': 'Civic', 'year': '2018', 'displL': 2, 'cyl': 4, 'engine': '2,0 L 4 cyl.'}, 'services': ["Changement d'huile et filtre"], 'service': "Changement d'huile et filtre", 'status': 'planifie', 'createdAt': 1})
     doc_set(otok, 'jobs/j2', {'date': TODAY, 'time': '10:00', 'durationMin': 60, 'mechanic': 'Ali', 'truck': 'c2', 'clientId': 'c2', 'client': snap(c2, 'c2'), 'vehicle': {'make': 'Ford', 'model': 'F-150', 'year': '2017'}, 'services': ['Inspection multipoints'], 'service': 'Inspection multipoints', 'status': 'planifie', 'createdAt': 2})
+    fn(otok, 'members', {'action': 'list'})   # (as after the owner opened « Équipe et accès » once: the agenda knows who has an account)
     return otok, pw
 
 def ctx(browser, phone=False, geo=None, scheme='light'):

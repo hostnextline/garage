@@ -95,6 +95,66 @@ async function garageName() {
   const { data } = await admin.from('docs').select('data').eq('path', 'config/main').maybeSingle();
   return String((data?.data as any)?.biz?.name || 'Garage mobile').trim();
 }
+/* The agenda's mechanics are the team's mechanics: each name comes from the person's account (never typed),
+   and each mechanic has one truck. config/main keeps in step:
+   - mechanics: the names with an account, plus names typed before that nobody has removed yet;
+   - crewAccounts: the names that have an account;
+   - trucks: a truck whose mechanic left is free again; assigning a mechanic to a truck takes him off his old one.
+   Returns the trucks whose usual mechanic changed ({c1: 'Ali'}), so the app moves the coming appointments with them. */
+const lc = (s: unknown) => String(s ?? '').trim().toLowerCase();
+const DEF_TRUCKS = [{ id: 'c1', name: 'Camion 1', on: true, mech: '' }, { id: 'c2', name: 'Camion 2', on: false, mech: '' }, { id: 'c3', name: 'Camion 3', on: false, mech: '' }];
+async function syncCrew(o: { assign?: { mech: string; truck: string }; drop?: string[] } = {}) {
+  const { data: ms } = await admin.from('members').select('mechanic,created_at').not('mechanic', 'is', null).order('created_at');
+  const accounts = ((ms || []) as any[]).map((m) => String(m.mechanic)).filter(Boolean);
+  const drop = new Set((o.drop || []).map(lc));
+  const { data: d } = await admin.from('docs').select('data').eq('path', 'config/main').maybeSingle();
+  const cfg: any = d?.data || null;
+  const cur: string[] = Array.isArray(cfg?.mechanics) ? cfg.mechanics.map(String).filter(Boolean) : [];
+  const list: string[] = [];
+  const push = (n: string) => { if (n && !drop.has(lc(n)) && !list.some((x) => lc(x) === lc(n))) list.push(n); };
+  cur.forEach((n) => push(accounts.find((x) => lc(x) === lc(n)) || n));   // (the order already chosen stays)
+  accounts.forEach(push);
+  const moved: Record<string, string> = {};
+  let trucks: any[] | null = Array.isArray(cfg?.trucks) ? cfg.trucks.map((t: any) => ({ ...t })) : null;
+  let tChanged = false;
+  if (!trucks && o.assign?.truck) { trucks = DEF_TRUCKS.map((t) => ({ ...t })); tChanged = true; }
+  if (trucks) {
+    trucks.forEach((t: any) => { if (t && t.mech && !list.some((x) => lc(x) === lc(t.mech))) { t.mech = ''; moved[t.id] = ''; tChanged = true; } });
+    const a = o.assign;
+    if (a && a.mech) trucks.forEach((t: any) => {
+      if (!t) return;
+      if (a.truck && t.id === a.truck) {
+        if (lc(t.mech) !== lc(a.mech)) { t.mech = a.mech; moved[t.id] = a.mech; tChanged = true; }
+        if (t.on === false) { t.on = true; tChanged = true; }   // (a truck that gets its mechanic goes into service)
+      } else if (lc(t.mech) === lc(a.mech)) { t.mech = ''; moved[t.id] = ''; tChanged = true; }
+    });
+  }
+  const patch: Record<string, unknown> = {};
+  if (JSON.stringify(list) !== JSON.stringify(cur)) patch.mechanics = list;
+  if (JSON.stringify(cfg?.crewAccounts || null) !== JSON.stringify(accounts)) patch.crewAccounts = accounts;
+  if (tChanged) patch.trucks = trucks;
+  if (!Object.keys(patch).length) return moved;
+  patch.updatedAt = Date.now();
+  if (!cfg) await admin.from('docs').insert({ path: 'config/main', data: patch });
+  else { const { error } = await admin.rpc('doc_merge', { p_path: 'config/main', p_patch: patch }); if (error) console.error('syncCrew', error.message); }
+  return moved;
+}
+/* a mechanic whose account is gone: his coming appointments, not started yet, wait for the truck's next mechanic */
+const mtlDay = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
+async function freeJobs(mech: unknown) {
+  if (!lc(mech)) return 0;
+  const { data } = await admin.from('docs').select('path,data').eq('col', 'jobs').eq('mech', lc(mech)).gte('data->>date', mtlDay());
+  let n = 0;
+  for (const r of (data || []) as any[]) {
+    if ((r.data?.status || 'planifie') !== 'planifie') continue;
+    const { error } = await admin.rpc('doc_merge', { p_path: r.path, p_patch: { mechanic: '', updatedAt: Date.now() } });
+    if (!error) n++;
+  }
+  return n;
+}
+const mechTaken = (m: string) => `Un autre mécano s'appelle déjà « ${m} ». Ajoute l'initiale de son nom de famille (ex. : ${m} B.).`;
+/* the truck chosen in the invitation or the card: '' = no truck; undefined = unchanged */
+const truckOf = (b: any) => b.truck === undefined || b.truck === null ? undefined : clean(b.truck, 40);
 const h = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
 function inviteMessageFr(o: { name: string; email: string; role: string; garage: string; by: string; link: string }) {
   const first = o.name.split(' ')[0] || o.name, role = String(o.role).split(',').map((r) => ROLE_FR[r] || r).join(' et ');
@@ -277,18 +337,20 @@ Deno.serve(async (req) => {
       }
       const { error } = await admin.auth.admin.deleteUser(me.user_id);
       if (error) return fail('Le compte n\'a pas été supprimé : ' + error.message);
+      if (me.mechanic) { await freeJobs(me.mechanic); await syncCrew({ drop: [me.mechanic] }); }
       return json({ ok: true });
     }
     if (me.role !== 'owner') return fail('Seul le propriétaire gère les accès.', 403, 'forbidden');
 
-    if (action === 'list') return json({ ok: true, members: await listMembers() });
+    if (action === 'list') { await syncCrew(); return json({ ok: true, members: await listMembers() }); }
 
     if (action === 'create') {
-      const email = clean(body.email, 120).toLowerCase(), name = clean(body.name), roles = rolesOf(body), role = roles[0] || '', mechanic = clean(body.mechanic) || null, perms = permsOf(body.perms) || {};
+      const email = clean(body.email, 120).toLowerCase(), name = clean(body.name), roles = rolesOf(body), role = roles[0] || '', truck = truckOf(body), perms = permsOf(body.perms) || {};
+      // the name in the agenda: the person's own name (or the name already in the agenda, picked in the list)
+      const mechanic = clean(body.mechanic) || (roles.includes('mecano') || truck ? name : '') || null;
       if (!emailOk(email)) return fail('Courriel invalide.');
       if (!name) return fail('Écris le nom de la personne.');
       if (!roles.length) return fail('Choisis au moins un rôle.');
-      if (roles.includes('mecano') && !mechanic) return fail('Choisis le nom du mécano dans la liste.');
       const password = String(body.password || '') || tempPassword();
       if (password.length < 8) return fail('Le mot de passe doit avoir au moins 8 caractères.');
       const { data: u, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name } });
@@ -296,30 +358,34 @@ Deno.serve(async (req) => {
       const { error: e2 } = await admin.from('members').insert({ user_id: u.user.id, role, roles, perms, name, mechanic });
       if (e2) {
         await admin.auth.admin.deleteUser(u.user.id);
-        return fail(/members_mechanic_uq/.test(e2.message) ? `${mechanic} a déjà un compte.` : 'Le compte n\'a pas pu être créé : ' + e2.message);
+        return fail(/members_mechanic_uq/.test(e2.message) ? mechTaken(String(mechanic)) : 'Le compte n\'a pas pu être créé : ' + e2.message);
       }
-      return json({ ok: true, user_id: u.user.id, password, members: await listMembers() });
+      const moved = await syncCrew(mechanic && truck !== undefined ? { assign: { mech: mechanic, truck } } : {});
+      return json({ ok: true, user_id: u.user.id, password, moved, members: await listMembers() });
     }
 
     if (action === 'invite') {
-      const email = clean(body.email, 120).toLowerCase(), name = clean(body.name), roles = rolesOf(body), role = roles[0] || '', mechanic = clean(body.mechanic) || null, perms = permsOf(body.perms) || {};
+      const email = clean(body.email, 120).toLowerCase(), name = clean(body.name), roles = rolesOf(body), role = roles[0] || '', truck = truckOf(body), perms = permsOf(body.perms) || {};
+      // the name in the agenda: the person's own name (or the name already in the agenda, picked in the list)
+      const mechanic = clean(body.mechanic) || (roles.includes('mecano') || truck ? name : '') || null;
       if (!emailOk(email)) return fail('Courriel invalide.');
       if (!name) return fail('Écris le nom de la personne.');
       if (!roles.length) return fail('Choisis au moins un rôle.');
-      if (roles.includes('mecano') && !mechanic) return fail('Choisis le nom du mécano dans la liste.');
       // nobody knows this password: the person chooses one with the link
       const { data: u, error } = await admin.auth.admin.createUser({ email, password: newToken(24) + 'aA1!', email_confirm: true, user_metadata: { name } });
       if (error || !u?.user) return fail(/already|exists|registered/i.test(error?.message || '') ? 'Ce courriel a déjà un compte. Dans la liste, touche « Renvoyer l\'invitation » ou « Nouveau mot de passe ».' : 'L\'invitation n\'a pas pu être créée : ' + (error?.message || ''));
       const { error: e2 } = await admin.from('members').insert({ user_id: u.user.id, role, roles, perms, name, mechanic });
       if (e2) {
         await admin.auth.admin.deleteUser(u.user.id);
-        return fail(/members_mechanic_uq/.test(e2.message) ? `${mechanic} a déjà un compte.` : 'L\'invitation n\'a pas pu être créée : ' + e2.message);
+        return fail(/members_mechanic_uq/.test(e2.message) ? mechTaken(String(mechanic)) : 'L\'invitation n\'a pas pu être créée : ' + e2.message);
       }
       try {
         const r = await inviteAndSend(me, { user_id: u.user.id, name, role, roles }, email, body.base, body.lang);
-        return json({ ok: true, user_id: u.user.id, email, ...r, members: await listMembers() });
+        const moved = await syncCrew(mechanic && truck !== undefined ? { assign: { mech: mechanic, truck } } : {});
+        return json({ ok: true, user_id: u.user.id, email, ...r, moved, members: await listMembers() });
       } catch (e) {
         await admin.auth.admin.deleteUser(u.user.id);
+        await syncCrew();
         return fail(String((e as Error).message || e), 500);
       }
     }
@@ -346,17 +412,21 @@ Deno.serve(async (req) => {
         if (body.roles !== undefined || body.role !== undefined) { const rs = rolesOf(body); if (!rs.length) return fail('Choisis au moins un rôle.'); up.roles = rs; up.role = rs.includes('owner') ? 'owner' : rs.includes('bureau') ? 'bureau' : rs.includes('mecano') ? 'mecano' : 'tresorier'; }
         if (body.perms !== undefined) up.perms = permsOf(body.perms) || {};
         if (body.mechanic !== undefined) up.mechanic = clean(body.mechanic) || null;
+        const truck = truckOf(body);
         if (body.active !== undefined) up.active = !!body.active;
         if (uid === me.user_id && (up.active === false || (up.role && up.role !== 'owner'))) return fail('Tu ne peux pas retirer ton propre accès de propriétaire.');
-        const finalRoles = (up.roles as string[] | undefined) || m.roles || [m.role], finalMech = up.mechanic !== undefined ? up.mechanic : m.mechanic;
-        if (finalRoles.includes('mecano') && !finalMech) return fail('Choisis le nom du mécano dans la liste.');
+        const finalRoles = (up.roles as string[] | undefined) || m.roles || [m.role];
+        let finalMech = up.mechanic !== undefined ? up.mechanic : m.mechanic;
+        // a mechanic (or someone who gets a truck) is in the agenda under his own name; the name stays the same after, so his jobs stay his
+        if (!finalMech && (finalRoles.includes('mecano') || truck)) finalMech = up.mechanic = (up.name as string) || m.name;
         const { error } = await admin.from('members').update(up).eq('user_id', uid);
-        if (error) return fail(/propriétaire/.test(error.message) ? 'Il faut garder au moins un propriétaire actif.' : /members_mechanic_uq/.test(error.message) ? 'Ce mécano a déjà un compte.' : /mecano_needs_mechanic/.test(error.message) ? 'Choisis le nom du mécano dans la liste.' : error.message);
+        if (error) return fail(/propriétaire/.test(error.message) ? 'Il faut garder au moins un propriétaire actif.' : /members_mechanic_uq/.test(error.message) ? mechTaken(String(finalMech)) : /mecano_needs_mechanic/.test(error.message) ? 'Choisis le nom du mécano dans la liste.' : error.message);
         if (up.active !== undefined) {
           await admin.auth.admin.updateUserById(uid, { ban_duration: up.active ? 'none' : '876000h' } as any);
           if (!up.active) await admin.from('mech_live').update({ on_shift: false, shift_started_at: null, lat: null, lon: null, at: null, job_id: null }).eq('user_id', uid);
         }
-        return json({ ok: true, members: await listMembers() });
+        const moved = await syncCrew(finalMech && truck !== undefined ? { assign: { mech: String(finalMech), truck } } : {});
+        return json({ ok: true, moved, members: await listMembers() });
       }
       if (action === 'password') {
         const password = String(body.password || '') || tempPassword();
@@ -373,7 +443,9 @@ Deno.serve(async (req) => {
         }
         const { error } = await admin.auth.admin.deleteUser(uid);
         if (error) return fail('Le compte n\'a pas été supprimé : ' + error.message);
-        return json({ ok: true, members: await listMembers() });
+        let moved = {};
+        if (m.mechanic) { await freeJobs(m.mechanic); moved = await syncCrew({ drop: [m.mechanic] }); }
+        return json({ ok: true, moved, members: await listMembers() });
       }
     }
 

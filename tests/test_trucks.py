@@ -133,6 +133,9 @@ with sync_playwright() as p:
     # settings: rename, usual mechanic, add a truck, other settings kept
     pg.evaluate("() => { const S = window.__garageApi.S; S.screen = null; S.tab = 'reglages'; window.__garageApi.render(); }"); wait(pg)
     pg.locator('#trucks-box .tk-row').nth(2).locator('[data-f="name"]').fill('Remorque'); pg.locator('#trucks-box .tk-row').nth(2).locator('[data-f="mech"]').select_option('Ali')
+    pg.click('#s-save'); wait(pg, 300)
+    check('one mechanic per truck: Ali on Camion 2 and on Remorque is refused', 'est sur deux camions' in txt(pg, '#toast') and [t.get('mech') for t in (store(pg, 'config/main') or {}).get('trucks', [])][2] != 'Ali', txt(pg, '#toast'))
+    pg.locator('#trucks-box .tk-row').nth(1).locator('[data-f="mech"]').select_option('')   # (Ali leaves Camion 2 for the Remorque)
     pg.click('[data-act="addtruckrow"]'); wait(pg, 100)
     check('« + Ajouter un camion » adds Camion 4', pg.locator('#trucks-box .tk-row').count() == 4 and pg.locator('#trucks-box .tk-row').nth(3).get_attribute('data-id') == 'c4')
     pg.click('#s-save'); wait(pg, 600)
@@ -155,7 +158,7 @@ with sync_playwright() as p:
     check('phone job: says the truck and the mechanic', 'Camion 1' in txt(pg, '.top-in .eyebrow') and 'Saleh' in txt(pg, '.top-in .eyebrow'), txt(pg, '.top-in .eyebrow'))
     pg.click('[data-act="back"]'); wait(pg)
     pg.click('.tab[data-t="plus"]'); wait(pg)
-    rows = pg.evaluate("[...document.querySelectorAll('nav.ph-menu .ph-row b')].map(b=>b.textContent)")
+    rows = pg.evaluate("[...document.querySelectorAll('#tiles a.tile')].filter(a => !['#jour', '#agenda', '#clients', '#factures'].includes(a.getAttribute('href'))).map(a => a.querySelector('b').textContent)")
     check('phone Plus: « Disponibilités des mécanos »', 'Disponibilités des mécanos' in rows, rows)
     pg.click('a[href="#heures"]'); wait(pg)
     check('phone hours: one switch per truck', pg.locator('#hz-trucks .switch').count() == 3)
