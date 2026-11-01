@@ -144,8 +144,9 @@ main{display:grid;gap:14px;padding:14px 0 28px}
     }
   });
   /* back from the card payment (« retour=paye » in the address): the marker stays until the server says the invoice is paid,
-     so a reload checks again. The bank's confirmation can take a few seconds: ask again every 3 s, up to 8 times.
-     While checking, the « Payer » button is not shown (no second payment by mistake). */
+     so a reload checks again. The bank's confirmation can take a few seconds: ask again every 3 s, for about 45 s.
+     The card was accepted (Stripe only comes back here after a payment): until the server confirms it, the « Payer » button
+     is not shown, even after the checks stop (no second payment by mistake). */
   function load(){
     if (!token || !CFG.url){ fail('Ce lien est incomplet. Demandez au garage de vous le renvoyer.'); return; }
     clearTimeout(checkT);
@@ -155,11 +156,11 @@ main{display:grid;gap:14px;padding:14px 0 28px}
       var inv = r.invoice;
       if (inv && inv.paid){ back = false; checks = 0; history.replaceState(null, '', location.pathname + '#t=' + token); render({text:'Paiement reçu. Merci !'}); return; }
       if (inv && inv.online && inv.online.short){ back = false; checks = 0; history.replaceState(null, '', location.pathname + '#t=' + token); render(null); return; }   /* received, but not the right amount: the invoice says it */
-      if (++checks < 8){ render({wait:true, text:'Paiement en vérification…'}); checkT = setTimeout(load, 3000); return; }
-      checks = 0; render({bad:true, text:'Le paiement n\'est pas encore confirmé. Rechargez la page dans un instant.'});
+      if (++checks < 15){ render({wait:true, text:'Paiement en vérification…'}); checkT = setTimeout(load, 3000); return; }
+      checks = 0; render({wait:true, bad:true, text:'Votre paiement est en route, mais pas encore confirmé. Ne payez pas une deuxième fois : rechargez cette page dans quelques minutes.'});
     }, function(e){
       /* weak signal while checking: keep the page, try again */
-      if (back && D){ if (++checks < 8){ checkT = setTimeout(load, 3000); return; } checks = 0; render({bad:true, text:e.message}); return; }
+      if (back && D){ if (++checks < 15){ checkT = setTimeout(load, 3000); return; } checks = 0; render({wait:true, bad:true, text:e.message + ' Ne payez pas une deuxième fois : rechargez cette page dans quelques minutes.'}); return; }
       fail(e.message);
     });
   }
