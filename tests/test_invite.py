@@ -49,11 +49,16 @@ with sync_playwright() as pl:
     check('typed differently → plain message', 'pas pareils' in txt(kp, '#g-msg'))
     kp.fill('#g-pw2', 'Karim-Garage-26'); kp.click('#g-go'); kp.wait_for_selector('#gate', state='detached', timeout=20000); kp.wait_for_timeout(1500)
     check('« Activer mon compte » → signed in to the garage', kp.locator('#tabbar').count() == 1 and kp.evaluate("!!window.__garageApi && window.__garageApi.S.loaded"))
-    kp.wait_for_selector('#tour', timeout=8000)
-    check('right after: the guided tour of the app opens by itself (« Bienvenue, Karim »)', 'Bienvenue, Karim' in txt(kp, '#sheet-title') and kp.locator('#tour').count() == 1, txt(kp, '#sheet-title'))
-    for _ in range(8):
-        if kp.locator('#tour [data-act="tour-go"].primary').count(): kp.click('#tour [data-act="tour-go"].primary'); kp.wait_for_timeout(250)
-    kp.click('#tour [data-act="tour-end"]'); kp.wait_for_timeout(900)
+    kp.wait_for_selector('#tour-ov .tt-tip', timeout=9000)
+    check('right after: the guided tour of the app starts by itself (« Bienvenue »)', 'Bienvenue' in txt(kp, '#tour-ov .tt-tip'), txt(kp, '#tour-ov .tt-tip')[:60])
+    for _ in range(20):
+        kp.wait_for_timeout(650)
+        if kp.locator('#tour-ov .tt-win').count(): break
+        if 'À toi' in txt(kp, '#tour-ov .tt-tip'):
+            c = kp.evaluate("(() => { const r = document.querySelector('#tour-ov .tt-hole').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; })()"); kp.mouse.click(c[0], c[1])
+        else: kp.click('#tour-ov [data-act="tt-next"]')
+    check('…to the trophy « Bravo, Karim ! »', 'Bravo, Karim' in txt(kp, '#tour-ov .tt-win'))
+    kp.click('#tour-ov [data-act="tt-end"]'); kp.wait_for_timeout(1200)
     check('the tour is remembered for him', bool((doc('data/users/%s/tour' % uid) or {}).get('seenAt')))
     check('after the tour (« C\'est parti »): how to put the app on the phone opens by itself (iPhone first)', kp.locator('#sheet:not([hidden]) .inst').count() == 1 and kp.locator('.inst .inst-b').first.get_attribute('data-p') == 'ios-safari', kp.locator('.inst .inst-b').count())
     check('steps are concrete: Partager (or ••• then Partager), « Sur l\'écran d\'accueil », « Ajouter »', all(w in txt(kp, '.inst .inst-b[data-p="ios-safari"]') for w in ['Partager', '•••', 'Sur l\'écran d\'accueil', 'Ajouter']))

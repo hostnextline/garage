@@ -596,33 +596,37 @@
   /* the page starts below the bar, whatever its height */
   function pvFit(){ var el = document.getElementById('pv-bar'); if (el) document.documentElement.style.setProperty('--pvh', el.offsetHeight + 'px'); }
   window.addEventListener('resize', pvFit);
-  /* the guided tour of the first visit, for each role (what that person can really do) */
+  /* the guided tour of the first visit, for each role: each step lights up a real button (sel), can open a screen (go),
+     and « À toi ! » steps (tap) wait for the person to touch it. Steps whose button is not on the screen are skipped. */
   function tourSteps(){
     var m = eff(); if (!m || m.role === 'owner') return [];
-    var a = A(), inst = !(a && a.isStandalone && a.isStandalone()), out = [];
-    var hi = function(icon, t, p){ out.push({icon:icon, t:t, p:p}); };
+    var out = [], st = function(o){ out.push(o); };
     if (m.role === 'mecano'){
-      hi('👋', 'L\'app du garage', 'Ici, tu vois tes jobs, tu avises le client quand tu pars et tu fais la facture sur place. Voici l\'essentiel, en quelques étapes.');
-      hi('☀️', 'Le matin : « Commencer ma journée »', 'Touche ce bouton en partant. Le bureau voit où tu es <b>seulement pendant ta journée</b> : rien n\'est envoyé avant, ni après « Fin de journée ».');
-      hi('🔧', 'Une job, un seul gros bouton', 'Ouvre une job : le gros bouton noir te dit quoi faire. <b>« Je pars »</b> (le client reçoit un texto pour suivre ton trajet), <b>« Je suis arrivé »</b>, <b>« Terminer la job »</b>, puis <b>« Faire la facture »</b>.');
-      hi('➕', 'Le « + » en bas', 'Pour une <b>facture sur place</b> (client sans rendez-vous)' + (perm('mecano', 'book') ? ', une <b>nouvelle réservation</b>' : '') + ' ou un <b>nouveau client</b>. Les petits <b>?</b> expliquent chaque chose.');
+      st({icon:'🎮', t:'Bienvenue dans l\'app du garage !', p:'Une visite d\'une minute pour connaître l\'essentiel. Chaque étape te donne des points ⭐.', go:'home'});
+      st({icon:'☀️', t:'Le matin', p:'Touche <b>« Commencer ma journée »</b> en partant. Le bureau voit où tu es <b>seulement pendant ta journée</b> : rien n\'est envoyé avant, ni après « Fin de journée ».', sel:'.shift', go:'home'});
+      st({icon:'🔧', t:'Tes jobs du jour', p:'Chaque carte, c\'est un client : l\'heure, l\'auto et le travail à faire.', sel:'.ticket, [data-act="open"]', go:'home'});
+      st({icon:'⚫', t:'Le gros bouton', p:'Dans une job, il te dit toujours quoi faire : <b>« Je pars »</b> (le client reçoit un texto pour suivre ton trajet), <b>« Je suis arrivé »</b>, <b>« Terminer la job »</b>, puis <b>« Faire la facture »</b>.', sel:'.nextbtn', go:'job'});
+      st({icon:'➕', t:'Le « + »', p:'Pour une <b>facture sur place</b> (client sans rendez-vous)' + (perm('mecano', 'book') ? ', une <b>nouvelle réservation</b>' : '') + ' ou un <b>nouveau client</b>.', sel:'.tab-new:not([hidden])', go:'home'});
+      st({icon:'👤', t:'Tes clients', p:'La fiche de chaque client : téléphone, adresse, ses autos et ses visites.', sel:'.tab[data-t="clients"]:not([hidden])', tap:true, go:'home'});
+      st({icon:'🧾', t:'Tes factures', p:'Les factures de tes jobs, payées ou à encaisser.', sel:'.tab[data-t="factures"]:not([hidden])', tap:true});
+      st({icon:'☰', t:'Plus', p:'Tes disponibilités, le stock du camion, et « Revoir la visite guidée » si tu veux recommencer.', sel:'.tab[data-t="plus"]:not([hidden])', go:'home'});
+      st({icon:'❓', t:'Les petits « ? »', p:'Partout dans l\'app, touche un <b>?</b> pour une explication simple.', sel:'.qhelp', go:'home'});
     } else if (m.role === 'tresorier'){
-      var see = [];
-      if (perm('tresorier', 'factures')) see.push(perm('tresorier', 'editinv') ? 'les factures (et les marquer payées)' : 'les factures');
-      if (perm('tresorier', 'clients')) see.push('les clients');
-      if (perm('tresorier', 'agenda')) see.push('l\'agenda');
-      if (perm('tresorier', 'stock')) see.push('le stock des camions');
-      hi('👋', 'Ta trésorerie', 'Ton écran, c\'est la <b>Trésorerie</b> : l\'argent qui rentre et l\'argent qui sort du garage.');
-      hi('🧾', 'Une dépense = une photo du reçu', 'Touche <b>« + Dépense »</b>, prends le reçu en photo, choisis la catégorie. Tout est gardé pour les impôts.');
-      hi('📊', 'Rapport et taxes', 'Le rapport du mois, du trimestre ou de l\'année, les taxes à remettre, et le fichier Excel pour le comptable.');
-      if (see.length) hi('👀', 'Tu peux aussi voir', see.join(', ').replace(/, ([^,]*)$/, ' et $1') + '.');
+      st({icon:'🎮', t:'Bienvenue dans ta trésorerie !', p:'Une visite d\'une minute. Chaque étape te donne des points ⭐.', go:'home'});
+      st({icon:'🧾', t:'Une dépense = une photo du reçu', p:'Ce bouton : prends le reçu en photo, choisis la catégorie. Tout est gardé pour les impôts.', sel:'#top [data-act="exp-new"], [data-act="exp-new"]', go:'home'});
+      st({icon:'📊', t:'Rapport et taxes', p:'Le mois, le trimestre ou l\'année : revenus, dépenses, profit et les taxes à remettre.', sel:'[data-act="tr-view"][data-v="rap"]', tap:true, go:'view:dep'});
+      st({icon:'📥', t:'Pour le comptable', p:'Le fichier Excel avec tout le détail, prêt à envoyer.', sel:'[data-act="tr-xlsx"]', go:'view:rap'});
+      if (perm('tresorier', 'factures')) st({icon:'💵', t:'Les factures', p:perm('tresorier', 'editinv') ? 'Tu peux les voir et les marquer payées.' : 'Tu peux les voir, sans les changer.', sel:'.tab[data-t="factures"]:not([hidden])', tap:true});
+      if (perm('tresorier', 'clients')) st({icon:'👤', t:'Les clients', p:'La fiche de chaque client.', sel:'.tab[data-t="clients"]:not([hidden])', tap:true});
+      if (perm('tresorier', 'agenda')) st({icon:'📅', t:'L\'agenda', p:'Les rendez-vous de tout le monde, sans rien y changer.', sel:'.tab[data-t="agenda"]:not([hidden]), .tab[data-t="jour"]:not([hidden])'});
     } else if (m.role === 'bureau'){
-      hi('👋', 'L\'app du garage', 'Tu vois l\'agenda de tous les mécanos, les clients et les factures.');
-      hi('📅', '« + Réservation »', 'Elle trouve un moment libre près des autres jobs du coin. Choisis le client et le service : c\'est réservé.');
-      hi('🗺️', 'La carte des mécanos', 'Où est chaque mécano pendant sa journée, et qui est en route vers un client.');
-      hi('🧾', 'Factures et clients', 'Les factures à encaisser, et la fiche de chaque client avec ses véhicules et ses visites. Les petits <b>?</b> expliquent chaque chose.');
+      st({icon:'🎮', t:'Bienvenue dans l\'app du garage !', p:'Une visite d\'une minute. Chaque étape te donne des points ⭐.', go:'tab:agenda'});
+      st({icon:'📅', t:'L\'agenda de tous les mécanos', p:'Chaque colonne, c\'est un camion ou un mécano. Touche une case libre pour réserver.', sel:'.cal, .list', go:'tab:agenda'});
+      st({icon:'➕', t:'« + Réservation »', p:'Elle trouve un moment libre près des autres jobs du coin. Choisis le client et le service : c\'est réservé.', sel:'#top [data-act="new"], [data-act="new"]', go:'tab:agenda'});
+      st({icon:'🗺️', t:'La carte des mécanos', p:'Où est chaque mécano pendant sa journée, et qui est en route vers un client.', sel:'.tab[data-t="carte"]:not([hidden])', tap:true, go:'tab:agenda'});
+      st({icon:'🧾', t:'Les factures', p:'Les factures à encaisser et celles déjà payées.', sel:'.tab[data-t="factures"]:not([hidden])', tap:true});
+      st({icon:'❓', t:'Les petits « ? »', p:'Partout dans l\'app, un <b>?</b> donne une explication simple.', sel:'.qhelp', go:'tab:agenda'});
     }
-    if (inst && (onPhone() || previewing())) hi('📱', 'Dernière chose', 'Mets l\'app sur ton écran d\'accueil : elle s\'ouvrira d\'un seul geste, comme une vraie app. On te montre comment juste après.');
     return out;
   }
   function val(id){ var e = document.getElementById(id); return e ? e.value.trim() : ''; }
