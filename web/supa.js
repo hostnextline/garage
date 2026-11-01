@@ -99,7 +99,8 @@
      (same rule as can_read_doc: his jobs, the clients and photos of his jobs, the shared settings). Nothing is deleted. */
   function lc(s){ return String(s == null ? '' : s).trim().toLowerCase(); }
   function visible(col, id, d){
-    var v = T.view; if (!v || v.role !== 'mecano' || d === undefined) return true;
+    var v = T.view, rs = v ? (v.roles && v.roles.length ? v.roles : [v.role]) : [];
+    if (!v || d === undefined || rs.indexOf('mecano') < 0 || rs.some(function(r){ return r !== 'mecano'; })) return true;   /* only a mechanic alone sees less */
     if (col.indexOf('data/') === 0) return true;
     var m = lc(v.mechanic);
     if (col === 'jobs') return lc(d.mechanic) === m;

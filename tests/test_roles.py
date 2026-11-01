@@ -9,7 +9,12 @@ def roles(): return doc('config/roles') or {}
 TABS = ['accueil', 'agenda', 'jour', 'clients', 'factures', 'tresor', 'carte', 'reglages', 'plus']
 def tabs(p): return [t for t in TABS if p.locator('.tab[data-t="%s"]' % t).count() and p.is_visible('.tab[data-t="%s"]' % t)]
 def main(p): return txt(p, 'main')
-def box(p, sel): p.click(sel); p.wait_for_timeout(900)
+def box(p, sel):
+    if not p.evaluate("document.getElementById('eq-roles') && document.getElementById('eq-roles').open"): p.click('#eq-roles > summary'); p.wait_for_timeout(200)
+    p.click(sel); p.wait_for_timeout(900)
+def has_marie(p):
+    try: p.wait_for_function("/Marie/.test((document.querySelector('main') || {}).textContent || '')", timeout=8000); return True
+    except Exception: return False
 
 otok, pw = seed()
 huid = psql("select id from auth.users where email='hassan@garage.test'")
@@ -23,7 +28,13 @@ with sync_playwright() as pl:
     check('« Voir l\'app comme… »: Saleh and Ali (mécanos), Nadia (trésorier), Lina (bureau) — not himself', any('Saleh' in n and 'mécano' in n for n in names) and any('Ali' in n for n in names) and any('Nadia' in n and 'trésorier' in n for n in names) and any('Lina' in n and 'bureau' in n for n in names) and not any('Hassan' in n for n in names), names)
     defaults = {'#rp-mecano-money': False, '#rp-mecano-book': False, '#rp-mecano-clients': True, '#rp-mecano-factures': True, '#rp-mecano-stock': True,
                 '#rp-tresorier-agenda': False, '#rp-tresorier-clients': True, '#rp-tresorier-factures': True, '#rp-tresorier-editinv': False, '#rp-tresorier-stock': True}
-    check('« Ce que chaque rôle peut faire »: 5 boxes for the mechanic, 5 for the treasurer, ticked exactly as before (nothing changes by itself)', all(op.is_checked(k) == v for k, v in defaults.items()), {k: op.is_checked(k) for k in defaults})
+    check('« Ce que chaque rôle donne au départ »: folded at first (one line), the table inside', op.locator('#eq-roles').count() == 1 and not op.evaluate("document.getElementById('eq-roles').open") and op.locator('#eq-roles table.rt').count() == 1)
+    op.click('#eq-roles > summary'); op.wait_for_timeout(300)
+    hd = op.evaluate("[...document.querySelectorAll('#eq-roles thead th')].map(x => x.textContent)")
+    check('…a table: one line per right, one column per role (Mécano, Bureau, Trésorier)', hd == ['Droit', 'Mécano', 'Bureau', 'Trésorier'] and op.locator('#eq-roles tbody tr').count() == 10, hd)
+    check('…the boxes ticked exactly as before (nothing changes by itself)', all(op.is_checked(k) == v for k, v in defaults.items()), {k: op.is_checked(k) for k in defaults})
+    check('…new rights for everyone: the map (ticked for all), the treasury and the garage hours (not ticked for a mechanic)', op.is_checked('#rp-mecano-map') and op.is_checked('#rp-tresorier-map') and not op.is_checked('#rp-mecano-tresor') and not op.is_checked('#rp-mecano-hours_others') and op.is_checked('#rp-bureau-hours_others'))
+    check('…✓ = always with that role (the treasurer always has the treasury), — = not for that role', op.locator('#eq-roles tr', has_text='Trésorerie').locator('td.rt-on').count() == 1 and op.locator('#eq-roles td.rt-na').count() >= 3)
     op.screenshot(path='roles_equipe.png', full_page=True)
 
     # ---------- 2. « Voir comme Saleh » on the computer ----------
@@ -31,7 +42,7 @@ with sync_playwright() as pl:
     check('bar on top: « Tu vois l\'app comme Saleh (mécano) » + « Revenir à mon compte »', op.is_visible('#pv-bar') and 'Saleh' in txt(op, '#pv-bar') and 'mécano' in txt(op, '#pv-bar') and op.is_visible('#pv-bar [data-act="pv-exit"]'), txt(op, '#pv-bar'))
     check('on a computer: his PHONE screen (narrow), on « Ma journée »', op.evaluate("document.body.classList.contains('ui-phone') && document.body.classList.contains('pv-narrow')") and op.evaluate('location.hash') == '#jour', op.evaluate('location.hash'))
     check('his tabs only (Ma journée, Clients, Factures, Plus): no Réglages, Carte, Trésorerie', tabs(op) == ['jour', 'clients', 'factures', 'plus'], tabs(op))
-    m = main(op)
+    has_marie(op); m = main(op)
     check('his job (Marie, 14 h) and not Ali\'s (Paul)', 'Marie' in m and 'Paul' not in m, m[:300])
     op.screenshot(path='roles_saleh_pc.png')
     op.click('.tab[data-t="clients"]'); op.wait_for_timeout(600)
@@ -56,7 +67,7 @@ with sync_playwright() as pl:
     def look(p): return p.evaluate("[document.body.classList.contains('ui-phone'), document.body.classList.contains('ui-pc'), document.body.classList.contains('pv-narrow'), Math.round(document.querySelector('main').getBoundingClientRect().width)]")
     check('bar: a button « 🖥 Voir sur ordinateur »', '🖥 Voir sur ordinateur' in txt(op, '#pv-bar [data-act="pv-fmt"]'), txt(op, '#pv-bar'))
     op.click('#pv-bar [data-act="pv-fmt"]'); op.wait_for_timeout(1200); lk = look(op)
-    check('« Voir sur ordinateur »: his computer screen, all of it (menu on the left, full-width page, Accueil)', lk[1] and not lk[0] and not lk[2] and lk[3] > 700 and op.evaluate('location.hash') == '#accueil' and tabs(op) == ['accueil', 'agenda', 'clients', 'factures'], [lk, op.evaluate('location.hash'), tabs(op)])
+    check('« Voir sur ordinateur »: his computer screen, all of it (menu on the left, full-width page, Accueil)', lk[1] and not lk[0] and not lk[2] and lk[3] > 700 and op.evaluate('location.hash') == '#accueil' and tabs(op) == ['accueil', 'agenda', 'clients', 'factures', 'carte'], [lk, op.evaluate('location.hash'), tabs(op)])
     op.screenshot(path='roles_saleh_pcformat.png')
     op.evaluate("location.hash = 'agenda'"); op.wait_for_timeout(900)
     check('…his agenda on the computer: Marie, not Paul', 'Marie' in main(op) and 'Paul' not in main(op), main(op)[:200])
@@ -83,7 +94,7 @@ with sync_playwright() as pl:
     # ---------- 3. « Voir comme » the treasurer and the office ----------
     op.evaluate("location.hash = 'equipe'"); op.wait_for_selector('#eq-viewas'); op.wait_for_timeout(600)
     op.click('#eq-viewas [data-act="pv-start"][data-role="tresorier"]'); op.wait_for_timeout(1500)
-    check('as Nadia (treasurer): her Trésorerie screen first; tabs Clients, Factures, Trésorerie only', op.evaluate('location.hash') == '#tresor' and tabs(op) == ['clients', 'factures', 'tresor'] and 'Nadia' in txt(op, '#pv-bar'), [op.evaluate('location.hash'), tabs(op)])
+    check('as Nadia (treasurer): her Trésorerie screen first; tabs Clients, Factures, Trésorerie, and the map', op.evaluate('location.hash') == '#tresor' and tabs(op) == ['clients', 'factures', 'tresor', 'carte'] and 'Nadia' in txt(op, '#pv-bar'), [op.evaluate('location.hash'), tabs(op)])
     check('computer screen kept for the treasurer (not the phone one), menu below the bar', op.evaluate("document.body.classList.contains('ui-pc')") and op.evaluate("document.querySelector('#tabbar').getBoundingClientRect().top") >= op.evaluate("document.querySelector('#pv-bar').getBoundingClientRect().bottom"))
     op.screenshot(path='roles_nadia_pc.png')
     op.click('#pv-bar [data-act="pv-exit"]'); op.wait_for_timeout(1200)
@@ -95,6 +106,7 @@ with sync_playwright() as pl:
     box(op, '#rp-mecano-money'); box(op, '#rp-mecano-book'); box(op, '#rp-mecano-clients'); box(op, '#rp-tresorier-agenda'); box(op, '#rp-tresorier-editinv')
     r = roles()
     check('each box is saved right away (config/roles)', r.get('mecano') == {'money': True, 'book': True, 'clients': False} and r.get('tresorier') == {'agenda': True, 'editinv': True}, r)
+    check('…and the table stays open while ticking', op.evaluate("document.getElementById('eq-roles').open"))
     check('a « Enregistré » message for each click', toast_has(op, 'Enregistré'))
     op.click('#eq-roles [data-act="pv-role"][data-role="mecano"]'); op.wait_for_timeout(1500)
     check('« Voir ce qu\'il voit » under the mechanic: preview of Saleh with the new boxes (no Clients tab now)', 'Saleh' in txt(op, '#pv-bar') and 'clients' not in tabs(op), tabs(op))

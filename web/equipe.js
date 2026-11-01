@@ -8,8 +8,17 @@
      His own account stays behind it: what he changes is saved under his name. */
   var VA = null;
   try { VA = JSON.parse(sessionStorage.getItem('gm.viewas') || 'null'); } catch(e){ VA = null; }
-  function previewing(){ return !!(me && VA && me.role === 'owner'); }
-  function eff(){ return previewing() ? {role:VA.role, mechanic:VA.mechanic || null, name:VA.name, user_id:me.user_id, active:true, preview:true} : me; }
+  /* a person can have several roles (members.roles); members.role is the main one (owner > bureau > mecano > tresorier) */
+  function rolesOf(m){ return m ? (m.roles && m.roles.length ? m.roles.slice() : [m.role]) : []; }
+  function hasR(m, r){ return rolesOf(m).indexOf(r) >= 0; }
+  function mainRole(rs){ return rs.indexOf('owner') >= 0 ? 'owner' : rs.indexOf('bureau') >= 0 ? 'bureau' : rs.indexOf('mecano') >= 0 ? 'mecano' : 'tresorier'; }
+  function rolesLabel(m){ return rolesOf(m).sort(function(a, b){ return ['owner','bureau','mecano','tresorier'].indexOf(a) - ['owner','bureau','mecano','tresorier'].indexOf(b); }).map(function(r){ return ROLE[r]; }).join(' + '); }
+  function previewing(){ return !!(me && VA && hasR(me, 'owner')); }
+  function eff(){
+    if (!previewing()) return me;
+    var rs = VA.roles && VA.roles.length ? VA.roles.slice() : [VA.role || 'mecano'];
+    return {role:mainRole(rs), roles:rs, mechanic:VA.mechanic || null, name:VA.name, perms:VA.perms || {}, user_id:me.user_id, active:true, preview:true};
+  }
   var X = {tracks:{}, trackLoading:{}, busy:{}, live:[], members:[], active:[], mapSel:null, showPath:{}, paths:{}, eq:{list:null, err:'', created:null, secrets:null, confirm:null, editing:null}, enRoute:null, near:false, warnedNear:false, roles:{}};
   var ROLE = {owner:'Propriétaire', bureau:'Bureau', mecano:'Mécano', tresorier:'Trésorier'};
 
@@ -34,34 +43,51 @@
       });
     });
   }
-  function mineOf(m, j){ return !!(m && m.mechanic && (norm(j.mechanic) === norm(m.mechanic) || (!j.mechanic && m.role === 'mecano'))); }
+  function mineOf(m, j){ return !!(m && m.mechanic && (norm(j.mechanic) === norm(m.mechanic) || (!j.mechanic && hasR(m, 'mecano')))); }
   function mineJob(j){ return mineOf(me, j); }          /* the real account (position, texts) */
   function mineView(j){ return mineOf(eff(), j); }      /* what the screen shows (« Voir comme ») */
   function onPhone(){ var a = A(); return !!(a && a.phone && a.phone()); }
-  function isStaff(){ return me && (me.role === 'owner' || me.role === 'bureau'); }
-  function worksShifts(){ return !!(me && (me.role === 'mecano' || me.mechanic)); }
-  function staffView(){ var m = eff(); return !!(m && (m.role === 'owner' || m.role === 'bureau')); }
-  function shiftsView(){ var m = eff(); return !!(m && (m.role === 'mecano' || m.mechanic)); }
+  function isStaff(){ return !!me && (hasR(me, 'owner') || hasR(me, 'bureau')); }
+  function worksShifts(){ return !!(me && (hasR(me, 'mecano') || me.mechanic)); }
+  function staffView(){ var m = eff(); return !!(m && (hasR(m, 'owner') || hasR(m, 'bureau'))); }
+  function shiftsView(){ var m = eff(); return !!(m && (hasR(m, 'mecano') || m.mechanic)); }
 
-  /* what the mechanic and the treasurer may do: the owner ticks boxes in Équipe et accès (document config/roles).
-     Nothing ticked = as before. « book » (mechanic) and « editinv » (treasurer) are also checked by the server. */
-  var PERMS = {
-    mecano:[
-      {k:'money', t:'Voir les chiffres du garage', s:'Ventes du mois et factures payées, sur l\'écran d\'accueil.', d:false},
-      {k:'book', t:'Prendre des rendez-vous', s:'Seulement dans son agenda.', d:false},
-      {k:'clients', t:'Voir l\'onglet Clients', s:'Seulement les clients de ses jobs.', d:true},
-      {k:'factures', t:'Voir l\'onglet Factures', s:'Seulement les factures de ses jobs.', d:true},
-      {k:'stock', t:'Voir et changer le stock', s:'Pièces et produits du camion.', d:true}
-    ],
-    tresorier:[
-      {k:'agenda', t:'Voir l\'agenda', s:'Les rendez-vous de tout le monde, sans rien y changer.', d:false},
-      {k:'clients', t:'Voir les clients', s:'Sans rien y changer.', d:true},
-      {k:'factures', t:'Voir les factures', s:'', d:true},
-      {k:'editinv', t:'Modifier les factures', s:'Les lignes, les rabais, « payée ». Rien d\'autre dans la job.', d:false},
-      {k:'stock', t:'Voir et changer le stock', s:'', d:true}
-    ]
-  };
-  function perm(role, k){ var r = X.roles && X.roles[role], v = r && r[k]; if (typeof v === 'boolean') return v; var p = (PERMS[role] || []).filter(function(x){ return x.k === k; })[0]; return p ? p.d : undefined; }
+  /* THE RIGHTS: one list for everyone. Each role ticks some of them at the start (« Ce que chaque rôle donne au départ »,
+     changeable); then a right can be added or removed for ONE person (Équipe et accès → Modifier).
+     on: the roles that always have it; r: the roles where it is a choice (d: ticked at the start).
+     The server also checks « Trésorerie », « Modifier les factures » (treasurer), « Voir la carte » and « Changer l'horaire des autres ». */
+  var RIGHTS = [
+    {k:'agenda', t:'Voir l\'agenda de toute l\'équipe', s:'Tous les rendez-vous, sans rien y changer.', on:['bureau'], r:['tresorier'], d:{}},
+    {k:'book', t:'Prendre des rendez-vous', s:'Un mécano : dans son agenda. Le bureau : pour tout le monde.', on:[], r:['bureau', 'mecano'], d:{bureau:true}},
+    {k:'clients', t:'Voir les clients', s:'Un mécano : les clients de ses jobs.', on:[], r:['bureau', 'mecano', 'tresorier'], d:{bureau:true, mecano:true, tresorier:true}},
+    {k:'factures', t:'Voir les factures', s:'Un mécano : les factures de ses jobs.', on:[], r:['bureau', 'mecano', 'tresorier'], d:{bureau:true, mecano:true, tresorier:true}},
+    {k:'editinv', t:'Modifier les factures et les marquer payées', s:'Le trésorier : la facture seulement, rien d\'autre dans la job.', on:[], r:['bureau', 'tresorier'], d:{bureau:true}},
+    {k:'money', t:'Voir les chiffres du garage', s:'Ventes du mois et factures payées, sur l\'écran d\'accueil.', on:[], r:['bureau', 'mecano', 'tresorier'], d:{bureau:true, tresorier:true}},
+    {k:'tresor', t:'Trésorerie : dépenses, reçus, rapport, taxes', s:'', on:['tresorier'], r:['bureau', 'mecano'], d:{}},
+    {k:'stock', t:'Voir et changer le stock des camions', s:'', on:[], r:['bureau', 'mecano', 'tresorier'], d:{bureau:true, mecano:true, tresorier:true}},
+    {k:'map', t:'Voir la carte de l\'équipe', s:'Les mécanos, leurs trajets et tous les rendez-vous du jour (avec le nom du client).', on:[], r:['bureau', 'mecano', 'tresorier'], d:{bureau:true, mecano:true, tresorier:true}},
+    {k:'hours_others', t:'Changer l\'horaire du garage et des autres', s:'Heures d\'ouverture et disponibilités de chaque mécano.', on:[], r:['bureau', 'mecano'], d:{bureau:true}}
+  ];
+  var PERMS = {};   /* (old name, kept for the guided tour) */
+  function right(k){ return RIGHTS.filter(function(x){ return x.k === k; })[0] || null; }
+  /* what a role gives: the owner everything; then « always », then the role template (config/roles), then the start */
+  function perm(role, k){
+    if (role === 'owner') return true;
+    var p = right(k); if (!p) return false;
+    if (p.on.indexOf(role) >= 0) return true;
+    if (p.r.indexOf(role) < 0) return false;
+    var t = X.roles && X.roles[role], v = t && t[k]; if (typeof v === 'boolean') return v;
+    return !!p.d[role];
+  }
+  function roleDefault(rs, k){ return rs.some(function(r){ return perm(r, k); }); }
+  /* what THIS person may do: always-rights of his roles, then what was set for him, then what his roles give */
+  function permOf(m, k){
+    if (!m) return false; if (hasR(m, 'owner')) return true;
+    var p = right(k), rs = rolesOf(m); if (!p) return false;
+    if (rs.some(function(r){ return p.on.indexOf(r) >= 0; })) return true;
+    if (!rs.some(function(r){ return p.r.indexOf(r) >= 0; })) return false;
+    var o = m.perms && m.perms[k]; return typeof o === 'boolean' ? o : roleDefault(rs, k);
+  }
   function trackBase(){ return location.origin + location.pathname.replace(/[^\/]*$/, ''); }
   function trackLink(t){ return t && t.token ? trackBase() + 'suivi.html#t=' + t.token : ''; }
 
@@ -272,10 +298,10 @@
   function agendaTop(){
     var m = eff(); if (!m) return '';
     /* on a big screen the side menu shows who is signed in; in a small window this line does */
-    return (onPhone() ? '' : '<div class="acct"><span>Connecté : <b>' + esc(m.name) + '</b> · ' + esc(ROLE[m.role]) + '</span><button type="button" class="linkbtn" data-act="acct-out">Se déconnecter</button></div>') + shiftCard();
+    return (onPhone() ? '' : '<div class="acct"><span>Connecté : <b>' + esc(m.name) + '</b> · ' + esc(rolesLabel(m)) + '</span><button type="button" class="linkbtn" data-act="acct-out">Se déconnecter</button></div>') + shiftCard();
   }
   /* the side menu of a computer ends with who is signed in */
-  function navFoot(){ var m = eff(); return m ? '<div class="navfoot"><span><b>' + esc(m.name) + '</b> · ' + esc(ROLE[m.role]) + '</span><button type="button" class="linkbtn" data-act="acct-out">Se déconnecter</button></div>' : ''; }
+  function navFoot(){ var m = eff(); return m ? '<div class="navfoot"><span><b>' + esc(m.name) + '</b> · ' + esc(rolesLabel(m)) + '</span><button type="button" class="linkbtn" data-act="tour-replay">👋 ' + (tourAuto() ? 'Revoir la visite guidée' : 'Visite guidée de l\'app') + '</button><button type="button" class="linkbtn" data-act="acct-out">Se déconnecter</button></div>' : ''; }
   /* « Commencer ma journée » only where a position can be sent: a phone or a tablet (not a desk computer) */
   function canTrack(){ try { return onPhone() || !!(window.matchMedia && matchMedia('(pointer: coarse)').matches); } catch(e){ return onPhone(); } }
   function shiftCard(){
@@ -303,7 +329,7 @@
     return h;
   }
   function settingsTop(){
-    var m = eff(); if (!m || m.role !== 'owner' || onPhone()) return '';
+    var m = eff(); if (!m || !hasR(m, 'owner') || onPhone()) return '';
     return '<section class="sect"><h3>Équipe et accès</h3><p class="muted small">Les comptes de l\'équipe, les mots de passe, les textos aux clients et le paiement par carte.</p><a class="btn block" href="#equipe">Gérer l\'équipe et les accès</a></section>';
   }
 
@@ -322,7 +348,7 @@
     return X.liveLoading = Promise.all([
       T.sb.from('mech_live').select('*'),
       T.sb.from('tracks').select('token,job_id,user_id,status,eta_at,route,dest_lat,dest_lon,created_at,client_first,sms_status').eq('status', 'active'),
-      T.sb.from('members').select('user_id,name,role,mechanic,active')
+      T.sb.from('members').select('user_id,name,role,roles,mechanic,active')
     ]).then(function(r){
       if (!r[0].error) X.live = r[0].data;
       if (!r[1].error) X.active = r[1].data.filter(function(t){ return !t.created_at || Date.now() - Date.parse(t.created_at) < 4 * 3600000; });
@@ -333,7 +359,7 @@
     }, function(){ X.liveLoading = null; });
   }
   function crew(){
-    var out = X.members.filter(function(m){ return m.active && (m.role === 'mecano' || m.mechanic); }).map(function(m){ return {m:m, l:X.live.filter(function(l){ return l.user_id === m.user_id; })[0] || null}; });
+    var out = X.members.filter(function(m){ return m.active && (hasR(m, 'mecano') || m.mechanic); }).map(function(m){ return {m:m, l:X.live.filter(function(l){ return l.user_id === m.user_id; })[0] || null}; });
     var order = {route:0, shift:1, stale:2, off:3};
     return out.sort(function(a, b){ return order[mechState(a.l)] - order[mechState(b.l)] || String(a.m.name).localeCompare(b.m.name, 'fr'); });
   }
@@ -356,36 +382,110 @@
     if (M.el.parentNode !== slot){ slot.appendChild(M.el); setTimeout(function(){ M.map.invalidateSize(); }, 0); }
   }).observe(document.documentElement, {childList:true, subtree:true});
   function pinIcon(cls, txt, big){ return L.divIcon({className:'gm-pin-wrap', html:'<span class="gm-pin ' + cls + '">' + esc(txt) + '</span>', iconSize:big ? [40, 40] : [30, 30], iconAnchor:big ? [20, 20] : [15, 15]}); }
+  /* ---- the team map: everybody sees the mechanics, their route of the day and every appointment (numbered, client's name) ---- */
+  var CENTRALE = {name:'Centrale', address:'8255 Avenue Mountain Sights, Montréal QC H4P 2B5', lat:45.5005053, lon:-73.6577429};
+  function centrale(){ var c = (A() && A().cfg().central) || {}; return c.geo && isFinite(+c.geo.lat) && isFinite(+c.geo.lon) ? {name:c.name || 'Centrale', address:c.address || '', lat:+c.geo.lat, lon:+c.geo.lon} : CENTRALE; }
+  var PAL = ['#E4572E', '#2E86AB', '#2BA84A', '#8E44AD', '#D99A00', '#D7263D', '#14A098', '#5C6B7A'];
+  function mechColor(name){ var ms = (A() && A().mechanics()) || [], i = ms.map(norm).indexOf(norm(name)); return !name ? '#7A8794' : i < 0 ? PAL[(ms.length + Math.abs(String(name).length)) % PAL.length] : PAL[i % PAL.length]; }
+  function loadTeamMap(){
+    if (X.tmLoading) return X.tmLoading;
+    return X.tmLoading = T.sb.rpc('team_map', {p_day:A().today()}).then(function(r){
+      X.tmLoading = null;
+      if (r.error){ X.tmErr = /not_granted|42501/.test(r.error.message + (r.error.code || '')) ? 'Tu n\'as pas accès à la carte. Parle au propriétaire.' : 'La carte ne répond pas (' + r.error.message + ').'; render(); return; }
+      X.tm = r.data; X.tmAt = Date.now(); X.tmErr = '';
+      drawMap(); if (A().S.tab === 'carte' && !A().S.screen) render();
+    }, function(e){ X.tmLoading = null; X.tmErr = 'La carte ne répond pas (' + (e && e.message || e) + ').'; render(); });
+  }
+  /* each mechanic: his color, his live position, his appointments of the day in order (1, 2, 3…) */
+  function teams(){
+    var tm = X.tm || {jobs:[], live:[], members:[]}, ms = A().mechanics(), groups = {}, order = [];
+    var add = function(name){ var k = norm(name); if (!groups[k]){ groups[k] = {key:k, name:name || 'Sans mécano', color:mechColor(name), jobs:[], member:null, live:null}; order.push(k); } return groups[k]; };
+    ms.forEach(add);
+    (tm.jobs || []).forEach(function(j){ add(j.mechanic || '').jobs.push(j); });
+    (tm.members || []).forEach(function(m){ if (m.mechanic){ var g = add(m.mechanic); g.member = m; g.live = (tm.live || []).filter(function(l){ return l.user_id === m.user_id; })[0] || null; } });
+    return order.map(function(k){ var g = groups[k]; g.jobs.sort(function(a, b){ return String(a.time).localeCompare(String(b.time)); }); g.jobs.forEach(function(j, i){ j.n = i + 1; }); return g; })
+      .filter(function(g){ return g.jobs.length || g.live; });   /* a mechanic with nothing today and not on the road: not shown */
+  }
+  function geoOf(j){ var g = j.client && j.client.geo; return g && isFinite(+g.lat) && isFinite(+g.lon) ? [+g.lat, +g.lon] : null; }
+  /* a mechanic's day: from the Centrale (where the trucks leave), then each appointment in order */
+  function dayLine(g){ var hq = centrale(), line = [[hq.lat, hq.lon]]; g.jobs.forEach(function(j){ var ll = geoOf(j); if (ll) line.push(ll); }); return line; }
+  /* the route on the roads (OpenStreetMap routing); a straight line if it does not answer */
+  X.roads = X.roads || {}; X.roadsMeta = X.roadsMeta || {};
+  function roadKey(pts){ return pts.map(function(p){ return (+p[0]).toFixed(5) + ',' + (+p[1]).toFixed(5); }).join(';'); }
+  function roads(pts, cb){
+    var key = roadKey(pts);
+    if (X.roads[key]) return cb(X.roads[key]);
+    if (X.roads[key] === null) return cb(pts);
+    X.roads[key] = null;
+    var url = 'https://router.project-osrm.org/route/v1/driving/' + pts.map(function(p){ return p[1] + ',' + p[0]; }).join(';') + '?overview=full&geometries=geojson';
+    fetch(url).then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
+      var rt = d && d.routes && d.routes[0], c = rt && rt.geometry && rt.geometry.coordinates;
+      if (c && c.length > 1){
+        X.roads[key] = c.map(function(x){ return [x[1], x[0]]; });
+        if (isFinite(+rt.distance) && isFinite(+rt.duration)) X.roadsMeta[key] = {km:+rt.distance / 1000, min:+rt.duration / 60};
+        drawMap(); if (A().S.tab === 'carte' && !A().S.screen) render();
+      }
+    }, function(){});
+    cb(pts);
+  }
+  /* « En route » : his active trip (link sent to the client), with the time of arrival */
+  function trackOf(g){ var uid = g.member && g.member.user_id, tm = X.tm || {}; return uid ? (tm.tracks || []).filter(function(t){ return t.user_id === uid; })[0] || null : null; }
+  function etaText(g){
+    var t = trackOf(g); if (!t) return '';
+    var j = (g.jobs || []).filter(function(x){ return x.id === t.job_id; })[0], who = j && j.client && j.client.name ? String(j.client.name).split(' ')[0] : 'un client';
+    return '<p class="small tm-eta">🚚 En route vers <b>' + esc(who) + '</b>' + (t.eta_at ? ' · arrivée vers ' + esc(clock(t.eta_at)) : '') + '</p>';
+  }
+  function routeText(g){
+    var line = dayLine(g), mt = line.length > 1 && X.roadsMeta[roadKey(line)];
+    if (!mt) return '';
+    var km = mt.km < 10 ? (Math.round(mt.km * 10) / 10).toString().replace('.', ',') : String(Math.round(mt.km)), mn = Math.max(1, Math.round(mt.min));
+    return '<p class="small tm-route"><span style="color:' + g.color + '">━━</span> Trajet du jour depuis la Centrale : <b>' + km + ' km</b> · environ <b>' + (mn >= 60 ? Math.floor(mn / 60) + ' h ' + String(mn % 60).padStart(2, '0') : mn + ' min') + '</b> de route</p>';
+  }
+  function stopIcon(n, color, cls){ return L.divIcon({className:'gm-pin-wrap', html:'<span class="tm-stop ' + (cls || '') + '" style="--c:' + color + '">' + n + '</span>', iconSize:[30, 30], iconAnchor:[15, 15]}); }
+  function mechIcon(txt, color, cls){ return L.divIcon({className:'gm-pin-wrap', html:'<span class="tm-mech ' + (cls || '') + '" style="--c:' + color + '">' + esc(txt) + '</span>', iconSize:[42, 42], iconAnchor:[21, 21]}); }
   function drawMap(){
-    if (!M.map) return;
-    var seen = {}, pts = [];
-    crew().forEach(function(c){
-      var l = c.l, st = mechState(l); if (!l || l.lat == null || st === 'off') return;
-      seen[l.user_id] = 1; var ll = [l.lat, l.lon]; pts.push(ll);
-      var tip = esc(c.m.name) + ' · ' + STATE[st].lbl + ' · ' + ago(l.at);
-      if (!M.pins[l.user_id]) M.pins[l.user_id] = L.marker(ll, {icon:pinIcon(STATE[st].cls, initials(c.m.name), true), keyboard:true, title:c.m.name, riseOnHover:true}).addTo(M.map).on('click', function(){ selectMech(l.user_id, true); });
-      var mk = M.pins[l.user_id]; mk.setLatLng(ll); mk.setIcon(pinIcon(STATE[st].cls + (X.mapSel === l.user_id ? ' sel' : ''), initials(c.m.name), true)); mk.bindTooltip(tip, {direction:'top', offset:[0, -18]});
+    if (!M.map || !X.tm) return;
+    var a = A(), pts = [], hq = centrale();
+    M.jobs.clearLayers(); M.routes.clearLayers(); M.path.clearLayers();
+    Object.keys(M.pins).forEach(function(k){ M.map.removeLayer(M.pins[k]); }); M.pins = {};
+    /* the Centrale (the owner's place) */
+    pts.push([hq.lat, hq.lon]);
+    L.marker([hq.lat, hq.lon], {icon:L.divIcon({className:'gm-pin-wrap', html:'<span class="tm-hq">🏢</span>', iconSize:[44, 44], iconAnchor:[22, 22]}), title:hq.name, zIndexOffset:500}).addTo(M.jobs)
+      .bindTooltip('<b>' + esc(hq.name) + '</b>', {permanent:true, direction:'right', offset:[18, 0], className:'tm-hq-tip'}).bindPopup('<b>' + esc(hq.name) + '</b>' + (hq.address ? '<br>' + esc(hq.address) : ''));
+    teams().forEach(function(g){
+      if (X.tmHide && X.tmHide[g.key]) return;
+      var line = dayLine(g);
+      g.jobs.forEach(function(j){
+        var ll = geoOf(j); if (!ll) return; pts.push(ll);
+        var st = j.status || 'planifie', mine = !!a.findJob(j.id);
+        var pop = '<div class="tm-pop"><b>' + j.n + ' · ' + esc(a.hm(j.time)) + '</b> <span class="tm-st">' + esc((a.ST && a.ST[st]) || st) + '</span><br><b>' + esc(j.client.name || 'Client') + '</b>' + (j.client.address ? '<br>' + esc(j.client.address) : '') +
+          '<br><span style="color:' + g.color + '">●</span> ' + esc(g.name) + (mine ? '<br><button type="button" class="btn sm" data-act="er-open" data-id="' + esc(j.id) + '">Ouvrir la job</button>' : '') + '</div>';
+        L.marker(ll, {icon:stopIcon(j.n, g.color, st === 'termine' ? 'done' : st === 'route' ? 'go' : st === 'place' ? 'here' : ''), title:j.n + ' · ' + (j.client.name || ''), riseOnHover:true}).addTo(M.jobs)
+          .bindTooltip(esc(j.n + ' · ' + a.hm(j.time) + ' · ' + (j.client.name || 'Client')), {direction:'top', offset:[0, -14]}).bindPopup(pop);
+      });
+      if (line.length > 1) roads(line, function(path){ L.polyline(path, {color:g.color, weight:5, opacity:.85, lineCap:'round', lineJoin:'round'}).addTo(M.routes); });
+      /* the mechanic himself (only during his workday) and the way to his next stop */
+      var l = g.live;
+      if (l && l.lat != null){
+        var ll2 = [+l.lat, +l.lon], stale = !l.at || Date.now() - Date.parse(l.at) > 5 * 60000; pts.push(ll2);
+        M.pins['m' + g.key] = L.marker(ll2, {icon:mechIcon(initials(g.member ? g.member.name : g.name), g.color, stale ? 'stale' : ''), title:g.name, zIndexOffset:800, riseOnHover:true}).addTo(M.map)
+          .bindTooltip(esc((g.member ? g.member.name : g.name) + (stale ? ' · signal perdu' : ' · en journée') + ' · ' + ago(l.at)), {direction:'top', offset:[0, -20]});
+        var trk = trackOf(g), tr = trk && Array.isArray(trk.route) && trk.route.length > 1 ? trk.route.map(function(c){ return [+c[1], +c[0]]; }) : null;
+        var next = g.jobs.filter(function(j){ return j.status !== 'termine' && geoOf(j); })[0];
+        if (tr) L.polyline(tr, {color:g.color, weight:4, opacity:.9, dashArray:'2 9', lineCap:'round'}).addTo(M.routes);   /* « En route » : the way the client sees it */
+        else if (next) roads([ll2, geoOf(next)], function(path){ L.polyline(path, {color:g.color, weight:4, opacity:.9, dashArray:'2 9', lineCap:'round'}).addTo(M.routes); });
+      }
     });
-    Object.keys(M.pins).forEach(function(k){ if (!seen[k]){ M.map.removeLayer(M.pins[k]); delete M.pins[k]; } });
-    M.jobs.clearLayers();
-    todaysJobs().forEach(function(j){ var g = A().cl(j).geo; if (!g || !isFinite(g.lat)) return; pts.push([g.lat, g.lon]); L.marker([g.lat, g.lon], {icon:pinIcon('p-job' + (j.status === 'termine' ? ' done' : ''), A().hm(j.time).replace(' h', 'h').replace(' ', ''), false), title:(A().cl(j).name || '') + ' ' + A().hm(j.time)}).addTo(M.jobs).bindTooltip(esc(A().hm(j.time) + ' · ' + (A().cl(j).name || 'Client') + (j.mechanic ? ' · ' + j.mechanic : '')), {direction:'top', offset:[0, -14]}); });
-    M.routes.clearLayers();
-    X.active.forEach(function(t){
-      if (t.route && t.route.length > 1) L.polyline(t.route.map(function(c){ return [c[1], c[0]]; }), {color:'#F2B200', weight:5, opacity:.9, dashArray:'2 8', lineCap:'round'}).addTo(M.routes);
-      if (t.dest_lat != null) L.marker([t.dest_lat, t.dest_lon], {icon:pinIcon('p-dest', '⌂', false), title:'Chez ' + (t.client_first || 'le client')}).addTo(M.routes);
-    });
-    M.path.clearLayers();
-    Object.keys(X.showPath).forEach(function(uid){ var p = X.paths[uid]; if (X.showPath[uid] && p && p.length > 1){ L.polyline(p.map(function(x){ return [x.lat, x.lon]; }), {color:'#1D4B77', weight:4, opacity:.75}).addTo(M.path); L.circleMarker([p[0].lat, p[0].lon], {radius:6, color:'#1D4B77', fillColor:'#fff', fillOpacity:1, weight:3}).addTo(M.path).bindTooltip('Début ' + clock(p[0].at)); } });
+    Object.keys(X.showPath).forEach(function(uid){ var p = X.paths[uid]; if (X.showPath[uid] && p && p.length > 1) L.polyline(p.map(function(x){ return [x.lat, x.lon]; }), {color:'#1E1915', weight:3, opacity:.55}).addTo(M.path); });
+    M.pts = pts;
     if (!M.fitted && pts.length){ M.fitted = true; fit(pts); }
   }
-  function fit(pts){ if (!M.map) return; pts = pts || []; if (!pts.length){ Object.keys(M.pins).forEach(function(k){ var p = M.pins[k].getLatLng(); pts.push([p.lat, p.lng]); }); todaysJobs().forEach(function(j){ var g = A().cl(j).geo; if (g && isFinite(g.lat)) pts.push([g.lat, g.lon]); }); }
-    if (pts.length === 1) M.map.setView(pts[0], 14); else if (pts.length) M.map.fitBounds(L.latLngBounds(pts).pad(0.2), {maxZoom:15}); }
+  function fit(pts){ if (!M.map) return; pts = pts || M.pts || []; if (pts.length === 1) M.map.setView(pts[0], 13); else if (pts.length) M.map.fitBounds(L.latLngBounds(pts).pad(0.15), {maxZoom:15}); }
   function selectMech(uid, fromMap){
-    X.mapSel = uid; var l = X.live.filter(function(x){ return x.user_id === uid; })[0];
-    if (M.map && l && l.lat != null) M.map.setView([l.lat, l.lon], Math.max(M.map.getZoom(), 14));
-    drawMap(); render();
-    if (fromMap){ var row = document.getElementById('mc-' + uid); if (row) row.scrollIntoView({block:'nearest'}); }
-    else if (M.el) M.el.scrollIntoView({block:'nearest'});
+    X.mapSel = uid; var g = teams().filter(function(x){ return x.member && x.member.user_id === uid; })[0];
+    if (M.map && g && g.live) M.map.setView([+g.live.lat, +g.live.lon], Math.max(M.map.getZoom(), 14));
+    render();
+    if (!fromMap && M.el) M.el.scrollIntoView({block:'nearest'});
   }
   function loadPath(uid){
     var d = new Date(); d.setHours(0, 0, 0, 0);
@@ -393,27 +493,33 @@
   }
   function viewMap(){
     var a = A();
-    if (!X.liveAt || Date.now() - X.liveAt > 8000) loadLive();
-    var top = onPhone() ? a.topBack('Carte des mécanos', 'ph-back', 'Plus') : '<div class="wrap top-in"><div class="brandrow"><div><div class="eyebrow">' + esc(a.bizName()) + '</div><h1>Carte</h1></div><button type="button" class="btn sm" data-act="map-fit">Tout voir</button></div></div>';
-    var body = a.banners() + (onPhone() ? '<button type="button" class="btn sm" data-act="map-fit">Tout voir sur la carte</button>' : '');
-    body += window.L ? '<div id="map-slot" class="mapslot"></div>' : '<div class="banner warn"><p>La carte n\'a pas pu se charger. Vérifie Internet et recharge la page.</p></div>';
-    body += '<p class="legend small"><span><i class="gm-pin p-route mini"></i>En route</span><span><i class="gm-pin p-shift mini"></i>En journée</span><span><i class="gm-pin p-stale mini"></i>Signal perdu</span><span><i class="gm-pin p-job mini"></i>Job d\'aujourd\'hui</span></p>';
-    var list = crew();
-    body += '<section class="sect"><div class="sect-head"><h3>Mécanos</h3><span class="muted small">' + (X.liveAt ? 'mis à jour ' + ago(X.liveAt) : 'chargement…') + '</span></div>';
-    if (!list.length) body += '<p class="muted">Aucun mécano n\'a encore de compte. ' + (eff().role === 'owner' ? '<a href="#equipe">Ajoute-les dans Équipe et accès</a>.' : 'Le propriétaire peut les ajouter.') + '</p>';
-    list.forEach(function(c){
-      var l = c.l, st = mechState(l), t = X.active.filter(function(x){ return x.user_id === c.m.user_id; })[0], tj = t && a.findJob(t.job_id);
-      var jobs = todaysJobs().filter(function(j){ return c.m.mechanic && norm(j.mechanic) === norm(c.m.mechanic); }), next = jobs.filter(function(j){ return j.status !== 'termine'; })[0];
-      body += '<div class="mc' + (X.mapSel === c.m.user_id ? ' sel' : '') + '" id="mc-' + esc(c.m.user_id) + '"><div class="mc-head"><span class="gm-pin ' + STATE[st].cls + '" aria-hidden="true">' + esc(initials(c.m.name)) + '</span><div class="mc-who"><b>' + esc(c.m.name) + '</b><span class="pillx ' + STATE[st].cls + '">' + STATE[st].lbl + '</span></div></div>' +
-        '<p class="small muted">' + (st === 'off' ? 'Pas en journée : sa position n\'est pas partagée.' : 'Dernière position ' + esc(ago(l.at)) + (l.shift_started_at ? ' · journée depuis ' + esc(clock(l.shift_started_at)) : '')) + '</p>' +
-        (t ? '<p class="small">En route vers <b>' + esc(t.client_first || (tj ? a.cl(tj).name : 'le client')) + '</b>' + (t.eta_at ? ' · arrivée ' + esc(clock(t.eta_at)) : '') + '</p>' : '') +
-        '<p class="small">' + (jobs.length ? jobs.length + ' job' + (jobs.length > 1 ? 's' : '') + ' aujourd\'hui' + (next ? ' · prochaine : ' + esc(a.hm(next.time)) + ' ' + esc(a.cl(next).name || '') : ' · toutes terminées') : 'Aucune job aujourd\'hui') + '</p>' +
-        '<div class="er-acts">' + (l && l.lat != null && st !== 'off' ? '<button type="button" class="btn sm" data-act="map-sel" data-v="' + esc(c.m.user_id) + '">Voir sur la carte</button>' : '') +
-        '<button type="button" class="btn sm" data-act="map-path" data-v="' + esc(c.m.user_id) + '" aria-pressed="' + (!!X.showPath[c.m.user_id]) + '">' + (X.showPath[c.m.user_id] ? 'Cacher le trajet du jour' : 'Trajet du jour') + '</button>' +
-        (tj ? '<button type="button" class="btn sm" data-act="er-open" data-id="' + esc(tj.id) + '">Ouvrir la job</button>' : '') + '</div>' +
-        (X.showPath[c.m.user_id] && X.paths[c.m.user_id] ? '<p class="small muted">' + (X.paths[c.m.user_id].length ? X.paths[c.m.user_id].length + ' points depuis ' + esc(clock(X.paths[c.m.user_id][0].at)) : 'Pas de trajet aujourd\'hui.') + '</p>' : '') + '</div>';
+    if (!X.tmAt || Date.now() - X.tmAt > 8000) loadTeamMap();
+    var top = onPhone() ? a.topBack('Carte de l\'équipe', 'ph-back', 'Plus') : '<div class="wrap top-in"><div class="brandrow"><div><div class="eyebrow">' + esc(a.bizName()) + ' · ' + esc(a.dayLong(a.today())) + '</div><h1>Carte de l\'équipe</h1></div><button type="button" class="btn sm" data-act="map-fit">Tout voir</button></div></div>';
+    var gs = teams(), body = a.banners();
+    if (X.tmErr) body += '<div class="banner warn"><p>' + esc(X.tmErr) + '</p></div>';
+    body += '<div class="tm-legend" role="group" aria-label="Mécanos sur la carte">' + gs.map(function(g){
+      var off = X.tmHide && X.tmHide[g.key];
+      return '<button type="button" class="tm-chip' + (off ? ' off' : '') + '" data-act="tm-mech" data-v="' + esc(g.key) + '" aria-pressed="' + !off + '"><i style="background:' + g.color + '"></i>' + esc(g.name) + ' <span>' + g.jobs.length + '</span></button>'; }).join('') +
+      (onPhone() ? '<button type="button" class="tm-chip" data-act="map-fit">Tout voir</button>' : '') + '</div>';
+    body += window.L ? '<div id="map-slot" class="mapslot tm-slot"></div>' : '<div class="banner warn"><p>La carte n\'a pas pu se charger. Vérifie Internet et recharge la page.</p></div>';
+    body += '<p class="legend small tm-leg"><span><b class="tm-hq mini">🏢</b>Centrale (départ des camions)</span><span><b class="tm-stop mini" style="--c:#7A8794">1</b>Rendez-vous, dans l\'ordre</span><span><b class="tm-line"></b>Son trajet du jour (par les routes)</span><span><b class="tm-mech mini" style="--c:#7A8794">AB</b>Mécano en journée</span><span><b class="tm-dash"></b>Vers son prochain client</span></p>';
+    body += '<section class="sect"><div class="sect-head"><h3>La journée de chaque mécano</h3><span class="muted small">' + (X.tmAt ? 'mis à jour ' + ago(X.tmAt) : 'chargement…') + '</span></div>';
+    if (!gs.length) body += '<p class="muted">Aucun rendez-vous ni mécano aujourd\'hui.</p>';
+    gs.forEach(function(g){
+      var l = g.live, uid = g.member && g.member.user_id;
+      body += '<div class="mc tm-mc" id="mc-' + esc(uid || g.key) + '"><div class="mc-head"><span class="tm-mech" style="--c:' + g.color + '" aria-hidden="true">' + esc(initials(g.member ? g.member.name : g.name)) + '</span><div class="mc-who"><b>' + esc(g.member ? g.member.name : g.name) + '</b>' +
+        '<span class="pillx ' + (l ? 'p-shift' : 'p-off') + '">' + (l ? 'En journée · ' + esc(ago(l.at)) : 'Pas en journée') + '</span></div></div>' + etaText(g);
+      if (g.jobs.length) body += '<ol class="tm-stops">' + g.jobs.map(function(j){
+        var mine = !!a.findJob(j.id), st = j.status || 'planifie';
+        return '<li><span class="tm-stop mini' + (st === 'termine' ? ' done' : '') + '" style="--c:' + g.color + '">' + j.n + '</span><div><b>' + esc(a.hm(j.time)) + ' · ' + esc(j.client.name || 'Client') + '</b><span class="small muted">' + esc(j.client.address || 'Adresse inconnue') + (geoOf(j) ? '' : ' · pas sur la carte') + '</span></div>' +
+          '<span class="pillx">' + esc((a.ST && a.ST[st]) || st) + '</span>' + (mine ? '<button type="button" class="btn sm" data-act="er-open" data-id="' + esc(j.id) + '">Ouvrir</button>' : '') + '</li>'; }).join('') + '</ol>';
+      else body += '<p class="small muted">Aucun rendez-vous aujourd\'hui.</p>';
+      body += routeText(g);
+      if (uid && (l || isStaff()) && isStaff()) body += '<div class="er-acts">' + (l ? '<button type="button" class="btn sm" data-act="map-sel" data-v="' + esc(uid) + '">Voir sur la carte</button>' : '') +
+        '<button type="button" class="btn sm" data-act="map-path" data-v="' + esc(uid) + '" aria-pressed="' + (!!X.showPath[uid]) + '">' + (X.showPath[uid] ? 'Cacher le trajet fait' : 'Trajet fait aujourd\'hui') + '</button></div>';
+      body += '</div>';
     });
-    body += '</section><p class="muted small">Positions partagées seulement pendant la journée de chaque mécano, gardées 30 jours.</p>';
+    body += '</section><p class="muted small">Les positions sont partagées seulement pendant la journée de chaque mécano (gardées 30 jours). Les trajets suivent les routes (OpenStreetMap).</p>';
     return {top:top, body:body};
   }
   /* dashboard: who is working and who is on the way */
@@ -422,7 +528,7 @@
     if (!X.liveAt || Date.now() - X.liveAt > 30000) loadLive();
     var c = crew(), on = c.filter(function(x){ return mechState(x.l) !== 'off'; });
     var h = '<section class="sect" aria-labelledby="d-road"><div class="sect-head"><h3 id="d-road">Sur la route</h3><button type="button" class="btn sm" data-act="tab" data-t="carte">Voir la carte</button></div>';
-    if (!c.length) return h + '<p class="muted">Aucun mécano n\'a encore de compte.' + (eff().role === 'owner' ? ' <a href="#equipe">Ajouter l\'équipe</a>' : '') + '</p></section>';
+    if (!c.length) return h + '<p class="muted">Aucun mécano n\'a encore de compte.' + (hasR(eff(), 'owner') ? ' <a href="#equipe">Ajouter l\'équipe</a>' : '') + '</p></section>';
     if (!on.length) h += '<p class="muted small">Personne n\'a commencé sa journée.</p>';
     h += '<div class="qrows">' + c.map(function(x){
       var st = mechState(x.l), t = X.active.filter(function(a){ return a.user_id === x.m.user_id; })[0];
@@ -430,7 +536,7 @@
     }).join('') + '</div></section>';
     return h;
   }
-  setInterval(function(){ if (document.visibilityState !== 'hidden' && A() && A().S.tab === 'carte' && !A().S.screen) loadLive().then(function(){ Object.keys(X.showPath).forEach(function(uid){ if (X.showPath[uid]) loadPath(uid); }); }); }, 10000);
+  setInterval(function(){ if (document.visibilityState !== 'hidden' && A() && A().S.tab === 'carte' && !A().S.screen){ loadTeamMap(); if (isStaff()) Object.keys(X.showPath).forEach(function(uid){ if (X.showPath[uid]) loadPath(uid); }); } }, 12000);
 
   /* ================= équipe et accès (propriétaire) ================= */
   function eqLoad(){
@@ -438,6 +544,61 @@
     return Promise.all([invoke('members', {action:'list'}), invoke('members', {action:'secrets'})]).then(function(r){
       X.eq.loading = false; X.eq.list = r[0].members; X.eq.secrets = r[1]; X.eq.err = ''; render();
     }, function(e){ X.eq.loading = false; X.eq.err = e.message; render(); });
+  }
+  /* what this person may open or do (true / false / undefined = as usual) */
+  function gate(m, w){
+    if (hasR(m, 'owner')) return (w === 'tab:tresor' || w === 'expenses') ? true : undefined;
+    var rs = rolesOf(m), mec = rs.indexOf('mecano') >= 0, bur = rs.indexOf('bureau') >= 0, works = mec || bur;
+    switch (w){
+      case 'tab:tresor': case 'expenses': return permOf(m, 'tresor');
+      case 'money': return permOf(m, 'money');
+      case 'tab:clients': return permOf(m, 'clients');
+      case 'tab:factures': return permOf(m, 'factures');
+      case 'tab:stock': case 'stock': return permOf(m, 'stock');
+      case 'tab:carte': return permOf(m, 'map');
+      case 'tab:agenda': case 'tab:jour': return works || permOf(m, 'agenda');
+      case 'tab:plus': return true;
+      case 'tab:reglages': case 'tab:equipe': return false;
+      case 'book': return works ? permOf(m, 'book') : false;
+      case 'deleteJob': return bur;
+      case 'hours': return permOf(m, 'hours_others');
+      case 'invoice': return permOf(m, 'editinv') ? true : mec ? undefined : false;
+      default: return works ? undefined : false;   /* the treasurer alone: only what is listed above */
+    }
+  }
+  /* roles: boxes (a person can have several) */
+  var ROLE_HINT = {mecano:'ses jobs, « En route », la facture sur place', bureau:'agenda, clients, factures, carte', tresorier:'dépenses, rapport, taxes', owner:'tout, y compris les accès'};
+  function roleBoxes(pre, sel){
+    return '<fieldset class="rbox"><legend>Rôles' + (A().help ? A().help('roles', 'les rôles') : '') + '</legend>' + ['mecano', 'bureau', 'tresorier', 'owner'].map(function(r){
+      return '<label class="check" for="' + pre + '-r-' + r + '"><input type="checkbox" id="' + pre + '-r-' + r + '" data-act="rb" data-pre="' + pre + '" data-role="' + r + '"' + (sel.indexOf(r) >= 0 ? ' checked' : '') + '><span><b>' + ROLE[r] + '</b> <span class="small muted">· ' + esc(ROLE_HINT[r]) + '</span></span></label>'; }).join('') + '</fieldset>';
+  }
+  function rolesFrom(pre){ return ['owner', 'bureau', 'mecano', 'tresorier'].filter(function(r){ var e = document.getElementById(pre + '-r-' + r); return e && e.checked; }); }
+  /* the rights of one person, with what his roles give; a change is kept for him only */
+  function rightKeys(rs){ return RIGHTS.filter(function(p){ return rs.some(function(r){ return p.r.indexOf(r) >= 0 || p.on.indexOf(r) >= 0; }); }); }
+  function rightsHTML(pre, m, rs, who){
+    if (rs.indexOf('owner') >= 0) return '<p class="small muted rights-own" id="' + pre + '-rights">Propriétaire : il peut tout faire, y compris les accès.</p>';
+    if (!rs.length) return '<p class="small muted" id="' + pre + '-rights">Coche au moins un rôle.</p>';
+    return '<fieldset class="rbox rights" id="' + pre + '-rights"><legend>Ses droits' + (who ? ' (' + esc(who) + ')' : '') + '</legend>' + rightKeys(rs).map(function(p){
+      var always = rs.some(function(r){ return p.on.indexOf(r) >= 0; }), def = roleDefault(rs, p.k), o = !always && m && m.perms && typeof m.perms[p.k] === 'boolean' ? m.perms[p.k] : null, on = always || (o === null ? def : o), id = pre + '-p-' + p.k;
+      return '<label class="check rp-row" for="' + id + '"><input type="checkbox" id="' + id + '" data-k="' + p.k + '" data-def="' + (def ? 1 : 0) + '"' + (on ? ' checked' : '') + (always ? ' disabled' : '') + '><span><b>' + esc(p.t) + '</b>' +
+        '<span class="small muted">' + (always ? 'Toujours, avec son rôle' : o === null ? 'Comme son rôle' : o ? '<b class="r-add">Ajouté pour cette personne</b>' : '<b class="r-del">Enlevé pour cette personne</b>') + (p.s ? ' · ' + esc(p.s) : '') + '</span></span></label>'; }).join('') +
+      '<p class="small muted">Ça ne change que pour cette personne.</p></fieldset>';
+  }
+  function rightsList(m){ return rightsHTML('ed', m, rolesOf(m), first(m.name)); }
+  /* roles or a box changed: the list follows (what the boxes say now is what counts) */
+  function rightsRedraw(pre, focusId){
+    var bx = document.getElementById(pre + '-rights'); if (!bx) return;
+    var who = pre === 'ed' ? (X.eq.list || []).filter(function(x){ return x.user_id === X.eq.editing; })[0] : null;
+    var keep = {}; bx.querySelectorAll('input[data-k]').forEach(function(e){ if (!e.disabled && e.checked !== (e.dataset.def === '1')) keep[e.dataset.k] = e.checked; });
+    bx.outerHTML = rightsHTML(pre, {perms:keep}, rolesFrom(pre), who ? first(who.name) : '');
+    var f = focusId && document.getElementById(focusId); if (f) try { f.focus({preventScroll:true}); } catch(e){}
+  }
+  document.addEventListener('toggle', function(ev){ if (ev.target && ev.target.id === 'eq-roles') X.rolesOpen = ev.target.open; }, true);   /* the table stays open while you tick boxes */
+  document.addEventListener('change', function(ev){ var e = ev.target; if (e && e.matches && e.matches('.rights input[data-k]')){ var bx = e.closest('.rights'); rightsRedraw(bx.id.replace(/-rights$/, ''), e.id); } });
+  function permsFrom(rs, pre){
+    var out = {};
+    rightKeys(rs).forEach(function(p){ var e = document.getElementById((pre || 'ed') + '-p-' + p.k); if (!e || e.disabled) return; if (e.checked !== roleDefault(rs, p.k)) out[p.k] = e.checked; });
+    return out;
   }
   function roleSelect(id, val){ return '<select id="' + id + '">' + ['mecano', 'bureau', 'tresorier', 'owner'].map(function(r){ return '<option value="' + r + '"' + (r === val ? ' selected' : '') + '>' + ROLE[r] + '</option>'; }).join('') + '</select>'; }
   function mechSelect(id, val){
@@ -447,7 +608,7 @@
   }
   function viewEquipe(){
     var a = A();
-    if (!eff() || eff().role !== 'owner') return {top:a.topBack('Équipe et accès', 'eq-back'), body:'<div class="banner"><p>Seul le propriétaire gère les accès.</p></div>'};
+    if (!eff() || !hasR(eff(), 'owner')) return {top:a.topBack('Équipe et accès', 'eq-back'), body:'<div class="banner"><p>Seul le propriétaire gère les accès.</p></div>'};
     if (!X.eq.list && !X.eq.loading && !X.eq.err) eqLoad();
     var top = a.topBack('Équipe et accès', 'eq-back', onPhone() ? 'Plus' : 'Réglages');
     var b = '';
@@ -473,17 +634,18 @@
     if (!X.eq.list) b += '<p class="muted">Chargement…</p>';
     else X.eq.list.forEach(function(m){
       var self = m.user_id === me.user_id;
-      b += '<div class="eqp' + (m.active ? '' : ' off') + '"><div class="eqp-head"><div><b>' + esc(m.name) + '</b>' + (self ? ' <span class="muted small">(toi)</span>' : '') + '<div class="small muted sel">' + esc(m.email) + '</div></div><span class="pillx r-' + m.role + '">' + ROLE[m.role] + '</span></div>' +
+      b += '<div class="eqp' + (m.active ? '' : ' off') + '"><div class="eqp-head"><div><b>' + esc(m.name) + '</b>' + (self ? ' <span class="muted small">(toi)</span>' : '') + '<div class="small muted sel">' + esc(m.email) + '</div></div><span class="pills">' + rolesOf(m).map(function(r){ return '<span class="pillx r-' + r + '">' + ROLE[r] + '</span>'; }).join('') + '</span></div>' +
         '<p class="small muted">' + (m.mechanic ? 'Dans l\'agenda : ' + esc(m.mechanic) + ' · ' : '') + (m.active ? (m.last_sign_in_at ? 'dernière connexion ' + esc(ago(m.last_sign_in_at)) : m.invite ? '<b>' + (m.invite.expired ? 'Invitation expirée' : 'Invitation envoyée ' + esc(ago(m.invite.at))) + '</b> · pas encore activé' : 'jamais connecté') : '<b>Accès désactivé</b>') + '</p>';
       if (X.eq.editing === m.user_id){
         b += '<div class="eq-form"><div class="field"><label for="ed-name">Nom</label><input id="ed-name" value="' + esc(m.name) + '" autocomplete="off"></div>' +
-          '<div class="grid2"><div class="field"><label for="ed-role">Rôle</label>' + roleSelect('ed-role', m.role) + '</div><div class="field"><label for="ed-mech">Nom dans l\'agenda</label>' + mechSelect('ed-mech', m.mechanic) + '</div></div>' +
+          roleBoxes('ed', rolesOf(m)) + '<div class="field"><label for="ed-mech">Nom dans l\'agenda <span class="small muted">(s\'il fait des jobs)</span></label>' + mechSelect('ed-mech', m.mechanic) + '</div>' +
+          rightsList(m) +
           '<div class="er-acts"><button type="button" class="btn sm primary" data-act="eq-save" data-v="' + esc(m.user_id) + '">Enregistrer</button><button type="button" class="btn sm" data-act="eq-cancel">Annuler</button></div></div>';
       } else if (X.eq.confirm === m.user_id){
         b += '<div class="banner warn"><p>Supprimer le compte de ' + esc(m.name) + ' ? Ses jobs restent au carnet.</p></div><div class="er-acts"><button type="button" class="btn sm" data-act="eq-cancel">Garder</button><button type="button" class="btn sm danger solid" data-act="eq-remove" data-v="' + esc(m.user_id) + '">Supprimer</button></div>';
       } else {
         b += '<div class="er-acts"><button type="button" class="btn sm" data-act="eq-edit" data-v="' + esc(m.user_id) + '">Modifier</button>' +
-          (self || !m.active || m.role === 'owner' ? '' : '<button type="button" class="btn sm" data-act="pv-person" data-v="' + esc(m.user_id) + '">👁 Voir comme ' + esc(first(m.name)) + '</button>') +
+          (self || !m.active || hasR(m, 'owner') ? '' : '<button type="button" class="btn sm" data-act="pv-person" data-v="' + esc(m.user_id) + '">👁 Voir comme ' + esc(first(m.name)) + '</button>') +
           (self ? '' : (!m.last_sign_in_at && m.active ? '<button type="button" class="btn sm" data-act="eq-reinvite" data-v="' + esc(m.user_id) + '">' + (m.invite ? 'Renvoyer l\'invitation' : 'Envoyer une invitation') + '</button>' : '') + '<button type="button" class="btn sm" data-act="eq-pw" data-v="' + esc(m.user_id) + '">Nouveau mot de passe</button>') + '</div>' +
           (self ? '' : (m.active ? '<details class="small eq-more"><summary>Bloquer ou supprimer l\'accès</summary><div class="er-acts">' : '<div class="er-acts">') + '<button type="button" class="btn sm" data-act="eq-active" data-v="' + esc(m.user_id) + '">' + (m.active ? 'Bloquer l\'accès (garder le compte)' : 'Redonner l\'accès') + '</button><button type="button" class="btn sm danger" data-act="eq-confirm" data-v="' + esc(m.user_id) + '">Supprimer le compte</button></div>' + (m.active ? '</details>' : ''));
       }
@@ -493,7 +655,8 @@
     b += '<section class="sect" id="eq-new"><h3>Inviter une personne</h3><p class="small">Écris son courriel : elle reçoit un lien, choisit elle-même son mot de passe, et son compte est activé.</p>' +
       '<div class="field"><label for="nw-name">Nom</label><input id="nw-name" autocomplete="off"></div>' +
       '<div class="field"><label for="nw-email">Courriel</label><input id="nw-email" type="email" inputmode="email" autocapitalize="off" spellcheck="false" autocomplete="off"></div>' +
-      '<div class="grid2"><div class="field"><label for="nw-role">Rôle' + (A().help ? A().help('roles', 'les rôles') : '') + '</label>' + roleSelect('nw-role', 'mecano') + '</div><div class="field"><label for="nw-mech">Nom dans l\'agenda</label>' + mechSelect('nw-mech', '') + '</div></div>' +
+      roleBoxes('nw', ['mecano']) + '<div class="field"><label for="nw-mech">Nom dans l\'agenda <span class="small muted">(pour un mécano)</span></label>' + mechSelect('nw-mech', '') + '</div>' +
+      rightsHTML('nw', null, ['mecano'], '') +
       '<ul class="roles small"><li><b>Mécano</b> : seulement ses jobs, le bouton « En route », la facture sur place. Sa position est partagée pendant sa journée.</li><li><b>Bureau</b> : agenda, clients, factures et carte des mécanos. Pas les réglages.</li><li><b>Trésorier</b> : son propre écran, la trésorerie (dépenses avec photo des reçus, rapport, taxes à remettre, Excel).</li><li><b>Propriétaire</b> : tout, y compris les accès.</li></ul><p class="small muted">Ce que le mécano et le trésorier voient de plus : plus haut, « Ce que chaque rôle peut faire ».</p>' +
       '<p class="formerr" id="nw-err" role="alert" hidden></p><button type="button" class="btn primary block" data-act="eq-invite">Envoyer l\'invitation</button>' +
       '<details class="small eq-more"><summary>Autre façon : créer un mot de passe temporaire</summary><p class="small">Pour quelqu\'un qui ne lit pas ses courriels : tu lui donnes toi-même un mot de passe.</p><button type="button" class="btn block" data-act="eq-add">Créer le compte avec un mot de passe temporaire</button></details></section>';
@@ -515,7 +678,7 @@
       '<p class="small">' + (s.tomtom ? '<span class="badge ok">TomTom branché</span> ' + esc(s.tomtom) : '<span class="badge">Cartes gratuites</span>') + '</p>' +
       '<div class="field"><label for="tt-key">Clé TomTom</label><input id="tt-key" type="password" autocomplete="off" spellcheck="false" placeholder="' + (s.tomtom ? 'Laisse vide pour garder la clé actuelle' : 'Clé de developer.tomtom.com') + '"></div>' +
       '<div class="er-acts"><button type="button" class="btn sm primary" data-act="tt-save">Enregistrer</button>' + (s.tomtom ? '<button type="button" class="btn sm danger" data-act="tt-clear">Retirer</button>' : '') + '</div></div></details>';
-    b += '<section class="sect"><h3>Ton compte</h3><p class="small">' + esc(eff().name) + ' · ' + ROLE[eff().role] + '</p><button type="button" class="btn" data-act="acct-out">Se déconnecter</button></section>';
+    b += '<section class="sect"><h3>Ton compte</h3><p class="small">' + esc(eff().name) + ' · ' + esc(rolesLabel(eff())) + '</p><button type="button" class="btn" data-act="acct-out">Se déconnecter</button></section>';
     return {top:top, body:b};
   }
   /* « Voir l'app comme… » : one button per mechanic in the agenda, the treasurer, the office */
@@ -529,17 +692,23 @@
     return '<section class="sect" id="eq-viewas"><h3>Voir l\'app comme…' + (A().help ? A().help('voircomme', 'voir comme') : '') + '</h3><p class="small">Tu vois exactement son écran. Tu peux corriger des choses : c\'est enregistré à ton nom. Un bandeau en haut te ramène à ton compte.</p>' +
       '<div class="pv-btns">' + out.map(function(o){ return '<button type="button" class="btn sm" data-act="pv-start" data-role="' + o.role + '" data-mech="' + esc(o.mechanic || '') + '" data-name="' + esc(o.name) + '">👁 ' + esc(o.name) + (o.role === 'mecano' ? ' <span class="muted">(mécano)</span>' : o.name !== ROLE[o.role] ? ' <span class="muted">(' + ROLE[o.role].toLowerCase() + ')</span>' : '') + '</button>'; }).join('') + '</div></section>';
   }
-  /* « Ce que chaque rôle peut faire » : boxes saved right away in config/roles */
+  /* « Ce que chaque rôle donne au départ » : a table (rights × roles), saved right away in config/roles */
   function rolesCard(){
-    var h = '<section class="sect" id="eq-roles"><h3>Ce que chaque rôle peut faire' + (A().help ? A().help('droits', 'les droits') : '') + '</h3><p class="small muted">Coche ou décoche : c\'est enregistré tout de suite, et ça change sur leur téléphone en quelques secondes.</p>';
-    ['mecano', 'tresorier'].forEach(function(r){
-      h += '<fieldset class="rp"><legend>' + (r === 'mecano' ? 'Le mécano' : 'Le trésorier') + '</legend>' +
-        (r === 'mecano' ? '<p class="small muted">Toujours : ses jobs du jour, le bouton « En route », les photos et la facture sur place.</p>' : '<p class="small muted">Toujours : la trésorerie (dépenses, reçus, rapport, taxes).</p>') +
-        PERMS[r].map(function(p){ var id = 'rp-' + r + '-' + p.k;
-          return '<label class="check rp-row" for="' + id + '"><input type="checkbox" id="' + id + '" data-act="rp" data-role="' + r + '" data-k="' + p.k + '"' + (perm(r, p.k) ? ' checked' : '') + (X.rolesLoaded ? '' : ' disabled') + '><span><b>' + esc(p.t) + '</b>' + (p.s ? '<span class="small muted">' + esc(p.s) + '</span>' : '') + '</span></label>'; }).join('') +
-        '<button type="button" class="linkbtn" data-act="pv-role" data-role="' + r + '">👁 Voir ce qu\'il voit</button></fieldset>';
-    });
-    return h + '</section>';
+    var cols = ['mecano', 'bureau', 'tresorier'];
+    var h = '<details class="sect fold" id="eq-roles"' + (X.rolesOpen ? ' open' : '') + '><summary>Ce que chaque rôle donne au départ' + (A().help ? A().help('droits', 'les droits') : '') + '</summary><div class="stack">' +
+      '<p class="small muted">Les cases de départ quand tu choisis un rôle. Coche ou décoche : c\'est enregistré tout de suite pour toutes les personnes de ce rôle (sauf ce que tu as changé pour une personne).</p>' +
+      '<div class="rt-wrap"><table class="rt"><thead><tr><th scope="col">Droit</th>' + cols.map(function(r){ return '<th scope="col">' + ROLE[r] + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      RIGHTS.map(function(p){
+        return '<tr><th scope="row">' + esc(p.t) + '</th>' + cols.map(function(r){
+          var id = 'rp-' + r + '-' + p.k;
+          if (p.on.indexOf(r) >= 0) return '<td class="rt-on" title="Toujours">✓</td>';
+          if (p.r.indexOf(r) < 0) return '<td class="rt-na" title="Pas pour ce rôle">—</td>';
+          return '<td><input type="checkbox" id="' + id + '" data-act="rp" data-role="' + r + '" data-k="' + p.k + '" aria-label="' + esc(ROLE[r] + ' : ' + p.t) + '"' + (perm(r, p.k) ? ' checked' : '') + (X.rolesLoaded ? '' : ' disabled') + '></td>';
+        }).join('') + '</tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<p class="small muted">✓ = toujours avec ce rôle · — = pas pour ce rôle. Le mécano fait toujours ses propres jobs (« En route », photos, facture sur place).</p>' +
+      '<div class="er-acts"><button type="button" class="linkbtn" data-act="pv-role" data-role="mecano">👁 Voir ce que voit un mécano</button><button type="button" class="linkbtn" data-act="pv-role" data-role="tresorier">👁 Voir ce que voit le trésorier</button></div></div></details>';
+    return h;
   }
   function saveRole(role, k, on, box){
     if (!X.rolesLoaded){ if (box) box.checked = !on; return; }
@@ -550,15 +719,16 @@
       next = JSON.parse(JSON.stringify(sn.exists ? (sn.data() || {}) : {}));
       next[role] = Object.assign({}, next[role] || {}); next[role][k] = !!on;
       return ref.set(next);
-    }).then(function(){ X.roles = next; toast('Enregistré : ' + (on ? 'oui' : 'non') + ' — ' + PERMS[role].filter(function(p){ return p.k === k; })[0].t.toLowerCase()); render(); },
+    }).then(function(){ X.roles = next; toast('Enregistré : ' + ROLE[role].toLowerCase() + ', ' + (on ? 'oui' : 'non') + ' — ' + right(k).t.toLowerCase()); render(); },
       function(e){ if (box){ box.checked = !on; box.disabled = false; } toast('Pas enregistré : ' + (e && e.message || 'erreur')); render(); });
   }
   /* start / stop the preview */
   function startView(v){
-    var a = A(); if (!a || !me || me.role !== 'owner') return;
+    var a = A(); if (!a || !me || !hasR(me, 'owner')) return;
     if (!VA) { try { X.uiBefore = sessionStorage.getItem('gm.ui'); } catch(e){ X.uiBefore = null; } try { sessionStorage.setItem('gm.ui.before', X.uiBefore || ''); } catch(e){} }
     /* a mechanic works on his phone: on a computer, show his phone screen first (a button switches to the computer screen) */
-    VA = {role:v.role, mechanic:v.mechanic || null, name:v.name || ROLE[v.role], fmt:v.role === 'mecano' ? 'phone' : 'pc'};
+    var vr = v.roles && v.roles.length ? v.roles : [v.role];
+    VA = {role:mainRole(vr), roles:vr, perms:v.perms || {}, mechanic:v.mechanic || null, name:v.name || ROLE[v.role], fmt:vr.indexOf('mecano') >= 0 ? 'phone' : 'pc'};
     saveVA(); applyView(); goHome();
   }
   function saveVA(){ try { sessionStorage.setItem('gm.viewas', JSON.stringify(VA)); } catch(e){} }
@@ -596,37 +766,80 @@
   /* the page starts below the bar, whatever its height */
   function pvFit(){ var el = document.getElementById('pv-bar'); if (el) document.documentElement.style.setProperty('--pvh', el.offsetHeight + 'px'); }
   window.addEventListener('resize', pvFit);
-  /* the guided tour of the first visit, for each role: each step lights up a real button (sel), can open a screen (go),
-     and « À toi ! » steps (tap) wait for the person to touch it. Steps whose button is not on the screen are skipped. */
+  /* the guided tour of the whole app, for each role (a person with several roles gets each part once).
+     Each step opens its screen (go), lights up the part it explains (sel) and says what it is for and when to use it.
+     need: skip the step when that part is not on the screen for this person. No points, no game: a calm visit. */
+  function tourAuto(){ var m = eff(); return !!m && !hasR(m, 'owner'); }
   function tourSteps(){
-    var m = eff(); if (!m || m.role === 'owner') return [];
-    var out = [], st = function(o){ out.push(o); };
-    if (m.role === 'mecano'){
-      st({icon:'🎮', t:'Bienvenue dans l\'app du garage !', p:'Une visite d\'une minute pour connaître l\'essentiel. Chaque étape te donne des points ⭐.', go:'home'});
-      st({icon:'☀️', t:'Le matin', p:'Touche <b>« Commencer ma journée »</b> en partant. Le bureau voit où tu es <b>seulement pendant ta journée</b> : rien n\'est envoyé avant, ni après « Fin de journée ».', sel:'.shift', go:'home'});
-      st({icon:'🔧', t:'Tes jobs du jour', p:'Chaque carte, c\'est un client : l\'heure, l\'auto et le travail à faire.', sel:'.ticket, [data-act="open"]', go:'home'});
-      st({icon:'⚫', t:'Le gros bouton', p:'Dans une job, il te dit toujours quoi faire : <b>« Je pars »</b> (le client reçoit un texto pour suivre ton trajet), <b>« Je suis arrivé »</b>, <b>« Terminer la job »</b>, puis <b>« Faire la facture »</b>.', sel:'.nextbtn', go:'job'});
-      st({icon:'➕', t:'Le « + »', p:'Pour une <b>facture sur place</b> (client sans rendez-vous)' + (perm('mecano', 'book') ? ', une <b>nouvelle réservation</b>' : '') + ' ou un <b>nouveau client</b>.', sel:'.tab-new:not([hidden])', go:'home'});
-      st({icon:'👤', t:'Tes clients', p:'La fiche de chaque client : téléphone, adresse, ses autos et ses visites.', sel:'.tab[data-t="clients"]:not([hidden])', tap:true, go:'home'});
-      st({icon:'🧾', t:'Tes factures', p:'Les factures de tes jobs, payées ou à encaisser.', sel:'.tab[data-t="factures"]:not([hidden])', tap:true});
-      st({icon:'☰', t:'Plus', p:'Tes disponibilités, le stock du camion, et « Revoir la visite guidée » si tu veux recommencer.', sel:'.tab[data-t="plus"]:not([hidden])', go:'home'});
-      st({icon:'❓', t:'Les petits « ? »', p:'Partout dans l\'app, touche un <b>?</b> pour une explication simple.', sel:'.qhelp', go:'home'});
-    } else if (m.role === 'tresorier'){
-      st({icon:'🎮', t:'Bienvenue dans ta trésorerie !', p:'Une visite d\'une minute. Chaque étape te donne des points ⭐.', go:'home'});
-      st({icon:'🧾', t:'Une dépense = une photo du reçu', p:'Ce bouton : prends le reçu en photo, choisis la catégorie. Tout est gardé pour les impôts.', sel:'#top [data-act="exp-new"], [data-act="exp-new"]', go:'home'});
-      st({icon:'📊', t:'Rapport et taxes', p:'Le mois, le trimestre ou l\'année : revenus, dépenses, profit et les taxes à remettre.', sel:'[data-act="tr-view"][data-v="rap"]', tap:true, go:'view:dep'});
-      st({icon:'📥', t:'Pour le comptable', p:'Le fichier Excel avec tout le détail, prêt à envoyer.', sel:'[data-act="tr-xlsx"]', go:'view:rap'});
-      if (perm('tresorier', 'factures')) st({icon:'💵', t:'Les factures', p:perm('tresorier', 'editinv') ? 'Tu peux les voir et les marquer payées.' : 'Tu peux les voir, sans les changer.', sel:'.tab[data-t="factures"]:not([hidden])', tap:true});
-      if (perm('tresorier', 'clients')) st({icon:'👤', t:'Les clients', p:'La fiche de chaque client.', sel:'.tab[data-t="clients"]:not([hidden])', tap:true});
-      if (perm('tresorier', 'agenda')) st({icon:'📅', t:'L\'agenda', p:'Les rendez-vous de tout le monde, sans rien y changer.', sel:'.tab[data-t="agenda"]:not([hidden]), .tab[data-t="jour"]:not([hidden])'});
-    } else if (m.role === 'bureau'){
-      st({icon:'🎮', t:'Bienvenue dans l\'app du garage !', p:'Une visite d\'une minute. Chaque étape te donne des points ⭐.', go:'tab:agenda'});
-      st({icon:'📅', t:'L\'agenda de tous les mécanos', p:'Chaque colonne, c\'est un camion ou un mécano. Touche une case libre pour réserver.', sel:'.cal, .list', go:'tab:agenda'});
-      st({icon:'➕', t:'« + Réservation »', p:'Elle trouve un moment libre près des autres jobs du coin. Choisis le client et le service : c\'est réservé.', sel:'#top [data-act="new"], [data-act="new"]', go:'tab:agenda'});
-      st({icon:'🗺️', t:'La carte des mécanos', p:'Où est chaque mécano pendant sa journée, et qui est en route vers un client.', sel:'.tab[data-t="carte"]:not([hidden])', tap:true, go:'tab:agenda'});
-      st({icon:'🧾', t:'Les factures', p:'Les factures à encaisser et celles déjà payées.', sel:'.tab[data-t="factures"]:not([hidden])', tap:true});
-      st({icon:'❓', t:'Les petits « ? »', p:'Partout dans l\'app, un <b>?</b> donne une explication simple.', sel:'.qhelp', go:'tab:agenda'});
-    }
+    var m = eff(); if (!m) return [];
+    var own = hasR(m, 'owner'), mec = hasR(m, 'mecano'), tre = hasR(m, 'tresorier'), bur = hasR(m, 'bureau') || own, ph = onPhone(), nm = first(m.name);
+    var can = function(k){ return own || permOf(m, k); };
+    var P = {
+      hello:['Bienvenue', [{icon:'👋', go:'home', t:'Bienvenue' + (nm ? ', ' + nm : '') + ' !',
+        p:'Je te fais visiter l\'app, écran par écran : à quoi sert chaque bouton, et quand t\'en servir. ' + (own ? 'C\'est la visite complète, environ 4 minutes.' : 'Ça prend environ 3 minutes.'),
+        x:'Tu peux arrêter quand tu veux (✕ en haut). La visite reste dans « Plus » pour la revoir.'}]],
+      dash:(own || bur) && ['Le tableau de bord', [
+        {icon:'🏠', go:'tab:accueil', sel:'main .ringcard, main .kpi-big, main', t:'D\'un coup d\'œil', p:'Les jobs du jour, ce qui est réservé cette semaine, l\'argent encaissé ce mois-ci et ce qui reste à recevoir.' + (own ? ' Seuls toi et le bureau voyez les chiffres (sauf si tu le permets à quelqu\'un).' : '')},
+        {icon:'🚚', sel:'.mcard, .qrow', need:true, t:'Tes mécanos aujourd\'hui', p:'Une carte par mécano : ses jobs du jour, ce qui est fait, et s\'il est en route vers un client.'}]],
+      day:mec && ['Ta journée', [
+        {icon:'📅', go:'home', sel:'.dayhead, #top', t:'Le jour affiché', p:'En haut : la date. Touche ‹ ou › pour voir hier ou demain, ou touche la date pour en choisir une autre.' + (ph ? ' Tu peux aussi glisser l\'écran vers la gauche ou la droite.' : '')},
+        {icon:'☀️', sel:'.shift', t:'Commencer ma journée', p:'Le matin, en partant, touche <b>« Commencer ma journée »</b>. Pendant ta journée seulement, ta position est partagée : le bureau te voit sur la carte. Le soir, <b>« Fin de journée »</b> arrête tout.', x:'Rien n\'est envoyé avant le début ni après la fin de ta journée.'},
+        {icon:'🔧', sel:'.ph-list, .cal, .list, .nrow', t:'Tes rendez-vous', p:'Chaque ligne, c\'est un client : l\'heure, l\'auto et le travail à faire. L\'étiquette dit où tu en es : <b>Planifié</b>, <b>En route</b>, <b>Sur place</b>, <b>Terminé</b>.'}]],
+      job:mec && ['Une job, du début à la fin', [
+        {icon:'📋', go:'job', sel:'.pjob, main .sect', t:'La fiche de la job', p:'Touche un rendez-vous pour ouvrir sa fiche : l\'auto, les travaux à faire, et les boutons pour <b>appeler</b> le client, lui <b>texter</b> ou ouvrir l\'<b>itinéraire</b> dans ton GPS.'},
+        {icon:'⚫', sel:'.nextbtn', t:'Le gros bouton', p:'Il te dit toujours la prochaine étape. <b>« Je pars »</b> : le client reçoit un texto avec ton heure d\'arrivée et peut suivre ton camion. Ensuite <b>« Je suis arrivé »</b>, puis <b>« Travaux terminés »</b>.'},
+        {icon:'🔎', sel:'#veh-fold', t:'Le VIN et la fiche du moteur', p:'Scanne le VIN avec la caméra : l\'année, la marque, le modèle et le moteur se remplissent tout seuls. La fiche du moteur (huile, filtres, pièces) est gardée pour la prochaine fois.'},
+        {icon:'📸', sel:'#ph-fold', t:'Photos et signature', p:'Prends des photos avant et après les travaux. À la fin, le client signe directement sur ton écran.'},
+        {icon:'➕', sel:'#xp-fold', t:'Travaux supplémentaires', p:'Tu trouves autre chose à réparer ? Écris-le avec son prix. Le client accepte en signant ou par texto, et ça s\'ajoute à la facture. Rien n\'est fait sans son accord.'},
+        {icon:'🧾', sel:'[data-act="invoice"]', t:'La facture sur place', p:'Quand c\'est fini : <b>« Faire la facture »</b>. Les services, les pièces et les taxes se calculent tout seuls. Le client paie par carte, comptant ou virement, et reçoit sa facture par texto.'}]],
+      agenda:(own || bur || can('agenda') || can('book')) && ['L\'agenda', [
+        {icon:'📅', go:'tab:agenda', sel:'.cal, .list, main', need:!own && !bur && !can('agenda'), t:'L\'agenda', p:(own || bur ? 'Chaque colonne, c\'est un camion (ou un mécano). Touche une case libre pour réserver à cette heure-là ; touche un rendez-vous pour l\'ouvrir.' : 'Les rendez-vous de toute l\'équipe' + (can('book') ? '.' : ', en lecture seulement.'))},
+        (own || bur || can('book')) && {icon:'➕', go:'tab:agenda', sel:'#top [data-act="new"]', need:true, t:'« + Réservation »', p:'Choisis le client et le service : l\'app propose les moments libres, près des autres jobs du même coin. Le client reçoit sa confirmation.'},
+        can('hours_others') && {icon:'🗓', go:'tab:agenda', sel:'[data-act="sched"][data-v="garage"]', need:true, t:'Modifier l\'horaire', p:'Les heures d\'ouverture du garage, dans une grande grille.'},
+        can('hours_others') && {icon:'👆', go:'sched:garage', sel:'#sched .sch-scroll', need:true, t:'La grille de l\'horaire', p:(ph ? 'Glisse ton doigt sur les cases' : 'Clique et glisse vers le bas sur les cases') + ' pour ouvrir des heures, ou pour les fermer (une pause, un congé).'},
+        can('hours_others') && {icon:'✅', go:'sched:garage', sel:'#sched .sch-apply', need:true, t:'Pour combien de temps ?', p:'<b>Seulement cette semaine</b> (un congé), <b>pendant quelques semaines</b> (l\'horaire d\'été) ou <b>en permanence</b> (ton horaire habituel). Puis « Enregistrer ».'}]],
+      clients:can('clients') && ['Clients et factures', [{icon:'👤', go:'tab:clients', sel:'main', t:mec && !bur ? 'Tes clients' : 'Les clients', p:'La fiche de chaque client : téléphone, adresse, ses autos et l\'historique de ses visites. Cherche par nom ou par téléphone.'}]],
+      factures:can('factures') && ['Clients et factures', [{icon:'💵', go:'tab:factures', sel:'main', t:mec && !bur && !tre ? 'Tes factures' : 'Les factures', p:'Celles à recevoir et celles déjà payées. ' + (own || bur || can('editinv') ? 'Ouvre une facture pour la revoir, la renvoyer au client ou la marquer payée.' : 'Ouvre une facture pour la revoir ou la renvoyer au client.')}]],
+      plusbtn:mec && ph && ['Clients et factures', [{icon:'➕', go:'home', sel:'.tab-new:not([hidden])', need:true, t:'Le bouton « + »', p:'Pour un client sans rendez-vous : <b>« Facture sur place »</b>. Aussi : <b>« Nouveau client »</b>' + (can('book') ? ' et <b>« Nouvelle réservation »</b>' : '') + '.'}]],
+      tresor:can('tresor') && ['La trésorerie', [
+        {icon:'💼', go:'view:dep', sel:'#top', t:'La trésorerie', p:'L\'argent du garage : ce qui entre (les factures payées), ce qui sort (les dépenses) et ce qui reste. Choisis la période en haut : le mois, le trimestre ou l\'année.'},
+        {icon:'🧾', go:'view:dep', sel:'[data-act="exp-new"]', t:'Ajouter une dépense', p:'Touche <b>« + Dépense »</b> : prends le reçu en photo, écris le montant et choisis la catégorie (pièces, essence, outils…). La TPS et la TVQ payées sont calculées pour toi.'},
+        {icon:'📑', go:'view:dep', sel:'main', t:'Les dépenses', p:'Toutes les dépenses de la période, avec la photo de leurs reçus. Touche une ligne pour la voir, la corriger ou la supprimer.'},
+        {icon:'📊', go:'view:rap', sel:'main', t:'Le rapport et les taxes', p:'Revenus, dépenses et profit de la période. Et les <b>taxes à remettre</b> : la TPS et la TVQ perçues sur les factures, moins celles payées sur les dépenses.'},
+        {icon:'📥', go:'view:rap', sel:'[data-act="tr-xlsx"]', need:true, t:'Pour le comptable', p:'Un fichier Excel avec tout le détail (revenus, dépenses, taxes), prêt à envoyer.'}]],
+      map:can('map') && ['La carte de l\'équipe', [
+        {icon:'🗺️', go:'carte', sel:'#map-slot', t:'La carte de l\'équipe', p:'La <b>Centrale</b>, d\'où partent les camions. Chaque mécano a sa couleur, ses rendez-vous <b>numérotés dans l\'ordre</b> (1, 2, 3…) et son trajet de la journée, par les routes.', x:'Touche un numéro pour voir le client, l\'adresse et l\'heure.'},
+        {icon:'📍', go:'carte', sel:'.tm-mc', need:true, t:'La journée de chacun', p:'Sous la carte : les arrêts de chaque mécano, la longueur de son trajet depuis la Centrale, et qui est en route vers quel client (avec l\'heure d\'arrivée).'}]],
+      avail:mec && ['Ton horaire', [
+        {icon:'🗓', go:'dispos', sel:'[data-act="sched"][data-v="avail"]', t:'Tes disponibilités', p:'Dis au bureau quand tu travailles : touche <b>« Modifier mes disponibilités »</b>.'},
+        {icon:'👆', go:'sched:avail', sel:'#sched .sch-scroll', need:true, t:'La grille', p:(ph ? 'Glisse ton doigt sur les cases, vers le bas,' : 'Clique et glisse vers le bas sur les cases') + ' pour choisir tes heures (ou pour les enlever).'},
+        {icon:'✅', go:'sched:avail', sel:'#sched .sch-apply', need:true, t:'Pour combien de temps ?', p:'<b>Seulement ce jour-là</b> (un rendez-vous chez le dentiste), <b>pendant quelques semaines</b> ou <b>en permanence</b> (ton horaire habituel). Puis « Enregistrer ».'}]],
+      dispos:(own || bur) && ['L\'équipe', [{icon:'🗓', go:'dispos', sel:'main', t:'Les disponibilités des mécanos', p:'Quand chaque mécano travaille. L\'agenda ne propose que ses heures.' + (can('hours_others') ? ' Tu peux changer l\'horaire de chacun, avec la même grille.' : '')}]],
+      stock:can('stock') && [mec && !bur ? 'Le camion' : 'L\'équipe', [{icon:'📦', go:'stock', sel:'main', need:true, t:'Le stock des camions', p:'Les pièces dans chaque camion. Quand une pièce va sur une facture, elle se retire toute seule du stock.'}]],
+      team:own && ['L\'équipe et les accès', [
+        {icon:'✉️', go:'equipe', sel:'#eq-new', t:'Inviter une personne', p:'Écris son courriel et coche ses <b>rôles</b> (mécano, bureau, trésorier ; plusieurs à la fois si tu veux). En dessous, <b>ses droits</b> : coche ou décoche, pour elle seulement. Elle reçoit un lien et choisit son mot de passe.'},
+        {icon:'👥', go:'equipe', sel:'.eqp', need:true, t:'Les personnes', p:'Touche <b>« Modifier »</b> pour changer les rôles et les droits d\'une personne, ou bloquer son accès.'},
+        {icon:'👁', go:'equipe', sel:'#eq-viewas', t:'Voir l\'app comme…', p:'Tu vois exactement l\'écran d\'un mécano ou du trésorier, et sa visite guidée. Un bandeau en haut te ramène à ton compte.'},
+        {icon:'☑️', go:'equipe', sel:'#eq-roles', t:'Ce que chaque rôle donne au départ', p:'Les cases de départ de chaque rôle. Un changement ici vaut pour toutes les personnes de ce rôle (sauf ce que tu as changé pour une personne).'}]],
+      settings:own && ['Les réglages', [
+        {icon:'🎨', go:'set:Couleurs', sel:'#lux-sect', t:'Les couleurs de l\'app', p:'Le mode vitrine : des panneaux en verre sur un fond de couleur. Choisis Sable, Champagne, Platine, Noir et or, Émeraude, Saphir ou Bordeaux : toute l\'équipe le voit.'},
+        {icon:'⚙️', go:'set:', sel:'#ph-setlist, #setform', t:'Le reste des réglages', p:'Le nom du garage, les taxes, ton taux horaire, ta liste de prix, l\'horaire, les mécanos et les camions, le bas des factures.'}]],
+      help:['Pour finir', [
+        {icon:'❓', go:'home', sel:'.qhelp', t:'Les petits « ? »', p:'Partout dans l\'app, touche un <b>?</b> à côté d\'un mot pour une explication simple.'},
+        {icon:'✅', go:'home', t:'C\'est tout !', p:'Tu connais l\'app. Si tu oublies quelque chose : <b>' + (ph ? 'Plus' : 'en bas du menu') + ' → « ' + (own ? 'Visite guidée de l\'app' : 'Revoir la visite guidée') + ' »</b>.' + (mec ? ' Bonne journée sur la route !' : '')}]]
+    };
+    /* the person's main job first, then what the other roles add (each part once) */
+    var ORDER = {owner:['dash', 'agenda', 'clients', 'factures', 'tresor', 'map', 'dispos', 'stock', 'team', 'settings'],
+      bureau:['dash', 'agenda', 'clients', 'factures', 'map', 'dispos', 'stock'],
+      mecano:['day', 'job', 'clients', 'factures', 'plusbtn', 'map', 'avail', 'agenda', 'stock'],
+      tresorier:['tresor', 'factures', 'clients', 'agenda', 'map', 'stock']};
+    var keys = ['hello'];
+    var mr = mainRole(rolesOf(m));
+    rolesOf(m).slice().sort(function(a, b){ return (a === mr ? -1 : 0) - (b === mr ? -1 : 0); }).forEach(function(r){ (ORDER[r] || []).forEach(function(k){ if (keys.indexOf(k) < 0) keys.push(k); }); });
+    ['tresor', 'agenda', 'map', 'stock'].forEach(function(k){ if (keys.indexOf(k) < 0) keys.push(k); });   /* rights given to this person */
+    keys.push('help');
+    var out = [];
+    keys.forEach(function(k){ var pt = P[k]; if (!pt) return; pt[1].filter(Boolean).forEach(function(x){ x.ch = pt[0]; out.push(x); }); });
     return out;
   }
   function val(id){ var e = document.getElementById(id); return e ? e.value.trim() : ''; }
@@ -646,10 +859,11 @@
         else startView({role:r, name:mm ? mm.name : ROLE[r]});
         break;
       }
-      case 'pv-person': { var pm = (X.eq.list || []).filter(function(x){ return x.user_id === v; })[0]; if (pm) startView({role:pm.role, mechanic:pm.mechanic || null, name:pm.name}); break; }
+      case 'pv-person': { var pm = (X.eq.list || []).filter(function(x){ return x.user_id === v; })[0]; if (pm) startView({role:pm.role, roles:rolesOf(pm), perms:pm.perms || {}, mechanic:pm.mechanic || null, name:pm.name}); break; }
       case 'pv-exit': stopView(); break;
       case 'pv-fmt': switchFmt(); break;
       case 'rp': saveRole(b.dataset.role, b.dataset.k, b.checked, b); break;
+      case 'rb': rightsRedraw(b.dataset.pre); break;
       case 'app-reload': location.reload(); break;
       case 'acct-out': {
         var pend = T.pending ? T.pending() : 0;
@@ -666,6 +880,7 @@
       case 'er-copy': { var t = X.tracks[id]; if (t && navigator.clipboard) navigator.clipboard.writeText(trackLink(t)).then(function(){ toast('Lien copié'); }, function(){ toast(trackLink(t)); }); else if (t) toast(trackLink(t)); break; }
       case 'er-open': api.S.jobId = id; api.S.screen = 'job'; api.S.backTo = null; render(); window.scrollTo(0, 0); break;
       case 'map-fit': fit(); break;
+      case 'tm-mech': X.tmHide = X.tmHide || {}; X.tmHide[v] = !X.tmHide[v]; drawMap(); render(); break;
       case 'map-sel': selectMech(v, false); break;
       case 'map-path': X.showPath[v] = !X.showPath[v]; if (X.showPath[v]) loadPath(v); else { drawMap(); render(); } break;
       case 'eq-back': location.hash = onPhone() ? 'plus' : 'reglages'; break;
@@ -676,10 +891,12 @@
       case 'eq-hidecred': X.eq.created = null; render(); break;
       case 'eq-copycred': { var pre = document.querySelector('.cred'); if (pre && navigator.clipboard) navigator.clipboard.writeText(pre.textContent).then(function(){ toast('Copié'); }, function(){}); break; }
       case 'eq-save': {
-        var role = val('ed-role'), mech = val('ed-mech'), name = val('ed-name');
-        if (role === 'mecano' && !mech){ toast('Choisis son nom dans l\'agenda.'); break; }
+        var ers = rolesFrom('ed'), mech = val('ed-mech'), name = val('ed-name');
+        if (!ers.length){ toast('Coche au moins un rôle.'); break; }
+        if (ers.indexOf('mecano') >= 0 && !mech){ toast('Choisis son nom dans l\'agenda.'); break; }
+        if (v === me.user_id && ers.indexOf('owner') < 0){ toast('Tu ne peux pas enlever ton propre rôle de propriétaire.'); break; }
         b.disabled = true;
-        invoke('members', {action:'update', user_id:v, name:name, role:role, mechanic:mech}).then(function(r){ X.eq.list = r.members; X.eq.editing = null; toast('Enregistré'); if (v === me.user_id) refreshMe(); render(); }, function(e){ b.disabled = false; toast(e.message); });
+        invoke('members', {action:'update', user_id:v, name:name, roles:ers, perms:permsFrom(ers, 'ed'), mechanic:mech}).then(function(r){ X.eq.list = r.members; X.eq.editing = null; toast('Enregistré'); if (v === me.user_id) refreshMe(); render(); }, function(e){ b.disabled = false; toast(e.message); });
         break;
       }
       case 'eq-active': {
@@ -694,12 +911,13 @@
       }
       case 'eq-remove': b.disabled = true; invoke('members', {action:'remove', user_id:v}).then(function(r){ X.eq.list = r.members; X.eq.confirm = null; toast('Compte supprimé'); render(); }, function(e){ b.disabled = false; toast(e.message); }); break;
       case 'eq-invite': {
-        var inm = val('nw-name'), iem = val('nw-email'), irl = val('nw-role'), imc = val('nw-mech');
+        var inm = val('nw-name'), iem = val('nw-email'), irs = rolesFrom('nw'), imc = val('nw-mech');
         if (!inm) return eqErr('Écris le nom de la personne.');
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(iem)) return eqErr('Écris un courriel valide.');
-        if (irl === 'mecano' && !imc) return eqErr(api.mechanics().length ? 'Choisis son nom dans l\'agenda (liste des mécanos).' : 'Ajoute d\'abord le nom de ce mécano dans Réglages → Mécanos.');
+        if (!irs.length) return eqErr('Coche au moins un rôle.');
+        if (irs.indexOf('mecano') >= 0 && !imc) return eqErr(api.mechanics().length ? 'Choisis son nom dans l\'agenda (liste des mécanos).' : 'Ajoute d\'abord le nom de ce mécano dans Réglages → Mécanos.');
         eqErr(''); b.disabled = true; b.textContent = 'Envoi…';
-        invoke('members', {action:'invite', name:inm, email:iem, role:irl, mechanic:imc, base:trackBase()}).then(function(r){
+        invoke('members', {action:'invite', name:inm, email:iem, roles:irs, perms:permsFrom(irs, 'nw'), mechanic:imc, base:trackBase()}).then(function(r){
           X.eq.list = r.members; X.eq.created = null; X.eq.invited = {name:inm, email:r.email || iem, link:r.link, mail:r.mail, message:r.message}; X.liveAt = 0;
           ['nw-name', 'nw-email', 'nw-mech'].forEach(function(i){ var e = document.getElementById(i); if (e) e.value = ''; });
           render(); window.scrollTo(0, 0);
@@ -718,12 +936,13 @@
       case 'eq-copylink': { var lk = X.eq.invited && X.eq.invited.link; if (lk && navigator.clipboard) navigator.clipboard.writeText(lk).then(function(){ toast('Lien copié'); }, function(){ toast(lk); }); else if (lk) toast(lk); break; }
       case 'eq-hideinv': X.eq.invited = null; render(); break;
       case 'eq-add': {
-        var nm = val('nw-name'), em = val('nw-email'), rl = val('nw-role'), mc = val('nw-mech');
+        var nm = val('nw-name'), em = val('nw-email'), rls = rolesFrom('nw'), mc = val('nw-mech');
         if (!nm) return eqErr('Écris le nom de la personne.');
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)) return eqErr('Écris un courriel valide.');
-        if (rl === 'mecano' && !mc) return eqErr(api.mechanics().length ? 'Choisis son nom dans l\'agenda (liste des mécanos).' : 'Ajoute d\'abord le nom de ce mécano dans Réglages → Mécanos.');
+        if (!rls.length) return eqErr('Coche au moins un rôle.');
+        if (rls.indexOf('mecano') >= 0 && !mc) return eqErr(api.mechanics().length ? 'Choisis son nom dans l\'agenda (liste des mécanos).' : 'Ajoute d\'abord le nom de ce mécano dans Réglages → Mécanos.');
         eqErr(''); b.disabled = true; b.textContent = 'Création…';
-        invoke('members', {action:'create', name:nm, email:em, role:rl, mechanic:mc}).then(function(r){
+        invoke('members', {action:'create', name:nm, email:em, roles:rls, perms:permsFrom(rls, 'nw'), mechanic:mc}).then(function(r){
           X.eq.list = r.members; X.eq.invited = null; X.eq.created = {name:nm, email:em, password:r.password}; X.liveAt = 0;
           ['nw-name', 'nw-email', 'nw-mech'].forEach(function(i){ var e = document.getElementById(i); if (e) e.value = ''; });
           render(); window.scrollTo(0, 0);
@@ -781,7 +1000,22 @@
     '.er-eta{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}.er-eta b{font-family:var(--f-display);font-size:34px;line-height:1}' +
     '.banner.ok{background:var(--ok-bg)}.btn.solid.danger,.btn.danger.solid{background:var(--bad);border-color:var(--bad);color:#fff}' +
     '.mapslot{margin:0 0 10px;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--sunk)}' +
-    '.gm-map{height:min(58vh,520px);min-height:300px;width:100%}' +
+    '.gm-map{height:calc(100vh - 230px);min-height:440px;width:100%;isolation:isolate}.ui-phone .gm-map{height:calc(100dvh - 268px);min-height:380px}' +
+    '.ui-phone .tm-slot{margin-left:-12px;margin-right:-12px;border-radius:18px}' +
+    '.tm-legend{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.tm-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-strong);background:var(--card);border-radius:999px;padding:6px 12px;font:600 14px/1 var(--f-body);color:var(--ink);cursor:pointer;min-height:38px}' +
+    '.tm-chip i{width:12px;height:12px;border-radius:50%;display:inline-block}.tm-chip span{color:var(--muted);font-weight:500}.tm-chip.off{opacity:.45;text-decoration:line-through}' +
+    '.tm-stop{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;background:var(--c);color:#fff;font:800 14px/1 var(--f-body);border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35)}' +
+    '.tm-stop.done{opacity:.5}.tm-stop.go{box-shadow:0 0 0 4px rgba(242,178,0,.65),0 2px 6px rgba(0,0,0,.35)}.tm-stop.here{outline:3px solid var(--c);outline-offset:2px}' +
+    '.tm-stop.mini,.tm-mech.mini,.tm-hq.mini{display:inline-grid;width:22px;height:22px;font-size:11px;border-width:2px;vertical-align:-6px;margin-right:6px}' +
+    '.tm-mech{display:grid;place-items:center;width:100%;height:100%;border-radius:12px;background:var(--c);color:#fff;font:800 14px/1 var(--f-body);border:3px solid #fff;box-shadow:0 0 0 3px var(--c),0 3px 10px rgba(0,0,0,.4)}.tm-mech.stale{filter:grayscale(.8);opacity:.75}' +
+    '.mc-head .tm-mech{width:40px;height:40px;flex:none}' +
+    '.tm-hq{display:grid;place-items:center;width:100%;height:100%;border-radius:14px;background:#1E1915;color:#fff;font-size:22px;border:3px solid #F7C873;box-shadow:0 4px 14px rgba(0,0,0,.45)}.tm-hq.mini{font-size:12px;border-radius:6px}' +
+    '.tm-hq-tip{font-weight:800;background:#1E1915;color:#F7C873;border:0}.tm-hq-tip::before{border-right-color:#1E1915}' +
+    '.tm-dash{display:inline-block;width:26px;height:0;border-top:3px dotted var(--ink);vertical-align:4px;margin-right:6px}' +
+    '.tm-line{display:inline-block;width:26px;height:0;border-top:5px solid #7A8794;border-radius:3px;vertical-align:3px;margin-right:6px}.tm-leg b.tm-line{width:26px;height:0}.tm-route{margin:6px 0 2px}' +
+    '.tm-leg b.mini{width:22px;height:22px;flex:none;margin:0}.tm-leg b.tm-mech.mini{border-radius:7px;font-size:9px;box-shadow:0 0 0 2px var(--c)}.tm-leg b.tm-dash{width:26px;height:0}' +
+    '.tm-pop{display:grid;gap:2px;font-size:14px}.tm-pop .btn{margin-top:6px;justify-self:start}.tm-st{color:#6B5E55;font-size:12.5px}' +
+    '.tm-stops{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:8px}.tm-stops li{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:4px 10px;align-items:center}.tm-stops li>div{display:grid;min-width:0}.tm-stops .tm-stop.mini{margin:0;width:26px;height:26px;font-size:12px}' +
     '.gm-pin-wrap{background:none;border:0}.gm-pin{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;font:700 13px/1 var(--f-body);color:#fff;background:#1D4B77;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}' +
     '.gm-pin.p-route{background:#B26B00}.gm-pin.p-shift{background:#1D4B77}.gm-pin.p-stale{background:#7A8794}.gm-pin.p-off{background:#B4BEC8}.gm-pin.sel{outline:3px solid #F2B200;outline-offset:1px}' +
     '.gm-pin.p-job{border-radius:8px;background:#fff;color:#14202B;border:2px solid #14202B;font-size:11px}.gm-pin.p-job.done{opacity:.55}.gm-pin.p-dest{background:#F2B200;color:#1E1600;border-radius:8px;font-size:15px}' +
@@ -800,6 +1034,10 @@
     '.created{border:2px solid var(--ok)}details summary{cursor:pointer;font-weight:600;min-height:36px;display:flex;align-items:center}details ol{margin:6px 0 0;padding-left:18px;display:grid;gap:4px}' +
     '.badge{display:inline-block;border-radius:6px;padding:1px 8px;font-weight:600;background:var(--idle-bg);color:var(--idle)}.badge.ok{background:var(--ok-bg);color:var(--ok)}.badge.warn{background:var(--warn-bg);color:var(--warn)}' +
     '.leaflet-container{font:inherit}.leaflet-control-attribution{font-size:11px}' +
+    '.rbox{border:1px solid var(--line);border-radius:14px;padding:8px 12px 6px;margin:0;display:grid;gap:2px}.rbox legend{font-weight:700;padding:0 6px}.rbox .check{align-items:flex-start;padding:4px 0}.rbox .check>span{display:grid;gap:1px}' +
+    '.rt-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px}.rt{width:100%;border-collapse:collapse;font-size:14px}.rt th,.rt td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:center}' +
+    '.rt thead th{font-weight:700;background:var(--sunk)}.rt tbody th{text-align:left;font-weight:600}.rt tr:last-child>*{border-bottom:0}.rt input{width:22px;height:22px;min-height:0;accent-color:var(--signal)}.rt-on{color:var(--ok);font-weight:800}.rt-na{color:var(--muted)}' +
+    '.r-add{color:var(--ok)}.r-del{color:var(--bad)}.pills{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}.pillx.r-tresorier{background:var(--ok-bg);color:var(--ok)}' +
     '.pv-btns{display:flex;flex-wrap:wrap;gap:8px}.rp{border:1px solid var(--line);border-radius:14px;padding:10px 14px 6px;margin:0;display:grid;gap:2px}.rp legend{font-weight:700;padding:0 6px}' +
     '.rp-row{align-items:flex-start;padding:6px 0}.rp-row input{margin-top:2px;flex:none}.rp-row>span{display:grid;gap:1px}' +
     '#pv-bar{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;justify-content:center;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:#1E1915;color:#F7F1EA;font-size:14.5px;box-shadow:0 4px 14px rgba(0,0,0,.25)}' +
@@ -851,44 +1089,24 @@
     tabs:[{key:'carte', label:'Carte', icon:MAP_ICON, view:viewMap}, {key:'equipe', label:'Équipe', hidden:true, view:viewEquipe}],
     can:function(w){
       var m = eff(); if (!m) return undefined;
-      var r = m.role;
-      /* the treasurer: his own screen; the rest only as the owner ticked it (Équipe et accès) */
-      if (r === 'tresorier'){
-        if (w === 'tab:tresor' || w === 'expenses' || w === 'money' || w === 'tab:plus') return true;
-        if (w === 'tab:clients') return perm(r, 'clients');
-        if (w === 'tab:factures') return perm(r, 'factures');
-        if (w === 'tab:stock' || w === 'stock') return perm(r, 'stock');
-        if (w === 'tab:agenda' || w === 'tab:jour') return perm(r, 'agenda');
-        if (w === 'invoice') return perm(r, 'editinv');
-        return false;
-      }
-      if (r === 'mecano'){
-        if (w === 'money') return perm(r, 'money');
-        if (w === 'book') return perm(r, 'book');
-        if (w === 'tab:clients') return perm(r, 'clients');
-        if (w === 'tab:factures') return perm(r, 'factures');
-        if (w === 'tab:stock' || w === 'stock') return perm(r, 'stock');
-      }
-      if (w === 'tab:tresor' || w === 'expenses') return r === 'owner';
-      if (w === 'tab:reglages') return r === 'owner';
-      if (w === 'tab:carte') return r !== 'mecano';
-      if (w === 'tab:equipe') return r === 'owner';
-      if (w === 'book' || w === 'deleteJob' || w === 'hours' || w === 'money') return r !== 'mecano';
-      return undefined;
+      return gate(m, w);
     },
+    roleOf:function(){ var m = eff(); return m ? rolesOf(m) : []; },
+    hoursOthers:function(){ return permOf(eff(), 'hours_others'); },
+
     netBanner:netBanner,
     /* the client's page: invoice (and « Payer »), work to approve; texted through GoHighLevel */
     clientLink:function(j, what, extraId){ return invoke('client', {action:'link', jobId:j.id, send:what || null, extraId:extraId || null, base:trackBase()}); },
     payOn:function(){ return !!X.payOnline; },
-    myMechanic:function(){ var m = eff(); return m && m.role === 'mecano' ? m.mechanic : null; },
-    homeTab:function(){ var m = eff(); return m && m.role === 'tresorier' ? 'tresor' : null; },
+    myMechanic:function(){ var m = eff(); return m && hasR(m, 'mecano') && !hasR(m, 'owner') && !hasR(m, 'bureau') ? m.mechanic : null; },
+    homeTab:function(){ var m = eff(); return m && rolesOf(m).join() === 'tresorier' ? 'tresor' : null; },
     greetName:function(){ var m = eff(); return m ? first(m.name) : ''; },
-    tellsClient:true, isMine:mineView, previewing:previewing, onUi:onUi, tourSteps:tourSteps,
+    tellsClient:true, isMine:mineView, previewing:previewing, onUi:onUi, tourSteps:tourSteps, tourAuto:tourAuto,
     decodeVin:function(vin){ return invoke('vehicle', {vin:vin}).then(function(d){ return (d && d.r) || {}; }); },
     phoneTop:function(){ return me ? shiftCard() : ''; },
     navFoot:navFoot,
     guideItems:function(){
-      if (!eff() || eff().role !== 'owner') return [];
+      if (!eff() || !hasR(eff(), 'owner')) return [];
       if (!X.eq.list && !X.eq.loading && !X.eq.err) eqLoad();
       var s = X.eq.secrets || {}, n = (X.eq.list || []).filter(function(m){ return m.active; }).length;
       return [
@@ -899,11 +1117,11 @@
     },
     plusItems:function(){
       var out = [];
-      if (staffView()) out.push({href:'#carte', label:'Carte des mécanos', sub:'Où est chaque mécano, qui est en route'});
-      if (eff() && eff().role === 'owner') out.push({href:'#equipe', label:'Équipe et accès', sub:'Comptes, voir comme…, mots de passe, textos'});
+      if (permOf(eff(), 'map')) out.push({href:'#carte', label:'Carte de l\'équipe', sub:'Les mécanos, leurs trajets et les rendez-vous du jour'});
+      if (eff() && hasR(eff(), 'owner')) out.push({href:'#equipe', label:'Équipe et accès', sub:'Comptes, voir comme…, mots de passe, textos'});
       return out;
     },
-    accountRow:function(){ var m = eff(); return m ? '<section class="sect"><p class="small">Connecté : <b>' + esc(m.name) + '</b> · ' + esc(ROLE[m.role]) + '</p><button type="button" class="btn block" data-act="acct-out">Se déconnecter</button></section>' : ''; },
+    accountRow:function(){ var m = eff(); return m ? '<section class="sect"><p class="small">Connecté : <b>' + esc(m.name) + '</b> · ' + esc(rolesLabel(m)) + '</p><button type="button" class="btn block" data-act="acct-out">Se déconnecter</button></section>' : ''; },
     dashTop:agendaTop, dashExtra:dashExtra,
     agendaTop:agendaTop, settingsTop:settingsTop, jobExtra:jobExtra, onStatus:onStatus, onAction:onAction,
     nextInvoiceNo:function(start){ return T.sb.rpc('next_invoice_number', {p_start:start}).then(function(r){ if (r.error || typeof r.data !== 'number') throw r.error || new Error('no number'); return r.data; }); }
@@ -912,7 +1130,7 @@
   /* once signed in: role, workday already running, address keys of the garage */
   T.onReady(function(){
     me = T.member;
-    if (VA && me.role !== 'owner'){ VA = null; try { sessionStorage.removeItem('gm.viewas'); } catch(e){} }
+    if (VA && !hasR(me, 'owner')){ VA = null; try { sessionStorage.removeItem('gm.viewas'); } catch(e){} }
     T.db.doc('config/roles').onSnapshot(function(s){ X.roles = s.exists ? (s.data() || {}) : {}; X.rolesLoaded = true; render(); }, function(){ X.rolesLoaded = true; render(); });
     if (previewing()) setTimeout(applyView, 0);
     T.db.doc('config/keys').get().then(function(s){ X.payOnline = !!(s.exists && s.data().payOnline); }, function(){});

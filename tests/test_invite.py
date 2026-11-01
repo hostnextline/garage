@@ -27,7 +27,7 @@ with sync_playwright() as pl:
     op.evaluate("location.hash = 'equipe'"); op.wait_for_selector('#eq-new', timeout=10000)
     check('Équipe et accès: « Inviter une personne » with « Envoyer l\'invitation »', 'Inviter une personne' in txt(op, '#eq-new h3') and op.is_visible('#eq-new [data-act="eq-invite"]'))
     check('temporary password is now the other way (folded)', op.locator('#eq-new details [data-act="eq-add"]').count() == 1 and not op.is_visible('#eq-new [data-act="eq-add"]'))
-    op.fill('#nw-name', 'Karim Test'); op.fill('#nw-email', 'karim@garage.test'); op.select_option('#nw-role', 'bureau')
+    op.fill('#nw-name', 'Karim Test'); op.fill('#nw-email', 'karim@garage.test'); pick_roles(op, 'nw', ['bureau'])
     op.click('[data-act="eq-invite"]'); op.wait_for_selector('#eq-invited', timeout=15000)
     check('card « Invitation envoyée à Karim Test »', 'Invitation envoyée à Karim Test' in txt(op, '#eq-invited h3'), txt(op, '#eq-invited'))
     link, mail = invite_link()
@@ -49,18 +49,15 @@ with sync_playwright() as pl:
     check('typed differently → plain message', 'pas pareils' in txt(kp, '#g-msg'))
     kp.fill('#g-pw2', 'Karim-Garage-26'); kp.click('#g-go'); kp.wait_for_selector('#gate', state='detached', timeout=20000); kp.wait_for_timeout(1500)
     check('« Activer mon compte » → signed in to the garage', kp.locator('#tabbar').count() == 1 and kp.evaluate("!!window.__garageApi && window.__garageApi.S.loaded"))
-    kp.wait_for_selector('#tour-ov .tt-tip', timeout=9000)
-    check('right after: the guided tour of the app starts by itself (« Bienvenue »)', 'Bienvenue' in txt(kp, '#tour-ov .tt-tip'), txt(kp, '#tour-ov .tt-tip')[:60])
-    for _ in range(20):
-        kp.wait_for_timeout(650)
-        if kp.locator('#tour-ov .tt-win').count(): break
-        if 'À toi' in txt(kp, '#tour-ov .tt-tip'):
-            c = kp.evaluate("(() => { const r = document.querySelector('#tour-ov .tt-hole').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; })()"); kp.mouse.click(c[0], c[1])
-        else: kp.click('#tour-ov [data-act="tt-next"]')
-    check('…to the trophy « Bravo, Karim ! »', 'Bravo, Karim' in txt(kp, '#tour-ov .tt-win'))
+    kp.wait_for_selector('#tour-ov .tt-tip:not(.going)', timeout=9000); kp.wait_for_timeout(300)
+    check('right after: the guided visit of the app starts by itself (« Bienvenue, Karim ! »)', 'Bienvenue, Karim' in txt(kp, '#tour-ov .tt-tip'), txt(kp, '#tour-ov .tt-tip')[:60])
+    for _ in range(40):
+        if kp.locator('#tour-ov [data-act="tt-end"]').count(): break
+        kp.click('#tour-ov [data-act="tt-next"]'); kp.wait_for_timeout(60); kp.wait_for_function("!!document.querySelector('#tour-ov .tt-tip') && !document.querySelector('#tour-ov .tt-tip.going')", timeout=9000)
+    check('…all the way to « C\'est tout ! » (a calm visit: no points, no trophy)', "C'est tout" in txt(kp, '#tour-ov .tt-tip') and kp.locator('#tour-ov .tt-win, #tour-ov .tt-pts, #tour-ov .tt-conf').count() == 0)
     kp.click('#tour-ov [data-act="tt-end"]'); kp.wait_for_timeout(1200)
     check('the tour is remembered for him', bool((doc('data/users/%s/tour' % uid) or {}).get('seenAt')))
-    check('after the tour (« C\'est parti »): how to put the app on the phone opens by itself (iPhone first)', kp.locator('#sheet:not([hidden]) .inst').count() == 1 and kp.locator('.inst .inst-b').first.get_attribute('data-p') == 'ios-safari', kp.locator('.inst .inst-b').count())
+    check('after the visit (« Terminer »): how to put the app on the phone opens by itself (iPhone first)', kp.locator('#sheet:not([hidden]) .inst').count() == 1 and kp.locator('.inst .inst-b').first.get_attribute('data-p') == 'ios-safari', kp.locator('.inst .inst-b').count())
     check('steps are concrete: Partager (or ••• then Partager), « Sur l\'écran d\'accueil », « Ajouter »', all(w in txt(kp, '.inst .inst-b[data-p="ios-safari"]') for w in ['Partager', '•••', 'Sur l\'écran d\'accueil', 'Ajouter']))
     kp.click('[data-act="app-done"]'); kp.wait_for_timeout(600)
     check('« C\'est fait » is remembered for that person', bool((doc('data/users/%s/app' % uid) or {}).get('installedAt')), doc('data/users/%s/app' % uid))
@@ -78,7 +75,7 @@ with sync_playwright() as pl:
     # ---------- 3. without automatic emails: the owner sends it himself; resend ----------
     fn(otok, 'members', {'action': 'secrets-set', 'ghlToken': '', 'ghlLocation': ''})
     op.reload(); op.wait_for_timeout(800); op.evaluate("location.hash = 'equipe'"); op.wait_for_selector('#eq-new', timeout=10000)
-    op.fill('#nw-name', 'Léa Test'); op.fill('#nw-email', 'lea@garage.test'); op.select_option('#nw-role', 'tresorier')
+    op.fill('#nw-name', 'Léa Test'); op.fill('#nw-email', 'lea@garage.test'); pick_roles(op, 'nw', ['tresorier'])
     op.click('[data-act="eq-invite"]'); op.wait_for_selector('#eq-invited', timeout=15000)
     href = op.get_attribute('#inv-mail', 'href') or ''
     check('no automatic email: « Invitation prête » + « Envoyer par courriel » already written', 'Invitation prête pour Léa Test' in txt(op, '#eq-invited h3') and href.startswith('mailto:lea@garage.test?subject=') and '%23invite%3D' in href and op.locator('#eq-invited [data-act="eq-copylink"]').count() == 1, href[:120])

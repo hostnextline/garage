@@ -36,7 +36,7 @@ with sync_playwright() as p:
     check('U6. Job card shows "2 h" (no units)', '2 h' in pg.inner_text('.when') and 'unité' not in pg.inner_text('.when'), pg.inner_text('.when'))
     pg.click('[data-act="back"]'); pg.wait_for_timeout(60)
     # periods
-    pg.click('[data-act="hours-edit"]'); pg.wait_for_timeout(80)
+    pg.click('[data-act="sched"][data-v="garage"]'); pg.wait_for_timeout(150); pg.click('#sched [data-act="hours-edit"]'); pg.wait_for_timeout(80)
     pg.select_option('#p-from', '12:00'); pg.select_option('#p-to', '13:00'); pg.select_option('#p-col', 'Ali')
     pg.click('[data-act="period"][data-v="close"]'); pg.wait_for_timeout(150)
     dd = store(pg).get('days/' + td, {})

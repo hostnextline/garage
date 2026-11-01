@@ -32,7 +32,7 @@ with sync_playwright() as p:
     check('guide step opens Réglages right at « Le garage »', pg.is_visible('#s-name') and not pg.is_visible('#s-tps') and pg.locator('.tab[data-t="reglages"][aria-current="page"]').count() == 1)
     # a « ? » bubble
     pg.click('section.cur .ph-secback'); pg.wait_for_timeout(150)
-    check('Réglages: a list of parts with a line each', pg.locator('#ph-setlist .ph-row').count() == 9 and 'TPS et TVQ' in txt(pg, '#ph-setlist'), txt(pg, '#ph-setlist'))
+    check('Réglages: a list of parts with a line each (now with « Couleurs de l\'app »)', pg.locator('#ph-setlist .ph-row').count() == 10 and 'TPS et TVQ' in txt(pg, '#ph-setlist') and 'Couleurs de l\'app' in txt(pg, '#ph-setlist'), txt(pg, '#ph-setlist'))
     pg.click('#ph-setlist .ph-row:has-text("Taxes")'); pg.wait_for_timeout(150)
     q = pg.locator('section.cur .qhelp').first
     q.click(); pg.wait_for_timeout(100)

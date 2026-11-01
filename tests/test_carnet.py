@@ -346,7 +346,7 @@ with sync_playwright() as p:
     check('G10. No horizontal page scroll with the grid', no_hscroll(pg))
 
     # ---------- open / close the schedule ----------
-    pg.click('[data-act="hours-edit"]'); pg.wait_for_timeout(80)
+    pg.click('[data-act="sched"][data-v="garage"]'); pg.wait_for_timeout(150); pg.click('#sched [data-act="hours-edit"]'); pg.wait_for_timeout(80)
     check('H1. "Ouvrir / fermer l\'horaire" shows the hours panel', pg.is_visible('#hours-panel') and pg.locator('.cal.editing').count() == 1)
     slot('Ali', '07:00').click(); pg.wait_for_timeout(120)
     dd = store(pg).get('days/' + datetime.date.today().isoformat(), {})
@@ -402,7 +402,7 @@ with sync_playwright() as p:
     marc_week = len([v for v in jobs(pg).values() if v.get('mechanic') == 'Marc' and mon.isoformat() <= v.get('date', '') <= (mon + datetime.timedelta(days=6)).isoformat() and v.get('time') and v.get('status') != 'annule'])
     check('W6. Filter Marc in week view shows only Marc\'s appointments', pg.locator('.cal.week .appt').count() == marc_week, (marc_week, pg.locator('.cal.week .appt').count()))
     pg.click('.chip[data-act="mech"][data-v=""]'); pg.wait_for_timeout(60)
-    check('W7. Week view has its own "Ouvrir / fermer l\'horaire de la semaine" button', pg.locator('[data-act="hours-edit"]').count() == 1 and 'de la semaine' in pg.inner_text('[data-act="hours-edit"]'))
+    check('W7. Week view: one « 🗓 Modifier l\'horaire » button (opens the schedule window)', pg.locator('[data-act="sched"][data-v="garage"]').count() == 1 and 'Modifier l\'horaire' in pg.inner_text('[data-act="sched"][data-v="garage"]'))
     check('W8. No horizontal page scroll (the week scrolls inside its box)', no_hscroll(pg))
     pg.locator(f'.col[data-date="{satw}"] .slot[data-t="08:00"]').click(); pg.wait_for_timeout(60)
     check('W9. Closed case in week view does not open the form', not pg.is_visible('#sheet') and 'Case fermée' in pg.inner_text('#toast'))
@@ -481,7 +481,7 @@ with sync_playwright() as p:
     pg.click('.tab[data-t="reglages"]'); pg.wait_for_timeout(80)
     check('22. Contributor sees settings disabled', pg.is_disabled('#s-name') and pg.locator('#s-save').count() == 0)
     pg.click('.tab[data-t="agenda"]'); pg.wait_for_timeout(80)
-    check('22b. Contributor has no "Ouvrir / fermer l\'horaire" button', pg.locator('[data-act="hours-edit"]').count() == 0)
+    check('22b. Contributor has no "Ouvrir / fermer l\'horaire" button', pg.locator('[data-act="sched"]').count() == 0)
     pg.locator('.slot.closed').first.click(); pg.wait_for_timeout(60)
     check('22c. Contributor tapping a closed case gets a plain message', 'on ne peut pas réserver' in pg.inner_text('#toast'))
     ctx.close()

@@ -103,3 +103,9 @@ def wait_for(p, js, ms=15000, arg=None):
         return True
     except Exception: return False
 def no_hscroll(p): return p.evaluate('document.documentElement.scrollWidth <= window.innerWidth + 1')
+
+def pick_roles(p, pre, roles):
+    """tick exactly these role boxes (Équipe et accès: a person can have several roles)"""
+    for r in ('mecano', 'bureau', 'tresorier', 'owner'):
+        sel = '#%s-r-%s' % (pre, r)
+        if p.locator(sel).count() and p.is_checked(sel) != (r in roles): p.click(sel)

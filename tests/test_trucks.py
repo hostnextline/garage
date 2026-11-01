@@ -112,7 +112,7 @@ with sync_playwright() as p:
     pg.click('#av-week .switch[data-v="3"]'); wait(pg, 300)
     pg.select_option('select[data-av="start"][data-dw="4"]', '10:00'); wait(pg, 300); pg.select_option('select[data-av="end"][data-dw="4"]', '14:00'); wait(pg, 300)
     av = store(pg, 'avail/saleh') or {}
-    check('Saleh: Thursday 10 h to 14 h', av['week']['4'] == {'on': True, 'start': '10:00', 'end': '14:00'} and av['week']['3']['on'] is True, av.get('week'))
+    check('Saleh: Thursday 10 h to 14 h (no break)', {k: v for k, v in av['week']['4'].items() if k != 'breaks'} == {'on': True, 'start': '10:00', 'end': '14:00'} and not av['week']['4'].get('breaks') and av['week']['3']['on'] is True, av.get('week'))
     pg.select_option('select[data-av="end"][data-dw="4"]', '09:00'); wait(pg, 300)
     check('end before start refused', (store(pg, 'avail/saleh') or {})['week']['4']['end'] == '14:00' and 'après le début' in txt(pg, '#toast'))
     go_day(pg, iso(TH))

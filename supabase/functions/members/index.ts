@@ -15,6 +15,18 @@ const cors = {
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 const fail = (message: string, status = 400, error = 'bad_request') => json({ error, message }, status);
 const ROLES = ['owner', 'bureau', 'mecano', 'tresorier'];
+// several roles per person (main role = owner > bureau > mecano > tresorier, set by the database) + rights for this person only
+const PERM_KEYS = ['money', 'book', 'clients', 'factures', 'stock', 'agenda', 'editinv', 'hours_others', 'map', 'tresor'];
+function rolesOf(body: any): string[] {
+  const r = Array.isArray(body.roles) ? body.roles : body.role ? [body.role] : [];
+  return [...new Set(r.map((x: unknown) => String(x)).filter((x: string) => ROLES.includes(x)))] as string[];
+}
+function permsOf(v: any): Record<string, boolean> | null {
+  if (v === undefined || v === null) return null;
+  const out: Record<string, boolean> = {};
+  if (typeof v === 'object') for (const k of PERM_KEYS) if (typeof v[k] === 'boolean') out[k] = v[k];
+  return out;
+}
 const clean = (s: unknown, n = 60) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, n);
 const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
 
@@ -85,7 +97,7 @@ async function garageName() {
 }
 const h = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
 function inviteMessage(o: { name: string; email: string; role: string; garage: string; by: string; link: string }) {
-  const first = o.name.split(' ')[0] || o.name, role = ROLE_FR[o.role] || o.role;
+  const first = o.name.split(' ')[0] || o.name, role = String(o.role).split(',').map((r) => ROLE_FR[r] || r).join(' et ');
   const subject = `Ton accès au carnet de ${o.garage}`;
   const text = `Bonjour ${first},\n\n${o.by} t'a ajouté à l'équipe de ${o.garage} (${role}).\n\n` +
     `1. Active ton compte et choisis ton mot de passe avec ce lien (valide ${INVITE_DAYS} jours) :\n${o.link}\n\n` +
@@ -129,11 +141,11 @@ async function makeInvite(userId: string, email: string, by: string) {
   if (error) throw new Error('L\'invitation n\'a pas pu être créée : ' + error.message);
   return token;
 }
-async function inviteAndSend(me: any, m: { user_id: string; name: string; role: string }, email: string, baseIn: unknown) {
+async function inviteAndSend(me: any, m: { user_id: string; name: string; role: string; roles?: string[] }, email: string, baseIn: unknown) {
   const s = await secretMap();
   const token = await makeInvite(m.user_id, email, me.user_id);
   const link = pickBase(baseIn, s) + '#invite=' + token;
-  const msg = inviteMessage({ name: m.name, email, role: m.role, garage: await garageName(), by: String(me.name || 'Le propriétaire').split(' ')[0], link });
+  const msg = inviteMessage({ name: m.name, email, role: (m.roles && m.roles.length ? m.roles : [m.role]).join(','), garage: await garageName(), by: String(me.name || 'Le propriétaire').split(' ')[0], link });
   const mail = await sendInvite(s, m.name, email, msg);
   await admin.from('invites').update({ sent_by: mail.status === 'sent' ? 'courriel' : 'manuel' }).eq('token_hash', await sha256(token));
   return { link, mail, message: { subject: msg.subject, body: msg.text } };
@@ -235,16 +247,16 @@ Deno.serve(async (req) => {
     if (action === 'list') return json({ ok: true, members: await listMembers() });
 
     if (action === 'create') {
-      const email = clean(body.email, 120).toLowerCase(), name = clean(body.name), role = String(body.role || ''), mechanic = clean(body.mechanic) || null;
+      const email = clean(body.email, 120).toLowerCase(), name = clean(body.name), roles = rolesOf(body), role = roles[0] || '', mechanic = clean(body.mechanic) || null, perms = permsOf(body.perms) || {};
       if (!emailOk(email)) return fail('Courriel invalide.');
       if (!name) return fail('Écris le nom de la personne.');
-      if (!ROLES.includes(role)) return fail('Choisis un rôle.');
-      if (role === 'mecano' && !mechanic) return fail('Choisis le nom du mécano dans la liste.');
+      if (!roles.length) return fail('Choisis au moins un rôle.');
+      if (roles.includes('mecano') && !mechanic) return fail('Choisis le nom du mécano dans la liste.');
       const password = String(body.password || '') || tempPassword();
       if (password.length < 8) return fail('Le mot de passe doit avoir au moins 8 caractères.');
       const { data: u, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name } });
       if (error || !u?.user) return fail(/already|exists|registered/i.test(error?.message || '') ? 'Ce courriel a déjà un compte.' : 'Le compte n\'a pas pu être créé : ' + (error?.message || ''));
-      const { error: e2 } = await admin.from('members').insert({ user_id: u.user.id, role, name, mechanic });
+      const { error: e2 } = await admin.from('members').insert({ user_id: u.user.id, role, roles, perms, name, mechanic });
       if (e2) {
         await admin.auth.admin.deleteUser(u.user.id);
         return fail(/members_mechanic_uq/.test(e2.message) ? `${mechanic} a déjà un compte.` : 'Le compte n\'a pas pu être créé : ' + e2.message);
@@ -253,21 +265,21 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'invite') {
-      const email = clean(body.email, 120).toLowerCase(), name = clean(body.name), role = String(body.role || ''), mechanic = clean(body.mechanic) || null;
+      const email = clean(body.email, 120).toLowerCase(), name = clean(body.name), roles = rolesOf(body), role = roles[0] || '', mechanic = clean(body.mechanic) || null, perms = permsOf(body.perms) || {};
       if (!emailOk(email)) return fail('Courriel invalide.');
       if (!name) return fail('Écris le nom de la personne.');
-      if (!ROLES.includes(role)) return fail('Choisis un rôle.');
-      if (role === 'mecano' && !mechanic) return fail('Choisis le nom du mécano dans la liste.');
+      if (!roles.length) return fail('Choisis au moins un rôle.');
+      if (roles.includes('mecano') && !mechanic) return fail('Choisis le nom du mécano dans la liste.');
       // nobody knows this password: the person chooses one with the link
       const { data: u, error } = await admin.auth.admin.createUser({ email, password: newToken(24) + 'aA1!', email_confirm: true, user_metadata: { name } });
       if (error || !u?.user) return fail(/already|exists|registered/i.test(error?.message || '') ? 'Ce courriel a déjà un compte. Dans la liste, touche « Renvoyer l\'invitation » ou « Nouveau mot de passe ».' : 'L\'invitation n\'a pas pu être créée : ' + (error?.message || ''));
-      const { error: e2 } = await admin.from('members').insert({ user_id: u.user.id, role, name, mechanic });
+      const { error: e2 } = await admin.from('members').insert({ user_id: u.user.id, role, roles, perms, name, mechanic });
       if (e2) {
         await admin.auth.admin.deleteUser(u.user.id);
         return fail(/members_mechanic_uq/.test(e2.message) ? `${mechanic} a déjà un compte.` : 'L\'invitation n\'a pas pu être créée : ' + e2.message);
       }
       try {
-        const r = await inviteAndSend(me, { user_id: u.user.id, name, role }, email, body.base);
+        const r = await inviteAndSend(me, { user_id: u.user.id, name, role, roles }, email, body.base);
         return json({ ok: true, user_id: u.user.id, email, ...r, members: await listMembers() });
       } catch (e) {
         await admin.auth.admin.deleteUser(u.user.id);
@@ -294,10 +306,13 @@ Deno.serve(async (req) => {
       if (action === 'update') {
         const up: Record<string, unknown> = {};
         if (body.name !== undefined) { const n = clean(body.name); if (!n) return fail('Écris le nom.'); up.name = n; }
-        if (body.role !== undefined) { if (!ROLES.includes(body.role)) return fail('Rôle inconnu.'); up.role = body.role; }
+        if (body.roles !== undefined || body.role !== undefined) { const rs = rolesOf(body); if (!rs.length) return fail('Choisis au moins un rôle.'); up.roles = rs; up.role = rs.includes('owner') ? 'owner' : rs.includes('bureau') ? 'bureau' : rs.includes('mecano') ? 'mecano' : 'tresorier'; }
+        if (body.perms !== undefined) up.perms = permsOf(body.perms) || {};
         if (body.mechanic !== undefined) up.mechanic = clean(body.mechanic) || null;
         if (body.active !== undefined) up.active = !!body.active;
         if (uid === me.user_id && (up.active === false || (up.role && up.role !== 'owner'))) return fail('Tu ne peux pas retirer ton propre accès de propriétaire.');
+        const finalRoles = (up.roles as string[] | undefined) || m.roles || [m.role], finalMech = up.mechanic !== undefined ? up.mechanic : m.mechanic;
+        if (finalRoles.includes('mecano') && !finalMech) return fail('Choisis le nom du mécano dans la liste.');
         const { error } = await admin.from('members').update(up).eq('user_id', uid);
         if (error) return fail(/propriétaire/.test(error.message) ? 'Il faut garder au moins un propriétaire actif.' : /members_mechanic_uq/.test(error.message) ? 'Ce mécano a déjà un compte.' : /mecano_needs_mechanic/.test(error.message) ? 'Choisis le nom du mécano dans la liste.' : error.message);
         if (up.active !== undefined) {
