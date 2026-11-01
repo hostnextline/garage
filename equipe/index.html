@@ -1277,8 +1277,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function idOf(path){ return path.split('/').pop(); }
   function C(col){ return cols[col] || (cols[col] = {docs:{}, loaded:false, since:null, listeners:[], docListeners:{}, loading:null, full:0}); }
   function freeze(o){ if (o && typeof o === 'object'){ Object.freeze(o); Object.keys(o).forEach(function(k){ freeze(o[k]); }); } return o; }
-  function snapDoc(col, id){ var d = C(col).docs[id]; return {id:id, exists:d !== undefined, data:function(){ return d === undefined ? undefined : freeze(clone(d)); }, metadata:{fromCache:false, hasPendingWrites:false}}; }
-  function snapCol(col){ var c = C(col), docs = Object.keys(c.docs).sort().map(function(id){ return snapDoc(col, id); }); return {docs:docs, size:docs.length, empty:!docs.length, docChanges:function(){ return []; }, metadata:{fromCache:false, hasPendingWrites:false}}; }
+  /* « Voir comme un mécano » (the owner, in preview): show only what that mechanic's account would get from the server
+     (same rule as can_read_doc: his jobs, the clients and photos of his jobs, the shared settings). Nothing is deleted. */
+  function lc(s){ return String(s == null ? '' : s).trim().toLowerCase(); }
+  function visible(col, id, d){
+    var v = T.view; if (!v || v.role !== 'mecano' || d === undefined) return true;
+    if (col.indexOf('data/') === 0) return true;
+    var m = lc(v.mechanic);
+    if (col === 'jobs') return lc(d.mechanic) === m;
+    if (col === 'clients' || col === 'photos'){
+      var js = C('jobs').docs, jid = id.split('__')[0];
+      for (var k in js){ if (lc(js[k].mechanic) === m && (col === 'clients' ? js[k].clientId === id : k === jid)) return true; }
+      return false;
+    }
+    return ['config','days','avail','specs','stock'].indexOf(col) >= 0;
+  }
+  T.setView = function(v){ T.view = v || null; Object.keys(cols).forEach(function(k){ notify(k); }); };
+  function snapDoc(col, id){ var d = C(col).docs[id]; if (!visible(col, id, d)) d = undefined; return {id:id, exists:d !== undefined, data:function(){ return d === undefined ? undefined : freeze(clone(d)); }, metadata:{fromCache:false, hasPendingWrites:false}}; }
+  function snapCol(col){ var c = C(col), docs = Object.keys(c.docs).filter(function(id){ return visible(col, id, c.docs[id]); }).sort().map(function(id){ return snapDoc(col, id); }); return {docs:docs, size:docs.length, empty:!docs.length, docChanges:function(){ return []; }, metadata:{fromCache:false, hasPendingWrites:false}}; }
   function notify(col, ids){
     var c = C(col);
     setTimeout(function(){
@@ -1677,7 +1693,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   var T = window.__supa; if (!T) return;
   function A(){ return window.__garageApi; }
   var me = null;
-  var X = {tracks:{}, trackLoading:{}, busy:{}, live:[], members:[], active:[], mapSel:null, showPath:{}, paths:{}, eq:{list:null, err:'', created:null, secrets:null, confirm:null, editing:null}, enRoute:null, near:false, warnedNear:false};
+  /* « Voir comme… » : the owner sees the app exactly as a mechanic, the treasurer or the office sees it.
+     His own account stays behind it: what he changes is saved under his name. */
+  var VA = null;
+  try { VA = JSON.parse(sessionStorage.getItem('gm.viewas') || 'null'); } catch(e){ VA = null; }
+  function previewing(){ return !!(me && VA && me.role === 'owner'); }
+  function eff(){ return previewing() ? {role:VA.role, mechanic:VA.mechanic || null, name:VA.name, user_id:me.user_id, active:true, preview:true} : me; }
+  var X = {tracks:{}, trackLoading:{}, busy:{}, live:[], members:[], active:[], mapSel:null, showPath:{}, paths:{}, eq:{list:null, err:'', created:null, secrets:null, confirm:null, editing:null}, enRoute:null, near:false, warnedNear:false, roles:{}};
   var ROLE = {owner:'Propriétaire', bureau:'Bureau', mecano:'Mécano', tresorier:'Trésorier'};
 
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -1701,10 +1723,34 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       });
     });
   }
-  function mineJob(j){ return !!(me && me.mechanic && (norm(j.mechanic) === norm(me.mechanic) || (!j.mechanic && me.role === 'mecano'))); }
+  function mineOf(m, j){ return !!(m && m.mechanic && (norm(j.mechanic) === norm(m.mechanic) || (!j.mechanic && m.role === 'mecano'))); }
+  function mineJob(j){ return mineOf(me, j); }          /* the real account (position, texts) */
+  function mineView(j){ return mineOf(eff(), j); }      /* what the screen shows (« Voir comme ») */
   function onPhone(){ var a = A(); return !!(a && a.phone && a.phone()); }
   function isStaff(){ return me && (me.role === 'owner' || me.role === 'bureau'); }
   function worksShifts(){ return !!(me && (me.role === 'mecano' || me.mechanic)); }
+  function staffView(){ var m = eff(); return !!(m && (m.role === 'owner' || m.role === 'bureau')); }
+  function shiftsView(){ var m = eff(); return !!(m && (m.role === 'mecano' || m.mechanic)); }
+
+  /* what the mechanic and the treasurer may do: the owner ticks boxes in Équipe et accès (document config/roles).
+     Nothing ticked = as before. « book » (mechanic) and « editinv » (treasurer) are also checked by the server. */
+  var PERMS = {
+    mecano:[
+      {k:'money', t:'Voir les chiffres du garage', s:'Ventes du mois et factures payées, sur l\'écran d\'accueil.', d:false},
+      {k:'book', t:'Prendre des rendez-vous', s:'Seulement dans son agenda.', d:false},
+      {k:'clients', t:'Voir l\'onglet Clients', s:'Seulement les clients de ses jobs.', d:true},
+      {k:'factures', t:'Voir l\'onglet Factures', s:'Seulement les factures de ses jobs.', d:true},
+      {k:'stock', t:'Voir et changer le stock', s:'Pièces et produits du camion.', d:true}
+    ],
+    tresorier:[
+      {k:'agenda', t:'Voir l\'agenda', s:'Les rendez-vous de tout le monde, sans rien y changer.', d:false},
+      {k:'clients', t:'Voir les clients', s:'Sans rien y changer.', d:true},
+      {k:'factures', t:'Voir les factures', s:'', d:true},
+      {k:'editinv', t:'Modifier les factures', s:'Les lignes, les rabais, « payée ». Rien d\'autre dans la job.', d:false},
+      {k:'stock', t:'Voir et changer le stock', s:'', d:true}
+    ]
+  };
+  function perm(role, k){ var r = X.roles && X.roles[role], v = r && r[k]; if (typeof v === 'boolean') return v; var p = (PERMS[role] || []).filter(function(x){ return x.k === k; })[0]; return p ? p.d : undefined; }
   function trackBase(){ return location.origin + location.pathname.replace(/[^\/]*$/, ''); }
   function trackLink(t){ return t && t.token ? trackBase() + 'suivi.html#t=' + t.token : ''; }
 
@@ -1875,7 +1921,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     var st = j.status || 'planifie', t = X.tracks[j.id];
     if (t === undefined) fetchTrack(j.id);
     if (st === 'annule' || st === 'noshow' || st === 'termine') return '';
-    var c = A().cl(j), who = first(c.firstName || c.name) || 'le client', phone = c.phone || '', mine = mineJob(j), busy = X.busy[j.id];
+    var c = A().cl(j), who = first(c.firstName || c.name) || 'le client', phone = c.phone || '', mine = mineView(j), busy = X.busy[j.id];
     var h = '<section class="sect er" aria-labelledby="er-h"><h3 id="er-h">' + (st === 'route' ? 'En route vers ' + esc(who) : st === 'place' ? 'Sur place' : 'Départ vers le client') + '</h3>';
     if (st === 'planifie'){
       if (busy) h += '<p class="er-line">Envoi du texto…</p>';
@@ -1913,18 +1959,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   /* ================= haut de l'agenda : compte, journée, trajet en cours ================= */
   function agendaTop(){
-    if (!me) return '';
+    var m = eff(); if (!m) return '';
     /* on a big screen the side menu shows who is signed in; in a small window this line does */
-    return (onPhone() ? '' : '<div class="acct"><span>Connecté : <b>' + esc(me.name) + '</b> · ' + esc(ROLE[me.role]) + '</span><button type="button" class="linkbtn" data-act="acct-out">Se déconnecter</button></div>') + shiftCard();
+    return (onPhone() ? '' : '<div class="acct"><span>Connecté : <b>' + esc(m.name) + '</b> · ' + esc(ROLE[m.role]) + '</span><button type="button" class="linkbtn" data-act="acct-out">Se déconnecter</button></div>') + shiftCard();
   }
   /* the side menu of a computer ends with who is signed in */
-  function navFoot(){ return me ? '<div class="navfoot"><span><b>' + esc(me.name) + '</b> · ' + esc(ROLE[me.role]) + '</span><button type="button" class="linkbtn" data-act="acct-out">Se déconnecter</button></div>' : ''; }
+  function navFoot(){ var m = eff(); return m ? '<div class="navfoot"><span><b>' + esc(m.name) + '</b> · ' + esc(ROLE[m.role]) + '</span><button type="button" class="linkbtn" data-act="acct-out">Se déconnecter</button></div>' : ''; }
   /* « Commencer ma journée » only where a position can be sent: a phone or a tablet (not a desk computer) */
   function canTrack(){ try { return onPhone() || !!(window.matchMedia && matchMedia('(pointer: coarse)').matches); } catch(e){ return onPhone(); } }
   function shiftCard(){
     var h = '';
-    if (worksShifts() && canTrack()){
-      if (!G.on){
+    if (shiftsView() && canTrack()){
+      if (previewing()){
+        h += '<section class="sect shift" aria-labelledby="sh-h"><h3 id="sh-h">Début de journée</h3><p class="small">Touche ce bouton en partant le matin. Le bureau voit où tu es, et le client voit ton trajet quand tu pars chez lui.</p>' +
+          '<button type="button" class="btn primary block" data-act="sh-start">Commencer ma journée</button></section>';
+      } else if (!G.on){
         var known = lsGet('gm.team.gpsok') === '1';
         h += '<section class="sect shift" aria-labelledby="sh-h"><h3 id="sh-h">Début de journée' + (A().help ? A().help('position', 'ta position') : '') + '</h3>' +
           (known ? '<p class="small">Touche ce bouton en partant le matin. Le bureau voit où tu es jusqu\'à « Fin de journée ».</p>'
@@ -1943,7 +1992,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return h;
   }
   function settingsTop(){
-    if (!me || me.role !== 'owner' || onPhone()) return '';
+    var m = eff(); if (!m || m.role !== 'owner' || onPhone()) return '';
     return '<section class="sect"><h3>Équipe et accès</h3><p class="muted small">Les comptes de l\'équipe, les mots de passe, les textos aux clients et le paiement par carte.</p><a class="btn block" href="#equipe">Gérer l\'équipe et les accès</a></section>';
   }
 
@@ -2040,7 +2089,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     body += '<p class="legend small"><span><i class="gm-pin p-route mini"></i>En route</span><span><i class="gm-pin p-shift mini"></i>En journée</span><span><i class="gm-pin p-stale mini"></i>Signal perdu</span><span><i class="gm-pin p-job mini"></i>Job d\'aujourd\'hui</span></p>';
     var list = crew();
     body += '<section class="sect"><div class="sect-head"><h3>Mécanos</h3><span class="muted small">' + (X.liveAt ? 'mis à jour ' + ago(X.liveAt) : 'chargement…') + '</span></div>';
-    if (!list.length) body += '<p class="muted">Aucun mécano n\'a encore de compte. ' + (me.role === 'owner' ? '<a href="#equipe">Ajoute-les dans Équipe et accès</a>.' : 'Le propriétaire peut les ajouter.') + '</p>';
+    if (!list.length) body += '<p class="muted">Aucun mécano n\'a encore de compte. ' + (eff().role === 'owner' ? '<a href="#equipe">Ajoute-les dans Équipe et accès</a>.' : 'Le propriétaire peut les ajouter.') + '</p>';
     list.forEach(function(c){
       var l = c.l, st = mechState(l), t = X.active.filter(function(x){ return x.user_id === c.m.user_id; })[0], tj = t && a.findJob(t.job_id);
       var jobs = todaysJobs().filter(function(j){ return c.m.mechanic && norm(j.mechanic) === norm(c.m.mechanic); }), next = jobs.filter(function(j){ return j.status !== 'termine'; })[0];
@@ -2058,11 +2107,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   /* dashboard: who is working and who is on the way */
   function dashExtra(){
-    if (!isStaff()) return '';
+    if (!staffView()) return '';
     if (!X.liveAt || Date.now() - X.liveAt > 30000) loadLive();
     var c = crew(), on = c.filter(function(x){ return mechState(x.l) !== 'off'; });
     var h = '<section class="sect" aria-labelledby="d-road"><div class="sect-head"><h3 id="d-road">Sur la route</h3><button type="button" class="btn sm" data-act="tab" data-t="carte">Voir la carte</button></div>';
-    if (!c.length) return h + '<p class="muted">Aucun mécano n\'a encore de compte.' + (me.role === 'owner' ? ' <a href="#equipe">Ajouter l\'équipe</a>' : '') + '</p></section>';
+    if (!c.length) return h + '<p class="muted">Aucun mécano n\'a encore de compte.' + (eff().role === 'owner' ? ' <a href="#equipe">Ajouter l\'équipe</a>' : '') + '</p></section>';
     if (!on.length) h += '<p class="muted small">Personne n\'a commencé sa journée.</p>';
     h += '<div class="qrows">' + c.map(function(x){
       var st = mechState(x.l), t = X.active.filter(function(a){ return a.user_id === x.m.user_id; })[0];
@@ -2087,7 +2136,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function viewEquipe(){
     var a = A();
-    if (!me || me.role !== 'owner') return {top:a.topBack('Équipe et accès', 'eq-back'), body:'<div class="banner"><p>Seul le propriétaire gère les accès.</p></div>'};
+    if (!eff() || eff().role !== 'owner') return {top:a.topBack('Équipe et accès', 'eq-back'), body:'<div class="banner"><p>Seul le propriétaire gère les accès.</p></div>'};
     if (!X.eq.list && !X.eq.loading && !X.eq.err) eqLoad();
     var top = a.topBack('Équipe et accès', 'eq-back', onPhone() ? 'Plus' : 'Réglages');
     var b = '';
@@ -2108,6 +2157,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             '<a class="btn sm" href="' + esc('sms:?&body=' + encodeURIComponent((ms.body || iv.link))) + '">Envoyer par texto</a><button type="button" class="btn sm" data-act="eq-copylink">Copier le lien</button></div>') +
         '<p class="muted small">Le lien marche une seule fois, pendant 7 jours.</p><button type="button" class="linkbtn" data-act="eq-hideinv">Fermer</button></section>';
     }
+    b += viewAsCard() + rolesCard();
     b += '<section class="sect"><h3>Personnes</h3>';
     if (!X.eq.list) b += '<p class="muted">Chargement…</p>';
     else X.eq.list.forEach(function(m){
@@ -2122,6 +2172,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         b += '<div class="banner warn"><p>Supprimer le compte de ' + esc(m.name) + ' ? Ses jobs restent au carnet.</p></div><div class="er-acts"><button type="button" class="btn sm" data-act="eq-cancel">Garder</button><button type="button" class="btn sm danger solid" data-act="eq-remove" data-v="' + esc(m.user_id) + '">Supprimer</button></div>';
       } else {
         b += '<div class="er-acts"><button type="button" class="btn sm" data-act="eq-edit" data-v="' + esc(m.user_id) + '">Modifier</button>' +
+          (self || !m.active || m.role === 'owner' ? '' : '<button type="button" class="btn sm" data-act="pv-person" data-v="' + esc(m.user_id) + '">👁 Voir comme ' + esc(first(m.name)) + '</button>') +
           (self ? '' : (!m.last_sign_in_at && m.active ? '<button type="button" class="btn sm" data-act="eq-reinvite" data-v="' + esc(m.user_id) + '">' + (m.invite ? 'Renvoyer l\'invitation' : 'Envoyer une invitation') + '</button>' : '') + '<button type="button" class="btn sm" data-act="eq-pw" data-v="' + esc(m.user_id) + '">Nouveau mot de passe</button>') + '</div>' +
           (self ? '' : (m.active ? '<details class="small eq-more"><summary>Bloquer ou supprimer l\'accès</summary><div class="er-acts">' : '<div class="er-acts">') + '<button type="button" class="btn sm" data-act="eq-active" data-v="' + esc(m.user_id) + '">' + (m.active ? 'Bloquer l\'accès (garder le compte)' : 'Redonner l\'accès') + '</button><button type="button" class="btn sm danger" data-act="eq-confirm" data-v="' + esc(m.user_id) + '">Supprimer le compte</button></div>' + (m.active ? '</details>' : ''));
       }
@@ -2132,7 +2183,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       '<div class="field"><label for="nw-name">Nom</label><input id="nw-name" autocomplete="off"></div>' +
       '<div class="field"><label for="nw-email">Courriel</label><input id="nw-email" type="email" inputmode="email" autocapitalize="off" spellcheck="false" autocomplete="off"></div>' +
       '<div class="grid2"><div class="field"><label for="nw-role">Rôle' + (A().help ? A().help('roles', 'les rôles') : '') + '</label>' + roleSelect('nw-role', 'mecano') + '</div><div class="field"><label for="nw-mech">Nom dans l\'agenda</label>' + mechSelect('nw-mech', '') + '</div></div>' +
-      '<ul class="roles small"><li><b>Mécano</b> : seulement ses jobs, le bouton « En route », la facture sur place. Sa position est partagée pendant sa journée.</li><li><b>Bureau</b> : agenda, clients, factures et carte des mécanos. Pas les réglages.</li><li><b>Trésorier</b> : son propre écran, la trésorerie (dépenses avec photo des reçus, rapport, taxes à remettre, Excel). Il voit les clients et les factures, sans rien y changer.</li><li><b>Propriétaire</b> : tout, y compris les accès.</li></ul>' +
+      '<ul class="roles small"><li><b>Mécano</b> : seulement ses jobs, le bouton « En route », la facture sur place. Sa position est partagée pendant sa journée.</li><li><b>Bureau</b> : agenda, clients, factures et carte des mécanos. Pas les réglages.</li><li><b>Trésorier</b> : son propre écran, la trésorerie (dépenses avec photo des reçus, rapport, taxes à remettre, Excel).</li><li><b>Propriétaire</b> : tout, y compris les accès.</li></ul><p class="small muted">Ce que le mécano et le trésorier voient de plus : plus haut, « Ce que chaque rôle peut faire ».</p>' +
       '<p class="formerr" id="nw-err" role="alert" hidden></p><button type="button" class="btn primary block" data-act="eq-invite">Envoyer l\'invitation</button>' +
       '<details class="small eq-more"><summary>Autre façon : créer un mot de passe temporaire</summary><p class="small">Pour quelqu\'un qui ne lit pas ses courriels : tu lui donnes toi-même un mot de passe.</p><button type="button" class="btn block" data-act="eq-add">Créer le compte avec un mot de passe temporaire</button></details></section>';
     var s = X.eq.secrets || {};
@@ -2153,16 +2204,100 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       '<p class="small">' + (s.tomtom ? '<span class="badge ok">TomTom branché</span> ' + esc(s.tomtom) : '<span class="badge">Cartes gratuites</span>') + '</p>' +
       '<div class="field"><label for="tt-key">Clé TomTom</label><input id="tt-key" type="password" autocomplete="off" spellcheck="false" placeholder="' + (s.tomtom ? 'Laisse vide pour garder la clé actuelle' : 'Clé de developer.tomtom.com') + '"></div>' +
       '<div class="er-acts"><button type="button" class="btn sm primary" data-act="tt-save">Enregistrer</button>' + (s.tomtom ? '<button type="button" class="btn sm danger" data-act="tt-clear">Retirer</button>' : '') + '</div></div></details>';
-    b += '<section class="sect"><h3>Ton compte</h3><p class="small">' + esc(me.name) + ' · ' + ROLE[me.role] + '</p><button type="button" class="btn" data-act="acct-out">Se déconnecter</button></section>';
+    b += '<section class="sect"><h3>Ton compte</h3><p class="small">' + esc(eff().name) + ' · ' + ROLE[eff().role] + '</p><button type="button" class="btn" data-act="acct-out">Se déconnecter</button></section>';
     return {top:top, body:b};
   }
+  /* « Voir l'app comme… » : one button per mechanic in the agenda, the treasurer, the office */
+  function viewAsCard(){
+    var list = X.eq.list || [], ms = A().mechanics(), out = [];
+    ms.forEach(function(n){ if (me && me.mechanic && norm(n) === norm(me.mechanic)) return; out.push({role:'mecano', mechanic:n, name:n}); });
+    ['tresorier', 'bureau'].forEach(function(r){
+      var m = list.filter(function(x){ return x.role === r && x.active; })[0];
+      out.push({role:r, name:m ? m.name : ROLE[r]});
+    });
+    return '<section class="sect" id="eq-viewas"><h3>Voir l\'app comme…' + (A().help ? A().help('voircomme', 'voir comme') : '') + '</h3><p class="small">Tu vois exactement son écran. Tu peux corriger des choses : c\'est enregistré à ton nom. Un bandeau en haut te ramène à ton compte.</p>' +
+      '<div class="pv-btns">' + out.map(function(o){ return '<button type="button" class="btn sm" data-act="pv-start" data-role="' + o.role + '" data-mech="' + esc(o.mechanic || '') + '" data-name="' + esc(o.name) + '">👁 ' + esc(o.name) + (o.role === 'mecano' ? ' <span class="muted">(mécano)</span>' : o.name !== ROLE[o.role] ? ' <span class="muted">(' + ROLE[o.role].toLowerCase() + ')</span>' : '') + '</button>'; }).join('') + '</div></section>';
+  }
+  /* « Ce que chaque rôle peut faire » : boxes saved right away in config/roles */
+  function rolesCard(){
+    var h = '<section class="sect" id="eq-roles"><h3>Ce que chaque rôle peut faire' + (A().help ? A().help('droits', 'les droits') : '') + '</h3><p class="small muted">Coche ou décoche : c\'est enregistré tout de suite, et ça change sur leur téléphone en quelques secondes.</p>';
+    ['mecano', 'tresorier'].forEach(function(r){
+      h += '<fieldset class="rp"><legend>' + (r === 'mecano' ? 'Le mécano' : 'Le trésorier') + '</legend>' +
+        (r === 'mecano' ? '<p class="small muted">Toujours : ses jobs du jour, le bouton « En route », les photos et la facture sur place.</p>' : '<p class="small muted">Toujours : la trésorerie (dépenses, reçus, rapport, taxes).</p>') +
+        PERMS[r].map(function(p){ var id = 'rp-' + r + '-' + p.k;
+          return '<label class="check rp-row" for="' + id + '"><input type="checkbox" id="' + id + '" data-act="rp" data-role="' + r + '" data-k="' + p.k + '"' + (perm(r, p.k) ? ' checked' : '') + (X.rolesLoaded ? '' : ' disabled') + '><span><b>' + esc(p.t) + '</b>' + (p.s ? '<span class="small muted">' + esc(p.s) + '</span>' : '') + '</span></label>'; }).join('') +
+        '<button type="button" class="linkbtn" data-act="pv-role" data-role="' + r + '">👁 Voir ce qu\'il voit</button></fieldset>';
+    });
+    return h + '</section>';
+  }
+  function saveRole(role, k, on, box){
+    if (!X.rolesLoaded){ if (box) box.checked = !on; return; }
+    if (box) box.disabled = true;
+    /* start from what is saved now (another screen may have changed another box) */
+    var ref = T.db.doc('config/roles'), next;
+    ref.get().then(function(sn){
+      next = JSON.parse(JSON.stringify(sn.exists ? (sn.data() || {}) : {}));
+      next[role] = Object.assign({}, next[role] || {}); next[role][k] = !!on;
+      return ref.set(next);
+    }).then(function(){ X.roles = next; toast('Enregistré : ' + (on ? 'oui' : 'non') + ' — ' + PERMS[role].filter(function(p){ return p.k === k; })[0].t.toLowerCase()); render(); },
+      function(e){ if (box){ box.checked = !on; box.disabled = false; } toast('Pas enregistré : ' + (e && e.message || 'erreur')); render(); });
+  }
+  /* start / stop the preview */
+  function startView(v){
+    var a = A(); if (!a || !me || me.role !== 'owner') return;
+    if (!VA) { try { X.uiBefore = sessionStorage.getItem('gm.ui'); } catch(e){ X.uiBefore = null; } try { sessionStorage.setItem('gm.ui.before', X.uiBefore || ''); } catch(e){} }
+    VA = {role:v.role, mechanic:v.mechanic || null, name:v.name || ROLE[v.role]};
+    try { sessionStorage.setItem('gm.viewas', JSON.stringify(VA)); } catch(e){}
+    /* a mechanic works on his phone: on a computer, show his phone screen */
+    if (v.role === 'mecano' && !a.phoneDevice()) a.setUi('phone');
+    applyView(); goHome();
+  }
+  function stopView(){
+    var a = A(); VA = null;
+    try { sessionStorage.removeItem('gm.viewas'); var u = sessionStorage.getItem('gm.ui.before'); sessionStorage.removeItem('gm.ui.before'); a.setUi(u || null); } catch(e){ a.setUi(null); }
+    applyView();
+    location.hash = 'equipe'; if (a.S.tab === 'equipe'){ a.S.screen = null; render(); }
+    toast('De retour sur ton compte');
+  }
+  function applyView(){
+    if (T.setView) T.setView(previewing() ? eff() : null);
+    document.body.classList.toggle('pv-on', previewing());
+    document.body.classList.toggle('pv-narrow', previewing() && VA.role === 'mecano' && !A().phoneDevice());
+    pvBar();
+  }
+  function goHome(){ var a = A(), t = a.defTab(); a.S.screen = null; a.S.inv = null; a.S.backTo = null; if (location.hash.slice(1) !== t) location.hash = t; else { a.S.tab = t; render(); } window.scrollTo(0, 0); }
+  function pvBar(){
+    var el = document.getElementById('pv-bar');
+    if (!previewing()){ if (el) el.remove(); return; }
+    if (!el){ el = document.createElement('div'); el.id = 'pv-bar'; el.setAttribute('role', 'status'); document.body.insertBefore(el, document.body.firstChild); }
+    var v = eff();
+    el.innerHTML = '<span class="pv-t"><span aria-hidden="true">👁 </span><span class="pv-long">Tu vois l\'app comme </span><span class="pv-short">Comme </span><b>' + esc(v.name) + '</b> (' + esc(ROLE[v.role].toLowerCase()) + ')</span>' +
+      '<button type="button" class="btn sm" data-act="pv-exit">Revenir à mon compte</button>';
+    pvFit();
+  }
+  /* the page starts below the bar, whatever its height */
+  function pvFit(){ var el = document.getElementById('pv-bar'); if (el) document.documentElement.style.setProperty('--pvh', el.offsetHeight + 'px'); }
+  window.addEventListener('resize', pvFit);
   function val(id){ var e = document.getElementById(id); return e ? e.value.trim() : ''; }
   function eqErr(m){ var e = document.getElementById('nw-err'); if (e){ e.textContent = m; e.hidden = !m; if (m) e.scrollIntoView({block:'nearest'}); } else if (m) toast(m); }
   function keysDoc(patch){ return T.db.doc('config/keys').get().then(function(s){ var d = Object.assign({}, s.exists ? s.data() : {}, patch); return T.db.doc('config/keys').set(d); }); }
 
   function onAction(a, b){
     var id = b.dataset.id, v = b.dataset.v, api = A();
+    /* in a preview, the buttons that act as that person (his workday, his position) are only shown */
+    if (previewing() && (a === 'sh-start' || a === 'sh-end' || a === 'sh-wake')){ toast('Aperçu : ce bouton marche seulement sur le téléphone de ' + first(eff().name) + '.'); return; }
+    if (previewing() && a === 'acct-out'){ stopView(); return; }
     switch (a){
+      case 'pv-start': startView({role:b.dataset.role, mechanic:b.dataset.mech || null, name:b.dataset.name}); break;
+      case 'pv-role': {
+        var r = b.dataset.role, list = X.eq.list || [], mm = list.filter(function(x){ return x.role === r && x.active; })[0];
+        if (r === 'mecano'){ var mn = mm && mm.mechanic ? mm.mechanic : api.mechanics()[0]; if (!mn){ toast('Ajoute d\'abord un mécano dans l\'agenda (Réglages).'); break; } startView({role:'mecano', mechanic:mn, name:mm && mm.mechanic === mn ? mm.name : mn}); }
+        else startView({role:r, name:mm ? mm.name : ROLE[r]});
+        break;
+      }
+      case 'pv-person': { var pm = (X.eq.list || []).filter(function(x){ return x.user_id === v; })[0]; if (pm) startView({role:pm.role, mechanic:pm.mechanic || null, name:pm.name}); break; }
+      case 'pv-exit': stopView(); break;
+      case 'rp': saveRole(b.dataset.role, b.dataset.k, b.checked, b); break;
       case 'app-reload': location.reload(); break;
       case 'acct-out': {
         var pend = T.pending ? T.pending() : 0;
@@ -2312,7 +2447,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     '.credl dd{margin:0;overflow-wrap:anywhere;font-weight:600}.credl dd.pw{font:600 22px/1.2 var(--f-mono);letter-spacing:.04em;white-space:nowrap;overflow-wrap:normal}' +
     '.created{border:2px solid var(--ok)}details summary{cursor:pointer;font-weight:600;min-height:36px;display:flex;align-items:center}details ol{margin:6px 0 0;padding-left:18px;display:grid;gap:4px}' +
     '.badge{display:inline-block;border-radius:6px;padding:1px 8px;font-weight:600;background:var(--idle-bg);color:var(--idle)}.badge.ok{background:var(--ok-bg);color:var(--ok)}.badge.warn{background:var(--warn-bg);color:var(--warn)}' +
-    '.leaflet-container{font:inherit}.leaflet-control-attribution{font-size:11px}';
+    '.leaflet-container{font:inherit}.leaflet-control-attribution{font-size:11px}' +
+    '.pv-btns{display:flex;flex-wrap:wrap;gap:8px}.rp{border:1px solid var(--line);border-radius:14px;padding:10px 14px 6px;margin:0;display:grid;gap:2px}.rp legend{font-weight:700;padding:0 6px}' +
+    '.rp-row{align-items:flex-start;padding:6px 0}.rp-row input{margin-top:2px;flex:none}.rp-row>span{display:grid;gap:1px}' +
+    '#pv-bar{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;justify-content:center;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:#1E1915;color:#F7F1EA;font-size:14.5px;box-shadow:0 4px 14px rgba(0,0,0,.25)}' +
+    '#pv-bar .btn{min-height:34px;padding:0 12px;background:#F7F1EA;color:#1E1915;border-color:#F7F1EA}#pv-bar b{color:#FFB37A}.pv-short{display:none}' +
+    '@media (max-width:560px){#pv-bar .pv-long{display:none}#pv-bar .pv-short{display:inline}#pv-bar{font-size:14px}}' +
+    'body.pv-on{padding-top:var(--pvh,48px)}body.pv-on .top{top:calc(var(--pvh,48px) + 6px)}body.pv-on.ui-pc .tabbar{top:calc(var(--pvh,48px) + 12px)}' +
+    'body.pv-narrow .top{max-width:450px;margin-left:auto;margin-right:auto}body.pv-narrow .wrap{max-width:430px}body.pv-narrow .tabbar{width:min(430px,calc(100% - 20px))}body.pv-narrow .sheet{max-width:430px}' +
+    'body.pv-narrow::after{box-shadow:inset calc((100vw - 470px) / 2) 0 0 rgba(30,25,21,.10),inset calc((470px - 100vw) / 2) 0 0 rgba(30,25,21,.10)}';
   document.head.appendChild(css);
 
   var MAP_ICON = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>';
@@ -2355,10 +2498,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   window.__garageExt = {
     tabs:[{key:'carte', label:'Carte', icon:MAP_ICON, view:viewMap}, {key:'equipe', label:'Équipe', hidden:true, view:viewEquipe}],
     can:function(w){
-      if (!me) return undefined;
-      var r = me.role;
-      /* the treasurer: his own screen; sees clients and invoices, changes nothing else */
-      if (r === 'tresorier') return w === 'tab:tresor' || w === 'expenses' || w === 'money' || w === 'tab:clients' || w === 'tab:factures' || w === 'tab:plus' || w === 'tab:stock' || w === 'stock';
+      var m = eff(); if (!m) return undefined;
+      var r = m.role;
+      /* the treasurer: his own screen; the rest only as the owner ticked it (Équipe et accès) */
+      if (r === 'tresorier'){
+        if (w === 'tab:tresor' || w === 'expenses' || w === 'money' || w === 'tab:plus') return true;
+        if (w === 'tab:clients') return perm(r, 'clients');
+        if (w === 'tab:factures') return perm(r, 'factures');
+        if (w === 'tab:stock' || w === 'stock') return perm(r, 'stock');
+        if (w === 'tab:agenda' || w === 'tab:jour') return perm(r, 'agenda');
+        if (w === 'invoice') return perm(r, 'editinv');
+        return false;
+      }
+      if (r === 'mecano'){
+        if (w === 'money') return perm(r, 'money');
+        if (w === 'book') return perm(r, 'book');
+        if (w === 'tab:clients') return perm(r, 'clients');
+        if (w === 'tab:factures') return perm(r, 'factures');
+        if (w === 'tab:stock' || w === 'stock') return perm(r, 'stock');
+      }
       if (w === 'tab:tresor' || w === 'expenses') return r === 'owner';
       if (w === 'tab:reglages') return r === 'owner';
       if (w === 'tab:carte') return r !== 'mecano';
@@ -2370,15 +2528,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     /* the client's page: invoice (and « Payer »), work to approve; texted through GoHighLevel */
     clientLink:function(j, what, extraId){ return invoke('client', {action:'link', jobId:j.id, send:what || null, extraId:extraId || null, base:trackBase()}); },
     payOn:function(){ return !!X.payOnline; },
-    myMechanic:function(){ return me && me.role === 'mecano' ? me.mechanic : null; },
-    homeTab:function(){ return me && me.role === 'tresorier' ? 'tresor' : null; },
-    greetName:function(){ return me ? first(me.name) : ''; },
-    tellsClient:true, isMine:mineJob,
+    myMechanic:function(){ var m = eff(); return m && m.role === 'mecano' ? m.mechanic : null; },
+    homeTab:function(){ var m = eff(); return m && m.role === 'tresorier' ? 'tresor' : null; },
+    greetName:function(){ var m = eff(); return m ? first(m.name) : ''; },
+    tellsClient:true, isMine:mineView, previewing:previewing,
     decodeVin:function(vin){ return invoke('vehicle', {vin:vin}).then(function(d){ return (d && d.r) || {}; }); },
     phoneTop:function(){ return me ? shiftCard() : ''; },
     navFoot:navFoot,
     guideItems:function(){
-      if (!me || me.role !== 'owner') return [];
+      if (!eff() || eff().role !== 'owner') return [];
       if (!X.eq.list && !X.eq.loading && !X.eq.err) eqLoad();
       var s = X.eq.secrets || {}, n = (X.eq.list || []).filter(function(m){ return m.active; }).length;
       return [
@@ -2389,11 +2547,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     },
     plusItems:function(){
       var out = [];
-      if (isStaff()) out.push({href:'#carte', label:'Carte des mécanos', sub:'Où est chaque mécano, qui est en route'});
-      if (me && me.role === 'owner') out.push({href:'#equipe', label:'Équipe et accès', sub:'Comptes, mots de passe, textos aux clients'});
+      if (staffView()) out.push({href:'#carte', label:'Carte des mécanos', sub:'Où est chaque mécano, qui est en route'});
+      if (eff() && eff().role === 'owner') out.push({href:'#equipe', label:'Équipe et accès', sub:'Comptes, voir comme…, mots de passe, textos'});
       return out;
     },
-    accountRow:function(){ return me ? '<section class="sect"><p class="small">Connecté : <b>' + esc(me.name) + '</b> · ' + esc(ROLE[me.role]) + '</p><button type="button" class="btn block" data-act="acct-out">Se déconnecter</button></section>' : ''; },
+    accountRow:function(){ var m = eff(); return m ? '<section class="sect"><p class="small">Connecté : <b>' + esc(m.name) + '</b> · ' + esc(ROLE[m.role]) + '</p><button type="button" class="btn block" data-act="acct-out">Se déconnecter</button></section>' : ''; },
     dashTop:agendaTop, dashExtra:dashExtra,
     agendaTop:agendaTop, settingsTop:settingsTop, jobExtra:jobExtra, onStatus:onStatus, onAction:onAction,
     nextInvoiceNo:function(start){ return T.sb.rpc('next_invoice_number', {p_start:start}).then(function(r){ if (r.error || typeof r.data !== 'number') throw r.error || new Error('no number'); return r.data; }); }
@@ -2402,6 +2560,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   /* once signed in: role, workday already running, address keys of the garage */
   T.onReady(function(){
     me = T.member;
+    if (VA && me.role !== 'owner'){ VA = null; try { sessionStorage.removeItem('gm.viewas'); } catch(e){} }
+    T.db.doc('config/roles').onSnapshot(function(s){ X.roles = s.exists ? (s.data() || {}) : {}; X.rolesLoaded = true; render(); }, function(){ X.rolesLoaded = true; render(); });
+    if (previewing()) setTimeout(applyView, 0);
     T.db.doc('config/keys').get().then(function(s){ X.payOnline = !!(s.exists && s.data().payOnline); }, function(){});
     if (worksShifts()){
       T.sb.from('mech_live').select('*').eq('user_id', me.user_id).maybeSingle().then(function(r){
@@ -2810,6 +2971,8 @@ function canAdmin(){ return !!S.db && (S.isAdmin || S.userUnknown); }
 function ext(){ return window.__garageExt || null; }
 function allow(what){ var e = ext(); return !(e && typeof e.can === 'function' && e.can(what) === false); }
 function canBook(){ return canWrite() && allow('book'); }
+/* invoices: whoever can change the job, or (team version) a treasurer the owner allowed to « Modifier les factures » */
+function canInvoice(){ var e = ext(); return canWrite() || !!(S.db && S.canWrite !== false && e && typeof e.can === 'function' && e.can('invoice') === true); }
 /* the treasurer's screen (expenses, report, taxes): the owner, and the treasurer in the team version */
 function canTresor(){ var e = ext(); if (!S.db) return false; return e && typeof e.can === 'function' ? e.can('tab:tresor') === true : canAdmin(); }
 function canExpense(){ var e = ext(); if (!S.db || S.canWrite === false) return false; return e && typeof e.can === 'function' ? e.can('expenses') === true : canAdmin(); }
@@ -3020,7 +3183,9 @@ var HELP = {
   textos:'Les textos aux clients (« je pars », facture, travaux à accepter) partent de ton compte GoHighLevel. Colle ta clé une seule fois ici.',
   carte:'Le paiement par carte passe par Stripe. Le client reçoit un lien « Payer » par texto ; l\'argent va dans ton compte Stripe et la facture se marque payée toute seule.',
   roles:'Mécano : seulement ses jobs. Bureau : agenda, clients, factures. Trésorier : dépenses et rapports. Propriétaire : tout.',
-  absent:'« Client absent » : le client n\'était pas là au rendez-vous. Rien n\'est facturé, et c\'est noté dans sa fiche pour la prochaine fois.'
+  absent:'« Client absent » : le client n\'était pas là au rendez-vous. Rien n\'est facturé, et c\'est noté dans sa fiche pour la prochaine fois.',
+  voircomme:'Pour vérifier ce qu\'un mécano ou le trésorier voit sur son téléphone. Ce n\'est pas son compte : tes changements sont enregistrés à ton nom, et sa journée de travail (sa position) ne démarre pas.',
+  droits:'Ces cases changent ce que le mécano et le trésorier voient et peuvent faire. Le propriétaire peut toujours tout faire. Le serveur vérifie aussi « Modifier les factures » : la facture seulement, rien d\'autre dans la job.'
 };
 /* « Touche » on a phone or tablet, « Clique » with a mouse */
 function tapw(){ try { return phone() || (window.matchMedia && matchMedia('(pointer: coarse)').matches) ? 'touche' : 'clique'; } catch(e){ return 'touche'; } }
@@ -3465,7 +3630,7 @@ function ageDays(iso){ return iso ? Math.max(0, Math.round((parseISO(today()) - 
 function viewClient(){
   var c = findClient(S.clientId);
   if (!c) return {top:topBack('Fiche client'), body:'<div class="empty-card"><p>Cette fiche n\'existe plus.</p><button type="button" class="btn" data-act="back">Retour aux clients</button></div>'};
-  var js = clientJobs(c.id), p = ptOf(c.postal || findPostal(c.address)), due = clientDue(c.id), w = canWrite(), tab = S.clientTab;
+  var js = clientJobs(c.id), p = ptOf(c.postal || findPostal(c.address)), due = clientDue(c.id), w = canWrite(), wi = canInvoice(), tab = S.clientTab;
   var invs = js.filter(function(j){ return j.invoice; }), unpaid = js.filter(function(j){ return invState(j) === 'unpaid'; }), t0 = today();
   var upcoming = js.filter(function(j){ return j.date >= t0 && !isOff(j) && j.status !== 'termine'; }).sort(function(a, b){ return (a.date + a.time).localeCompare(b.date + b.time); });
   var past = js.filter(function(j){ return upcoming.indexOf(j) < 0; }).sort(function(a, b){ return (b.date + b.time).localeCompare(a.date + a.time); });
@@ -3490,7 +3655,7 @@ function viewClient(){
         var v = j.invoice, age = ageDays(v.issuedAt);
         return '<div class="rec"><div class="rec-head"><button type="button" class="linkbtn" data-act="cl-inv" data-id="' + esc(j.id) + '">Facture ' + esc(v.number) + '</button><b class="num">' + esc(money(v.total)) + '</b></div>' +
           '<span class="small ' + (age > 30 ? 'tight' : 'muted') + '">Émise le ' + esc(dateMed(v.issuedAt)) + ' · ' + (age === 0 ? "aujourd'hui" : 'il y a ' + age + ' jour' + (age > 1 ? 's' : '')) + '</span>' +
-          (w ? '<div class="payrow"><select id="pay-' + esc(j.id) + '" aria-label="Mode de paiement">' + opt('', 'Payé par…', true) + PAY.map(function(m){ return opt(m, m, false); }).join('') + '</select><button type="button" class="btn steel" data-act="cl-pay" data-id="' + esc(j.id) + '">Marquer payée</button></div>' : '') + '</div>';
+          (wi ? '<div class="payrow"><select id="pay-' + esc(j.id) + '" aria-label="Mode de paiement">' + opt('', 'Payé par…', true) + PAY.map(function(m){ return opt(m, m, false); }).join('') + '</select><button type="button" class="btn steel" data-act="cl-pay" data-id="' + esc(j.id) + '">Marquer payée</button></div>' : '') + '</div>';
       }).join('') +
       (unpaid.length ? '<button type="button" class="btn block" data-act="cl-remind">Copier un rappel de paiement (texto ou courriel)</button><div id="copybox"></div>' : '') + '</section>';
   } else {
@@ -4245,7 +4410,7 @@ function viewDash(){
 function viewJob(){
   var j = findJob(S.jobId);
   if (!j) return {top:topBack('Bon de travail'), body:'<div class="empty-card"><p>Cette job n\'existe plus. Quelqu\'un l\'a peut-être supprimée.</p><button type="button" class="btn" data-act="back">Retour à l\'agenda</button></div>'};
-  var c = cl(j), v = j.vehicle || {}, st = j.status || 'planifie', w = canWrite(), is = invState(j);
+  var c = cl(j), v = j.vehicle || {}, st = j.status || 'planifie', w = canWrite(), wi = canInvoice(), is = invState(j);
   var body = banners();
   body += '<section class="sect"><div class="sect-head"><div><div class="eyebrow">' + esc(cap(dayLong(j.date))) + '</div><div class="when">' + esc(hm(j.time)) + (j.durationMin ? ' · ' + esc(dur(j.durationMin)) : '') + '</div></div><span>' + pill(st, ST[st]) + help('etapes', 'les étapes') + '</span></div>';
   if (j.mechanic || truckMode()) body += '<p class="muted">' + (truckMode() ? 'Camion : <strong style="color:var(--ink)">' + esc(colName(jobCol(j))) + '</strong>' + (j.mechanic ? ' · ' : '') : '') + (j.mechanic ? 'Mécano : <strong style="color:var(--ink)">' + esc(j.mechanic) + '</strong>' : '') + '</p>';
@@ -4255,7 +4420,7 @@ function viewJob(){
   if (isOffSt(st)) body += offBanner(j) + (w ? '<button type="button" class="btn" data-act="status" data-v="planifie">Remettre la job à l\'agenda</button>' : '');
   body += '</section>';
   if (ext() && typeof ext().jobExtra === 'function') body += ext().jobExtra(j) || '';
-  var nx = w ? nextStep(j) : null;
+  var nx = w ? nextStep(j) : (wi && (j.status || 'planifie') === 'termine' ? nextStep(j) : null);
   if (nx) body += nextBtn(nx);
 
   body += '<section class="sect"><h3>Client</h3><dl class="kv">' +
@@ -4283,10 +4448,10 @@ function viewJob(){
 
   body += '<section class="sect"><h3>Facture</h3>';
   if (is === 'none'){
-    body += '<p class="muted">Pas encore facturée.</p>' + (w ? '<button type="button" class="btn block" data-act="invoice" data-id="' + esc(j.id) + '">Faire la facture</button>' : '');
+    body += '<p class="muted">Pas encore facturée.</p>' + (wi ? '<button type="button" class="btn block" data-act="invoice" data-id="' + esc(j.id) + '">Faire la facture</button>' : '');
   } else {
     body += '<div class="invbox"><div><div class="eyebrow">' + (j.invoice.number ? 'Facture ' + esc(j.invoice.number) : 'Facture à finir') + '</div><b>' + esc(money(j.invoice.total)) + '</b></div>' + pill(is, INV_LBL[is]) + '</div>' +
-      '<div class="actions">' + (is === 'draft' ? (w ? '<button type="button" class="btn primary block" data-act="invoice" data-id="' + esc(j.id) + '">Continuer la facture</button>' : '') : '<button type="button" class="btn primary block" data-act="preview" data-id="' + esc(j.id) + '">Voir la facture</button>' + (w ? '<button type="button" class="btn block" data-act="invoice" data-id="' + esc(j.id) + '">Modifier la facture</button>' : '')) + '</div>' + invoiceSendHTML(j);
+      '<div class="actions">' + (is === 'draft' ? (wi ? '<button type="button" class="btn primary block" data-act="invoice" data-id="' + esc(j.id) + '">Continuer la facture</button>' : '') : '<button type="button" class="btn primary block" data-act="preview" data-id="' + esc(j.id) + '">Voir la facture</button>' + (w ? '<button type="button" class="btn block" data-act="invoice" data-id="' + esc(j.id) + '">Modifier la facture</button>' : '')) + '</div>' + invoiceSendHTML(j);
   }
   body += '</section>';
 
@@ -4773,7 +4938,7 @@ function saveInvoice(finalize){
 function viewPreview(){
   var j = findJob(S.jobId);
   if (!j || !j.invoice) return viewJob();
-  var v = j.invoice, b = biz(), c = cl(j), veh = j.vehicle || {}, is = invState(j), w = canWrite(), cf = cfg();
+  var v = j.invoice, b = biz(), c = cl(j), veh = j.vehicle || {}, is = invState(j), w = canWrite(), wi = canInvoice(), cf = cfg();
   var lines = (v.lines || []).map(function(l){
     return '<div class="il"><div class="il-d"><b>' + esc(l.desc) + '</b><span class="muted small">' + esc(LT[l.type] || '') + ' · ' + esc(fmtQty(l.qty)) + (l.type === 'mo' ? ' h' : '') + ' × ' + esc(money(l.price)) + '</span></div><div class="il-a">' + esc(money(lineAmt(l))) + '</div></div>';
   }).join('');
@@ -4792,10 +4957,10 @@ function viewPreview(){
     (j.signature ? '<div class="sigbox paper-sig">' + (photoSrc(j.signature.id) ? '<img src="' + photoSrc(j.signature.id) + '" alt="Signature">' : '') + '<p class="small">Signé par <b>' + esc(j.signature.name || 'le client') + '</b> le ' + esc(whenTxt(j.signature.at)) + '</p></div>' : '') +
     '</article>';
   body += '<div class="actions">';
-  if (is === 'unpaid' && w) body += '<section class="sect"><h3>Le client paie maintenant ?</h3><div class="payrow"><select id="p-method" aria-label="Mode de paiement">' + opt('', 'Payé par…', true) + PAY.map(function(p){ return opt(p, p, false); }).join('') + '</select><button type="button" class="btn steel" data-act="markpaid">Marquer payée</button></div></section>';
+  if (is === 'unpaid' && wi) body += '<section class="sect"><h3>Le client paie maintenant ?</h3><div class="payrow"><select id="p-method" aria-label="Mode de paiement">' + opt('', 'Payé par…', true) + PAY.map(function(p){ return opt(p, p, false); }).join('') + '</select><button type="button" class="btn steel" data-act="markpaid">Marquer payée</button></div></section>';
   if (S.dl) body += '<button type="button" class="btn primary block" data-act="pdf">Télécharger le PDF</button>';
   body += '<button type="button" class="btn block" data-act="copytext">Copier la facture (pour texto ou courriel)</button>';
-  if (w) body += '<button type="button" class="btn ghost block" data-act="invoice" data-id="' + esc(j.id) + '">Modifier la facture</button>';
+  if (wi) body += '<button type="button" class="btn ghost block" data-act="invoice" data-id="' + esc(j.id) + '">Modifier la facture</button>';
   body += '<div id="copybox"></div></div>';
   return {top:topBack(c.name || 'Facture', 'back-prev', v.number ? 'Facture ' + v.number : 'Facture à finir'), body:body};
 }
@@ -5077,7 +5242,7 @@ document.addEventListener('click', function(e){
     case 'cl-book': { var cb = findClient(S.clientId); if (cb) openEdit(null, false, {date:S.day >= today() ? S.day : today()}, true, clientSnap(cb)); break; }
     case 'cl-quick': { var cq2 = findClient(S.clientId); if (cq2){ S.backTo = 'client'; openEdit(null, true, null, true, clientSnap(cq2)); } break; }
     case 'cl-job': S.jobId = id; S.screen = 'job'; S.backTo = 'client'; S.confirmDel = false; render(); window.scrollTo(0, 0); break;
-    case 'cl-inv': { var ij = findJob(id); if (!ij) break; S.jobId = id; S.backTo = 'client'; if (invState(ij) === 'draft' && canWrite()) openInvoice(id); else { S.screen = 'preview'; render(); window.scrollTo(0, 0); } break; }
+    case 'cl-inv': { var ij = findJob(id); if (!ij) break; S.jobId = id; S.backTo = 'client'; if (invState(ij) === 'draft' && canInvoice()) openInvoice(id); else { S.screen = 'preview'; render(); window.scrollTo(0, 0); } break; }
     case 'cl-pay': {
       var pj = findJob(id), pm = $('#pay-' + id) ? $('#pay-' + id).value : '';
       if (!pj) break;
@@ -5208,7 +5373,7 @@ document.addEventListener('click', function(e){
     case 'preview': S.jobId = id || S.jobId; S.screen = 'preview'; render(); window.scrollTo(0, 0); break;
     case 'openinv': {
       var oj = findJob(id); if (!oj) return; S.jobId = id;
-      if (invState(oj) === 'draft' && canWrite()) openInvoice(id); else { S.screen = 'preview'; render(); window.scrollTo(0, 0); }
+      if (invState(oj) === 'draft' && canInvoice()) openInvoice(id); else { S.screen = 'preview'; render(); window.scrollTo(0, 0); }
       break;
     }
     case 'addpromo': { var pp = promos()[+v]; if (pp){ S.inv.lines.push({type:'forfait', desc:promoDesc(pp), qty:'1', price:String(r2(num(pp.price))).replace('.', ',')}); renderLines(); renderTotals(); hideInvErr(); } break; }
@@ -5424,7 +5589,7 @@ function frZone(n){ return String(n || '').replace(/\bMount Royal\b/g, 'Mont-Roy
 function viewJobPhone(){
   var j = findJob(S.jobId);
   if (!j) return viewJob();
-  var c = cl(j), v = j.vehicle || {}, st = j.status || 'planifie', w = canWrite(), is = invState(j), e = ext(), ph = String(c.phone || '').replace(/[^\d+]/g, ''), addr = addrFull(c);
+  var c = cl(j), v = j.vehicle || {}, st = j.status || 'planifie', w = canWrite(), wi = canInvoice(), is = invState(j), e = ext(), ph = String(c.phone || '').replace(/[^\d+]/g, ''), addr = addrFull(c);
   var top = topBack(c.name || 'Client', 'back', cap(dShort(j.date)) + ' · ' + hm(j.time) + (truckMode() ? ' · ' + colName(jobCol(j)) : '') + (j.mechanic ? ' · ' + j.mechanic : ''));
   var sp0 = findSpec(jobVeh(j));
   var b = banners() + '<section class="sect pjob"><p class="pj-what"><b>' + esc(vehLabel(j) || 'Véhicule à préciser') + '</b><span>' + esc(jobServices(j).join(', ') || 'Service à préciser') + (j.durationMin ? ' · ' + esc(dur(j.durationMin)) : '') + '</span>' + (sp0 && sp0.s.oilL ? '<span class="pj-oil">' + esc(oilLine(sp0.s)) + (sp0.exact ? '' : ' (à confirmer)') + '</span>' : '') + '</p>' +
@@ -5434,7 +5599,7 @@ function viewJobPhone(){
     '</div>' +
     (!isOffSt(st) ? '<ol class="steps4" aria-label="Étapes">' + ST_FLOW.map(function(k, i){ var cur = ST_FLOW.indexOf(st); return '<li class="' + (i < cur ? 'past' : i === cur ? 'here' : '') + '"' + (i === cur ? ' aria-current="step"' : '') + '>' + ST[k] + '</li>'; }).join('') + '</ol>' : offBanner(j)) + '</section>';
   if (e && typeof e.jobExtra === 'function') b += e.jobExtra(j) || '';
-  var nx = w ? nextStep(j) : null;
+  var nx = w ? nextStep(j) : (wi && (j.status || 'planifie') === 'termine' ? nextStep(j) : null);
   if (nx) b += nextBtn(nx);
   if (w && isOffSt(st)) b += '<button type="button" class="btn primary block nextbtn" data-act="status" data-v="planifie">Remettre la job à l\'agenda</button>';
   if (st === 'place' || st === 'termine' || Array.isArray(j.done)) b += '<details class="sect fold"' + (st === 'place' ? ' open' : '') + '><summary>Travaux faits</summary>' + doneHTML(j, w) + '</details>';
@@ -5447,7 +5612,7 @@ function viewJobPhone(){
     '<dl class="kv"><div><dt>Modèle</dt><dd>' + esc(vehLabel(j) || '—') + (jobVeh(j).engine || v.trim ? '<br><span class="small muted">' + esc([v.trim, jobVeh(j).engine, v.drive].filter(Boolean).join(' · ')) + '</span>' : '') + '</dd></div>' + (v.vin ? '<div><dt>VIN</dt><dd class="vin sel">' + esc(v.vin) + '</dd></div>' : '') + (v.plate ? '<div><dt>Plaque</dt><dd class="mono">' + esc(v.plate) + '</dd></div>' : '') + (v.km ? '<div><dt>Kilométrage</dt><dd>' + esc(v.km) + ' km</dd></div>' : '') + '</dl>' + specCardHTML(jobVeh(j), w, j.id) + '</div></details>';
   if (j.problem || j.notes) b += '<details class="sect fold" open><summary>Notes</summary><dl class="kv">' + (j.problem ? '<div><dt>Ce que le client décrit</dt><dd>' + esc(j.problem) + '</dd></div>' : '') + (j.notes ? '<div><dt>Notes pour le mécano</dt><dd>' + esc(j.notes) + '</dd></div>' : '') + '</dl></details>';
   b += '<details class="sect fold"><summary>Facture <span class="muted small">' + (is === 'none' ? 'pas encore' : esc(INV_LBL[is]) + (j.invoice && j.invoice.total ? ' · ' + esc(money(j.invoice.total)) : '')) + '</span></summary>' +
-    (is === 'none' ? (w ? '<button type="button" class="btn block" data-act="invoice" data-id="' + esc(j.id) + '">Faire la facture</button>' : '<p class="muted">Pas encore facturée.</p>') : '<button type="button" class="btn block" data-act="' + (is === 'draft' && w ? 'invoice' : 'preview') + '" data-id="' + esc(j.id) + '">' + (is === 'draft' ? 'Continuer la facture' : 'Voir la facture') + '</button>' + invoiceSendHTML(j)) + '</details>';
+    (is === 'none' ? (wi ? '<button type="button" class="btn block" data-act="invoice" data-id="' + esc(j.id) + '">Faire la facture</button>' : '<p class="muted">Pas encore facturée.</p>') : '<button type="button" class="btn block" data-act="' + (is === 'draft' && w ? 'invoice' : 'preview') + '" data-id="' + esc(j.id) + '">' + (is === 'draft' ? 'Continuer la facture' : 'Voir la facture') + '</button>' + invoiceSendHTML(j)) + '</details>';
   if (w){
     b += '<div class="actions"><button type="button" class="btn block" data-act="edit" data-id="' + esc(j.id) + '">Modifier la réservation</button></div>';
     var more = (!isOffSt(st) && st !== 'termine' ? offRow() : '') +
@@ -6347,7 +6512,8 @@ function invoiceSendHTML(j){
 /* what the team version may use (absent extension = nothing happens) */
 window.__garageApi = Object.freeze({S:S, render:render, toast:toast, findJob:findJob, findClient:findClient, cfg:cfg, mechanics:mechanics, esc:esc, hm:hm, money:money,
   bizName:bizName, dayLong:dayLong, dShort:dShort, today:today, jobServices:jobServices, cl:cl, addrFull:addrFull, clientName:clientName, telHref:telHref, fmtPhone:fmtPhone,
-  topBack:topBack, banners:banners, pill:pill, norm:norm, canWrite:canWrite, canAdmin:canAdmin, lockedMech:lockedMech, ST:ST, phone:phone, changeStatus:changeStatus, help:help});
+  topBack:topBack, banners:banners, pill:pill, norm:norm, canWrite:canWrite, canAdmin:canAdmin, lockedMech:lockedMech, ST:ST, phone:phone, changeStatus:changeStatus, help:help,
+  defTab:defTab, setUi:setUiOverride, phoneDevice:function(){ return PHONE_DEV; }});
 boot();
 })();
 </script>

@@ -1563,6 +1563,8 @@ function canAdmin(){ return !!S.db && (S.isAdmin || S.userUnknown); }
 function ext(){ return window.__garageExt || null; }
 function allow(what){ var e = ext(); return !(e && typeof e.can === 'function' && e.can(what) === false); }
 function canBook(){ return canWrite() && allow('book'); }
+/* invoices: whoever can change the job, or (team version) a treasurer the owner allowed to « Modifier les factures » */
+function canInvoice(){ var e = ext(); return canWrite() || !!(S.db && S.canWrite !== false && e && typeof e.can === 'function' && e.can('invoice') === true); }
 /* the treasurer's screen (expenses, report, taxes): the owner, and the treasurer in the team version */
 function canTresor(){ var e = ext(); if (!S.db) return false; return e && typeof e.can === 'function' ? e.can('tab:tresor') === true : canAdmin(); }
 function canExpense(){ var e = ext(); if (!S.db || S.canWrite === false) return false; return e && typeof e.can === 'function' ? e.can('expenses') === true : canAdmin(); }
@@ -1773,7 +1775,9 @@ var HELP = {
   textos:'Les textos aux clients (« je pars », facture, travaux à accepter) partent de ton compte GoHighLevel. Colle ta clé une seule fois ici.',
   carte:'Le paiement par carte passe par Stripe. Le client reçoit un lien « Payer » par texto ; l\'argent va dans ton compte Stripe et la facture se marque payée toute seule.',
   roles:'Mécano : seulement ses jobs. Bureau : agenda, clients, factures. Trésorier : dépenses et rapports. Propriétaire : tout.',
-  absent:'« Client absent » : le client n\'était pas là au rendez-vous. Rien n\'est facturé, et c\'est noté dans sa fiche pour la prochaine fois.'
+  absent:'« Client absent » : le client n\'était pas là au rendez-vous. Rien n\'est facturé, et c\'est noté dans sa fiche pour la prochaine fois.',
+  voircomme:'Pour vérifier ce qu\'un mécano ou le trésorier voit sur son téléphone. Ce n\'est pas son compte : tes changements sont enregistrés à ton nom, et sa journée de travail (sa position) ne démarre pas.',
+  droits:'Ces cases changent ce que le mécano et le trésorier voient et peuvent faire. Le propriétaire peut toujours tout faire. Le serveur vérifie aussi « Modifier les factures » : la facture seulement, rien d\'autre dans la job.'
 };
 /* « Touche » on a phone or tablet, « Clique » with a mouse */
 function tapw(){ try { return phone() || (window.matchMedia && matchMedia('(pointer: coarse)').matches) ? 'touche' : 'clique'; } catch(e){ return 'touche'; } }
@@ -2218,7 +2222,7 @@ function ageDays(iso){ return iso ? Math.max(0, Math.round((parseISO(today()) - 
 function viewClient(){
   var c = findClient(S.clientId);
   if (!c) return {top:topBack('Fiche client'), body:'<div class="empty-card"><p>Cette fiche n\'existe plus.</p><button type="button" class="btn" data-act="back">Retour aux clients</button></div>'};
-  var js = clientJobs(c.id), p = ptOf(c.postal || findPostal(c.address)), due = clientDue(c.id), w = canWrite(), tab = S.clientTab;
+  var js = clientJobs(c.id), p = ptOf(c.postal || findPostal(c.address)), due = clientDue(c.id), w = canWrite(), wi = canInvoice(), tab = S.clientTab;
   var invs = js.filter(function(j){ return j.invoice; }), unpaid = js.filter(function(j){ return invState(j) === 'unpaid'; }), t0 = today();
   var upcoming = js.filter(function(j){ return j.date >= t0 && !isOff(j) && j.status !== 'termine'; }).sort(function(a, b){ return (a.date + a.time).localeCompare(b.date + b.time); });
   var past = js.filter(function(j){ return upcoming.indexOf(j) < 0; }).sort(function(a, b){ return (b.date + b.time).localeCompare(a.date + a.time); });
@@ -2243,7 +2247,7 @@ function viewClient(){
         var v = j.invoice, age = ageDays(v.issuedAt);
         return '<div class="rec"><div class="rec-head"><button type="button" class="linkbtn" data-act="cl-inv" data-id="' + esc(j.id) + '">Facture ' + esc(v.number) + '</button><b class="num">' + esc(money(v.total)) + '</b></div>' +
           '<span class="small ' + (age > 30 ? 'tight' : 'muted') + '">Émise le ' + esc(dateMed(v.issuedAt)) + ' · ' + (age === 0 ? "aujourd'hui" : 'il y a ' + age + ' jour' + (age > 1 ? 's' : '')) + '</span>' +
-          (w ? '<div class="payrow"><select id="pay-' + esc(j.id) + '" aria-label="Mode de paiement">' + opt('', 'Payé par…', true) + PAY.map(function(m){ return opt(m, m, false); }).join('') + '</select><button type="button" class="btn steel" data-act="cl-pay" data-id="' + esc(j.id) + '">Marquer payée</button></div>' : '') + '</div>';
+          (wi ? '<div class="payrow"><select id="pay-' + esc(j.id) + '" aria-label="Mode de paiement">' + opt('', 'Payé par…', true) + PAY.map(function(m){ return opt(m, m, false); }).join('') + '</select><button type="button" class="btn steel" data-act="cl-pay" data-id="' + esc(j.id) + '">Marquer payée</button></div>' : '') + '</div>';
       }).join('') +
       (unpaid.length ? '<button type="button" class="btn block" data-act="cl-remind">Copier un rappel de paiement (texto ou courriel)</button><div id="copybox"></div>' : '') + '</section>';
   } else {
@@ -2998,7 +3002,7 @@ function viewDash(){
 function viewJob(){
   var j = findJob(S.jobId);
   if (!j) return {top:topBack('Bon de travail'), body:'<div class="empty-card"><p>Cette job n\'existe plus. Quelqu\'un l\'a peut-être supprimée.</p><button type="button" class="btn" data-act="back">Retour à l\'agenda</button></div>'};
-  var c = cl(j), v = j.vehicle || {}, st = j.status || 'planifie', w = canWrite(), is = invState(j);
+  var c = cl(j), v = j.vehicle || {}, st = j.status || 'planifie', w = canWrite(), wi = canInvoice(), is = invState(j);
   var body = banners();
   body += '<section class="sect"><div class="sect-head"><div><div class="eyebrow">' + esc(cap(dayLong(j.date))) + '</div><div class="when">' + esc(hm(j.time)) + (j.durationMin ? ' · ' + esc(dur(j.durationMin)) : '') + '</div></div><span>' + pill(st, ST[st]) + help('etapes', 'les étapes') + '</span></div>';
   if (j.mechanic || truckMode()) body += '<p class="muted">' + (truckMode() ? 'Camion : <strong style="color:var(--ink)">' + esc(colName(jobCol(j))) + '</strong>' + (j.mechanic ? ' · ' : '') : '') + (j.mechanic ? 'Mécano : <strong style="color:var(--ink)">' + esc(j.mechanic) + '</strong>' : '') + '</p>';
@@ -3008,7 +3012,7 @@ function viewJob(){
   if (isOffSt(st)) body += offBanner(j) + (w ? '<button type="button" class="btn" data-act="status" data-v="planifie">Remettre la job à l\'agenda</button>' : '');
   body += '</section>';
   if (ext() && typeof ext().jobExtra === 'function') body += ext().jobExtra(j) || '';
-  var nx = w ? nextStep(j) : null;
+  var nx = w ? nextStep(j) : (wi && (j.status || 'planifie') === 'termine' ? nextStep(j) : null);
   if (nx) body += nextBtn(nx);
 
   body += '<section class="sect"><h3>Client</h3><dl class="kv">' +
@@ -3036,10 +3040,10 @@ function viewJob(){
 
   body += '<section class="sect"><h3>Facture</h3>';
   if (is === 'none'){
-    body += '<p class="muted">Pas encore facturée.</p>' + (w ? '<button type="button" class="btn block" data-act="invoice" data-id="' + esc(j.id) + '">Faire la facture</button>' : '');
+    body += '<p class="muted">Pas encore facturée.</p>' + (wi ? '<button type="button" class="btn block" data-act="invoice" data-id="' + esc(j.id) + '">Faire la facture</button>' : '');
   } else {
     body += '<div class="invbox"><div><div class="eyebrow">' + (j.invoice.number ? 'Facture ' + esc(j.invoice.number) : 'Facture à finir') + '</div><b>' + esc(money(j.invoice.total)) + '</b></div>' + pill(is, INV_LBL[is]) + '</div>' +
-      '<div class="actions">' + (is === 'draft' ? (w ? '<button type="button" class="btn primary block" data-act="invoice" data-id="' + esc(j.id) + '">Continuer la facture</button>' : '') : '<button type="button" class="btn primary block" data-act="preview" data-id="' + esc(j.id) + '">Voir la facture</button>' + (w ? '<button type="button" class="btn block" data-act="invoice" data-id="' + esc(j.id) + '">Modifier la facture</button>' : '')) + '</div>' + invoiceSendHTML(j);
+      '<div class="actions">' + (is === 'draft' ? (wi ? '<button type="button" class="btn primary block" data-act="invoice" data-id="' + esc(j.id) + '">Continuer la facture</button>' : '') : '<button type="button" class="btn primary block" data-act="preview" data-id="' + esc(j.id) + '">Voir la facture</button>' + (w ? '<button type="button" class="btn block" data-act="invoice" data-id="' + esc(j.id) + '">Modifier la facture</button>' : '')) + '</div>' + invoiceSendHTML(j);
   }
   body += '</section>';
 
@@ -3526,7 +3530,7 @@ function saveInvoice(finalize){
 function viewPreview(){
   var j = findJob(S.jobId);
   if (!j || !j.invoice) return viewJob();
-  var v = j.invoice, b = biz(), c = cl(j), veh = j.vehicle || {}, is = invState(j), w = canWrite(), cf = cfg();
+  var v = j.invoice, b = biz(), c = cl(j), veh = j.vehicle || {}, is = invState(j), w = canWrite(), wi = canInvoice(), cf = cfg();
   var lines = (v.lines || []).map(function(l){
     return '<div class="il"><div class="il-d"><b>' + esc(l.desc) + '</b><span class="muted small">' + esc(LT[l.type] || '') + ' · ' + esc(fmtQty(l.qty)) + (l.type === 'mo' ? ' h' : '') + ' × ' + esc(money(l.price)) + '</span></div><div class="il-a">' + esc(money(lineAmt(l))) + '</div></div>';
   }).join('');
@@ -3545,10 +3549,10 @@ function viewPreview(){
     (j.signature ? '<div class="sigbox paper-sig">' + (photoSrc(j.signature.id) ? '<img src="' + photoSrc(j.signature.id) + '" alt="Signature">' : '') + '<p class="small">Signé par <b>' + esc(j.signature.name || 'le client') + '</b> le ' + esc(whenTxt(j.signature.at)) + '</p></div>' : '') +
     '</article>';
   body += '<div class="actions">';
-  if (is === 'unpaid' && w) body += '<section class="sect"><h3>Le client paie maintenant ?</h3><div class="payrow"><select id="p-method" aria-label="Mode de paiement">' + opt('', 'Payé par…', true) + PAY.map(function(p){ return opt(p, p, false); }).join('') + '</select><button type="button" class="btn steel" data-act="markpaid">Marquer payée</button></div></section>';
+  if (is === 'unpaid' && wi) body += '<section class="sect"><h3>Le client paie maintenant ?</h3><div class="payrow"><select id="p-method" aria-label="Mode de paiement">' + opt('', 'Payé par…', true) + PAY.map(function(p){ return opt(p, p, false); }).join('') + '</select><button type="button" class="btn steel" data-act="markpaid">Marquer payée</button></div></section>';
   if (S.dl) body += '<button type="button" class="btn primary block" data-act="pdf">Télécharger le PDF</button>';
   body += '<button type="button" class="btn block" data-act="copytext">Copier la facture (pour texto ou courriel)</button>';
-  if (w) body += '<button type="button" class="btn ghost block" data-act="invoice" data-id="' + esc(j.id) + '">Modifier la facture</button>';
+  if (wi) body += '<button type="button" class="btn ghost block" data-act="invoice" data-id="' + esc(j.id) + '">Modifier la facture</button>';
   body += '<div id="copybox"></div></div>';
   return {top:topBack(c.name || 'Facture', 'back-prev', v.number ? 'Facture ' + v.number : 'Facture à finir'), body:body};
 }
@@ -3830,7 +3834,7 @@ document.addEventListener('click', function(e){
     case 'cl-book': { var cb = findClient(S.clientId); if (cb) openEdit(null, false, {date:S.day >= today() ? S.day : today()}, true, clientSnap(cb)); break; }
     case 'cl-quick': { var cq2 = findClient(S.clientId); if (cq2){ S.backTo = 'client'; openEdit(null, true, null, true, clientSnap(cq2)); } break; }
     case 'cl-job': S.jobId = id; S.screen = 'job'; S.backTo = 'client'; S.confirmDel = false; render(); window.scrollTo(0, 0); break;
-    case 'cl-inv': { var ij = findJob(id); if (!ij) break; S.jobId = id; S.backTo = 'client'; if (invState(ij) === 'draft' && canWrite()) openInvoice(id); else { S.screen = 'preview'; render(); window.scrollTo(0, 0); } break; }
+    case 'cl-inv': { var ij = findJob(id); if (!ij) break; S.jobId = id; S.backTo = 'client'; if (invState(ij) === 'draft' && canInvoice()) openInvoice(id); else { S.screen = 'preview'; render(); window.scrollTo(0, 0); } break; }
     case 'cl-pay': {
       var pj = findJob(id), pm = $('#pay-' + id) ? $('#pay-' + id).value : '';
       if (!pj) break;
@@ -3961,7 +3965,7 @@ document.addEventListener('click', function(e){
     case 'preview': S.jobId = id || S.jobId; S.screen = 'preview'; render(); window.scrollTo(0, 0); break;
     case 'openinv': {
       var oj = findJob(id); if (!oj) return; S.jobId = id;
-      if (invState(oj) === 'draft' && canWrite()) openInvoice(id); else { S.screen = 'preview'; render(); window.scrollTo(0, 0); }
+      if (invState(oj) === 'draft' && canInvoice()) openInvoice(id); else { S.screen = 'preview'; render(); window.scrollTo(0, 0); }
       break;
     }
     case 'addpromo': { var pp = promos()[+v]; if (pp){ S.inv.lines.push({type:'forfait', desc:promoDesc(pp), qty:'1', price:String(r2(num(pp.price))).replace('.', ',')}); renderLines(); renderTotals(); hideInvErr(); } break; }
@@ -4177,7 +4181,7 @@ function frZone(n){ return String(n || '').replace(/\bMount Royal\b/g, 'Mont-Roy
 function viewJobPhone(){
   var j = findJob(S.jobId);
   if (!j) return viewJob();
-  var c = cl(j), v = j.vehicle || {}, st = j.status || 'planifie', w = canWrite(), is = invState(j), e = ext(), ph = String(c.phone || '').replace(/[^\d+]/g, ''), addr = addrFull(c);
+  var c = cl(j), v = j.vehicle || {}, st = j.status || 'planifie', w = canWrite(), wi = canInvoice(), is = invState(j), e = ext(), ph = String(c.phone || '').replace(/[^\d+]/g, ''), addr = addrFull(c);
   var top = topBack(c.name || 'Client', 'back', cap(dShort(j.date)) + ' · ' + hm(j.time) + (truckMode() ? ' · ' + colName(jobCol(j)) : '') + (j.mechanic ? ' · ' + j.mechanic : ''));
   var sp0 = findSpec(jobVeh(j));
   var b = banners() + '<section class="sect pjob"><p class="pj-what"><b>' + esc(vehLabel(j) || 'Véhicule à préciser') + '</b><span>' + esc(jobServices(j).join(', ') || 'Service à préciser') + (j.durationMin ? ' · ' + esc(dur(j.durationMin)) : '') + '</span>' + (sp0 && sp0.s.oilL ? '<span class="pj-oil">' + esc(oilLine(sp0.s)) + (sp0.exact ? '' : ' (à confirmer)') + '</span>' : '') + '</p>' +
@@ -4187,7 +4191,7 @@ function viewJobPhone(){
     '</div>' +
     (!isOffSt(st) ? '<ol class="steps4" aria-label="Étapes">' + ST_FLOW.map(function(k, i){ var cur = ST_FLOW.indexOf(st); return '<li class="' + (i < cur ? 'past' : i === cur ? 'here' : '') + '"' + (i === cur ? ' aria-current="step"' : '') + '>' + ST[k] + '</li>'; }).join('') + '</ol>' : offBanner(j)) + '</section>';
   if (e && typeof e.jobExtra === 'function') b += e.jobExtra(j) || '';
-  var nx = w ? nextStep(j) : null;
+  var nx = w ? nextStep(j) : (wi && (j.status || 'planifie') === 'termine' ? nextStep(j) : null);
   if (nx) b += nextBtn(nx);
   if (w && isOffSt(st)) b += '<button type="button" class="btn primary block nextbtn" data-act="status" data-v="planifie">Remettre la job à l\'agenda</button>';
   if (st === 'place' || st === 'termine' || Array.isArray(j.done)) b += '<details class="sect fold"' + (st === 'place' ? ' open' : '') + '><summary>Travaux faits</summary>' + doneHTML(j, w) + '</details>';
@@ -4200,7 +4204,7 @@ function viewJobPhone(){
     '<dl class="kv"><div><dt>Modèle</dt><dd>' + esc(vehLabel(j) || '—') + (jobVeh(j).engine || v.trim ? '<br><span class="small muted">' + esc([v.trim, jobVeh(j).engine, v.drive].filter(Boolean).join(' · ')) + '</span>' : '') + '</dd></div>' + (v.vin ? '<div><dt>VIN</dt><dd class="vin sel">' + esc(v.vin) + '</dd></div>' : '') + (v.plate ? '<div><dt>Plaque</dt><dd class="mono">' + esc(v.plate) + '</dd></div>' : '') + (v.km ? '<div><dt>Kilométrage</dt><dd>' + esc(v.km) + ' km</dd></div>' : '') + '</dl>' + specCardHTML(jobVeh(j), w, j.id) + '</div></details>';
   if (j.problem || j.notes) b += '<details class="sect fold" open><summary>Notes</summary><dl class="kv">' + (j.problem ? '<div><dt>Ce que le client décrit</dt><dd>' + esc(j.problem) + '</dd></div>' : '') + (j.notes ? '<div><dt>Notes pour le mécano</dt><dd>' + esc(j.notes) + '</dd></div>' : '') + '</dl></details>';
   b += '<details class="sect fold"><summary>Facture <span class="muted small">' + (is === 'none' ? 'pas encore' : esc(INV_LBL[is]) + (j.invoice && j.invoice.total ? ' · ' + esc(money(j.invoice.total)) : '')) + '</span></summary>' +
-    (is === 'none' ? (w ? '<button type="button" class="btn block" data-act="invoice" data-id="' + esc(j.id) + '">Faire la facture</button>' : '<p class="muted">Pas encore facturée.</p>') : '<button type="button" class="btn block" data-act="' + (is === 'draft' && w ? 'invoice' : 'preview') + '" data-id="' + esc(j.id) + '">' + (is === 'draft' ? 'Continuer la facture' : 'Voir la facture') + '</button>' + invoiceSendHTML(j)) + '</details>';
+    (is === 'none' ? (wi ? '<button type="button" class="btn block" data-act="invoice" data-id="' + esc(j.id) + '">Faire la facture</button>' : '<p class="muted">Pas encore facturée.</p>') : '<button type="button" class="btn block" data-act="' + (is === 'draft' && w ? 'invoice' : 'preview') + '" data-id="' + esc(j.id) + '">' + (is === 'draft' ? 'Continuer la facture' : 'Voir la facture') + '</button>' + invoiceSendHTML(j)) + '</details>';
   if (w){
     b += '<div class="actions"><button type="button" class="btn block" data-act="edit" data-id="' + esc(j.id) + '">Modifier la réservation</button></div>';
     var more = (!isOffSt(st) && st !== 'termine' ? offRow() : '') +
@@ -5100,7 +5104,8 @@ function invoiceSendHTML(j){
 /* what the team version may use (absent extension = nothing happens) */
 window.__garageApi = Object.freeze({S:S, render:render, toast:toast, findJob:findJob, findClient:findClient, cfg:cfg, mechanics:mechanics, esc:esc, hm:hm, money:money,
   bizName:bizName, dayLong:dayLong, dShort:dShort, today:today, jobServices:jobServices, cl:cl, addrFull:addrFull, clientName:clientName, telHref:telHref, fmtPhone:fmtPhone,
-  topBack:topBack, banners:banners, pill:pill, norm:norm, canWrite:canWrite, canAdmin:canAdmin, lockedMech:lockedMech, ST:ST, phone:phone, changeStatus:changeStatus, help:help});
+  topBack:topBack, banners:banners, pill:pill, norm:norm, canWrite:canWrite, canAdmin:canAdmin, lockedMech:lockedMech, ST:ST, phone:phone, changeStatus:changeStatus, help:help,
+  defTab:defTab, setUi:setUiOverride, phoneDevice:function(){ return PHONE_DEV; }});
 boot();
 })();
 </script>
