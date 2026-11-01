@@ -557,12 +557,12 @@
   function startView(v){
     var a = A(); if (!a || !me || me.role !== 'owner') return;
     if (!VA) { try { X.uiBefore = sessionStorage.getItem('gm.ui'); } catch(e){ X.uiBefore = null; } try { sessionStorage.setItem('gm.ui.before', X.uiBefore || ''); } catch(e){} }
-    VA = {role:v.role, mechanic:v.mechanic || null, name:v.name || ROLE[v.role]};
-    try { sessionStorage.setItem('gm.viewas', JSON.stringify(VA)); } catch(e){}
-    /* a mechanic works on his phone: on a computer, show his phone screen */
-    if (v.role === 'mecano' && !a.phoneDevice()) a.setUi('phone');
-    applyView(); goHome();
+    /* a mechanic works on his phone: on a computer, show his phone screen first (a button switches to the computer screen) */
+    VA = {role:v.role, mechanic:v.mechanic || null, name:v.name || ROLE[v.role], fmt:v.role === 'mecano' ? 'phone' : 'pc'};
+    saveVA(); applyView(); goHome();
   }
+  function saveVA(){ try { sessionStorage.setItem('gm.viewas', JSON.stringify(VA)); } catch(e){} }
+  function switchFmt(){ if (!previewing()) return; VA.fmt = VA.fmt === 'phone' ? 'pc' : 'phone'; saveVA(); applyView(); goHome(); }
   function stopView(){
     var a = A(); VA = null;
     try { sessionStorage.removeItem('gm.viewas'); var u = sessionStorage.getItem('gm.ui.before'); sessionStorage.removeItem('gm.ui.before'); a.setUi(u || null); } catch(e){ a.setUi(null); }
@@ -570,11 +570,14 @@
     location.hash = 'equipe'; if (a.S.tab === 'equipe'){ a.S.screen = null; render(); }
     toast('De retour sur ton compte');
   }
+  /* one place decides the look of the preview, every time (also after a reload): never half phone, half computer */
   function applyView(){
+    var a = A(), pc = !a.phoneDevice();
     if (T.setView) T.setView(previewing() ? eff() : null);
+    if (previewing() && pc) a.setUi(VA.fmt === 'phone' ? 'phone' : null);
     document.body.classList.toggle('pv-on', previewing());
-    document.body.classList.toggle('pv-narrow', previewing() && VA.role === 'mecano' && !A().phoneDevice());
-    pvBar();
+    document.body.classList.toggle('pv-narrow', previewing() && pc && a.phone());
+    pvBar(); render();
   }
   function goHome(){ var a = A(), t = a.defTab(); a.S.screen = null; a.S.inv = null; a.S.backTo = null; if (location.hash.slice(1) !== t) location.hash = t; else { a.S.tab = t; render(); } window.scrollTo(0, 0); }
   function pvBar(){
@@ -583,6 +586,7 @@
     if (!el){ el = document.createElement('div'); el.id = 'pv-bar'; el.setAttribute('role', 'status'); document.body.insertBefore(el, document.body.firstChild); }
     var v = eff();
     el.innerHTML = '<span class="pv-t"><span aria-hidden="true">👁 </span><span class="pv-long">Tu vois l\'app comme </span><span class="pv-short">Comme </span><b>' + esc(v.name) + '</b> (' + esc(ROLE[v.role].toLowerCase()) + ')</span>' +
+      (A().phoneDevice() ? '' : '<button type="button" class="btn sm pv-fmt" data-act="pv-fmt">' + (A().phone() ? '🖥 Voir sur ordinateur' : '📱 Voir sur téléphone') + '</button>') +
       '<button type="button" class="btn sm" data-act="pv-exit">Revenir à mon compte</button>';
     pvFit();
   }
@@ -608,6 +612,7 @@
       }
       case 'pv-person': { var pm = (X.eq.list || []).filter(function(x){ return x.user_id === v; })[0]; if (pm) startView({role:pm.role, mechanic:pm.mechanic || null, name:pm.name}); break; }
       case 'pv-exit': stopView(); break;
+      case 'pv-fmt': switchFmt(); break;
       case 'rp': saveRole(b.dataset.role, b.dataset.k, b.checked, b); break;
       case 'app-reload': location.reload(); break;
       case 'acct-out': {
@@ -766,7 +771,7 @@
     '@media (max-width:560px){#pv-bar .pv-long{display:none}#pv-bar .pv-short{display:inline}#pv-bar{font-size:14px}}' +
     'body.pv-on{padding-top:var(--pvh,48px)}body.pv-on .top{top:calc(var(--pvh,48px) + 6px)}body.pv-on.ui-pc .tabbar{top:calc(var(--pvh,48px) + 12px)}' +
     'body.pv-narrow .top{max-width:450px;margin-left:auto;margin-right:auto}body.pv-narrow .wrap{max-width:430px}body.pv-narrow .tabbar{width:min(430px,calc(100% - 20px))}body.pv-narrow .sheet{max-width:430px}' +
-    'body.pv-narrow::after{box-shadow:inset calc((100vw - 470px) / 2) 0 0 rgba(30,25,21,.10),inset calc((470px - 100vw) / 2) 0 0 rgba(30,25,21,.10)}';
+    '#pv-bar .pv-fmt{background:transparent;color:#F7F1EA;border-color:rgba(247,241,234,.5)}';
   document.head.appendChild(css);
 
   var MAP_ICON = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>';
