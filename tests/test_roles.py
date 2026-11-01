@@ -1,0 +1,149 @@
+"""« Voir comme… » (le propriétaire voit l'app comme un mécano / le trésorier / le bureau)
++ « Ce que chaque rôle peut faire » (cases), et ce que le serveur accepte ou refuse avec ces cases.
+Copie locale de Supabase ; tout est remis comme au départ à la fin."""
+from team_seed import *
+from playwright.sync_api import sync_playwright
+def rpc(tok, name, body): return http('POST', API + '/rest/v1/rpc/' + name, body, tok)
+def refused(r): return isinstance(r, dict) and r.get('_status', 200) >= 400
+def roles(): return doc('config/roles') or {}
+TABS = ['accueil', 'agenda', 'jour', 'clients', 'factures', 'tresor', 'carte', 'reglages', 'plus']
+def tabs(p): return [t for t in TABS if p.locator('.tab[data-t="%s"]' % t).count() and p.is_visible('.tab[data-t="%s"]' % t)]
+def main(p): return txt(p, 'main')
+def box(p, sel): p.click(sel); p.wait_for_timeout(900)
+
+otok, pw = seed()
+huid = psql("select id from auth.users where email='hassan@garage.test'")
+ORIG = {k: doc(k) for k in ('jobs/j1', 'jobs/j2', 'clients/c1', 'clients/c2')}
+with sync_playwright() as pl:
+    b = pl.chromium.launch()
+    # ---------- 1. Équipe et accès: the two new sections ----------
+    oc = ctx(b); op = page(oc, 'owner'); op.set_viewport_size({'width': 1280, 'height': 900}); login(op, 'hassan@garage.test', pw['hassan'])
+    op.evaluate("location.hash = 'equipe'"); op.wait_for_selector('#eq-viewas', timeout=10000); op.wait_for_timeout(1200)
+    bl = op.locator('#eq-viewas [data-act="pv-start"]'); names = [bl.nth(i).inner_text() for i in range(bl.count())]
+    check('« Voir l\'app comme… »: Saleh and Ali (mécanos), Nadia (trésorier), Lina (bureau) — not himself', any('Saleh' in n and 'mécano' in n for n in names) and any('Ali' in n for n in names) and any('Nadia' in n and 'trésorier' in n for n in names) and any('Lina' in n and 'bureau' in n for n in names) and not any('Hassan' in n for n in names), names)
+    defaults = {'#rp-mecano-money': False, '#rp-mecano-book': False, '#rp-mecano-clients': True, '#rp-mecano-factures': True, '#rp-mecano-stock': True,
+                '#rp-tresorier-agenda': False, '#rp-tresorier-clients': True, '#rp-tresorier-factures': True, '#rp-tresorier-editinv': False, '#rp-tresorier-stock': True}
+    check('« Ce que chaque rôle peut faire »: 5 boxes for the mechanic, 5 for the treasurer, ticked exactly as before (nothing changes by itself)', all(op.is_checked(k) == v for k, v in defaults.items()), {k: op.is_checked(k) for k in defaults})
+    op.screenshot(path='roles_equipe.png', full_page=True)
+
+    # ---------- 2. « Voir comme Saleh » on the computer ----------
+    op.click('#eq-viewas [data-act="pv-start"][data-mech="Saleh"]'); op.wait_for_timeout(1500)
+    check('bar on top: « Tu vois l\'app comme Saleh (mécano) » + « Revenir à mon compte »', op.is_visible('#pv-bar') and 'Saleh' in txt(op, '#pv-bar') and 'mécano' in txt(op, '#pv-bar') and op.is_visible('#pv-bar [data-act="pv-exit"]'), txt(op, '#pv-bar'))
+    check('on a computer: his PHONE screen (narrow), on « Ma journée »', op.evaluate("document.body.classList.contains('ui-phone') && document.body.classList.contains('pv-narrow')") and op.evaluate('location.hash') == '#jour', op.evaluate('location.hash'))
+    check('his tabs only (Ma journée, Clients, Factures, Plus): no Réglages, Carte, Trésorerie', tabs(op) == ['jour', 'clients', 'factures', 'plus'], tabs(op))
+    m = main(op)
+    check('his job (Marie, 14 h) and not Ali\'s (Paul)', 'Marie' in m and 'Paul' not in m, m[:300])
+    op.screenshot(path='roles_saleh_pc.png')
+    op.click('.tab[data-t="clients"]'); op.wait_for_timeout(600)
+    check('Clients: only the client of his jobs (Marie)', op.locator('.crow').count() == 1 and 'Marie' in main(op), op.locator('.crow').count())
+    op.click('.tab[data-t="plus"]'); op.wait_for_timeout(500)
+    check('Plus: no « Équipe et accès »', 'Équipe et accès' not in main(op))
+    op.click('.tab-new'); op.wait_for_timeout(500)
+    check('his « + »: no « Nouvelle réservation » (box not ticked); « Nouveau client » as before', op.locator('[data-act="ph-go"][data-v="new"]').count() == 0 and op.locator('[data-act="ph-go"][data-v="client"]').count() == 1)
+    op.keyboard.press('Escape'); op.wait_for_timeout(300)
+    op.click('.tab[data-t="jour"]'); op.wait_for_timeout(600)
+    check('his « Début de journée » card is shown, as on his phone', op.locator('[data-act="sh-start"]').count() == 1)
+    op.click('[data-act="sh-start"]')
+    check('…the button only says « Aperçu »: nobody\'s workday starts', toast_has(op, 'Aperçu') and psql("select count(*) from public.mech_live where on_shift") == '0')
+    op.locator('[data-act="open"][data-id="j1"]').first.click(); op.wait_for_timeout(800)
+    nb = op.locator('.nextbtn').first
+    check('his job screen: big button « Je pars : aviser Marie »', nb.count() == 1 and 'Je pars' in nb.inner_text(), nb.inner_text() if nb.count() else '')
+    nb.click(); op.wait_for_timeout(3000)
+    check('a fix made in the preview is really saved (job « en route »), under the owner\'s name', psql("select data->>'status' || '|' || updated_by from public.docs where path='jobs/j1'") == 'route|' + huid, psql("select data->>'status' || '|' || updated_by from public.docs where path='jobs/j1'"))
+    check('still nobody on shift after that', psql("select count(*) from public.mech_live where on_shift") == '0')
+    op.reload(); op.wait_for_timeout(2500)
+    check('reloading the page keeps the preview (bar + his screen)', op.is_visible('#pv-bar') and 'Paul' not in main(op) and tabs(op) == ['jour', 'clients', 'factures', 'plus'], tabs(op))
+    op.click('#pv-bar [data-act="pv-exit"]'); op.wait_for_timeout(1500)
+    check('« Revenir à mon compte »: bar gone, computer screen, back on Équipe et accès', op.locator('#pv-bar').count() == 0 and op.evaluate("document.body.classList.contains('ui-pc') && !document.body.classList.contains('pv-narrow')") and op.evaluate('location.hash') == '#equipe')
+    op.evaluate("location.hash = 'agenda'"); op.wait_for_timeout(1000)
+    check('the owner sees every job again (Marie and Paul) and his own tabs', 'Marie' in main(op) and 'Paul' in main(op) and 'reglages' in tabs(op) and 'carte' in tabs(op), tabs(op))
+
+    # ---------- 3. « Voir comme » the treasurer and the office ----------
+    op.evaluate("location.hash = 'equipe'"); op.wait_for_selector('#eq-viewas'); op.wait_for_timeout(600)
+    op.click('#eq-viewas [data-act="pv-start"][data-role="tresorier"]'); op.wait_for_timeout(1500)
+    check('as Nadia (treasurer): her Trésorerie screen first; tabs Clients, Factures, Trésorerie only', op.evaluate('location.hash') == '#tresor' and tabs(op) == ['clients', 'factures', 'tresor'] and 'Nadia' in txt(op, '#pv-bar'), [op.evaluate('location.hash'), tabs(op)])
+    check('computer screen kept for the treasurer (not the phone one), menu below the bar', op.evaluate("document.body.classList.contains('ui-pc')") and op.evaluate("document.querySelector('#tabbar').getBoundingClientRect().top") >= op.evaluate("document.querySelector('#pv-bar').getBoundingClientRect().bottom"))
+    op.screenshot(path='roles_nadia_pc.png')
+    op.click('#pv-bar [data-act="pv-exit"]'); op.wait_for_timeout(1200)
+    op.click('#eq-viewas [data-act="pv-start"][data-role="bureau"]'); op.wait_for_timeout(1500)
+    check('as Lina (office): agenda and map, no Réglages, no Trésorerie', 'agenda' in tabs(op) and 'carte' in tabs(op) and 'reglages' not in tabs(op) and 'tresor' not in tabs(op), tabs(op))
+    op.click('#pv-bar [data-act="pv-exit"]'); op.wait_for_timeout(1200)
+
+    # ---------- 4. the owner ticks boxes ----------
+    box(op, '#rp-mecano-money'); box(op, '#rp-mecano-book'); box(op, '#rp-mecano-clients'); box(op, '#rp-tresorier-agenda'); box(op, '#rp-tresorier-editinv')
+    r = roles()
+    check('each box is saved right away (config/roles)', r.get('mecano') == {'money': True, 'book': True, 'clients': False} and r.get('tresorier') == {'agenda': True, 'editinv': True}, r)
+    check('a « Enregistré » message for each click', toast_has(op, 'Enregistré'))
+    op.click('#eq-roles [data-act="pv-role"][data-role="mecano"]'); op.wait_for_timeout(1500)
+    check('« Voir ce qu\'il voit » under the mechanic: preview of Saleh with the new boxes (no Clients tab now)', 'Saleh' in txt(op, '#pv-bar') and 'clients' not in tabs(op), tabs(op))
+    op.evaluate("location.hash = 'accueil'"); op.wait_for_timeout(900)
+    check('…and he now sees the garage figures on Accueil', op.locator('.ringcard').count() >= 1)
+    op.click('#pv-bar [data-act="pv-exit"]'); op.wait_for_timeout(1200)
+    oc.close()
+
+    # ---------- 5. Saleh, for real, on his phone ----------
+    stok = token('saleh@garage.test', pw['saleh'])
+    sc = ctx(b, phone=True); sp = page(sc, 'saleh'); login(sp, 'saleh@garage.test', pw['saleh']); sp.wait_for_timeout(1200)
+    check('his phone: no Clients tab any more (box unticked)', 'clients' not in tabs(sp) and 'jour' in tabs(sp), tabs(sp))
+    sp.click('.tab-new'); sp.wait_for_timeout(500)
+    check('his « + »: « Nouvelle réservation » now (box « Prendre des rendez-vous »)', sp.locator('[data-act="ph-go"][data-v="new"]').count() == 1)
+    sc.close()
+    newc = {'firstName': 'Test', 'lastName': 'Rendezvous', 'phone': '514 555-0303', 'address': '1 rue Test, Montréal', 'postal': 'H2X 1A1'}
+    check('server: he can create a new client (as before, for walk-in clients)', not refused(rpc(stok, 'doc_set', {'p_path': 'clients/zz-newc', 'p_data': newc})) and doc('clients/zz-newc') is not None)
+    check('server: and a job for that client in HIS agenda', not refused(rpc(stok, 'doc_set', {'p_path': 'jobs/zz-newj', 'p_data': {'date': TODAY, 'time': '16:00', 'durationMin': 60, 'mechanic': 'Saleh', 'clientId': 'zz-newc', 'client': dict(newc, id='zz-newc', name='Test Rendezvous'), 'services': ['Inspection multipoints'], 'status': 'planifie', 'createdAt': 3}})) and doc('jobs/zz-newj') is not None)
+    check('server: still refuses to change Ali\'s client (Paul)', refused(rpc(stok, 'doc_merge', {'p_path': 'clients/c2', 'p_patch': {'firstName': 'Pirate'}})) and doc('clients/c2')['firstName'] == 'Paul')
+    check('server: still refuses a job in Ali\'s agenda', refused(rpc(stok, 'doc_set', {'p_path': 'jobs/zz-alij', 'p_data': {'date': TODAY, 'time': '17:00', 'mechanic': 'Ali', 'clientId': 'c2'}})) and doc('jobs/zz-alij') is None)
+
+    # ---------- 6. Nadia, for real: agenda (read only) + invoices she may change ----------
+    rpc(otok, 'doc_merge', {'p_path': 'jobs/j2', 'p_patch': {'status': 'termine', 'invoice': {'lines': [{'type': 'forfait', 'desc': 'Inspection multipoints', 'qty': 1, 'price': 59}], 'taxesOn': True, 'sub': 59, 'tps': 2.95, 'tvq': 5.89, 'total': 67.84, 'paid': False, 'method': '', 'paidAt': None, 'note': '', 'number': 1, 'issuedAt': TODAY, 'updatedAt': 1}}})
+    ntok = token('nadia@garage.test', pw['nadia'])
+    nc = ctx(b); np_ = page(nc, 'nadia'); np_.set_viewport_size({'width': 1280, 'height': 900}); login(np_, 'nadia@garage.test', pw['nadia']); np_.wait_for_timeout(1200)
+    check('Nadia: Agenda tab now (box « Voir l\'agenda »)', 'agenda' in tabs(np_), tabs(np_))
+    np_.click('.tab[data-t="agenda"]'); np_.wait_for_timeout(900)
+    check('…read only: she sees the jobs, no « + Réservation »', 'Marie' in main(np_) and np_.locator('[data-act="new"]').count() == 0)
+    np_.click('.tab[data-t="factures"]'); np_.wait_for_timeout(700)
+    np_.locator('.row[data-act="openinv"]').first.click(); np_.wait_for_timeout(800)
+    check('on the invoice: « Le client paie maintenant ? » and « Modifier la facture » (box « Modifier les factures »)', np_.locator('#p-method').count() == 1 and np_.locator('[data-act="invoice"]').count() >= 1)
+    np_.select_option('#p-method', 'Comptant'); np_.click('[data-act="markpaid"]'); np_.wait_for_timeout(1500)
+    inv = (doc('jobs/j2') or {}).get('invoice', {})
+    check('she marks it paid (cash): saved', inv.get('paid') is True and inv.get('method') == 'Comptant', inv)
+    check('server: she may change the invoice (a note)', not refused(rpc(ntok, 'doc_merge', {'p_path': 'jobs/j2', 'p_patch': {'invoice': {'note': 'Merci !'}, 'updatedAt': 5}})) and doc('jobs/j2')['invoice']['note'] == 'Merci !')
+    check('server: NOT the mechanic of the job', refused(rpc(ntok, 'doc_merge', {'p_path': 'jobs/j2', 'p_patch': {'mechanic': 'Saleh'}})) and doc('jobs/j2')['mechanic'] == 'Ali')
+    check('server: NOT the date or the status (cancel)', refused(rpc(ntok, 'doc_merge', {'p_path': 'jobs/j2', 'p_patch': {'date': '2030-01-01'}})) and refused(rpc(ntok, 'doc_merge', {'p_path': 'jobs/j2', 'p_patch': {'status': 'annule'}})) and doc('jobs/j2')['status'] == 'termine')
+    check('server: no new job, no deleting a job', refused(rpc(ntok, 'doc_set', {'p_path': 'jobs/zz-nadia', 'p_data': {'date': TODAY, 'mechanic': 'Ali'}})) and refused(rpc(ntok, 'doc_delete', {'p_path': 'jobs/j2'})) and doc('jobs/zz-nadia') is None and doc('jobs/j2') is not None)
+    nc.close()
+
+    # ---------- 7. the owner unticks: rights go away (screen and server) ----------
+    oc = ctx(b); op = page(oc, 'owner2'); op.set_viewport_size({'width': 1280, 'height': 900}); login(op, 'hassan@garage.test', pw['hassan'])
+    op.evaluate("location.hash = 'equipe'"); op.wait_for_selector('#eq-roles', timeout=10000); op.wait_for_timeout(1200)
+    box(op, '#rp-tresorier-editinv'); box(op, '#rp-mecano-book')
+    check('server: without the box, Nadia cannot touch the invoice any more', refused(rpc(ntok, 'doc_merge', {'p_path': 'jobs/j2', 'p_patch': {'invoice': {'note': 'x'}}})) and doc('jobs/j2')['invoice']['note'] == 'Merci !')
+    nc = ctx(b); np_ = page(nc, 'nadia2'); np_.set_viewport_size({'width': 1280, 'height': 900}); login(np_, 'nadia@garage.test', pw['nadia']); np_.wait_for_timeout(1200)
+    np_.click('.tab[data-t="factures"]'); np_.wait_for_timeout(700); np_.click('[data-act="invf"][data-v="all"]'); np_.wait_for_timeout(500)
+    np_.locator('.row[data-act="openinv"]').first.click(); np_.wait_for_timeout(800)
+    check('Nadia\'s screen: no « Modifier la facture » any more', np_.locator('[data-act="invoice"]').count() == 0)
+    nc.close()
+
+    # ---------- 8. owner on his phone: same preview, phone screen as is ----------
+    pc = ctx(b, phone=True); pp = page(pc, 'owner-phone'); login(pp, 'hassan@garage.test', pw['hassan']); pp.wait_for_timeout(800)
+    pp.evaluate("location.hash = 'equipe'"); pp.wait_for_selector('#eq-viewas', timeout=10000); pp.wait_for_timeout(800)
+    pp.click('#eq-viewas [data-act="pv-start"][data-mech="Ali"]'); pp.wait_for_timeout(1500)
+    check('on the owner\'s phone: « Voir comme Ali » (normal phone screen, bar on top, header below it)', pp.is_visible('#pv-bar') and 'Ali' in txt(pp, '#pv-bar') and not pp.evaluate("document.body.classList.contains('pv-narrow')") and 'Paul' in main(pp) and 'Marie' not in main(pp)
+          and pp.evaluate("document.querySelector('.top') ? document.querySelector('.top').getBoundingClientRect().top >= document.querySelector('#pv-bar').getBoundingClientRect().bottom - 1 : true"))
+    pp.screenshot(path='roles_ali_phone.png')
+    pp.click('#pv-bar [data-act="pv-exit"]'); pp.wait_for_timeout(1200)
+    check('…and back to his account', pp.locator('#pv-bar').count() == 0 and pp.evaluate('location.hash') == '#equipe')
+    pc.close()
+
+    # ---------- 9. back to the start: boxes as before, test data removed ----------
+    box(op, '#rp-mecano-money'); box(op, '#rp-mecano-clients'); box(op, '#rp-tresorier-agenda')
+    op.reload(); op.wait_for_selector('#eq-roles', timeout=10000); op.wait_for_timeout(1200)
+    check('boxes back exactly as before', all(op.is_checked(k) == v for k, v in defaults.items()), {k: op.is_checked(k) for k in defaults})
+    oc.close()
+    for pth in ('jobs/zz-newj', 'clients/zz-newc'): rpc(otok, 'doc_delete', {'p_path': pth})
+    fn(otok, 'en-route', {'jobId': 'j1', 'action': 'end', 'reason': 'cancelled'})
+    for k, v in ORIG.items(): doc_set(otok, k, v)
+    check('test data removed, jobs and clients as at the start', all(doc(k) == v for k, v in ORIG.items()) and doc('jobs/zz-newj') is None and doc('clients/zz-newc') is None)
+    b.close()
+check('no page errors', not ERRS, ERRS[:5])
+summary()

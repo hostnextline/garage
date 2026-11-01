@@ -95,8 +95,24 @@
   function idOf(path){ return path.split('/').pop(); }
   function C(col){ return cols[col] || (cols[col] = {docs:{}, loaded:false, since:null, listeners:[], docListeners:{}, loading:null, full:0}); }
   function freeze(o){ if (o && typeof o === 'object'){ Object.freeze(o); Object.keys(o).forEach(function(k){ freeze(o[k]); }); } return o; }
-  function snapDoc(col, id){ var d = C(col).docs[id]; return {id:id, exists:d !== undefined, data:function(){ return d === undefined ? undefined : freeze(clone(d)); }, metadata:{fromCache:false, hasPendingWrites:false}}; }
-  function snapCol(col){ var c = C(col), docs = Object.keys(c.docs).sort().map(function(id){ return snapDoc(col, id); }); return {docs:docs, size:docs.length, empty:!docs.length, docChanges:function(){ return []; }, metadata:{fromCache:false, hasPendingWrites:false}}; }
+  /* « Voir comme un mécano » (the owner, in preview): show only what that mechanic's account would get from the server
+     (same rule as can_read_doc: his jobs, the clients and photos of his jobs, the shared settings). Nothing is deleted. */
+  function lc(s){ return String(s == null ? '' : s).trim().toLowerCase(); }
+  function visible(col, id, d){
+    var v = T.view; if (!v || v.role !== 'mecano' || d === undefined) return true;
+    if (col.indexOf('data/') === 0) return true;
+    var m = lc(v.mechanic);
+    if (col === 'jobs') return lc(d.mechanic) === m;
+    if (col === 'clients' || col === 'photos'){
+      var js = C('jobs').docs, jid = id.split('__')[0];
+      for (var k in js){ if (lc(js[k].mechanic) === m && (col === 'clients' ? js[k].clientId === id : k === jid)) return true; }
+      return false;
+    }
+    return ['config','days','avail','specs','stock'].indexOf(col) >= 0;
+  }
+  T.setView = function(v){ T.view = v || null; Object.keys(cols).forEach(function(k){ notify(k); }); };
+  function snapDoc(col, id){ var d = C(col).docs[id]; if (!visible(col, id, d)) d = undefined; return {id:id, exists:d !== undefined, data:function(){ return d === undefined ? undefined : freeze(clone(d)); }, metadata:{fromCache:false, hasPendingWrites:false}}; }
+  function snapCol(col){ var c = C(col), docs = Object.keys(c.docs).filter(function(id){ return visible(col, id, c.docs[id]); }).sort().map(function(id){ return snapDoc(col, id); }); return {docs:docs, size:docs.length, empty:!docs.length, docChanges:function(){ return []; }, metadata:{fromCache:false, hasPendingWrites:false}}; }
   function notify(col, ids){
     var c = C(col);
     setTimeout(function(){

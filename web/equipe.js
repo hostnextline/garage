@@ -4,7 +4,13 @@
   var T = window.__supa; if (!T) return;
   function A(){ return window.__garageApi; }
   var me = null;
-  var X = {tracks:{}, trackLoading:{}, busy:{}, live:[], members:[], active:[], mapSel:null, showPath:{}, paths:{}, eq:{list:null, err:'', created:null, secrets:null, confirm:null, editing:null}, enRoute:null, near:false, warnedNear:false};
+  /* « Voir comme… » : the owner sees the app exactly as a mechanic, the treasurer or the office sees it.
+     His own account stays behind it: what he changes is saved under his name. */
+  var VA = null;
+  try { VA = JSON.parse(sessionStorage.getItem('gm.viewas') || 'null'); } catch(e){ VA = null; }
+  function previewing(){ return !!(me && VA && me.role === 'owner'); }
+  function eff(){ return previewing() ? {role:VA.role, mechanic:VA.mechanic || null, name:VA.name, user_id:me.user_id, active:true, preview:true} : me; }
+  var X = {tracks:{}, trackLoading:{}, busy:{}, live:[], members:[], active:[], mapSel:null, showPath:{}, paths:{}, eq:{list:null, err:'', created:null, secrets:null, confirm:null, editing:null}, enRoute:null, near:false, warnedNear:false, roles:{}};
   var ROLE = {owner:'Propriétaire', bureau:'Bureau', mecano:'Mécano', tresorier:'Trésorier'};
 
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -28,10 +34,34 @@
       });
     });
   }
-  function mineJob(j){ return !!(me && me.mechanic && (norm(j.mechanic) === norm(me.mechanic) || (!j.mechanic && me.role === 'mecano'))); }
+  function mineOf(m, j){ return !!(m && m.mechanic && (norm(j.mechanic) === norm(m.mechanic) || (!j.mechanic && m.role === 'mecano'))); }
+  function mineJob(j){ return mineOf(me, j); }          /* the real account (position, texts) */
+  function mineView(j){ return mineOf(eff(), j); }      /* what the screen shows (« Voir comme ») */
   function onPhone(){ var a = A(); return !!(a && a.phone && a.phone()); }
   function isStaff(){ return me && (me.role === 'owner' || me.role === 'bureau'); }
   function worksShifts(){ return !!(me && (me.role === 'mecano' || me.mechanic)); }
+  function staffView(){ var m = eff(); return !!(m && (m.role === 'owner' || m.role === 'bureau')); }
+  function shiftsView(){ var m = eff(); return !!(m && (m.role === 'mecano' || m.mechanic)); }
+
+  /* what the mechanic and the treasurer may do: the owner ticks boxes in Équipe et accès (document config/roles).
+     Nothing ticked = as before. « book » (mechanic) and « editinv » (treasurer) are also checked by the server. */
+  var PERMS = {
+    mecano:[
+      {k:'money', t:'Voir les chiffres du garage', s:'Ventes du mois et factures payées, sur l\'écran d\'accueil.', d:false},
+      {k:'book', t:'Prendre des rendez-vous', s:'Seulement dans son agenda.', d:false},
+      {k:'clients', t:'Voir l\'onglet Clients', s:'Seulement les clients de ses jobs.', d:true},
+      {k:'factures', t:'Voir l\'onglet Factures', s:'Seulement les factures de ses jobs.', d:true},
+      {k:'stock', t:'Voir et changer le stock', s:'Pièces et produits du camion.', d:true}
+    ],
+    tresorier:[
+      {k:'agenda', t:'Voir l\'agenda', s:'Les rendez-vous de tout le monde, sans rien y changer.', d:false},
+      {k:'clients', t:'Voir les clients', s:'Sans rien y changer.', d:true},
+      {k:'factures', t:'Voir les factures', s:'', d:true},
+      {k:'editinv', t:'Modifier les factures', s:'Les lignes, les rabais, « payée ». Rien d\'autre dans la job.', d:false},
+      {k:'stock', t:'Voir et changer le stock', s:'', d:true}
+    ]
+  };
+  function perm(role, k){ var r = X.roles && X.roles[role], v = r && r[k]; if (typeof v === 'boolean') return v; var p = (PERMS[role] || []).filter(function(x){ return x.k === k; })[0]; return p ? p.d : undefined; }
   function trackBase(){ return location.origin + location.pathname.replace(/[^\/]*$/, ''); }
   function trackLink(t){ return t && t.token ? trackBase() + 'suivi.html#t=' + t.token : ''; }
 
@@ -202,7 +232,7 @@
     var st = j.status || 'planifie', t = X.tracks[j.id];
     if (t === undefined) fetchTrack(j.id);
     if (st === 'annule' || st === 'noshow' || st === 'termine') return '';
-    var c = A().cl(j), who = first(c.firstName || c.name) || 'le client', phone = c.phone || '', mine = mineJob(j), busy = X.busy[j.id];
+    var c = A().cl(j), who = first(c.firstName || c.name) || 'le client', phone = c.phone || '', mine = mineView(j), busy = X.busy[j.id];
     var h = '<section class="sect er" aria-labelledby="er-h"><h3 id="er-h">' + (st === 'route' ? 'En route vers ' + esc(who) : st === 'place' ? 'Sur place' : 'Départ vers le client') + '</h3>';
     if (st === 'planifie'){
       if (busy) h += '<p class="er-line">Envoi du texto…</p>';
@@ -240,18 +270,21 @@
 
   /* ================= haut de l'agenda : compte, journée, trajet en cours ================= */
   function agendaTop(){
-    if (!me) return '';
+    var m = eff(); if (!m) return '';
     /* on a big screen the side menu shows who is signed in; in a small window this line does */
-    return (onPhone() ? '' : '<div class="acct"><span>Connecté : <b>' + esc(me.name) + '</b> · ' + esc(ROLE[me.role]) + '</span><button type="button" class="linkbtn" data-act="acct-out">Se déconnecter</button></div>') + shiftCard();
+    return (onPhone() ? '' : '<div class="acct"><span>Connecté : <b>' + esc(m.name) + '</b> · ' + esc(ROLE[m.role]) + '</span><button type="button" class="linkbtn" data-act="acct-out">Se déconnecter</button></div>') + shiftCard();
   }
   /* the side menu of a computer ends with who is signed in */
-  function navFoot(){ return me ? '<div class="navfoot"><span><b>' + esc(me.name) + '</b> · ' + esc(ROLE[me.role]) + '</span><button type="button" class="linkbtn" data-act="acct-out">Se déconnecter</button></div>' : ''; }
+  function navFoot(){ var m = eff(); return m ? '<div class="navfoot"><span><b>' + esc(m.name) + '</b> · ' + esc(ROLE[m.role]) + '</span><button type="button" class="linkbtn" data-act="acct-out">Se déconnecter</button></div>' : ''; }
   /* « Commencer ma journée » only where a position can be sent: a phone or a tablet (not a desk computer) */
   function canTrack(){ try { return onPhone() || !!(window.matchMedia && matchMedia('(pointer: coarse)').matches); } catch(e){ return onPhone(); } }
   function shiftCard(){
     var h = '';
-    if (worksShifts() && canTrack()){
-      if (!G.on){
+    if (shiftsView() && canTrack()){
+      if (previewing()){
+        h += '<section class="sect shift" aria-labelledby="sh-h"><h3 id="sh-h">Début de journée</h3><p class="small">Touche ce bouton en partant le matin. Le bureau voit où tu es, et le client voit ton trajet quand tu pars chez lui.</p>' +
+          '<button type="button" class="btn primary block" data-act="sh-start">Commencer ma journée</button></section>';
+      } else if (!G.on){
         var known = lsGet('gm.team.gpsok') === '1';
         h += '<section class="sect shift" aria-labelledby="sh-h"><h3 id="sh-h">Début de journée' + (A().help ? A().help('position', 'ta position') : '') + '</h3>' +
           (known ? '<p class="small">Touche ce bouton en partant le matin. Le bureau voit où tu es jusqu\'à « Fin de journée ».</p>'
@@ -270,7 +303,7 @@
     return h;
   }
   function settingsTop(){
-    if (!me || me.role !== 'owner' || onPhone()) return '';
+    var m = eff(); if (!m || m.role !== 'owner' || onPhone()) return '';
     return '<section class="sect"><h3>Équipe et accès</h3><p class="muted small">Les comptes de l\'équipe, les mots de passe, les textos aux clients et le paiement par carte.</p><a class="btn block" href="#equipe">Gérer l\'équipe et les accès</a></section>';
   }
 
@@ -367,7 +400,7 @@
     body += '<p class="legend small"><span><i class="gm-pin p-route mini"></i>En route</span><span><i class="gm-pin p-shift mini"></i>En journée</span><span><i class="gm-pin p-stale mini"></i>Signal perdu</span><span><i class="gm-pin p-job mini"></i>Job d\'aujourd\'hui</span></p>';
     var list = crew();
     body += '<section class="sect"><div class="sect-head"><h3>Mécanos</h3><span class="muted small">' + (X.liveAt ? 'mis à jour ' + ago(X.liveAt) : 'chargement…') + '</span></div>';
-    if (!list.length) body += '<p class="muted">Aucun mécano n\'a encore de compte. ' + (me.role === 'owner' ? '<a href="#equipe">Ajoute-les dans Équipe et accès</a>.' : 'Le propriétaire peut les ajouter.') + '</p>';
+    if (!list.length) body += '<p class="muted">Aucun mécano n\'a encore de compte. ' + (eff().role === 'owner' ? '<a href="#equipe">Ajoute-les dans Équipe et accès</a>.' : 'Le propriétaire peut les ajouter.') + '</p>';
     list.forEach(function(c){
       var l = c.l, st = mechState(l), t = X.active.filter(function(x){ return x.user_id === c.m.user_id; })[0], tj = t && a.findJob(t.job_id);
       var jobs = todaysJobs().filter(function(j){ return c.m.mechanic && norm(j.mechanic) === norm(c.m.mechanic); }), next = jobs.filter(function(j){ return j.status !== 'termine'; })[0];
@@ -385,11 +418,11 @@
   }
   /* dashboard: who is working and who is on the way */
   function dashExtra(){
-    if (!isStaff()) return '';
+    if (!staffView()) return '';
     if (!X.liveAt || Date.now() - X.liveAt > 30000) loadLive();
     var c = crew(), on = c.filter(function(x){ return mechState(x.l) !== 'off'; });
     var h = '<section class="sect" aria-labelledby="d-road"><div class="sect-head"><h3 id="d-road">Sur la route</h3><button type="button" class="btn sm" data-act="tab" data-t="carte">Voir la carte</button></div>';
-    if (!c.length) return h + '<p class="muted">Aucun mécano n\'a encore de compte.' + (me.role === 'owner' ? ' <a href="#equipe">Ajouter l\'équipe</a>' : '') + '</p></section>';
+    if (!c.length) return h + '<p class="muted">Aucun mécano n\'a encore de compte.' + (eff().role === 'owner' ? ' <a href="#equipe">Ajouter l\'équipe</a>' : '') + '</p></section>';
     if (!on.length) h += '<p class="muted small">Personne n\'a commencé sa journée.</p>';
     h += '<div class="qrows">' + c.map(function(x){
       var st = mechState(x.l), t = X.active.filter(function(a){ return a.user_id === x.m.user_id; })[0];
@@ -414,7 +447,7 @@
   }
   function viewEquipe(){
     var a = A();
-    if (!me || me.role !== 'owner') return {top:a.topBack('Équipe et accès', 'eq-back'), body:'<div class="banner"><p>Seul le propriétaire gère les accès.</p></div>'};
+    if (!eff() || eff().role !== 'owner') return {top:a.topBack('Équipe et accès', 'eq-back'), body:'<div class="banner"><p>Seul le propriétaire gère les accès.</p></div>'};
     if (!X.eq.list && !X.eq.loading && !X.eq.err) eqLoad();
     var top = a.topBack('Équipe et accès', 'eq-back', onPhone() ? 'Plus' : 'Réglages');
     var b = '';
@@ -435,6 +468,7 @@
             '<a class="btn sm" href="' + esc('sms:?&body=' + encodeURIComponent((ms.body || iv.link))) + '">Envoyer par texto</a><button type="button" class="btn sm" data-act="eq-copylink">Copier le lien</button></div>') +
         '<p class="muted small">Le lien marche une seule fois, pendant 7 jours.</p><button type="button" class="linkbtn" data-act="eq-hideinv">Fermer</button></section>';
     }
+    b += viewAsCard() + rolesCard();
     b += '<section class="sect"><h3>Personnes</h3>';
     if (!X.eq.list) b += '<p class="muted">Chargement…</p>';
     else X.eq.list.forEach(function(m){
@@ -449,6 +483,7 @@
         b += '<div class="banner warn"><p>Supprimer le compte de ' + esc(m.name) + ' ? Ses jobs restent au carnet.</p></div><div class="er-acts"><button type="button" class="btn sm" data-act="eq-cancel">Garder</button><button type="button" class="btn sm danger solid" data-act="eq-remove" data-v="' + esc(m.user_id) + '">Supprimer</button></div>';
       } else {
         b += '<div class="er-acts"><button type="button" class="btn sm" data-act="eq-edit" data-v="' + esc(m.user_id) + '">Modifier</button>' +
+          (self || !m.active || m.role === 'owner' ? '' : '<button type="button" class="btn sm" data-act="pv-person" data-v="' + esc(m.user_id) + '">👁 Voir comme ' + esc(first(m.name)) + '</button>') +
           (self ? '' : (!m.last_sign_in_at && m.active ? '<button type="button" class="btn sm" data-act="eq-reinvite" data-v="' + esc(m.user_id) + '">' + (m.invite ? 'Renvoyer l\'invitation' : 'Envoyer une invitation') + '</button>' : '') + '<button type="button" class="btn sm" data-act="eq-pw" data-v="' + esc(m.user_id) + '">Nouveau mot de passe</button>') + '</div>' +
           (self ? '' : (m.active ? '<details class="small eq-more"><summary>Bloquer ou supprimer l\'accès</summary><div class="er-acts">' : '<div class="er-acts">') + '<button type="button" class="btn sm" data-act="eq-active" data-v="' + esc(m.user_id) + '">' + (m.active ? 'Bloquer l\'accès (garder le compte)' : 'Redonner l\'accès') + '</button><button type="button" class="btn sm danger" data-act="eq-confirm" data-v="' + esc(m.user_id) + '">Supprimer le compte</button></div>' + (m.active ? '</details>' : ''));
       }
@@ -459,7 +494,7 @@
       '<div class="field"><label for="nw-name">Nom</label><input id="nw-name" autocomplete="off"></div>' +
       '<div class="field"><label for="nw-email">Courriel</label><input id="nw-email" type="email" inputmode="email" autocapitalize="off" spellcheck="false" autocomplete="off"></div>' +
       '<div class="grid2"><div class="field"><label for="nw-role">Rôle' + (A().help ? A().help('roles', 'les rôles') : '') + '</label>' + roleSelect('nw-role', 'mecano') + '</div><div class="field"><label for="nw-mech">Nom dans l\'agenda</label>' + mechSelect('nw-mech', '') + '</div></div>' +
-      '<ul class="roles small"><li><b>Mécano</b> : seulement ses jobs, le bouton « En route », la facture sur place. Sa position est partagée pendant sa journée.</li><li><b>Bureau</b> : agenda, clients, factures et carte des mécanos. Pas les réglages.</li><li><b>Trésorier</b> : son propre écran, la trésorerie (dépenses avec photo des reçus, rapport, taxes à remettre, Excel). Il voit les clients et les factures, sans rien y changer.</li><li><b>Propriétaire</b> : tout, y compris les accès.</li></ul>' +
+      '<ul class="roles small"><li><b>Mécano</b> : seulement ses jobs, le bouton « En route », la facture sur place. Sa position est partagée pendant sa journée.</li><li><b>Bureau</b> : agenda, clients, factures et carte des mécanos. Pas les réglages.</li><li><b>Trésorier</b> : son propre écran, la trésorerie (dépenses avec photo des reçus, rapport, taxes à remettre, Excel).</li><li><b>Propriétaire</b> : tout, y compris les accès.</li></ul><p class="small muted">Ce que le mécano et le trésorier voient de plus : plus haut, « Ce que chaque rôle peut faire ».</p>' +
       '<p class="formerr" id="nw-err" role="alert" hidden></p><button type="button" class="btn primary block" data-act="eq-invite">Envoyer l\'invitation</button>' +
       '<details class="small eq-more"><summary>Autre façon : créer un mot de passe temporaire</summary><p class="small">Pour quelqu\'un qui ne lit pas ses courriels : tu lui donnes toi-même un mot de passe.</p><button type="button" class="btn block" data-act="eq-add">Créer le compte avec un mot de passe temporaire</button></details></section>';
     var s = X.eq.secrets || {};
@@ -480,16 +515,100 @@
       '<p class="small">' + (s.tomtom ? '<span class="badge ok">TomTom branché</span> ' + esc(s.tomtom) : '<span class="badge">Cartes gratuites</span>') + '</p>' +
       '<div class="field"><label for="tt-key">Clé TomTom</label><input id="tt-key" type="password" autocomplete="off" spellcheck="false" placeholder="' + (s.tomtom ? 'Laisse vide pour garder la clé actuelle' : 'Clé de developer.tomtom.com') + '"></div>' +
       '<div class="er-acts"><button type="button" class="btn sm primary" data-act="tt-save">Enregistrer</button>' + (s.tomtom ? '<button type="button" class="btn sm danger" data-act="tt-clear">Retirer</button>' : '') + '</div></div></details>';
-    b += '<section class="sect"><h3>Ton compte</h3><p class="small">' + esc(me.name) + ' · ' + ROLE[me.role] + '</p><button type="button" class="btn" data-act="acct-out">Se déconnecter</button></section>';
+    b += '<section class="sect"><h3>Ton compte</h3><p class="small">' + esc(eff().name) + ' · ' + ROLE[eff().role] + '</p><button type="button" class="btn" data-act="acct-out">Se déconnecter</button></section>';
     return {top:top, body:b};
   }
+  /* « Voir l'app comme… » : one button per mechanic in the agenda, the treasurer, the office */
+  function viewAsCard(){
+    var list = X.eq.list || [], ms = A().mechanics(), out = [];
+    ms.forEach(function(n){ if (me && me.mechanic && norm(n) === norm(me.mechanic)) return; out.push({role:'mecano', mechanic:n, name:n}); });
+    ['tresorier', 'bureau'].forEach(function(r){
+      var m = list.filter(function(x){ return x.role === r && x.active; })[0];
+      out.push({role:r, name:m ? m.name : ROLE[r]});
+    });
+    return '<section class="sect" id="eq-viewas"><h3>Voir l\'app comme…' + (A().help ? A().help('voircomme', 'voir comme') : '') + '</h3><p class="small">Tu vois exactement son écran. Tu peux corriger des choses : c\'est enregistré à ton nom. Un bandeau en haut te ramène à ton compte.</p>' +
+      '<div class="pv-btns">' + out.map(function(o){ return '<button type="button" class="btn sm" data-act="pv-start" data-role="' + o.role + '" data-mech="' + esc(o.mechanic || '') + '" data-name="' + esc(o.name) + '">👁 ' + esc(o.name) + (o.role === 'mecano' ? ' <span class="muted">(mécano)</span>' : o.name !== ROLE[o.role] ? ' <span class="muted">(' + ROLE[o.role].toLowerCase() + ')</span>' : '') + '</button>'; }).join('') + '</div></section>';
+  }
+  /* « Ce que chaque rôle peut faire » : boxes saved right away in config/roles */
+  function rolesCard(){
+    var h = '<section class="sect" id="eq-roles"><h3>Ce que chaque rôle peut faire' + (A().help ? A().help('droits', 'les droits') : '') + '</h3><p class="small muted">Coche ou décoche : c\'est enregistré tout de suite, et ça change sur leur téléphone en quelques secondes.</p>';
+    ['mecano', 'tresorier'].forEach(function(r){
+      h += '<fieldset class="rp"><legend>' + (r === 'mecano' ? 'Le mécano' : 'Le trésorier') + '</legend>' +
+        (r === 'mecano' ? '<p class="small muted">Toujours : ses jobs du jour, le bouton « En route », les photos et la facture sur place.</p>' : '<p class="small muted">Toujours : la trésorerie (dépenses, reçus, rapport, taxes).</p>') +
+        PERMS[r].map(function(p){ var id = 'rp-' + r + '-' + p.k;
+          return '<label class="check rp-row" for="' + id + '"><input type="checkbox" id="' + id + '" data-act="rp" data-role="' + r + '" data-k="' + p.k + '"' + (perm(r, p.k) ? ' checked' : '') + (X.rolesLoaded ? '' : ' disabled') + '><span><b>' + esc(p.t) + '</b>' + (p.s ? '<span class="small muted">' + esc(p.s) + '</span>' : '') + '</span></label>'; }).join('') +
+        '<button type="button" class="linkbtn" data-act="pv-role" data-role="' + r + '">👁 Voir ce qu\'il voit</button></fieldset>';
+    });
+    return h + '</section>';
+  }
+  function saveRole(role, k, on, box){
+    if (!X.rolesLoaded){ if (box) box.checked = !on; return; }
+    if (box) box.disabled = true;
+    /* start from what is saved now (another screen may have changed another box) */
+    var ref = T.db.doc('config/roles'), next;
+    ref.get().then(function(sn){
+      next = JSON.parse(JSON.stringify(sn.exists ? (sn.data() || {}) : {}));
+      next[role] = Object.assign({}, next[role] || {}); next[role][k] = !!on;
+      return ref.set(next);
+    }).then(function(){ X.roles = next; toast('Enregistré : ' + (on ? 'oui' : 'non') + ' — ' + PERMS[role].filter(function(p){ return p.k === k; })[0].t.toLowerCase()); render(); },
+      function(e){ if (box){ box.checked = !on; box.disabled = false; } toast('Pas enregistré : ' + (e && e.message || 'erreur')); render(); });
+  }
+  /* start / stop the preview */
+  function startView(v){
+    var a = A(); if (!a || !me || me.role !== 'owner') return;
+    if (!VA) { try { X.uiBefore = sessionStorage.getItem('gm.ui'); } catch(e){ X.uiBefore = null; } try { sessionStorage.setItem('gm.ui.before', X.uiBefore || ''); } catch(e){} }
+    VA = {role:v.role, mechanic:v.mechanic || null, name:v.name || ROLE[v.role]};
+    try { sessionStorage.setItem('gm.viewas', JSON.stringify(VA)); } catch(e){}
+    /* a mechanic works on his phone: on a computer, show his phone screen */
+    if (v.role === 'mecano' && !a.phoneDevice()) a.setUi('phone');
+    applyView(); goHome();
+  }
+  function stopView(){
+    var a = A(); VA = null;
+    try { sessionStorage.removeItem('gm.viewas'); var u = sessionStorage.getItem('gm.ui.before'); sessionStorage.removeItem('gm.ui.before'); a.setUi(u || null); } catch(e){ a.setUi(null); }
+    applyView();
+    location.hash = 'equipe'; if (a.S.tab === 'equipe'){ a.S.screen = null; render(); }
+    toast('De retour sur ton compte');
+  }
+  function applyView(){
+    if (T.setView) T.setView(previewing() ? eff() : null);
+    document.body.classList.toggle('pv-on', previewing());
+    document.body.classList.toggle('pv-narrow', previewing() && VA.role === 'mecano' && !A().phoneDevice());
+    pvBar();
+  }
+  function goHome(){ var a = A(), t = a.defTab(); a.S.screen = null; a.S.inv = null; a.S.backTo = null; if (location.hash.slice(1) !== t) location.hash = t; else { a.S.tab = t; render(); } window.scrollTo(0, 0); }
+  function pvBar(){
+    var el = document.getElementById('pv-bar');
+    if (!previewing()){ if (el) el.remove(); return; }
+    if (!el){ el = document.createElement('div'); el.id = 'pv-bar'; el.setAttribute('role', 'status'); document.body.insertBefore(el, document.body.firstChild); }
+    var v = eff();
+    el.innerHTML = '<span class="pv-t"><span aria-hidden="true">👁 </span><span class="pv-long">Tu vois l\'app comme </span><span class="pv-short">Comme </span><b>' + esc(v.name) + '</b> (' + esc(ROLE[v.role].toLowerCase()) + ')</span>' +
+      '<button type="button" class="btn sm" data-act="pv-exit">Revenir à mon compte</button>';
+    pvFit();
+  }
+  /* the page starts below the bar, whatever its height */
+  function pvFit(){ var el = document.getElementById('pv-bar'); if (el) document.documentElement.style.setProperty('--pvh', el.offsetHeight + 'px'); }
+  window.addEventListener('resize', pvFit);
   function val(id){ var e = document.getElementById(id); return e ? e.value.trim() : ''; }
   function eqErr(m){ var e = document.getElementById('nw-err'); if (e){ e.textContent = m; e.hidden = !m; if (m) e.scrollIntoView({block:'nearest'}); } else if (m) toast(m); }
   function keysDoc(patch){ return T.db.doc('config/keys').get().then(function(s){ var d = Object.assign({}, s.exists ? s.data() : {}, patch); return T.db.doc('config/keys').set(d); }); }
 
   function onAction(a, b){
     var id = b.dataset.id, v = b.dataset.v, api = A();
+    /* in a preview, the buttons that act as that person (his workday, his position) are only shown */
+    if (previewing() && (a === 'sh-start' || a === 'sh-end' || a === 'sh-wake')){ toast('Aperçu : ce bouton marche seulement sur le téléphone de ' + first(eff().name) + '.'); return; }
+    if (previewing() && a === 'acct-out'){ stopView(); return; }
     switch (a){
+      case 'pv-start': startView({role:b.dataset.role, mechanic:b.dataset.mech || null, name:b.dataset.name}); break;
+      case 'pv-role': {
+        var r = b.dataset.role, list = X.eq.list || [], mm = list.filter(function(x){ return x.role === r && x.active; })[0];
+        if (r === 'mecano'){ var mn = mm && mm.mechanic ? mm.mechanic : api.mechanics()[0]; if (!mn){ toast('Ajoute d\'abord un mécano dans l\'agenda (Réglages).'); break; } startView({role:'mecano', mechanic:mn, name:mm && mm.mechanic === mn ? mm.name : mn}); }
+        else startView({role:r, name:mm ? mm.name : ROLE[r]});
+        break;
+      }
+      case 'pv-person': { var pm = (X.eq.list || []).filter(function(x){ return x.user_id === v; })[0]; if (pm) startView({role:pm.role, mechanic:pm.mechanic || null, name:pm.name}); break; }
+      case 'pv-exit': stopView(); break;
+      case 'rp': saveRole(b.dataset.role, b.dataset.k, b.checked, b); break;
       case 'app-reload': location.reload(); break;
       case 'acct-out': {
         var pend = T.pending ? T.pending() : 0;
@@ -639,7 +758,15 @@
     '.credl dd{margin:0;overflow-wrap:anywhere;font-weight:600}.credl dd.pw{font:600 22px/1.2 var(--f-mono);letter-spacing:.04em;white-space:nowrap;overflow-wrap:normal}' +
     '.created{border:2px solid var(--ok)}details summary{cursor:pointer;font-weight:600;min-height:36px;display:flex;align-items:center}details ol{margin:6px 0 0;padding-left:18px;display:grid;gap:4px}' +
     '.badge{display:inline-block;border-radius:6px;padding:1px 8px;font-weight:600;background:var(--idle-bg);color:var(--idle)}.badge.ok{background:var(--ok-bg);color:var(--ok)}.badge.warn{background:var(--warn-bg);color:var(--warn)}' +
-    '.leaflet-container{font:inherit}.leaflet-control-attribution{font-size:11px}';
+    '.leaflet-container{font:inherit}.leaflet-control-attribution{font-size:11px}' +
+    '.pv-btns{display:flex;flex-wrap:wrap;gap:8px}.rp{border:1px solid var(--line);border-radius:14px;padding:10px 14px 6px;margin:0;display:grid;gap:2px}.rp legend{font-weight:700;padding:0 6px}' +
+    '.rp-row{align-items:flex-start;padding:6px 0}.rp-row input{margin-top:2px;flex:none}.rp-row>span{display:grid;gap:1px}' +
+    '#pv-bar{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;justify-content:center;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:#1E1915;color:#F7F1EA;font-size:14.5px;box-shadow:0 4px 14px rgba(0,0,0,.25)}' +
+    '#pv-bar .btn{min-height:34px;padding:0 12px;background:#F7F1EA;color:#1E1915;border-color:#F7F1EA}#pv-bar b{color:#FFB37A}.pv-short{display:none}' +
+    '@media (max-width:560px){#pv-bar .pv-long{display:none}#pv-bar .pv-short{display:inline}#pv-bar{font-size:14px}}' +
+    'body.pv-on{padding-top:var(--pvh,48px)}body.pv-on .top{top:calc(var(--pvh,48px) + 6px)}body.pv-on.ui-pc .tabbar{top:calc(var(--pvh,48px) + 12px)}' +
+    'body.pv-narrow .top{max-width:450px;margin-left:auto;margin-right:auto}body.pv-narrow .wrap{max-width:430px}body.pv-narrow .tabbar{width:min(430px,calc(100% - 20px))}body.pv-narrow .sheet{max-width:430px}' +
+    'body.pv-narrow::after{box-shadow:inset calc((100vw - 470px) / 2) 0 0 rgba(30,25,21,.10),inset calc((470px - 100vw) / 2) 0 0 rgba(30,25,21,.10)}';
   document.head.appendChild(css);
 
   var MAP_ICON = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>';
@@ -682,10 +809,25 @@
   window.__garageExt = {
     tabs:[{key:'carte', label:'Carte', icon:MAP_ICON, view:viewMap}, {key:'equipe', label:'Équipe', hidden:true, view:viewEquipe}],
     can:function(w){
-      if (!me) return undefined;
-      var r = me.role;
-      /* the treasurer: his own screen; sees clients and invoices, changes nothing else */
-      if (r === 'tresorier') return w === 'tab:tresor' || w === 'expenses' || w === 'money' || w === 'tab:clients' || w === 'tab:factures' || w === 'tab:plus' || w === 'tab:stock' || w === 'stock';
+      var m = eff(); if (!m) return undefined;
+      var r = m.role;
+      /* the treasurer: his own screen; the rest only as the owner ticked it (Équipe et accès) */
+      if (r === 'tresorier'){
+        if (w === 'tab:tresor' || w === 'expenses' || w === 'money' || w === 'tab:plus') return true;
+        if (w === 'tab:clients') return perm(r, 'clients');
+        if (w === 'tab:factures') return perm(r, 'factures');
+        if (w === 'tab:stock' || w === 'stock') return perm(r, 'stock');
+        if (w === 'tab:agenda' || w === 'tab:jour') return perm(r, 'agenda');
+        if (w === 'invoice') return perm(r, 'editinv');
+        return false;
+      }
+      if (r === 'mecano'){
+        if (w === 'money') return perm(r, 'money');
+        if (w === 'book') return perm(r, 'book');
+        if (w === 'tab:clients') return perm(r, 'clients');
+        if (w === 'tab:factures') return perm(r, 'factures');
+        if (w === 'tab:stock' || w === 'stock') return perm(r, 'stock');
+      }
       if (w === 'tab:tresor' || w === 'expenses') return r === 'owner';
       if (w === 'tab:reglages') return r === 'owner';
       if (w === 'tab:carte') return r !== 'mecano';
@@ -697,15 +839,15 @@
     /* the client's page: invoice (and « Payer »), work to approve; texted through GoHighLevel */
     clientLink:function(j, what, extraId){ return invoke('client', {action:'link', jobId:j.id, send:what || null, extraId:extraId || null, base:trackBase()}); },
     payOn:function(){ return !!X.payOnline; },
-    myMechanic:function(){ return me && me.role === 'mecano' ? me.mechanic : null; },
-    homeTab:function(){ return me && me.role === 'tresorier' ? 'tresor' : null; },
-    greetName:function(){ return me ? first(me.name) : ''; },
-    tellsClient:true, isMine:mineJob,
+    myMechanic:function(){ var m = eff(); return m && m.role === 'mecano' ? m.mechanic : null; },
+    homeTab:function(){ var m = eff(); return m && m.role === 'tresorier' ? 'tresor' : null; },
+    greetName:function(){ var m = eff(); return m ? first(m.name) : ''; },
+    tellsClient:true, isMine:mineView, previewing:previewing,
     decodeVin:function(vin){ return invoke('vehicle', {vin:vin}).then(function(d){ return (d && d.r) || {}; }); },
     phoneTop:function(){ return me ? shiftCard() : ''; },
     navFoot:navFoot,
     guideItems:function(){
-      if (!me || me.role !== 'owner') return [];
+      if (!eff() || eff().role !== 'owner') return [];
       if (!X.eq.list && !X.eq.loading && !X.eq.err) eqLoad();
       var s = X.eq.secrets || {}, n = (X.eq.list || []).filter(function(m){ return m.active; }).length;
       return [
@@ -716,11 +858,11 @@
     },
     plusItems:function(){
       var out = [];
-      if (isStaff()) out.push({href:'#carte', label:'Carte des mécanos', sub:'Où est chaque mécano, qui est en route'});
-      if (me && me.role === 'owner') out.push({href:'#equipe', label:'Équipe et accès', sub:'Comptes, mots de passe, textos aux clients'});
+      if (staffView()) out.push({href:'#carte', label:'Carte des mécanos', sub:'Où est chaque mécano, qui est en route'});
+      if (eff() && eff().role === 'owner') out.push({href:'#equipe', label:'Équipe et accès', sub:'Comptes, voir comme…, mots de passe, textos'});
       return out;
     },
-    accountRow:function(){ return me ? '<section class="sect"><p class="small">Connecté : <b>' + esc(me.name) + '</b> · ' + esc(ROLE[me.role]) + '</p><button type="button" class="btn block" data-act="acct-out">Se déconnecter</button></section>' : ''; },
+    accountRow:function(){ var m = eff(); return m ? '<section class="sect"><p class="small">Connecté : <b>' + esc(m.name) + '</b> · ' + esc(ROLE[m.role]) + '</p><button type="button" class="btn block" data-act="acct-out">Se déconnecter</button></section>' : ''; },
     dashTop:agendaTop, dashExtra:dashExtra,
     agendaTop:agendaTop, settingsTop:settingsTop, jobExtra:jobExtra, onStatus:onStatus, onAction:onAction,
     nextInvoiceNo:function(start){ return T.sb.rpc('next_invoice_number', {p_start:start}).then(function(r){ if (r.error || typeof r.data !== 'number') throw r.error || new Error('no number'); return r.data; }); }
@@ -729,6 +871,9 @@
   /* once signed in: role, workday already running, address keys of the garage */
   T.onReady(function(){
     me = T.member;
+    if (VA && me.role !== 'owner'){ VA = null; try { sessionStorage.removeItem('gm.viewas'); } catch(e){} }
+    T.db.doc('config/roles').onSnapshot(function(s){ X.roles = s.exists ? (s.data() || {}) : {}; X.rolesLoaded = true; render(); }, function(){ X.rolesLoaded = true; render(); });
+    if (previewing()) setTimeout(applyView, 0);
     T.db.doc('config/keys').get().then(function(s){ X.payOnline = !!(s.exists && s.data().payOnline); }, function(){});
     if (worksShifts()){
       T.sb.from('mech_live').select('*').eq('user_id', me.user_id).maybeSingle().then(function(r){
