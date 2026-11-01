@@ -859,8 +859,24 @@ details.adv[open] > summary{margin-bottom:8px}
 .qrbox{width:200px;height:200px;padding:10px;border-radius:14px;background:#fff;justify-self:center;border:1px solid var(--line)}
 .qrbox svg{width:100%;height:100%;display:block}
 .inst-url{text-align:center;font-size:19px;font-weight:700;word-break:break-all;letter-spacing:.01em}
-.tour{display:grid;gap:12px;justify-items:center;text-align:center;padding:4px 0 2px}.tour .tour-ic{font-size:46px;line-height:1}.tour h3{font-size:21px}.tour p{max-width:46ch;color:var(--ink)}.tour .grid2{width:100%}
-.tour-dots{display:flex;gap:6px}.tour-dots i{width:8px;height:8px;border-radius:50%;background:var(--line-strong)}.tour-dots i.on{background:var(--signal);width:20px;border-radius:4px}
+.touring{overflow:hidden}
+#tour-ov{position:fixed;inset:0;z-index:80;pointer-events:none}
+#tour-ov .tt-block{position:absolute;inset:0;pointer-events:auto}
+#tour-ov .tt-dim{position:absolute;inset:0;background:rgba(20,14,10,.62);pointer-events:auto}
+#tour-ov .tt-hole{position:absolute;border-radius:16px;box-shadow:0 0 0 9999px rgba(20,14,10,.62),0 0 0 3px #F7974F,0 0 24px 6px rgba(247,151,79,.55);transition:all .35s cubic-bezier(.2,.8,.2,1);pointer-events:none}
+@media (prefers-reduced-motion:no-preference){#tour-ov .tt-hole.tap{animation:ttpulse 1.3s ease-in-out infinite}@keyframes ttpulse{50%{box-shadow:0 0 0 9999px rgba(20,14,10,.62),0 0 0 6px #F7974F,0 0 34px 12px rgba(247,151,79,.7)}}}
+#tour-ov .tt-tip{position:absolute;pointer-events:auto;background:var(--surface-solid,#FFFCF9);color:var(--ink);border-radius:20px;padding:14px 16px 12px;box-shadow:0 18px 50px rgba(0,0,0,.35);display:grid;gap:8px}
+@media (prefers-reduced-motion:no-preference){#tour-ov .tt-tip{animation:ttin .3s cubic-bezier(.2,.8,.2,1)}@keyframes ttin{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}}
+.tt-top{display:flex;align-items:center;gap:10px}.tt-bar{flex:1;height:8px;border-radius:4px;background:var(--line);overflow:hidden}.tt-bar i{display:block;height:100%;background:var(--accent,#EE6A2F);border-radius:4px;transition:width .4s}
+.tt-pts{font-weight:700;font-size:14px;white-space:nowrap}.tt-step{font-size:12.5px;color:var(--muted)}
+.tt-head{display:flex;align-items:center;gap:10px}.tt-ic{font-size:30px;line-height:1}.tt-head h3{font-size:18px}
+.tt-you{font-weight:700;color:#C2410C}.tt-btns{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.tt-win{text-align:center;justify-items:center}.tt-trophy{font-size:64px;line-height:1}
+@media (prefers-reduced-motion:no-preference){.tt-trophy{animation:ttwin .7s cubic-bezier(.2,1.6,.4,1)}@keyframes ttwin{from{transform:scale(.2) rotate(-20deg)}to{transform:none}}}
+.tt-conf{position:absolute;inset:0;overflow:hidden}.tt-conf i{position:absolute;top:-12px;width:9px;height:14px;border-radius:2px;animation:ttfall 2s linear forwards}
+@keyframes ttfall{to{transform:translateY(105vh) rotate(540deg)}}
+.tt-pop{position:fixed;left:50%;top:38%;z-index:90;transform:translateX(-50%);font:800 34px/1 var(--f-display);color:#F2B200;text-shadow:0 2px 10px rgba(0,0,0,.4);pointer-events:none;animation:ttpop 1.1s ease-out forwards}
+@keyframes ttpop{from{opacity:1;transform:translate(-50%,10px) scale(.8)}to{opacity:0;transform:translate(-50%,-60px) scale(1.2)}}
 .guide{display:grid;gap:10px}
 .guide ol{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .guide li a,.guide li button.g-go{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:10px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);color:var(--ink);text-decoration:none;font:inherit;font-weight:600;text-align:left;cursor:pointer}
@@ -4054,9 +4070,7 @@ document.addEventListener('click', function(e){
     case 'ui-phone': setUiOverride(null); S.tab = defTab(); if (location.hash) location.hash = S.tab; render(); window.scrollTo(0, 0); if (ext() && typeof ext().onUi === 'function') ext().onUi(); break;
     case 'ph-install': installApp(); break;
     case 'app-install': installSheet(); break;
-    case 'tour-go': tourOpen(v); break;
-    case 'tour-end': tourEnd(); break;
-    case 'tour-replay': tourOpen(0, true); break;
+    case 'tour-replay': tourStart(true); break;
     case 'inst-copy': { var iu = realAppUrl(); if (navigator.clipboard) navigator.clipboard.writeText(iu).then(function(){ toast('Adresse copiée : colle-la dans Safari ou Chrome'); }, function(){ toast(iu); }); else toast(iu); break; }
     case 'app-done': appInstMark('manuel'); closeSheet(); toast('Bravo ! L\'app est sur ton téléphone.'); render(); break;
     case 'inst-later': try { localStorage.setItem('gm.inst.later', '1'); } catch(x){} render(); break;
@@ -4342,27 +4356,110 @@ function tourCheck(){
   S.tourAsked = true;
   S.db.doc(tourPath()).get().then(function(sn){
     if (sn.exists && sn.data() && sn.data().seenAt) return;
-    var go = function(){ if (S.sheet) return setTimeout(go, 1500); tourOpen(0, false); };
-    setTimeout(go, 600);
+    var go = function(){ if (S.sheet) return setTimeout(go, 1500); tourStart(false); };
+    setTimeout(go, 700);
   }, function(){});
 }
-function tourOpen(i, replay){
+/* ---- the guided tour: a dark layer with a lit hole around the real button, a bubble, points, a trophy ---- */
+var TOUR = null;
+function tourStart(replay){
   var st = tourSteps(); if (!st.length) return;
-  i = Math.max(0, Math.min(+i || 0, st.length - 1));
-  S.tour = {i:i, replay:replay === undefined ? !!(S.tour && S.tour.replay) : !!replay};
-  var x = st[i], last = i === st.length - 1, e = ext(), who = e && typeof e.greetName === 'function' ? e.greetName() : '';
-  var h = '<div class="tour" id="tour" data-i="' + i + '"><div class="tour-ic" aria-hidden="true">' + x.icon + '</div><h3>' + esc(x.t) + '</h3><p>' + x.p + '</p>' +
-    '<div class="tour-dots" role="img" aria-label="Étape ' + (i + 1) + ' sur ' + st.length + '">' + st.map(function(_, k){ return '<i' + (k === i ? ' class="on"' : '') + '></i>'; }).join('') + '</div>' +
-    '<div class="grid2">' + (i ? '<button type="button" class="btn" data-act="tour-go" data-v="' + (i - 1) + '">Retour</button>' : '<button type="button" class="btn ghost" data-act="tour-end">Passer</button>') +
-    (last ? '<button type="button" class="btn primary" data-act="tour-end">C\'est parti</button>' : '<button type="button" class="btn primary" data-act="tour-go" data-v="' + (i + 1) + '">Suivant</button>') + '</div></div>';
-  openSheet('Bienvenue' + (who ? ', ' + who : ''), 'Visite guidée · étape ' + (i + 1) + ' sur ' + st.length, h);
+  if (S.sheet) closeSheet();
+  TOUR = {steps:st, i:0, dir:1, replay:!!replay, pts:0, home:location.hash.slice(1) || S.tab};
+  tourShow();
 }
-function tourEnd(){
-  var replay = S.tour && S.tour.replay, p = tourPath(); S.tour = null; closeSheet();
+function tourEl(sel){ if (!sel) return null; var l = $$(sel); for (var k = 0; k < l.length; k++){ var r = l[k].getBoundingClientRect(); if (r.width > 0 && r.height > 0 && getComputedStyle(l[k]).visibility !== 'hidden') return l[k]; } return null; }
+function tourGo(go){
+  if (!go) return;
+  if (go === 'home'){ var h = defTab(); S.screen = null; S.inv = null; if (location.hash.slice(1) !== h) location.hash = h; else { S.tab = h; render(); } }
+  else if (go.indexOf('tab:') === 0){ var t = go.slice(4); if (tabOk(t)){ S.screen = null; if (location.hash.slice(1) !== t) location.hash = t; else { S.tab = t; render(); } } }
+  else if (go === 'job'){ var lm = lockedMech(), js = S.jobs.filter(function(j){ return j.date === today() && !isOff(j) && (!lm || norm(j.mechanic) === norm(lm)); }).sort(byWhen); if (js.length){ S.jobId = js[0].id; S.screen = 'job'; S.backTo = null; render(); } }
+  else if (go.indexOf('view:') === 0){ S.trView = go.slice(5); render(); }
+  window.scrollTo(0, 0);
+}
+function tourShow(){
+  if (!TOUR) return;
+  var x = TOUR.steps[TOUR.i];
+  tourGo(x.go);
+  setTimeout(function(){
+    if (!TOUR) return;
+    var el = tourEl(x.sel);
+    if (x.sel && !el){   /* not on this screen: skip it, in the direction we are going */
+      if (TOUR.dir < 0 && TOUR.i > 0){ TOUR.i--; tourShow(); } else if (TOUR.dir >= 0 && TOUR.i < TOUR.steps.length - 1){ TOUR.i++; tourShow(); } else if (TOUR.dir >= 0) tourDone(); else { TOUR.dir = 1; tourShow(); }
+      return; }
+    if (el){ el.scrollIntoView({block:'center', behavior:'instant'}); }
+    tourDraw();
+  }, x.go ? 450 : 60);
+}
+function tourDraw(){
+  if (!TOUR) return;
+  var x = TOUR.steps[TOUR.i], el = tourEl(x.sel), n = TOUR.steps.length, ov = $('#tour-ov');
+  if (!ov){ ov = document.createElement('div'); ov.id = 'tour-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); document.body.appendChild(ov); document.body.classList.add('touring'); }
+  var W = window.innerWidth, H = window.innerHeight, pad = 8, r = el ? el.getBoundingClientRect() : null;
+  var hole = r ? {x:Math.max(4, r.left - pad), y:Math.max(4, r.top - pad), w:Math.min(W - 8, r.width + pad * 2), h:r.height + pad * 2} : null;
+  /* clicks go through the hole only on « À toi ! » steps */
+  var block = hole && x.tap ? "path(evenodd, 'M0 0H" + W + "V" + H + "H0Z M" + hole.x + " " + hole.y + "h" + hole.w + "v" + hole.h + "h-" + hole.w + "Z')" : 'none';
+  var last = TOUR.i === n - 1;
+  var tip = '<div class="tt-top"><div class="tt-bar" aria-hidden="true"><i style="width:' + Math.round((TOUR.i + 1) / n * 100) + '%"></i></div><span class="tt-pts" aria-label="' + TOUR.pts + ' points">⭐ ' + TOUR.pts + '</span></div>' +
+    '<div class="tt-step">Étape ' + (TOUR.i + 1) + ' sur ' + n + '</div>' +
+    '<div class="tt-head"><span class="tt-ic" aria-hidden="true">' + x.icon + '</span><h3 id="tt-t">' + esc(x.t).replace(/« /g, '«\u00a0').replace(/ »/g, '\u00a0»') + '</h3></div><p>' + x.p.replace(/« /g, '«\u00a0').replace(/ »/g, '\u00a0»') + '</p>' +
+    (x.tap ? '<p class="tt-you">👆 À toi ! Touche le bouton qui brille.</p>' : '') +
+    '<div class="tt-btns">' + (TOUR.i ? '<button type="button" class="btn sm ghost" data-act="tt-prev">Retour</button>' : '<button type="button" class="btn sm ghost" data-act="tt-skip">Passer la visite</button>') +
+    (x.tap ? '<button type="button" class="btn sm ghost" data-act="tt-next">Je regarderai plus tard</button>' : '<button type="button" class="btn sm primary" data-act="tt-next">' + (TOUR.i === 0 ? 'C\'est parti !' : last ? 'Terminer' : 'Suivant') + '</button>') + '</div>';
+  ov.innerHTML = '<div class="tt-block" style="clip-path:' + block + '"></div>' +
+    (hole ? '<div class="tt-hole' + (x.tap ? ' tap' : '') + '" style="left:' + hole.x + 'px;top:' + hole.y + 'px;width:' + hole.w + 'px;height:' + hole.h + 'px"></div>' : '<div class="tt-dim"></div>') +
+    '<div class="tt-tip" aria-labelledby="tt-t">' + tip + '</div>';
+  var t = ov.querySelector('.tt-tip'), th = t.offsetHeight, tw = Math.min(380, W - 24);
+  t.style.width = tw + 'px';
+  if (!hole){ t.style.left = Math.round((W - tw) / 2) + 'px'; t.style.top = Math.max(16, Math.round((H - t.offsetHeight) / 2)) + 'px'; }
+  else {
+    var below = hole.y + hole.h + 14, above = hole.y - 14 - t.offsetHeight;
+    var top = below + t.offsetHeight < H - 8 ? below : above > 8 ? above : Math.max(8, H - t.offsetHeight - 8);
+    t.style.top = Math.round(top) + 'px';
+    t.style.left = Math.round(Math.max(12, Math.min(W - tw - 12, hole.x + hole.w / 2 - tw / 2))) + 'px';
+    t.classList.toggle('up', top < hole.y);
+  }
+  var f = ov.querySelector('[data-act="tt-next"]'); if (f) setTimeout(function(){ try { f.focus({preventScroll:true}); } catch(e){} }, 30);
+}
+function tourNext(won){
+  if (!TOUR) return;
+  if (won){ TOUR.pts += 10; tourPop('+10'); }
+  else if (!TOUR.steps[TOUR.i].tap) TOUR.pts += 5;
+  TOUR.dir = 1;
+  if (TOUR.i < TOUR.steps.length - 1){ TOUR.i++; tourShow(); } else tourDone();
+}
+function tourPop(txt){ var p = document.createElement('div'); p.className = 'tt-pop'; p.textContent = txt; document.body.appendChild(p); setTimeout(function(){ p.remove(); }, 1100); }
+function tourDone(){
+  var ov = $('#tour-ov'); if (!ov || !TOUR) return;
+  var e = ext(), who = e && typeof e.greetName === 'function' ? e.greetName() : '';
+  var conf = ''; for (var k = 0; k < 36; k++) conf += '<i style="left:' + (k * 2.8 % 100) + '%;background:' + ['#EE6A2F','#F2B200','#1C7A4B','#2257A8','#F7974F'][k % 5] + ';animation-delay:' + (k % 9) * 0.07 + 's;animation-duration:' + (1.4 + (k % 5) * 0.25) + 's"></i>';
+  ov.innerHTML = '<div class="tt-dim"></div><div class="tt-conf" aria-hidden="true">' + conf + '</div>' +
+    '<div class="tt-tip tt-win"><div class="tt-trophy" aria-hidden="true">🏆</div><h3 id="tt-t">Bravo' + (who ? ', ' + esc(who) : '') + ' !</h3><p>Tu connais l\'app. <b>⭐ ' + TOUR.pts + ' points</b></p>' +
+    (TOUR.replay || !window.__webDownloads || !phone() || isStandalone() || S.appInst ? '' : '<p class="small">Dernière chose : mettre l\'app sur ton écran d\'accueil. On te montre comment.</p>') +
+    '<p class="small muted">Tu peux revoir cette visite dans Plus.</p><button type="button" class="btn primary block" data-act="tt-end">C\'est parti</button></div>';
+  var t = ov.querySelector('.tt-tip'), W = window.innerWidth, tw = Math.min(360, W - 24); t.style.width = tw + 'px'; t.style.left = Math.round((W - tw) / 2) + 'px'; t.style.top = Math.max(16, Math.round((window.innerHeight - t.offsetHeight) / 2)) + 'px';
+}
+function tourEnd(skipped){
+  if (!TOUR) return;
+  var replay = TOUR.replay, home = TOUR.home, p = tourPath(), ov = $('#tour-ov');
+  TOUR = null; if (ov) ov.remove(); document.body.classList.remove('touring');
+  S.screen = null; if (home && tabOk(home) && location.hash.slice(1) !== home) location.hash = home; else render();
   if (replay) return;
-  if (p) S.db.doc(p).set({seenAt:Date.now()}).then(function(){}, function(){});
-  if (window.__webDownloads && phone() && !isStandalone() && !S.appInst) setTimeout(installSheet, 450);
+  if (p) S.db.doc(p).set({seenAt:Date.now(), skipped:!!skipped}).then(function(){}, function(){});
+  if (window.__webDownloads && phone() && !isStandalone() && !S.appInst) setTimeout(installSheet, 500);
 }
+/* the lit button really works on « À toi ! » steps: the click goes through, then the tour moves on */
+document.addEventListener('click', function(ev){
+  if (!TOUR) return;
+  var b = ev.target.closest('#tour-ov [data-act]');
+  if (b){ ev.stopPropagation(); ev.preventDefault(); var a = b.dataset.act;
+    if (a === 'tt-next') tourNext(false); else if (a === 'tt-prev'){ TOUR.dir = -1; TOUR.i = Math.max(0, TOUR.i - 1); tourShow(); } else if (a === 'tt-skip') tourEnd(true); else if (a === 'tt-end') tourEnd(false);
+    return; }
+  var x = TOUR.steps[TOUR.i], el = tourEl(x.sel);
+  if (x.tap && el && el.contains(ev.target)) setTimeout(function(){ tourNext(true); }, 380);
+}, true);
+document.addEventListener('keydown', function(ev){ if (TOUR && ev.key === 'Escape'){ ev.preventDefault(); tourEnd(true); } }, true);
+window.addEventListener('resize', function(){ if (TOUR && $('#tour-ov') && !$('#tour-ov .tt-win')) tourDraw(); });
 /* opening hours, one day at a time */
 function viewHours(){
   var t = today(), rows = '';
