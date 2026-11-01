@@ -19,7 +19,7 @@
     var rs = VA.roles && VA.roles.length ? VA.roles.slice() : [VA.role || 'mecano'];
     return {role:mainRole(rs), roles:rs, mechanic:VA.mechanic || null, name:VA.name, perms:VA.perms || {}, user_id:me.user_id, active:true, preview:true};
   }
-  var X = {tracks:{}, trackLoading:{}, busy:{}, live:[], members:[], active:[], mapSel:null, showPath:{}, paths:{}, eq:{list:null, err:'', created:null, secrets:null, confirm:null, editing:null}, enRoute:null, near:false, warnedNear:false, roles:{}};
+  var X = {tracks:{}, trackLoading:{}, trackSt:{}, busy:{}, live:[], members:[], active:[], showPath:{}, paths:{}, pathBusy:{}, eq:{list:null, err:'', created:null, secrets:null, confirm:null, editing:null, draft:{}}, enRoute:null, near:false, warnedNear:false, roles:{}};
   var ROLE = {owner:'Propriétaire', bureau:'Bureau', mecano:'Mécano', tresorier:'Trésorier'};
 
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -34,8 +34,18 @@
   function km(x){ return (Math.round(x * 10) / 10).toLocaleString('fr-CA') + ' km'; }
   function dist(a, b){ var R = 6371000, r = Math.PI / 180, x = Math.pow(Math.sin((b.lat - a.lat) * r / 2), 2) + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.pow(Math.sin((b.lon - a.lon) * r / 2), 2); return 2 * R * Math.asin(Math.sqrt(x)); }
   function first(s){ return String(s || '').trim().split(/\s+/)[0] || ''; }
+  /* no answer after 15 s: stop waiting, so a stuck request never blocks the screen (« Envoi du texto… ») or the position.
+     ac (optional): the request is also cancelled. */
+  var WAIT_MS = 15000;
+  function timed(p, ac){
+    var t, late = new Promise(function(res, rej){ t = setTimeout(function(){
+      if (ac) try { ac.abort(); } catch(x){}
+      var e = new Error('pas de réponse du serveur après 15 secondes'); e.code = 'timeout'; rej(e);
+    }, WAIT_MS); });
+    return Promise.race([Promise.resolve(p), late]).then(function(v){ clearTimeout(t); return v; }, function(e){ clearTimeout(t); throw e; });
+  }
   function invoke(name, body){
-    return T.sb.functions.invoke(name, {body:body}).then(function(r){
+    return timed(T.sb.functions.invoke(name, {body:body})).then(function(r){
       if (!r.error) return r.data;
       var ctx = r.error.context;
       return (ctx && typeof ctx.json === 'function' ? ctx.json().catch(function(){ return null; }) : Promise.resolve(null)).then(function(j){
@@ -68,7 +78,6 @@
     {k:'map', t:'Voir la carte de l\'équipe', s:'Les mécanos, leurs trajets et tous les rendez-vous du jour (avec le nom du client).', on:[], r:['bureau', 'mecano', 'tresorier'], d:{bureau:true, mecano:true, tresorier:true}},
     {k:'hours_others', t:'Changer l\'horaire du garage et des autres', s:'Heures d\'ouverture et disponibilités de chaque mécano.', on:[], r:['bureau', 'mecano'], d:{bureau:true}}
   ];
-  var PERMS = {};   /* (old name, kept for the guided tour) */
   function right(k){ return RIGHTS.filter(function(x){ return x.k === k; })[0] || null; }
   /* what a role gives: the owner everything; then « always », then the role template (config/roles), then the start */
   function perm(role, k){
@@ -116,8 +125,12 @@
     var due = force ? now : G.sentAt + (moved >= 60 ? 4000 : iv);
     clearTimeout(G.later);
     if (now < due){ G.later = setTimeout(function(){ maybeSend(false); }, due - now + 50); return; }
-    var pos = G.last; G.sending = true;
-    T.sb.rpc('report_position', {p_lat:pos.lat, p_lon:pos.lon, p_acc:pos.acc == null ? null : Math.round(pos.acc), p_speed:pos.speed, p_heading:pos.heading}).then(function(r){
+    var pos = G.last, ac = window.AbortController ? new AbortController() : null;
+    var q = T.sb.rpc('report_position', {p_lat:pos.lat, p_lon:pos.lon, p_acc:pos.acc == null ? null : Math.round(pos.acc), p_speed:pos.speed, p_heading:pos.heading});
+    if (ac && q && typeof q.abortSignal === 'function') q = q.abortSignal(ac.signal); else ac = null;
+    G.sending = true;
+    /* a send stuck on a weak signal is dropped after 15 s: the next position can go out */
+    timed(q, ac).then(function(r){
       G.sending = false;
       if (r.error){ G.sendErr = r.error.message; shiftLine(); return; }
       G.sendErr = null; G.sentAt = Date.now(); G.sentPos = pos;
@@ -147,12 +160,12 @@
   function shiftStart(){
     if (G.starting) return Promise.resolve();
     G.starting = true;
-    return T.sb.rpc('shift_start').then(function(r){
+    return timed(T.sb.rpc('shift_start')).then(function(r){
       G.starting = false;
-      if (r.error){ toast('La journée n\'a pas commencé : ' + r.error.message); return; }
+      if (r.error){ toast('La journée n\'a pas commencé : ' + r.error.message); render(); return; }
       G.on = true; G.since = r.data && r.data.shift_started_at; lsSet('gm.team.gpsok', '1');
       gpsStart(); render();
-    }, function(){ G.starting = false; toast('Pas de connexion au serveur. Réessaie.'); });
+    }, function(e){ G.starting = false; toast(e && e.code === 'timeout' ? 'Pas de réponse du serveur après 15 secondes. Réessaie.' : 'Pas de connexion au serveur. Réessaie.'); render(); });
   }
   function shiftEnd(){
     return T.sb.rpc('shift_end').then(function(r){
@@ -185,7 +198,6 @@
     var w = document.getElementById('sh-wake'); if (w){ w.setAttribute('aria-pressed', String(!!G.wake)); w.textContent = G.wake ? 'Écran gardé allumé ✓' : 'Garder l\'écran allumé'; }
   }
   setInterval(shiftLine, 5000);
-  window.__garageTeamState = function(){ return {on:G.on, last:G.last, sentAt:G.sentAt, sending:G.sending, err:G.err, sendErr:G.sendErr, asking:!!G.asking, watch:G.watch != null, enRoute:X.enRoute}; };
 
   /* while on the way: faster position, route redone if he leaves it, « arrivé ? » when he is there */
   function offRoute(p, route){
@@ -209,14 +221,16 @@
   }
 
   /* ================= « En route » ================= */
+  /* true when a read started (false: one is already on its way) */
   function fetchTrack(jobId){
-    if (X.trackLoading[jobId]) return;
+    if (X.trackLoading[jobId]) return false;
     X.trackLoading[jobId] = true;
-    T.sb.from('tracks').select('*').eq('job_id', jobId).order('created_at', {ascending:false}).limit(1).then(function(r){
+    timed(T.sb.from('tracks').select('*').eq('job_id', jobId).order('created_at', {ascending:false}).limit(1)).then(function(r){
       X.trackLoading[jobId] = false;
       if (r.error) return;
       X.tracks[jobId] = r.data[0] || null; render();
     }, function(){ X.trackLoading[jobId] = false; });
+    return true;
   }
   function smsText(j, t){
     var c = A().cl(j), name = first(c.firstName || c.name), mech = first((t && t.mech_name) || j.mechanic || (me && me.name)) || 'Votre mécano';
@@ -242,7 +256,9 @@
       fetchTrack(j.id);
     }, function(e){
       X.busy[j.id] = false;
-      toast('Le client n\'a pas été avisé : ' + e.message + '.');
+      /* no answer: the text may have left anyway, so read the real state again (a second try does not text him twice) */
+      if (e && e.code === 'timeout'){ toast('Pas de réponse du serveur après 15 secondes : le client n\'a peut-être pas été avisé. Vérifie ta connexion, puis réessaie.'); fetchTrack(j.id); }
+      else toast('Le client n\'a pas été avisé : ' + e.message + '.');
       render();
     });
   }
@@ -253,11 +269,19 @@
       fetchTrack(j.id);
     }, function(){});
   }
+  /* the tracking kept here no longer matches the job (changed on another phone): « En route » goes with an active tracking.
+     Read again when the status changed since the last read, otherwise not more than once every 15 s. */
+  function trackStale(j, st, t){
+    if (t === undefined) return true;
+    if (!!(t && t.status === 'active') === (st === 'route')) return false;
+    var w = X.trackSt[j.id];
+    return !w || w.st !== st || Date.now() - w.at > 15000;
+  }
   function jobExtra(j){
     if (!me || !A().canWrite()) return '';
     var st = j.status || 'planifie', t = X.tracks[j.id];
-    if (t === undefined) fetchTrack(j.id);
-    if (st === 'annule' || st === 'noshow' || st === 'termine') return '';
+    if (st === 'annule' || st === 'noshow' || st === 'termine') return '';   /* finished or cancelled: nothing to follow, nothing to read */
+    if (trackStale(j, st, t) && fetchTrack(j.id)) X.trackSt[j.id] = {st:st, at:Date.now()};
     var c = A().cl(j), who = first(c.firstName || c.name) || 'le client', phone = c.phone || '', mine = mineView(j), busy = X.busy[j.id];
     var h = '<section class="sect er" aria-labelledby="er-h"><h3 id="er-h">' + (st === 'route' ? 'En route vers ' + esc(who) : st === 'place' ? 'Sur place' : 'Départ vers le client') + '</h3>';
     if (st === 'planifie'){
@@ -290,7 +314,8 @@
   function onStatus(j, v, was){
     var ST = A().ST;
     if (v === 'route') return startEnRoute(j);
-    if (was === 'route') endTrack(j, (v === 'annule' || v === 'noshow') ? 'cancelled' : 'arrived');
+    /* « arrivé » only when he is there (or done); back to « Planifié », cancelled or absent: the client's page says the trip stopped */
+    if (was === 'route') endTrack(j, (v === 'place' || v === 'termine') ? 'arrived' : 'cancelled');
     toast(ST[v]);
   }
 
@@ -320,7 +345,7 @@
         var trip = X.enRoute && A().findJob(X.enRoute.jobId), tt = trip && X.tracks[trip.id];
         h += '<section class="sect shift on" aria-labelledby="sh-h"><div class="sh-head"><span class="sh-dot" aria-hidden="true"></span><h3 id="sh-h">Journée en cours' + (G.since ? ' depuis ' + esc(clock(G.since)) : '') + '</h3></div>' +
           '<p class="sh-line" id="sh-line" aria-live="polite"></p>' +
-          (trip ? '<div class="banner"><p><b>En route vers ' + esc(first(A().cl(trip).firstName || A().cl(trip).name)) + '</b>' + (tt && tt.eta_at ? ' · arrivée prévue ' + esc(clock(tt.eta_at)) : '') + '</p><button type="button" class="btn sm" data-act="er-open" data-id="' + esc(trip.id) + '">Ouvrir la job</button></div>' : '') +
+          (trip ? '<div class="banner"><p><b>En route vers ' + esc(first(A().cl(trip).firstName || A().cl(trip).name)) + '</b>' + (tt && tt.eta_at ? ' · arrivée prévue ' + esc(clock(tt.eta_at)) : '') + '</p><button type="button" class="btn sm" data-act="open" data-id="' + esc(trip.id) + '">Ouvrir la job</button></div>' : '') +
           '<p class="muted small">Garde l\'app ouverte pendant ta journée.</p>' +
           '<div class="er-acts"><button type="button" class="btn sm" id="sh-wake" data-act="sh-wake" aria-pressed="false">Garder l\'écran allumé</button><button type="button" class="btn sm" data-act="sh-end">Fin de journée</button></div></section>';
         setTimeout(shiftLine, 0);
@@ -334,7 +359,7 @@
   }
 
   /* ================= carte des mécanos ================= */
-  var M = {el:null, map:null, pins:{}, jobs:null, routes:null, path:null, fitted:false, timer:null};
+  var M = {el:null, map:null, pins:{}, jobs:null, routes:null, path:null, fitted:false, sig:null};
   var STATE = {route:{lbl:'En route', cls:'p-route'}, shift:{lbl:'En journée', cls:'p-shift'}, stale:{lbl:'Signal perdu', cls:'p-stale'}, off:{lbl:'Hors service', cls:'p-off'}};
   function mechState(l){
     if (!l || !l.on_shift) return 'off';
@@ -363,7 +388,6 @@
     var order = {route:0, shift:1, stale:2, off:3};
     return out.sort(function(a, b){ return order[mechState(a.l)] - order[mechState(b.l)] || String(a.m.name).localeCompare(b.m.name, 'fr'); });
   }
-  function todaysJobs(){ var a = A(), d = a.today(); return a.S.jobs.filter(function(j){ return j.date === d && j.status !== 'annule' && j.status !== 'noshow'; }).sort(function(x, y){ return String(x.time).localeCompare(String(y.time)); }); }
   function ensureMap(){
     if (M.map || !window.L) return !!M.map;
     M.el = document.createElement('div'); M.el.id = 'gm-map'; M.el.className = 'gm-map'; M.el.setAttribute('role', 'region'); M.el.setAttribute('aria-label', 'Carte des mécanos');
@@ -381,7 +405,6 @@
     if (!M.map){ if (ensureMap()){ drawMap(); } return; }
     if (M.el.parentNode !== slot){ slot.appendChild(M.el); setTimeout(function(){ M.map.invalidateSize(); }, 0); }
   }).observe(document.documentElement, {childList:true, subtree:true});
-  function pinIcon(cls, txt, big){ return L.divIcon({className:'gm-pin-wrap', html:'<span class="gm-pin ' + cls + '">' + esc(txt) + '</span>', iconSize:big ? [40, 40] : [30, 30], iconAnchor:big ? [20, 20] : [15, 15]}); }
   /* ---- the team map: everybody sees the mechanics, their route of the day and every appointment (numbered, client's name) ---- */
   var CENTRALE = {name:'Centrale', address:'8255 Avenue Mountain Sights, Montréal QC H4P 2B5', lat:45.5005053, lon:-73.6577429};
   function centrale(){ var c = (A() && A().cfg().central) || {}; return c.geo && isFinite(+c.geo.lat) && isFinite(+c.geo.lon) ? {name:c.name || 'Centrale', address:c.address || '', lat:+c.geo.lat, lon:+c.geo.lon} : CENTRALE; }
@@ -391,10 +414,34 @@
     if (X.tmLoading) return X.tmLoading;
     return X.tmLoading = T.sb.rpc('team_map', {p_day:A().today()}).then(function(r){
       X.tmLoading = null;
-      if (r.error){ X.tmErr = /not_granted|42501/.test(r.error.message + (r.error.code || '')) ? 'Tu n\'as pas accès à la carte. Parle au propriétaire.' : 'La carte ne répond pas (' + r.error.message + ').'; render(); return; }
+      if (r.error){ X.tmErr = /not_granted|42501/.test(r.error.message + (r.error.code || '')) ? 'Tu n\'as pas accès à la carte. Parle au propriétaire.' : 'La carte ne répond pas (' + r.error.message + ').'; X.tmSig = null; render(); return; }
       X.tm = r.data; X.tmAt = Date.now(); X.tmErr = '';
-      drawMap(); if (A().S.tab === 'carte' && !A().S.screen) render();
-    }, function(e){ X.tmLoading = null; X.tmErr = 'La carte ne répond pas (' + (e && e.message || e) + ').'; render(); });
+      tmRefresh();
+    }, function(e){ X.tmLoading = null; X.tmErr = 'La carte ne répond pas (' + (e && e.message || e) + ').'; X.tmSig = null; render(); });
+  }
+  /* what the map and the list under it are drawn from. When none of it changed, nothing is redrawn:
+     the pins stay, an open popup stays open and the screen does not jump.
+     Positions are rounded to about 10 m (a phone standing still wobbles); an age is counted once it reads in minutes. */
+  function tmSig(){
+    var a = A(), now = Date.now();
+    var gs = teams().map(function(g){
+      var l = g.live, line = dayLine(g), t = trackOf(g), ll = l && l.lat != null ? [+l.lat, +l.lon] : null, age = l && l.at ? now - Date.parse(l.at) : null;
+      var next = g.jobs.filter(function(j){ return j.status !== 'termine' && geoOf(j); })[0];
+      return [g.key, g.name, g.color, g.member && g.member.name, g.member && g.member.user_id,
+        g.jobs.map(function(j){ var c = j.client || {}; return [j.id, j.n, j.time, j.status, c.name, c.address, geoOf(j), !!a.findJob(j.id)]; }),
+        line.length > 1 ? [!!X.roads[roadKey(line)], X.roadsMeta[roadKey(line)] || null] : null,
+        l ? [ll && [Math.round(ll[0] * 1e4), Math.round(ll[1] * 1e4)], age == null || age > 5 * 60000, age != null && age < 45000 ? 'live' : ago(l.at)] : null,
+        t ? [t.job_id, t.eta_at, t.route || null] : null,
+        ll && next ? !!X.roads[roadKey([ll, geoOf(next)])] : null];
+    });
+    var ps = Object.keys(X.showPath).filter(function(u){ return X.showPath[u]; }).map(function(u){ var p = X.paths[u] || []; return [u, p.length, p.length ? p[p.length - 1].at : null]; });
+    return JSON.stringify([centrale(), X.tmHide || {}, X.tmErr || '', gs, ps]);
+  }
+  /* new data arrived: redraw the map and the screen only if something they show changed */
+  function tmRefresh(){
+    var s = tmSig(); if (s === X.tmSig) return;
+    X.tmSig = s; drawMap();
+    var a = A(); if (a && a.S.tab === 'carte' && !a.S.screen) render();
   }
   /* each mechanic: his color, his live position, his appointments of the day in order (1, 2, 3…) */
   function teams(){
@@ -423,7 +470,7 @@
       if (c && c.length > 1){
         X.roads[key] = c.map(function(x){ return [x[1], x[0]]; });
         if (isFinite(+rt.distance) && isFinite(+rt.duration)) X.roadsMeta[key] = {km:+rt.distance / 1000, min:+rt.duration / 60};
-        drawMap(); if (A().S.tab === 'carte' && !A().S.screen) render();
+        tmRefresh();
       }
     }, function(){});
     cb(pts);
@@ -445,13 +492,17 @@
   function mechIcon(txt, color, cls){ return L.divIcon({className:'gm-pin-wrap', html:'<span class="tm-mech ' + (cls || '') + '" style="--c:' + color + '">' + esc(txt) + '</span>', iconSize:[42, 42], iconAnchor:[21, 21]}); }
   function drawMap(){
     if (!M.map || !X.tm) return;
-    var a = A(), pts = [], hq = centrale();
+    var sig = tmSig(); if (sig === M.sig) return;   /* nothing new to draw: the map is left as it is */
+    M.sig = sig;
+    var a = A(), pts = [], hq = centrale(), open = null;
+    /* the popup someone opened is opened again after the redraw, if its pin is still there */
+    M.jobs.eachLayer(function(l){ if (l.gmKey && l.isPopupOpen && l.isPopupOpen()) open = l.gmKey; });
     M.jobs.clearLayers(); M.routes.clearLayers(); M.path.clearLayers();
     Object.keys(M.pins).forEach(function(k){ M.map.removeLayer(M.pins[k]); }); M.pins = {};
     /* the Centrale (the owner's place) */
     pts.push([hq.lat, hq.lon]);
     L.marker([hq.lat, hq.lon], {icon:L.divIcon({className:'gm-pin-wrap', html:'<span class="tm-hq">🏢</span>', iconSize:[44, 44], iconAnchor:[22, 22]}), title:hq.name, zIndexOffset:500}).addTo(M.jobs)
-      .bindTooltip('<b>' + esc(hq.name) + '</b>', {permanent:true, direction:'right', offset:[18, 0], className:'tm-hq-tip'}).bindPopup('<b>' + esc(hq.name) + '</b>' + (hq.address ? '<br>' + esc(hq.address) : ''));
+      .bindTooltip('<b>' + esc(hq.name) + '</b>', {permanent:true, direction:'right', offset:[18, 0], className:'tm-hq-tip'}).bindPopup('<b>' + esc(hq.name) + '</b>' + (hq.address ? '<br>' + esc(hq.address) : '')).gmKey = 'hq';
     teams().forEach(function(g){
       if (X.tmHide && X.tmHide[g.key]) return;
       var line = dayLine(g);
@@ -459,9 +510,9 @@
         var ll = geoOf(j); if (!ll) return; pts.push(ll);
         var st = j.status || 'planifie', mine = !!a.findJob(j.id);
         var pop = '<div class="tm-pop"><b>' + j.n + ' · ' + esc(a.hm(j.time)) + '</b> <span class="tm-st">' + esc((a.ST && a.ST[st]) || st) + '</span><br><b>' + esc(j.client.name || 'Client') + '</b>' + (j.client.address ? '<br>' + esc(j.client.address) : '') +
-          '<br><span style="color:' + g.color + '">●</span> ' + esc(g.name) + (mine ? '<br><button type="button" class="btn sm" data-act="er-open" data-id="' + esc(j.id) + '">Ouvrir la job</button>' : '') + '</div>';
+          '<br><span style="color:' + g.color + '">●</span> ' + esc(g.name) + (mine ? '<br><button type="button" class="btn sm" data-act="open" data-id="' + esc(j.id) + '">Ouvrir la job</button>' : '') + '</div>';
         L.marker(ll, {icon:stopIcon(j.n, g.color, st === 'termine' ? 'done' : st === 'route' ? 'go' : st === 'place' ? 'here' : ''), title:j.n + ' · ' + (j.client.name || ''), riseOnHover:true}).addTo(M.jobs)
-          .bindTooltip(esc(j.n + ' · ' + a.hm(j.time) + ' · ' + (j.client.name || 'Client')), {direction:'top', offset:[0, -14]}).bindPopup(pop);
+          .bindTooltip(esc(j.n + ' · ' + a.hm(j.time) + ' · ' + (j.client.name || 'Client')), {direction:'top', offset:[0, -14]}).bindPopup(pop).gmKey = 'j' + j.id;
       });
       if (line.length > 1) roads(line, function(path){ L.polyline(path, {color:g.color, weight:5, opacity:.85, lineCap:'round', lineJoin:'round'}).addTo(M.routes); });
       /* the mechanic himself (only during his workday) and the way to his next stop */
@@ -479,17 +530,33 @@
     Object.keys(X.showPath).forEach(function(uid){ var p = X.paths[uid]; if (X.showPath[uid] && p && p.length > 1) L.polyline(p.map(function(x){ return [x.lat, x.lon]; }), {color:'#1E1915', weight:3, opacity:.55}).addTo(M.path); });
     M.pts = pts;
     if (!M.fitted && pts.length){ M.fitted = true; fit(pts); }
+    if (open) M.jobs.eachLayer(function(l){ if (l.gmKey === open) l.openPopup(); });
   }
   function fit(pts){ if (!M.map) return; pts = pts || M.pts || []; if (pts.length === 1) M.map.setView(pts[0], 13); else if (pts.length) M.map.fitBounds(L.latLngBounds(pts).pad(0.15), {maxZoom:15}); }
-  function selectMech(uid, fromMap){
-    X.mapSel = uid; var g = teams().filter(function(x){ return x.member && x.member.user_id === uid; })[0];
+  function selectMech(uid){
+    var g = teams().filter(function(x){ return x.member && x.member.user_id === uid; })[0];
     if (M.map && g && g.live) M.map.setView([+g.live.lat, +g.live.lon], Math.max(M.map.getZoom(), 14));
     render();
-    if (!fromMap && M.el) M.el.scrollIntoView({block:'nearest'});
+    if (M.el) M.el.scrollIntoView({block:'nearest'});
   }
+  /* « Trajet fait aujourd'hui » : the server gives at most 1000 points at a time, so read page by page.
+     After the first time, only the points newer than the last one already here. */
   function loadPath(uid){
+    if (X.pathBusy[uid]) return Promise.resolve();
     var d = new Date(); d.setHours(0, 0, 0, 0);
-    return T.sb.from('mech_positions').select('lat,lon,at').eq('user_id', uid).gte('at', d.toISOString()).order('at', {ascending:true}).limit(5000).then(function(r){ if (!r.error){ X.paths[uid] = r.data; drawMap(); render(); } });
+    var had = (X.paths[uid] || []).filter(function(p){ return Date.parse(p.at) >= d.getTime(); }), since = had.length ? had[had.length - 1].at : null, got = [];
+    function page(from){
+      var q = T.sb.from('mech_positions').select('lat,lon,at').eq('user_id', uid);
+      q = since ? q.gt('at', since) : q.gte('at', d.toISOString());
+      return timed(q.order('at', {ascending:true}).range(from, from + 999)).then(function(r){
+        if (r.error) return;
+        got = got.concat(r.data || []);
+        if ((r.data || []).length >= 1000) return page(from + 1000);
+        X.paths[uid] = had.concat(got); tmRefresh();
+      });
+    }
+    X.pathBusy[uid] = true;
+    return page(0).then(function(){ X.pathBusy[uid] = false; }, function(){ X.pathBusy[uid] = false; });
   }
   function viewMap(){
     var a = A();
@@ -512,10 +579,10 @@
       if (g.jobs.length) body += '<ol class="tm-stops">' + g.jobs.map(function(j){
         var mine = !!a.findJob(j.id), st = j.status || 'planifie';
         return '<li><span class="tm-stop mini' + (st === 'termine' ? ' done' : '') + '" style="--c:' + g.color + '">' + j.n + '</span><div><b>' + esc(a.hm(j.time)) + ' · ' + esc(j.client.name || 'Client') + '</b><span class="small muted">' + esc(j.client.address || 'Adresse inconnue') + (geoOf(j) ? '' : ' · pas sur la carte') + '</span></div>' +
-          '<span class="pillx">' + esc((a.ST && a.ST[st]) || st) + '</span>' + (mine ? '<button type="button" class="btn sm" data-act="er-open" data-id="' + esc(j.id) + '">Ouvrir</button>' : '') + '</li>'; }).join('') + '</ol>';
+          '<span class="pillx">' + esc((a.ST && a.ST[st]) || st) + '</span>' + (mine ? '<button type="button" class="btn sm" data-act="open" data-id="' + esc(j.id) + '">Ouvrir</button>' : '') + '</li>'; }).join('') + '</ol>';
       else body += '<p class="small muted">Aucun rendez-vous aujourd\'hui.</p>';
       body += routeText(g);
-      if (uid && (l || isStaff()) && isStaff()) body += '<div class="er-acts">' + (l ? '<button type="button" class="btn sm" data-act="map-sel" data-v="' + esc(uid) + '">Voir sur la carte</button>' : '') +
+      if (uid && staffView()) body += '<div class="er-acts">' + (l ? '<button type="button" class="btn sm" data-act="map-sel" data-v="' + esc(uid) + '">Voir sur la carte</button>' : '') +
         '<button type="button" class="btn sm" data-act="map-path" data-v="' + esc(uid) + '" aria-pressed="' + (!!X.showPath[uid]) + '">' + (X.showPath[uid] ? 'Cacher le trajet fait' : 'Trajet fait aujourd\'hui') + '</button></div>';
       body += '</div>';
     });
@@ -584,15 +651,22 @@
         '<span class="small muted">' + (always ? 'Toujours, avec son rôle' : o === null ? 'Comme son rôle' : o ? '<b class="r-add">Ajouté pour cette personne</b>' : '<b class="r-del">Enlevé pour cette personne</b>') + (p.s ? ' · ' + esc(p.s) : '') + '</span></span></label>'; }).join('') +
       '<p class="small muted">Ça ne change que pour cette personne.</p></fieldset>';
   }
-  function rightsList(m){ return rightsHTML('ed', m, rolesOf(m), first(m.name)); }
+  /* what was ticked in a form ('nw' = invite, 'ed' = change a person) is kept in X.eq.draft: when the screen is drawn again
+     (the people list arriving, a colleague's change, the network banner), the boxes come from it, not from the start values.
+     Forgotten after a save or an invitation, on « Annuler », and when leaving the screen. */
+  function draftOf(pre, uid){ var d = X.eq.draft[pre]; return d && (pre !== 'ed' || d.uid === uid) ? d : null; }
+  function rightsList(m){ var d = draftOf('ed', m.user_id); return rightsHTML('ed', d ? {perms:d.perms} : m, d ? d.roles : rolesOf(m), first(m.name)); }
   /* roles or a box changed: the list follows (what the boxes say now is what counts) */
   function rightsRedraw(pre, focusId){
     var bx = document.getElementById(pre + '-rights'); if (!bx) return;
     var who = pre === 'ed' ? (X.eq.list || []).filter(function(x){ return x.user_id === X.eq.editing; })[0] : null;
     var keep = {}; bx.querySelectorAll('input[data-k]').forEach(function(e){ if (!e.disabled && e.checked !== (e.dataset.def === '1')) keep[e.dataset.k] = e.checked; });
-    bx.outerHTML = rightsHTML(pre, {perms:keep}, rolesFrom(pre), who ? first(who.name) : '');
+    var rs = rolesFrom(pre);
+    bx.outerHTML = rightsHTML(pre, {perms:keep}, rs, who ? first(who.name) : '');
+    X.eq.draft[pre] = {roles:rs, perms:keep, uid:pre === 'ed' ? X.eq.editing : null};
     var f = focusId && document.getElementById(focusId); if (f) try { f.focus({preventScroll:true}); } catch(e){}
   }
+  window.addEventListener('hashchange', function(){ if (location.hash.slice(1) !== 'equipe') X.eq.draft = {}; });
   document.addEventListener('toggle', function(ev){ if (ev.target && ev.target.id === 'eq-roles') X.rolesOpen = ev.target.open; }, true);   /* the table stays open while you tick boxes */
   document.addEventListener('change', function(ev){ var e = ev.target; if (e && e.matches && e.matches('.rights input[data-k]')){ var bx = e.closest('.rights'); rightsRedraw(bx.id.replace(/-rights$/, ''), e.id); } });
   function permsFrom(rs, pre){
@@ -600,7 +674,6 @@
     rightKeys(rs).forEach(function(p){ var e = document.getElementById((pre || 'ed') + '-p-' + p.k); if (!e || e.disabled) return; if (e.checked !== roleDefault(rs, p.k)) out[p.k] = e.checked; });
     return out;
   }
-  function roleSelect(id, val){ return '<select id="' + id + '">' + ['mecano', 'bureau', 'tresorier', 'owner'].map(function(r){ return '<option value="' + r + '"' + (r === val ? ' selected' : '') + '>' + ROLE[r] + '</option>'; }).join('') + '</select>'; }
   function mechSelect(id, val){
     var ms = A().mechanics(), opts = '<option value="">' + (ms.length ? 'Aucun' : 'Ajoute les mécanos dans Réglages') + '</option>' + ms.map(function(m){ return '<option' + (norm(m) === norm(val) ? ' selected' : '') + '>' + esc(m) + '</option>'; }).join('');
     if (val && !ms.some(function(m){ return norm(m) === norm(val); })) opts += '<option selected>' + esc(val) + '</option>';
@@ -638,7 +711,7 @@
         '<p class="small muted">' + (m.mechanic ? 'Dans l\'agenda : ' + esc(m.mechanic) + ' · ' : '') + (m.active ? (m.last_sign_in_at ? 'dernière connexion ' + esc(ago(m.last_sign_in_at)) : m.invite ? '<b>' + (m.invite.expired ? 'Invitation expirée' : 'Invitation envoyée ' + esc(ago(m.invite.at))) + '</b> · pas encore activé' : 'jamais connecté') : '<b>Accès désactivé</b>') + '</p>';
       if (X.eq.editing === m.user_id){
         b += '<div class="eq-form"><div class="field"><label for="ed-name">Nom</label><input id="ed-name" value="' + esc(m.name) + '" autocomplete="off"></div>' +
-          roleBoxes('ed', rolesOf(m)) + '<div class="field"><label for="ed-mech">Nom dans l\'agenda <span class="small muted">(s\'il fait des jobs)</span></label>' + mechSelect('ed-mech', m.mechanic) + '</div>' +
+          roleBoxes('ed', (draftOf('ed', m.user_id) || {roles:rolesOf(m)}).roles) + '<div class="field"><label for="ed-mech">Nom dans l\'agenda <span class="small muted">(s\'il fait des jobs)</span></label>' + mechSelect('ed-mech', m.mechanic) + '</div>' +
           rightsList(m) +
           '<div class="er-acts"><button type="button" class="btn sm primary" data-act="eq-save" data-v="' + esc(m.user_id) + '">Enregistrer</button><button type="button" class="btn sm" data-act="eq-cancel">Annuler</button></div></div>';
       } else if (X.eq.confirm === m.user_id){
@@ -652,11 +725,12 @@
       b += '</div>';
     });
     b += '</section>';
+    var nwd = draftOf('nw'), nwr = nwd ? nwd.roles : ['mecano'];
     b += '<section class="sect" id="eq-new"><h3>Inviter une personne</h3><p class="small">Écris son courriel : elle reçoit un lien, choisit elle-même son mot de passe, et son compte est activé.</p>' +
       '<div class="field"><label for="nw-name">Nom</label><input id="nw-name" autocomplete="off"></div>' +
       '<div class="field"><label for="nw-email">Courriel</label><input id="nw-email" type="email" inputmode="email" autocapitalize="off" spellcheck="false" autocomplete="off"></div>' +
-      roleBoxes('nw', ['mecano']) + '<div class="field"><label for="nw-mech">Nom dans l\'agenda <span class="small muted">(pour un mécano)</span></label>' + mechSelect('nw-mech', '') + '</div>' +
-      rightsHTML('nw', null, ['mecano'], '') +
+      roleBoxes('nw', nwr) + '<div class="field"><label for="nw-mech">Nom dans l\'agenda <span class="small muted">(pour un mécano)</span></label>' + mechSelect('nw-mech', '') + '</div>' +
+      rightsHTML('nw', nwd ? {perms:nwd.perms} : null, nwr, '') +
       '<ul class="roles small"><li><b>Mécano</b> : seulement ses jobs, le bouton « En route », la facture sur place. Sa position est partagée pendant sa journée.</li><li><b>Bureau</b> : agenda, clients, factures et carte des mécanos. Pas les réglages.</li><li><b>Trésorier</b> : son propre écran, la trésorerie (dépenses avec photo des reçus, rapport, taxes à remettre, Excel).</li><li><b>Propriétaire</b> : tout, y compris les accès.</li></ul><p class="small muted">Ce que le mécano et le trésorier voient de plus : plus haut, « Ce que chaque rôle peut faire ».</p>' +
       '<p class="formerr" id="nw-err" role="alert" hidden></p><button type="button" class="btn primary block" data-act="eq-invite">Envoyer l\'invitation</button>' +
       '<details class="small eq-more"><summary>Autre façon : créer un mot de passe temporaire</summary><p class="small">Pour quelqu\'un qui ne lit pas ses courriels : tu lui donnes toi-même un mot de passe.</p><button type="button" class="btn block" data-act="eq-add">Créer le compte avec un mot de passe temporaire</button></details></section>';
@@ -774,6 +848,7 @@
     var m = eff(); if (!m) return [];
     var own = hasR(m, 'owner'), mec = hasR(m, 'mecano'), tre = hasR(m, 'tresorier'), bur = hasR(m, 'bureau') || own, ph = onPhone(), nm = first(m.name);
     var can = function(k){ return own || permOf(m, k); };
+    var HELP_GO = mec ? 'home' : (own || bur || can('agenda')) && !ph ? 'tab:agenda' : 'home';   /* a screen that has a « ? » */
     var P = {
       hello:['Bienvenue', [{icon:'👋', go:'home', t:'Bienvenue' + (nm ? ', ' + nm : '') + ' !',
         p:'Je te fais visiter l\'app, écran par écran : à quoi sert chaque bouton, et quand t\'en servir. ' + (own ? 'C\'est la visite complète, environ 4 minutes.' : 'Ça prend environ 3 minutes.'),
@@ -784,10 +859,12 @@
       day:mec && ['Ta journée', [
         {icon:'📅', go:'home', sel:'.dayhead, #top', t:'Le jour affiché', p:'En haut : la date. Touche ‹ ou › pour voir hier ou demain, ou touche la date pour en choisir une autre.' + (ph ? ' Tu peux aussi glisser l\'écran vers la gauche ou la droite.' : '')},
         {icon:'☀️', sel:'.shift', t:'Commencer ma journée', p:'Le matin, en partant, touche <b>« Commencer ma journée »</b>. Pendant ta journée seulement, ta position est partagée : le bureau te voit sur la carte. Le soir, <b>« Fin de journée »</b> arrête tout.', x:'Rien n\'est envoyé avant le début ni après la fin de ta journée.'},
-        {icon:'🔧', sel:'.ph-list, .cal, .list, .nrow', t:'Tes rendez-vous', p:'Chaque ligne, c\'est un client : l\'heure, l\'auto et le travail à faire. L\'étiquette dit où tu en es : <b>Planifié</b>, <b>En route</b>, <b>Sur place</b>, <b>Terminé</b>.'}]],
+        {icon:'🔧', sel:'.ph-list, .cal, .list, .nrow', t:'Tes rendez-vous', p:'Chaque ligne, c\'est un client : l\'heure, l\'auto et le travail à faire. L\'étiquette dit où tu en es : <b>Planifié</b>, <b>En route</b>, <b>Sur place</b>, <b>Terminé</b>.'},
+        {icon:'👆', tap:'.ph-job, .ticket, #main .nrow', need:true, t:'Ouvre un rendez-vous', p:'Pour voir une job, tu touches sa ligne.', do:'Touche le rendez-vous éclairé.'}]],
       job:mec && ['Une job, du début à la fin', [
         {icon:'📋', go:'job', sel:'.pjob, main .sect', t:'La fiche de la job', p:'Touche un rendez-vous pour ouvrir sa fiche : l\'auto, les travaux à faire, et les boutons pour <b>appeler</b> le client, lui <b>texter</b> ou ouvrir l\'<b>itinéraire</b> dans ton GPS.'},
-        {icon:'⚫', sel:'.nextbtn', t:'Le gros bouton', p:'Il te dit toujours la prochaine étape. <b>« Je pars »</b> : le client reçoit un texto avec ton heure d\'arrivée et peut suivre ton camion. Ensuite <b>« Je suis arrivé »</b>, puis <b>« Travaux terminés »</b>.'},
+        {icon:'⚫', sel:'.nextbtn', t:'Le gros bouton', p:'Il te dit toujours la prochaine étape. <b>« Je pars »</b> : le client reçoit un texto avec ton heure d\'arrivée et peut suivre ton camion. Ensuite <b>« Je suis arrivé »</b>, puis <b>« Travaux terminés »</b>.', x:'Pendant la visite, on n\'y touche pas : il enverrait un vrai texto au client.'},
+        {icon:'👆', tap:'#veh-fold:not([open]) > summary', need:true, t:'Les sections', p:'Chaque section de la fiche s\'ouvre d\'un toucher.', do:'Touche « Véhicule et fiche technique ».'},
         {icon:'🔎', sel:'#veh-fold', t:'Le VIN et la fiche du moteur', p:'Scanne le VIN avec la caméra : l\'année, la marque, le modèle et le moteur se remplissent tout seuls. La fiche du moteur (huile, filtres, pièces) est gardée pour la prochaine fois.'},
         {icon:'📸', sel:'#ph-fold', t:'Photos et signature', p:'Prends des photos avant et après les travaux. À la fin, le client signe directement sur ton écran.'},
         {icon:'➕', sel:'#xp-fold', t:'Travaux supplémentaires', p:'Tu trouves autre chose à réparer ? Écris-le avec son prix. Le client accepte en signant ou par texto, et ça s\'ajoute à la facture. Rien n\'est fait sans son accord.'},
@@ -795,25 +872,27 @@
       agenda:(own || bur || can('agenda') || can('book')) && ['L\'agenda', [
         {icon:'📅', go:'tab:agenda', sel:'.cal, .list, main', need:!own && !bur && !can('agenda'), t:'L\'agenda', p:(own || bur ? 'Chaque colonne, c\'est un camion (ou un mécano). Touche une case libre pour réserver à cette heure-là ; touche un rendez-vous pour l\'ouvrir.' : 'Les rendez-vous de toute l\'équipe' + (can('book') ? '.' : ', en lecture seulement.'))},
         (own || bur || can('book')) && {icon:'➕', go:'tab:agenda', sel:'#top [data-act="new"]', need:true, t:'« + Réservation »', p:'Choisis le client et le service : l\'app propose les moments libres, près des autres jobs du même coin. Le client reçoit sa confirmation.'},
-        can('hours_others') && {icon:'🗓', go:'tab:agenda', sel:'[data-act="sched"][data-v="garage"]', need:true, t:'Modifier l\'horaire', p:'Les heures d\'ouverture du garage, dans une grande grille.'},
-        can('hours_others') && {icon:'👆', go:'sched:garage', sel:'#sched .sch-scroll', need:true, t:'La grille de l\'horaire', p:(ph ? 'Glisse ton doigt sur les cases' : 'Clique et glisse vers le bas sur les cases') + ' pour ouvrir des heures, ou pour les fermer (une pause, un congé).'},
-        can('hours_others') && {icon:'✅', go:'sched:garage', sel:'#sched .sch-apply', need:true, t:'Pour combien de temps ?', p:'<b>Seulement cette semaine</b> (un congé), <b>pendant quelques semaines</b> (l\'horaire d\'été) ou <b>en permanence</b> (ton horaire habituel). Puis « Enregistrer ».'}]],
-      clients:can('clients') && ['Clients et factures', [{icon:'👤', go:'tab:clients', sel:'main', t:mec && !bur ? 'Tes clients' : 'Les clients', p:'La fiche de chaque client : téléphone, adresse, ses autos et l\'historique de ses visites. Cherche par nom ou par téléphone.'}]],
-      factures:can('factures') && ['Clients et factures', [{icon:'💵', go:'tab:factures', sel:'main', t:mec && !bur && !tre ? 'Tes factures' : 'Les factures', p:'Celles à recevoir et celles déjà payées. ' + (own || bur || can('editinv') ? 'Ouvre une facture pour la revoir, la renvoyer au client ou la marquer payée.' : 'Ouvre une facture pour la revoir ou la renvoyer au client.')}]],
+        can('hours_others') && {icon:'🗓', go:'tab:agenda', tap:'[data-act="sched"][data-v="garage"]', need:true, t:'Modifier l\'horaire', p:'Les heures d\'ouverture du garage s\'ouvrent dans une grande grille.', do:'Touche « Modifier l\'horaire ».'},
+        can('hours_others') && {icon:'👆', go:'sched:garage', try:'#sched .sch-scroll', need:true, t:'La grille de l\'horaire', p:'Une case foncée est ouverte, une case pâle est fermée.', tryT:(ph ? 'Essaie : glisse ton doigt vers le bas sur quelques cases.' : 'Essaie : clique et glisse vers le bas sur quelques cases.') + ' C\'est un essai, rien n\'est enregistré.', done:'Voilà : tu viens d\'ouvrir ou de fermer des heures (une pause, un congé). Rien n\'est enregistré pendant la visite.'},
+        can('hours_others') && {icon:'✅', go:'sched:garage', sel:'#sched .sch-apply', need:true, t:'Pour combien de temps ?', p:'<b>Seulement cette semaine</b> (un congé), <b>pendant quelques semaines</b> (l\'horaire d\'été) ou <b>en permanence</b> (ton horaire habituel). Puis « Enregistrer ».', x:'On n\'enregistre pas maintenant : en continuant, la grille se ferme sans rien changer.'}]],
+      clients:can('clients') && ['Clients et factures', [{icon:'👆', tap:'.tab[data-t="clients"]:not([hidden])', need:true, t:mec && !bur ? 'Tes clients' : 'Les clients', p:'Pour changer d\'écran, tu touches le menu ' + (ph ? 'en bas' : 'à gauche') + '.', do:'Touche « Clients ».'}, {icon:'👤', go:'tab:clients', sel:'main', t:mec && !bur ? 'Tes clients' : 'Les clients', p:'La fiche de chaque client : téléphone, adresse, ses autos et l\'historique de ses visites. Cherche par nom ou par téléphone.'}]],
+      factures:can('factures') && ['Clients et factures', [{icon:'👆', tap:'.tab[data-t="factures"]:not([hidden])', need:true, t:mec && !bur && !tre ? 'Tes factures' : 'Les factures', p:'Les factures ont leur propre écran.', do:'Touche « Factures ».'}, {icon:'💵', go:'tab:factures', sel:'main', t:mec && !bur && !tre ? 'Tes factures' : 'Les factures', p:'Celles à recevoir et celles déjà payées. ' + (own || bur || can('editinv') ? 'Ouvre une facture pour la revoir, la renvoyer au client ou la marquer payée.' : 'Ouvre une facture pour la revoir ou la renvoyer au client.')}]],
       plusbtn:mec && ph && ['Clients et factures', [{icon:'➕', go:'home', sel:'.tab-new:not([hidden])', need:true, t:'Le bouton « + »', p:'Pour un client sans rendez-vous : <b>« Facture sur place »</b>. Aussi : <b>« Nouveau client »</b>' + (can('book') ? ' et <b>« Nouvelle réservation »</b>' : '') + '.'}]],
       tresor:can('tresor') && ['La trésorerie', [
         {icon:'💼', go:'view:dep', sel:'#top', t:'La trésorerie', p:'L\'argent du garage : ce qui entre (les factures payées), ce qui sort (les dépenses) et ce qui reste. Choisis la période en haut : le mois, le trimestre ou l\'année.'},
         {icon:'🧾', go:'view:dep', sel:'[data-act="exp-new"]', t:'Ajouter une dépense', p:'Touche <b>« + Dépense »</b> : prends le reçu en photo, écris le montant et choisis la catégorie (pièces, essence, outils…). La TPS et la TVQ payées sont calculées pour toi.'},
         {icon:'📑', go:'view:dep', sel:'main', t:'Les dépenses', p:'Toutes les dépenses de la période, avec la photo de leurs reçus. Touche une ligne pour la voir, la corriger ou la supprimer.'},
+        {icon:'👆', go:'view:dep', tap:'[data-act="tr-view"][data-v="rap"]', need:true, t:'Le rapport', p:'Le rapport est juste à côté des dépenses.', do:'Touche « Rapport et taxes ».'},
         {icon:'📊', go:'view:rap', sel:'main', t:'Le rapport et les taxes', p:'Revenus, dépenses et profit de la période. Et les <b>taxes à remettre</b> : la TPS et la TVQ perçues sur les factures, moins celles payées sur les dépenses.'},
+        {icon:'🗓', go:'view:rap', try:'.trbar', need:true, t:'La période', p:'Le rapport se fait pour le mois, le trimestre ou l\'année. ‹ et › reculent ou avancent d\'une période.', tryT:'Essaie : touche « Trimestre » ou « Année ».', done:'Les chiffres suivent la période que tu choisis.'},
         {icon:'📥', go:'view:rap', sel:'[data-act="tr-xlsx"]', need:true, t:'Pour le comptable', p:'Un fichier Excel avec tout le détail (revenus, dépenses, taxes), prêt à envoyer.'}]],
       map:can('map') && ['La carte de l\'équipe', [
-        {icon:'🗺️', go:'carte', sel:'#map-slot', t:'La carte de l\'équipe', p:'La <b>Centrale</b>, d\'où partent les camions. Chaque mécano a sa couleur, ses rendez-vous <b>numérotés dans l\'ordre</b> (1, 2, 3…) et son trajet de la journée, par les routes.', x:'Touche un numéro pour voir le client, l\'adresse et l\'heure.'},
+        {icon:'🗺️', go:'carte', try:'#map-slot', t:'La carte de l\'équipe', p:'La <b>Centrale</b>, d\'où partent les camions. Chaque mécano a sa couleur, ses rendez-vous <b>numérotés dans l\'ordre</b> (1, 2, 3…) et son trajet de la journée, par les routes.', tryT:'Essaie : touche un numéro, ou glisse la carte avec ton doigt.', done:'Le numéro montre le client, l\'adresse et l\'heure.'},
         {icon:'📍', go:'carte', sel:'.tm-mc', need:true, t:'La journée de chacun', p:'Sous la carte : les arrêts de chaque mécano, la longueur de son trajet depuis la Centrale, et qui est en route vers quel client (avec l\'heure d\'arrivée).'}]],
       avail:mec && ['Ton horaire', [
-        {icon:'🗓', go:'dispos', sel:'[data-act="sched"][data-v="avail"]', t:'Tes disponibilités', p:'Dis au bureau quand tu travailles : touche <b>« Modifier mes disponibilités »</b>.'},
-        {icon:'👆', go:'sched:avail', sel:'#sched .sch-scroll', need:true, t:'La grille', p:(ph ? 'Glisse ton doigt sur les cases, vers le bas,' : 'Clique et glisse vers le bas sur les cases') + ' pour choisir tes heures (ou pour les enlever).'},
-        {icon:'✅', go:'sched:avail', sel:'#sched .sch-apply', need:true, t:'Pour combien de temps ?', p:'<b>Seulement ce jour-là</b> (un rendez-vous chez le dentiste), <b>pendant quelques semaines</b> ou <b>en permanence</b> (ton horaire habituel). Puis « Enregistrer ».'}]],
+        {icon:'🗓', go:'dispos', tap:'[data-act="sched"][data-v="avail"]', t:'Tes disponibilités', p:'Tu dis au bureau quand tu travailles.', do:'Touche « Modifier mes disponibilités ».'},
+        {icon:'👆', go:'sched:avail', try:'#sched .sch-scroll', need:true, t:'La grille', p:'Une case foncée, c\'est une heure où tu travailles.', tryT:(ph ? 'Essaie : glisse ton doigt vers le bas sur quelques cases.' : 'Essaie : clique et glisse vers le bas sur quelques cases.') + ' C\'est un essai, rien n\'est enregistré.', done:'Voilà : tu viens de choisir des heures (ou de les enlever). Rien n\'est enregistré pendant la visite.'},
+        {icon:'✅', go:'sched:avail', sel:'#sched .sch-apply', need:true, t:'Pour combien de temps ?', p:'<b>Seulement ce jour-là</b> (un rendez-vous chez le dentiste), <b>pendant quelques semaines</b> ou <b>en permanence</b> (ton horaire habituel). Puis « Enregistrer ».', x:'On n\'enregistre pas maintenant : en continuant, la grille se ferme sans rien changer.'}]],
       dispos:(own || bur) && ['L\'équipe', [{icon:'🗓', go:'dispos', sel:'main', t:'Les disponibilités des mécanos', p:'Quand chaque mécano travaille. L\'agenda ne propose que ses heures.' + (can('hours_others') ? ' Tu peux changer l\'horaire de chacun, avec la même grille.' : '')}]],
       stock:can('stock') && [mec && !bur ? 'Le camion' : 'L\'équipe', [{icon:'📦', go:'stock', sel:'main', need:true, t:'Le stock des camions', p:'Les pièces dans chaque camion. Quand une pièce va sur une facture, elle se retire toute seule du stock.'}]],
       team:own && ['L\'équipe et les accès', [
@@ -822,10 +901,10 @@
         {icon:'👁', go:'equipe', sel:'#eq-viewas', t:'Voir l\'app comme…', p:'Tu vois exactement l\'écran d\'un mécano ou du trésorier, et sa visite guidée. Un bandeau en haut te ramène à ton compte.'},
         {icon:'☑️', go:'equipe', sel:'#eq-roles', t:'Ce que chaque rôle donne au départ', p:'Les cases de départ de chaque rôle. Un changement ici vaut pour toutes les personnes de ce rôle (sauf ce que tu as changé pour une personne).'}]],
       settings:own && ['Les réglages', [
-        {icon:'🎨', go:'set:Couleurs', sel:'#lux-sect', t:'Les couleurs de l\'app', p:'Le mode vitrine : des panneaux en verre sur un fond de couleur. Choisis Sable, Champagne, Platine, Noir et or, Émeraude, Saphir ou Bordeaux : toute l\'équipe le voit.'},
+        {icon:'🎨', go:'set:Couleurs', try:'#lux-sect', t:'Les couleurs de l\'app', p:'Le mode vitrine : des panneaux en verre sur un fond de couleur. Sable, Champagne, Platine, Noir et or, Émeraude, Saphir ou Bordeaux : toute l\'équipe voit celle que tu choisis.', tryT:'Essaie : touche une couleur pour la voir sur toute l\'app.', done:'C\'est un essai : à l\'étape suivante, la couleur revient comme avant. Pour la garder, reviens ici après la visite et touche-la.'},
         {icon:'⚙️', go:'set:', sel:'#ph-setlist, #setform', t:'Le reste des réglages', p:'Le nom du garage, les taxes, ton taux horaire, ta liste de prix, l\'horaire, les mécanos et les camions, le bas des factures.'}]],
       help:['Pour finir', [
-        {icon:'❓', go:'home', sel:'.qhelp', t:'Les petits « ? »', p:'Partout dans l\'app, touche un <b>?</b> à côté d\'un mot pour une explication simple.'},
+        {icon:'❓', go:HELP_GO, try:'.qhelp', after:'.helptip', t:'Les petits « ? »', p:'Partout dans l\'app, un <b>?</b> à côté d\'un mot donne une explication simple.', tryT:'Essaie : touche le ?.', done:'Touche-le encore pour fermer l\'explication.'},
         {icon:'✅', go:'home', t:'C\'est tout !', p:'Tu connais l\'app. Si tu oublies quelque chose : <b>' + (ph ? 'Plus' : 'en bas du menu') + ' → « ' + (own ? 'Visite guidée de l\'app' : 'Revoir la visite guidée') + ' »</b>.' + (mec ? ' Bonne journée sur la route !' : '')}]]
     };
     /* the person's main job first, then what the other roles add (each part once) */
@@ -878,16 +957,15 @@
       case 'er-start': { var j1 = api.findJob(id); if (j1) startEnRoute(j1); break; }
       case 'er-resend': { var j2 = api.findJob(id); if (j2) startEnRoute(j2, {resend:true}); break; }
       case 'er-copy': { var t = X.tracks[id]; if (t && navigator.clipboard) navigator.clipboard.writeText(trackLink(t)).then(function(){ toast('Lien copié'); }, function(){ toast(trackLink(t)); }); else if (t) toast(trackLink(t)); break; }
-      case 'er-open': api.S.jobId = id; api.S.screen = 'job'; api.S.backTo = null; render(); window.scrollTo(0, 0); break;
       case 'map-fit': fit(); break;
       case 'tm-mech': X.tmHide = X.tmHide || {}; X.tmHide[v] = !X.tmHide[v]; drawMap(); render(); break;
-      case 'map-sel': selectMech(v, false); break;
+      case 'map-sel': selectMech(v); break;
       case 'map-path': X.showPath[v] = !X.showPath[v]; if (X.showPath[v]) loadPath(v); else { drawMap(); render(); } break;
       case 'eq-back': location.hash = onPhone() ? 'plus' : 'reglages'; break;
       case 'eq-reload': X.eq.err = ''; X.eq.list = null; eqLoad(); render(); break;
-      case 'eq-edit': X.eq.editing = v; X.eq.confirm = null; render(); break;
-      case 'eq-confirm': X.eq.confirm = v; X.eq.editing = null; render(); break;
-      case 'eq-cancel': X.eq.editing = null; X.eq.confirm = null; render(); break;
+      case 'eq-edit': X.eq.editing = v; X.eq.confirm = null; delete X.eq.draft.ed; render(); break;
+      case 'eq-confirm': X.eq.confirm = v; X.eq.editing = null; delete X.eq.draft.ed; render(); break;
+      case 'eq-cancel': X.eq.editing = null; X.eq.confirm = null; delete X.eq.draft.ed; render(); break;
       case 'eq-hidecred': X.eq.created = null; render(); break;
       case 'eq-copycred': { var pre = document.querySelector('.cred'); if (pre && navigator.clipboard) navigator.clipboard.writeText(pre.textContent).then(function(){ toast('Copié'); }, function(){}); break; }
       case 'eq-save': {
@@ -896,7 +974,7 @@
         if (ers.indexOf('mecano') >= 0 && !mech){ toast('Choisis son nom dans l\'agenda.'); break; }
         if (v === me.user_id && ers.indexOf('owner') < 0){ toast('Tu ne peux pas enlever ton propre rôle de propriétaire.'); break; }
         b.disabled = true;
-        invoke('members', {action:'update', user_id:v, name:name, roles:ers, perms:permsFrom(ers, 'ed'), mechanic:mech}).then(function(r){ X.eq.list = r.members; X.eq.editing = null; toast('Enregistré'); if (v === me.user_id) refreshMe(); render(); }, function(e){ b.disabled = false; toast(e.message); });
+        invoke('members', {action:'update', user_id:v, name:name, roles:ers, perms:permsFrom(ers, 'ed'), mechanic:mech}).then(function(r){ X.eq.list = r.members; X.eq.editing = null; delete X.eq.draft.ed; toast('Enregistré'); if (v === me.user_id) refreshMe(); render(); }, function(e){ b.disabled = false; toast(e.message); });
         break;
       }
       case 'eq-active': {
@@ -918,7 +996,7 @@
         if (irs.indexOf('mecano') >= 0 && !imc) return eqErr(api.mechanics().length ? 'Choisis son nom dans l\'agenda (liste des mécanos).' : 'Ajoute d\'abord le nom de ce mécano dans Réglages → Mécanos.');
         eqErr(''); b.disabled = true; b.textContent = 'Envoi…';
         invoke('members', {action:'invite', name:inm, email:iem, roles:irs, perms:permsFrom(irs, 'nw'), mechanic:imc, base:trackBase()}).then(function(r){
-          X.eq.list = r.members; X.eq.created = null; X.eq.invited = {name:inm, email:r.email || iem, link:r.link, mail:r.mail, message:r.message}; X.liveAt = 0;
+          X.eq.list = r.members; X.eq.created = null; X.eq.invited = {name:inm, email:r.email || iem, link:r.link, mail:r.mail, message:r.message}; X.liveAt = 0; delete X.eq.draft.nw;
           ['nw-name', 'nw-email', 'nw-mech'].forEach(function(i){ var e = document.getElementById(i); if (e) e.value = ''; });
           render(); window.scrollTo(0, 0);
         }, function(e){ b.disabled = false; b.textContent = 'Envoyer l\'invitation'; eqErr(e.message); });
@@ -943,7 +1021,7 @@
         if (rls.indexOf('mecano') >= 0 && !mc) return eqErr(api.mechanics().length ? 'Choisis son nom dans l\'agenda (liste des mécanos).' : 'Ajoute d\'abord le nom de ce mécano dans Réglages → Mécanos.');
         eqErr(''); b.disabled = true; b.textContent = 'Création…';
         invoke('members', {action:'create', name:nm, email:em, roles:rls, perms:permsFrom(rls, 'nw'), mechanic:mc}).then(function(r){
-          X.eq.list = r.members; X.eq.invited = null; X.eq.created = {name:nm, email:em, password:r.password}; X.liveAt = 0;
+          X.eq.list = r.members; X.eq.invited = null; X.eq.created = {name:nm, email:em, password:r.password}; X.liveAt = 0; delete X.eq.draft.nw;
           ['nw-name', 'nw-email', 'nw-mech'].forEach(function(i){ var e = document.getElementById(i); if (e) e.value = ''; });
           render(); window.scrollTo(0, 0);
         }, function(e){ b.disabled = false; b.textContent = 'Créer le compte'; eqErr(e.message); });
@@ -1016,12 +1094,9 @@
     '.tm-leg b.mini{width:22px;height:22px;flex:none;margin:0}.tm-leg b.tm-mech.mini{border-radius:7px;font-size:9px;box-shadow:0 0 0 2px var(--c)}.tm-leg b.tm-dash{width:26px;height:0}' +
     '.tm-pop{display:grid;gap:2px;font-size:14px}.tm-pop .btn{margin-top:6px;justify-self:start}.tm-st{color:#6B5E55;font-size:12.5px}' +
     '.tm-stops{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:8px}.tm-stops li{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:4px 10px;align-items:center}.tm-stops li>div{display:grid;min-width:0}.tm-stops .tm-stop.mini{margin:0;width:26px;height:26px;font-size:12px}' +
-    '.gm-pin-wrap{background:none;border:0}.gm-pin{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;font:700 13px/1 var(--f-body);color:#fff;background:#1D4B77;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}' +
-    '.gm-pin.p-route{background:#B26B00}.gm-pin.p-shift{background:#1D4B77}.gm-pin.p-stale{background:#7A8794}.gm-pin.p-off{background:#B4BEC8}.gm-pin.sel{outline:3px solid #F2B200;outline-offset:1px}' +
-    '.gm-pin.p-job{border-radius:8px;background:#fff;color:#14202B;border:2px solid #14202B;font-size:11px}.gm-pin.p-job.done{opacity:.55}.gm-pin.p-dest{background:#F2B200;color:#1E1600;border-radius:8px;font-size:15px}' +
-    '.mc .gm-pin,.legend .gm-pin{width:36px;height:36px;flex:none}.legend{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--muted);margin:0 0 12px}.legend span{display:inline-flex;align-items:center;gap:6px}' +
-    '.legend .gm-pin.mini{width:16px;height:16px;border-width:2px;display:inline-block;border-radius:50%}.legend .gm-pin.mini.p-job{border-radius:4px}' +
-    '.mc{border-top:1px solid var(--line);padding-top:12px;display:grid;gap:6px}.mc:first-of-type{border-top:0;padding-top:0}.mc.sel{background:var(--steel-soft);margin:0 -10px;padding:12px 10px;border-radius:10px}' +
+    '.gm-pin-wrap{background:none;border:0}' +
+    '.legend{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--muted);margin:0 0 12px}.legend span{display:inline-flex;align-items:center;gap:6px}' +
+    '.mc{border-top:1px solid var(--line);padding-top:12px;display:grid;gap:6px}.mc:first-of-type{border-top:0;padding-top:0}' +
     '.mc-head{display:flex;align-items:center;gap:10px}.mc-who{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}' +
     '.pillx{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;font-weight:600;background:var(--idle-bg);color:var(--idle)}' +
     '.pillx.p-route{background:var(--warn-bg);color:var(--warn)}.pillx.p-shift{background:var(--steel-soft);color:var(--steel)}.pillx.p-stale{background:var(--idle-bg);color:var(--idle)}' +
@@ -1038,7 +1113,7 @@
     '.rt-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px}.rt{width:100%;border-collapse:collapse;font-size:14px}.rt th,.rt td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:center}' +
     '.rt thead th{font-weight:700;background:var(--sunk)}.rt tbody th{text-align:left;font-weight:600}.rt tr:last-child>*{border-bottom:0}.rt input{width:22px;height:22px;min-height:0;accent-color:var(--signal)}.rt-on{color:var(--ok);font-weight:800}.rt-na{color:var(--muted)}' +
     '.r-add{color:var(--ok)}.r-del{color:var(--bad)}.pills{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}.pillx.r-tresorier{background:var(--ok-bg);color:var(--ok)}' +
-    '.pv-btns{display:flex;flex-wrap:wrap;gap:8px}.rp{border:1px solid var(--line);border-radius:14px;padding:10px 14px 6px;margin:0;display:grid;gap:2px}.rp legend{font-weight:700;padding:0 6px}' +
+    '.pv-btns{display:flex;flex-wrap:wrap;gap:8px}' +
     '.rp-row{align-items:flex-start;padding:6px 0}.rp-row input{margin-top:2px;flex:none}.rp-row>span{display:grid;gap:1px}' +
     '#pv-bar{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;justify-content:center;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:#1E1915;color:#F7F1EA;font-size:14.5px;box-shadow:0 4px 14px rgba(0,0,0,.25)}' +
     '#pv-bar .btn{min-height:34px;padding:0 12px;background:#F7F1EA;color:#1E1915;border-color:#F7F1EA}#pv-bar b{color:#FFB37A}.pv-short{display:none}' +
@@ -1063,6 +1138,9 @@
         n.failed.slice(-3).map(function(f){ var c = f.path.split('/')[0]; return (COLNAME[c] || c) + ' (' + esc(/permission|row-level|not_granted/i.test(f.msg) ? 'pas permis' : /not_found/i.test(f.msg) ? 'n\'existe plus' : f.msg.slice(0, 60)) + ')'; }).join(', ') +
         '. Le carnet montre la version du serveur.</p><button type="button" class="btn sm" data-act="net-ok">OK</button></div>';
     }
+    /* the phone could not keep a change made without signal (private browsing, memory full) */
+    if (n.storeErr && (n.offlineMode || n.online === false || p))
+      h += '<div class="banner warn net" role="alert"><p><b>Ce téléphone ne peut pas garder tes changements</b> (navigation privée ou mémoire pleine). Ne ferme pas l\'app avant le retour du signal : ils seraient perdus.</p></div>';
     return h;
   }
   var netT = null, lastNet = '';
@@ -1091,9 +1169,6 @@
       var m = eff(); if (!m) return undefined;
       return gate(m, w);
     },
-    roleOf:function(){ var m = eff(); return m ? rolesOf(m) : []; },
-    hoursOthers:function(){ return permOf(eff(), 'hours_others'); },
-
     netBanner:netBanner,
     /* the client's page: invoice (and « Payer »), work to approve; texted through GoHighLevel */
     clientLink:function(j, what, extraId){ return invoke('client', {action:'link', jobId:j.id, send:what || null, extraId:extraId || null, base:trackBase()}); },
@@ -1127,25 +1202,41 @@
     nextInvoiceNo:function(start){ return T.sb.rpc('next_invoice_number', {p_start:start}).then(function(r){ if (r.error || typeof r.data !== 'number') throw r.error || new Error('no number'); return r.data; }); }
   };
 
+  /* at the start: is his workday already running (app reopened during the day)? With a weak signal the answer may not come:
+     ask again when the network is back and every 30 s, until the server answers */
+  var shiftAsk = {done:false, busy:false, timer:null};
+  function shiftCheck(){
+    if (shiftAsk.done || shiftAsk.busy || !me) return;
+    shiftAsk.busy = true;
+    timed(T.sb.from('mech_live').select('*').eq('user_id', me.user_id).maybeSingle()).then(function(r){
+      shiftAsk.busy = false;
+      if (r.error){ shiftRetry(); return; }
+      shiftAsk.done = true; clearInterval(shiftAsk.timer); window.removeEventListener('online', shiftCheck);
+      var l = r.data; if (!l || !l.on_shift) { render(); return; }
+      if (!G.on){ G.on = true; G.since = l.shift_started_at; gpsStart(); }   /* (he may have started it by hand in the meantime) */
+      if (l.job_id && !X.enRoute){ X.enRoute = {jobId:l.job_id, refreshedAt:0}; fetchTrack(l.job_id); }
+      render();
+    }, function(){ shiftAsk.busy = false; shiftRetry(); });
+  }
+  function shiftRetry(){
+    if (shiftAsk.timer) return;
+    shiftAsk.timer = setInterval(shiftCheck, 30000);
+    window.addEventListener('online', shiftCheck);
+  }
+
   /* once signed in: role, workday already running, address keys of the garage */
   T.onReady(function(){
     me = T.member;
     if (VA && !hasR(me, 'owner')){ VA = null; try { sessionStorage.removeItem('gm.viewas'); } catch(e){} }
     T.db.doc('config/roles').onSnapshot(function(s){ X.roles = s.exists ? (s.data() || {}) : {}; X.rolesLoaded = true; render(); }, function(){ X.rolesLoaded = true; render(); });
     if (previewing()) setTimeout(applyView, 0);
-    T.db.doc('config/keys').get().then(function(s){ X.payOnline = !!(s.exists && s.data().payOnline); }, function(){});
-    if (worksShifts()){
-      T.sb.from('mech_live').select('*').eq('user_id', me.user_id).maybeSingle().then(function(r){
-        var l = r.data; if (!l || !l.on_shift) { render(); return; }
-        G.on = true; G.since = l.shift_started_at; gpsStart();
-        if (l.job_id){ X.enRoute = {jobId:l.job_id, refreshedAt:0}; fetchTrack(l.job_id); }
-        render();
-      });
-    }
+    if (worksShifts()) shiftCheck();
+    /* one listener for the garage's keys: « Payer » on the invoices (Stripe) and the address keys */
     T.db.doc('config/keys').onSnapshot(function(s){
-      var d = s.exists ? s.data() : {};
+      var d = s.exists ? (s.data() || {}) : {}, pay = !!d.payOnline;
       lsSet('gm.web.ttkey', d.tomtom || null);
       if (d.google !== undefined) lsSet('gm.web.gkey', d.google || null);
+      if (pay !== X.payOnline){ X.payOnline = pay; render(); }
     });
     if (isStaff()) loadLive();
     render();

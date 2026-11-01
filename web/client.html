@@ -46,7 +46,7 @@ main{display:grid;gap:14px;padding:14px 0 28px}
 .muted{color:var(--muted)}.small{font-size:14.5px}
 .note{background:var(--sunk);border-radius:12px;padding:10px 12px}
 .msg{border-radius:14px;padding:14px 16px;font-weight:600}
-.msg.ok{background:var(--ok-bg);color:var(--ok)}.msg.bad{background:var(--bad-bg);color:var(--bad)}
+.msg.ok{background:var(--ok-bg);color:var(--ok)}.msg.bad{background:var(--bad-bg);color:var(--bad)}.msg.wait{background:var(--sunk);color:var(--ink)}
 .foot{color:var(--muted);font-size:14px;text-align:center;padding:0 0 max(20px,env(safe-area-inset-bottom))}
 .foot a{color:inherit}
 :focus-visible{outline:3px solid var(--signal);outline-offset:2px}
@@ -62,7 +62,9 @@ main{display:grid;gap:14px;padding:14px 0 28px}
 <script src="config.js"></script>
 <script>
 (function(){
-  var CFG = window.GARAGE_CFG || {}, m = location.hash.match(/t=([A-Za-z0-9_-]{20,64})/), token = m ? m[1] : '', back = /retour=paye/.test(location.hash), D = null, busy = false;
+  var CFG = window.GARAGE_CFG || {}, m = location.hash.match(/t=([A-Za-z0-9_-]{20,64})/), token = m ? m[1] : '', back = /retour=paye/.test(location.hash), D = null, busy = false, checks = 0, checkT = null;
+  var TPS = 0.05, TVQ = 0.09975;   /* the rates shown on the invoice below */
+  function r2(n){ return Math.round((+n || 0) * 100) / 100; }
   var $ = function(s){ return document.querySelector(s); };
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   var CUR = new Intl.NumberFormat('fr-CA', {style:'currency', currency:'CAD'});
@@ -81,7 +83,16 @@ main{display:grid;gap:14px;padding:14px 0 28px}
     document.title = (inv ? 'Facture ' + inv.number : 'Votre dossier') + ' · ' + g.name;
     $('#garage').textContent = g.name;
     $('#title').textContent = 'Bonjour' + (D.client.first ? ' ' + D.client.first : '') + (D.job.vehicle ? ' · ' + D.job.vehicle : '');
-    var h = flash ? '<div class="msg ' + (flash.bad ? 'bad' : 'ok') + '" role="status">' + esc(flash.text) + '</div>' : '';
+    var h = flash ? '<div class="msg ' + (flash.bad ? 'bad' : flash.wait ? 'wait' : 'ok') + '" role="status">' + esc(flash.text) + '</div>' : '';
+    /* the mechanic's price is before taxes. The taxes are added only when the invoice says how this job is taxed; without an invoice, no taxes are guessed */
+    function xtot(x){
+      var sub = +x.total || 0;
+      if (!inv) return '<div class="grand"><span>Total avant taxes</span><span class="num">' + esc(money(sub)) + '</span></div>';
+      if (!inv.taxesOn) return '<div class="grand"><span>Total</span><span class="num">' + esc(money(sub)) + '</span></div>';
+      var tx = r2(sub * TPS) + r2(sub * TVQ);
+      return '<div><span>Avant taxes</span><span class="num">' + esc(money(sub)) + '</span></div><div><span>Taxes</span><span class="num">' + esc(money(tx)) + '</span></div>' +
+        '<div class="grand"><span>Total avec taxes</span><span class="num">' + esc(money(sub + tx)) + '</span></div>';
+    }
     /* work the mechanic proposes: waiting ones first, the invoice, then the ones already answered */
     function xcard(x){
       var st = x.status;
@@ -89,7 +100,7 @@ main{display:grid;gap:14px;padding:14px 0 28px}
         (st === 'accepte' ? '<span class="pill ok">Acceptés</span>' : st === 'refuse' ? '<span class="pill bad">Refusés</span>' : '<span class="pill warn">Votre réponse</span>') + '</div>' +
         (x.note ? '<p class="note">' + esc(x.note) + '</p>' : '') +
         '<ul class="lines">' + x.items.map(function(i){ return '<li><span>' + esc(i.desc) + (i.qty > 1 ? ' × ' + esc(i.qty) : '') + '</span><span class="num">' + esc(money(i.price * (i.qty || 1))) + '</span></li>'; }).join('') + '</ul>' +
-        '<div class="tot"><div class="grand"><span>Total</span><span class="num">' + esc(money(x.total)) + '</span></div><div><span>avant taxes</span><span class="num">' + esc(money(x.total * 1.14975)) + ' taxes incluses</span></div></div>' +
+        '<div class="tot">' + xtot(x) + '</div>' +
         (st === 'attente' ? '<div class="row2"><button type="button" class="btn" data-ans="0" data-id="' + esc(x.id) + '">Je refuse</button><button type="button" class="btn primary" data-ans="1" data-id="' + esc(x.id) + '">J\'accepte</button></div>' +
           '<p class="muted small">Le mécano est avisé tout de suite. Rien n\'est fait sans votre accord.</p>' : '') + '</section>';
     }
@@ -107,7 +118,7 @@ main{display:grid;gap:14px;padding:14px 0 28px}
         '<div class="grand"><span>Total</span><span class="num">' + esc(money(inv.total)) + '</span></div></div>' +
         (inv.paid ? '<p class="small">Payée' + (inv.method ? ' · ' + esc(inv.method) : '') + (inv.paidAt ? ' · ' + esc(day(inv.paidAt)) : '') + '. Merci !</p>' : '') +
         (inv.online && inv.online.short ? '<p class="msg bad">Paiement reçu (' + esc(money(inv.online.amount)) + '), mais il ne correspond pas au total. Le garage vous contactera.</p>' : '') +
-        (!inv.paid && D.pay ? '<button type="button" class="btn pay" id="pay">Payer ' + esc(money(inv.total)) + ' par carte</button><p class="muted small">Paiement sécurisé par Stripe (carte, Apple Pay, Google Pay). Le garage ne voit jamais votre numéro de carte.</p>' : '') +
+        (!inv.paid && D.pay && !(flash && flash.wait) ? '<button type="button" class="btn pay" id="pay">Payer ' + esc(money(inv.total)) + ' par carte</button><p class="muted small">Paiement sécurisé par Stripe (carte, Apple Pay, Google Pay). Le garage ne voit jamais votre numéro de carte.</p>' : '') +
         (inv.note ? '<p class="note small">' + esc(inv.note) + '</p>' : '') +
         (g.taxIds ? '<p class="muted small">' + esc(g.taxIds) + '</p>' : '') + (g.footer ? '<p class="muted small">' + esc(g.footer) + '</p>' : '') +
         '<button type="button" class="btn noprint" id="print">Imprimer ou enregistrer en PDF</button></section>';
@@ -132,14 +143,25 @@ main{display:grid;gap:14px;padding:14px 0 28px}
         function(e){ busy = false; b.disabled = false; render({bad:true, text:e.message}); });
     }
   });
+  /* back from the card payment (« retour=paye » in the address): the marker stays until the server says the invoice is paid,
+     so a reload checks again. The bank's confirmation can take a few seconds: ask again every 3 s, up to 8 times.
+     While checking, the « Payer » button is not shown (no second payment by mistake). */
   function load(){
     if (!token || !CFG.url){ fail('Ce lien est incomplet. Demandez au garage de vous le renvoyer.'); return; }
+    clearTimeout(checkT);
     call({action:back ? 'check' : 'view'}).then(function(r){
-      D = r; var paidNow = back && r.invoice && r.invoice.paid;
-      if (back) history.replaceState(null, '', location.pathname + '#t=' + token);
-      render(back ? (paidNow ? {text:'Paiement reçu. Merci !'} : {bad:true, text:'Le paiement n\'est pas encore confirmé. Rechargez la page dans un instant.'}) : null);
-      back = false;
-    }, function(e){ fail(e.message); });
+      D = r;
+      if (!back){ render(null); return; }
+      var inv = r.invoice;
+      if (inv && inv.paid){ back = false; checks = 0; history.replaceState(null, '', location.pathname + '#t=' + token); render({text:'Paiement reçu. Merci !'}); return; }
+      if (inv && inv.online && inv.online.short){ back = false; checks = 0; history.replaceState(null, '', location.pathname + '#t=' + token); render(null); return; }   /* received, but not the right amount: the invoice says it */
+      if (++checks < 8){ render({wait:true, text:'Paiement en vérification…'}); checkT = setTimeout(load, 3000); return; }
+      checks = 0; render({bad:true, text:'Le paiement n\'est pas encore confirmé. Rechargez la page dans un instant.'});
+    }, function(e){
+      /* weak signal while checking: keep the page, try again */
+      if (back && D){ if (++checks < 8){ checkT = setTimeout(load, 3000); return; } checks = 0; render({bad:true, text:e.message}); return; }
+      fail(e.message);
+    });
   }
   load();
 })();

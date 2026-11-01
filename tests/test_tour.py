@@ -56,6 +56,8 @@ with sync_playwright() as pl:
     check('the rest of the screen waits during the visit (touching « Factures » does nothing)', sp.evaluate('location.hash') != '#factures' and sp.locator('#tour-ov').count() == 1)
     nxt(sp)
     check('…his appointments of the day (Marie), with what each label means', lit(sp, '.ph-list') and 'Planifié' in tip(sp) and 'Terminé' in tip(sp))
+    nxt(sp)
+    check('hands-on: « Ouvre un rendez-vous » — Marie\'s line is lit and pulses, « Touche le rendez-vous éclairé », a quiet « Passer »', info(sp)['t'] == 'Ouvre un rendez-vous' and lit(sp, '.ph-job') and 'Touche le rendez-vous' in tip(sp) and sp.locator('#tour-ov .tt-hole.tap').count() == 1 and sp.locator('#tour-ov [data-act="tt-next"]', has_text='Passer').count() == 1, info(sp))
     old = info(sp)['t']; fr, same = rec_next(sp); i = info(sp)
     changed = [f for f in fr if f['screen'] == 'job']
     check('smooth: on a change of screen, the light closes first (the whole screen dims evenly) and the new screen comes in the dark', bool(changed) and changed[0]['shut'], [(f['screen'], f['shut']) for f in fr[:12]])
@@ -131,8 +133,11 @@ with sync_playwright() as pl:
     check('…« + Dépense » lit: photo of the receipt, the category, taxes counted', lit(np_, '#top [data-act="exp-new"], [data-act="exp-new"]') and 'reçu' in tip(np_) and 'TVQ' in tip(np_))
     np_.screenshot(path='tour_nadia.png')
     nxt(np_); nxt(np_)
-    check('…the report opens by itself (revenue, expenses, profit, taxes to send)', np_.evaluate("window.__garageApi.S.trView") == 'rap' and 'taxes à remettre' in tip(np_))
-    nxt(np_)
+    check('…hands-on: « Touche « Rapport et taxes » », the button is lit', info(np_)['t'] == 'Le rapport' and lit(np_, '[data-act="tr-view"][data-v="rap"]') and 'Rapport et taxes' in tip(np_), info(np_))
+    hb = np_.evaluate("(() => { const r = document.querySelector('#tour-ov .tt-hole').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()")
+    np_.mouse.click(hb[0], hb[1]); np_.wait_for_timeout(200); settle(np_)
+    check('…she touches it: the report opens (revenue, expenses, profit, taxes to send), the visit goes on by itself', np_.evaluate("window.__garageApi.S.trView") == 'rap' and 'taxes à remettre' in tip(np_))
+    nxt(np_); nxt(np_)
     check('…the Excel file for the accountant, lit', lit(np_, '[data-act="tr-xlsx"]'))
     st = walk(np_); chs = []
     for x in st:
@@ -160,7 +165,7 @@ with sync_playwright() as pl:
     st = walk(ap); chs = []
     for x in st:
         if x['ch'] not in chs: chs.append(x['ch'])
-    check('two roles: his mechanic visit first, then the treasury — each part once', chs.index('Ta journée') < chs.index('La trésorerie') and len([x for x in st if x['t'] == 'Bienvenue, Ali !']) == 1 and len([x for x in st if x['t'] in ('Tes clients', 'Les clients')]) == 1, chs)
+    check('two roles: his mechanic visit first, then the treasury — each part once', chs.index('Ta journée') < chs.index('La trésorerie') and len([x for x in st if x['t'] == 'Bienvenue, Ali !']) == 1 and len([x for x in st if x['t'] in ('Tes clients', 'Les clients')]) == 2, chs)   # « go to Clients » (touch the menu), then the screen explained
     ap.keyboard.press('Escape'); ac.close()
     fn(otok, 'members', {'action': 'update', 'user_id': uid['ali'], 'roles': ['mecano'], 'mechanic': 'Ali'})
     # ---------- 5. the owner: nothing by itself; the full visit from the menu ----------

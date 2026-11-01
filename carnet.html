@@ -5,49 +5,26 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:wght@500;600;700&display=swap">
 <style>
 /* Layout: a mechanic's clipboard: sticky day header, job tickets with a perforated time stub, thumb-reach tab bar at the bottom */
-:root{
-  --paper:#ECEFF2; --surface:#FFFFFF; --sunk:#E2E7EC; --ink:#14202B; --muted:#55626F; --line:#D2D9E0; --line-strong:#B4BEC8; --line-faint:#E9EDF0;
-  --signal:#F2B200; --on-signal:#1E1600; --steel:#1D4B77; --on-steel:#FFFFFF; --steel-soft:#DCE7F3;
-  --ok:#1B6E45; --ok-bg:#DCF0E3; --warn:#8F5400; --warn-bg:#FBEACB; --bad:#AE2116; --bad-bg:#FADFDB;
-  --info:#1D5CA3; --info-bg:#DCE8F7; --idle:#55626F; --idle-bg:#E2E7EC; --closed-a:#E3E7EB; --closed-b:#F1F3F5; --scrim:rgba(14,19,24,.45);
-  --f-display:"Barlow Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
-  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  --r:10px;
-}
+:root{--f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --paper:#0E1318; --surface:#172029; --sunk:#111920; --ink:#E6ECF1; --muted:#97A5B2; --line:#26323D; --line-strong:#3A4855; --line-faint:#1D2630;
-    --signal:#F4BE2A; --on-signal:#1E1600; --steel:#93BCE4; --on-steel:#0E1318; --steel-soft:#1C3046;
-    --ok:#5CCB93; --ok-bg:#15321F; --warn:#F2AE45; --warn-bg:#382709; --bad:#F2796D; --bad-bg:#3A1714;
-    --info:#7DB2EC; --info-bg:#14273D; --idle:#97A5B2; --idle-bg:#1E2832; --closed-a:#1A222B; --closed-b:#121921; --scrim:rgba(0,0,0,.6);
-    color-scheme:dark;
-  }
+  :root:not([data-theme="light"]){color-scheme:dark;}
 }
-:root[data-theme="dark"]{
-  --paper:#0E1318; --surface:#172029; --sunk:#111920; --ink:#E6ECF1; --muted:#97A5B2; --line:#26323D; --line-strong:#3A4855; --line-faint:#1D2630;
-  --signal:#F4BE2A; --on-signal:#1E1600; --steel:#93BCE4; --on-steel:#0E1318; --steel-soft:#1C3046;
-  --ok:#5CCB93; --ok-bg:#15321F; --warn:#F2AE45; --warn-bg:#382709; --bad:#F2796D; --bad-bg:#3A1714;
-  --info:#7DB2EC; --info-bg:#14273D; --idle:#97A5B2; --idle-bg:#1E2832; --closed-a:#1A222B; --closed-b:#121921; --scrim:rgba(0,0,0,.6);
-  color-scheme:dark;
-}
+:root[data-theme="dark"]{color-scheme:dark;}
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;padding-block:0 calc(92px + env(safe-area-inset-bottom,0px))}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+body{color:var(--ink);;font-family:var(--f-body);;font-size:16px;;line-height:1.45;;padding-block:0 calc(92px + env(safe-area-inset-bottom,0px));}
+body::before{content:"";;position:fixed;;inset:0 0 auto;;height:env(safe-area-inset-top,0px);;z-index:10;}
 .wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-h1,h2,h3{font-family:var(--f-display);font-weight:700;line-height:1.05;margin:0;text-wrap:balance;letter-spacing:.01em}
-h1{font-size:30px} h2{font-size:24px} h3{font-size:19px;font-weight:600}
+h1,h2,h3{font-family:var(--f-display);;margin:0;;text-wrap:balance;}
 p{margin:0}
 button,input,select,textarea{font:inherit;color:inherit}
 .muted{color:var(--muted)} .small{font-size:14px}
 .mono{font-family:var(--f-mono);letter-spacing:.03em}
 .num{font-variant-numeric:tabular-nums}
-.eyebrow,.lbl{font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.eyebrow,.lbl{font-family:var(--f-display);;font-weight:600;;font-size:13px;}
 .stack{display:grid;gap:14px}
-
 /* top band */
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);border-bottom:1px solid var(--line)}
+.top{position:sticky;;top:env(safe-area-inset-top,0px);;z-index:5;;border-bottom:1px solid var(--line);}
 .top-in{display:grid;gap:12px;padding-block:14px 12px}
 .brandrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .brandrow>div{min-width:0}
@@ -57,37 +34,28 @@ button,input,select,textarea{font:inherit;color:inherit}
 .weeknav{display:flex;align-items:center;gap:6px}
 .weeknav .month{font-family:var(--f-display);font-weight:600;font-size:17px;flex:1;text-transform:capitalize}
 .days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
-.day{display:grid;justify-items:center;gap:1px;padding:7px 0 6px;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer}
+.day{display:grid;;justify-items:center;;gap:1px;;padding:7px 0 6px;;border:1px solid transparent;;background:transparent;;cursor:pointer;}
 .day .dw{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-.day .dn{font-family:var(--f-display);font-size:22px;font-weight:700;line-height:1.1}
+.day .dn{font-family:var(--f-display);;font-weight:700;;line-height:1.1;}
 .day .dc{display:flex;gap:3px;height:6px;align-items:center}
-.day .dc i{width:5px;height:5px;border-radius:50%;background:var(--signal)}
-.day.today .dn{text-decoration:underline 3px var(--signal);text-underline-offset:4px}
-.day.on{background:var(--ink);color:var(--paper)}
+.day .dc i{width:5px;;height:5px;;border-radius:50%;}
+.day.today .dn{text-underline-offset:4px;}
 .day.on .dw{color:inherit;opacity:.75}
-
 /* controls */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border-radius:var(--r);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-weight:600;cursor:pointer;text-decoration:none;text-align:center;line-height:1.15}
+.btn{display:inline-flex;;align-items:center;;justify-content:center;;gap:8px;;min-height:46px;;padding:0 18px;;color:var(--ink);;cursor:pointer;;text-decoration:none;;text-align:center;;line-height:1.15;}
 .btn.sm{min-height:38px;padding:0 12px;font-size:15px;white-space:nowrap}
-.btn.primary{background:var(--signal);border-color:var(--signal);color:var(--on-signal)}
-.btn.steel{background:var(--steel);border-color:var(--steel);color:var(--on-steel)}
-.btn.danger{color:var(--bad);border-color:var(--bad);background:transparent}
-.btn.danger.solid{background:var(--bad);color:var(--surface)}
-.btn.ghost{border-color:transparent;background:transparent}
+.btn.danger{color:var(--bad);}
 .btn.block{width:100%}
 .btn[disabled]{opacity:.5;cursor:not-allowed}
-.iconbtn{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer;flex:none;font-size:20px;line-height:1}
+.iconbtn{display:inline-grid;;place-items:center;;width:40px;;height:40px;;cursor:pointer;;flex:none;;font-size:20px;;line-height:1;}
 .linkbtn{background:none;border:0;color:var(--steel);font-weight:600;cursor:pointer;padding:6px 4px;text-decoration:underline;text-underline-offset:3px}
-:focus-visible{outline:3px solid var(--steel);outline-offset:2px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{border:1px solid var(--line-strong);background:var(--surface);border-radius:999px;padding:7px 14px;font-weight:600;font-size:15px;cursor:pointer;min-height:38px}
-.chip.on{background:var(--sel-bg);color:var(--sel-ink);border-color:transparent}
+.chip{border-radius:999px;;padding:7px 14px;;font-weight:600;;font-size:15px;;cursor:pointer;;min-height:38px;}
 .chip.add{border-style:dashed}
-
 .field{display:grid;gap:6px;min-width:0}
-.field>label{font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-input,select,textarea{font-size:16px;width:100%;min-height:46px;padding:10px 12px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);min-width:0}
-input[disabled],select[disabled],textarea[disabled]{background:var(--sunk);color:var(--muted)}
+.field>label{font-family:var(--f-display);;font-weight:600;;font-size:14px;}
+input,select,textarea{font-size:16px;;width:100%;;min-height:46px;;padding:10px 12px;;color:var(--ink);;min-width:0;}
+input[disabled],select[disabled],textarea[disabled]{color:var(--muted);}
 textarea{min-height:80px;resize:vertical}
 input.mono{text-transform:uppercase}
 input.mono::placeholder{text-transform:none;font-family:var(--f-body);letter-spacing:0}
@@ -99,60 +67,51 @@ input.mono::placeholder{text-transform:none;font-family:var(--f-body);letter-spa
 @media (max-width:440px){.grid2.stack-sm{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:370px){.veh{grid-template-columns:84px minmax(0,1fr)}.veh .field:last-child{grid-column:1/-1}}
 .check{display:flex;align-items:center;gap:10px;font-weight:500;cursor:pointer;min-height:40px}
-.check input{width:22px;height:22px;min-height:0;accent-color:var(--steel)}
-.err{background:var(--bad-bg);color:var(--bad);border-radius:8px;padding:10px 12px;font-weight:500}
+.check input{width:22px;;height:22px;;min-height:0;}
+.err{background:var(--bad-bg);;color:var(--bad);;padding:10px 12px;;font-weight:500;}
 .actions{display:grid;gap:10px}
-
 /* sections & cards */
-.sect{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:14px;min-width:0}
+.sect{display:grid;;gap:14px;;min-width:0;}
 .sect-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.banner{border-radius:10px;padding:12px 14px;background:var(--steel-soft);color:var(--ink);display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
-.banner.warn{background:var(--warn-bg)}
+.banner{padding:12px 14px;;color:var(--ink);;display:flex;;gap:10px;;align-items:flex-start;;justify-content:space-between;;flex-wrap:wrap;}
 .banner p{min-width:0;flex:1 1 220px}
 main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .daytitle{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
 .daytitle h2::first-letter{text-transform:uppercase}
-
 .sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
-.stat b{display:block;font-family:var(--f-display);font-size:clamp(18px,5vw,22px);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.stat{padding:10px 12px;;min-width:0;}
+.stat b{display:block;;font-size:clamp(18px,5vw,22px);;font-weight:700;;font-variant-numeric:tabular-nums;;white-space:nowrap;}
 .stat span{font-size:13px;color:var(--muted)}
-
 .list{display:grid;gap:10px}
-.ticket{display:grid;grid-template-columns:78px minmax(0,1fr);width:100%;text-align:left;padding:0;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer;overflow:hidden;color:var(--ink)}
-.stub{display:grid;align-content:center;justify-items:center;gap:3px;padding:12px 6px;background:var(--sunk);border-right:2px dashed var(--line-strong)}
-.stub b{font-family:var(--f-display);font-size:20px;white-space:nowrap;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.ticket{display:grid;;grid-template-columns:78px minmax(0,1fr);;width:100%;;text-align:left;;padding:0;;cursor:pointer;;overflow:hidden;;color:var(--ink);}
+.stub{display:grid;;align-content:center;;justify-items:center;;gap:3px;;padding:12px 6px;}
+.stub b{font-family:var(--f-display);;white-space:nowrap;;font-weight:700;;line-height:1;;font-variant-numeric:tabular-nums;}
 .stub small{font-size:12.5px;color:var(--muted)}
-.ticket.s-route .stub{background:var(--info-bg)}
-.ticket.s-place .stub{background:var(--warn-bg)}
-.ticket.s-termine .stub{background:var(--ok-bg)}
+
 .ticket.s-annule,.ticket.s-noshow{opacity:.62}
 .ticket.s-annule .tk-name,.ticket.s-noshow .tk-name{text-decoration:line-through}
 .tk{padding:12px 14px;display:grid;gap:2px;min-width:0}
 .tk-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
 .tk-name{font-weight:600;font-size:17px;overflow-wrap:anywhere;min-width:0}
-.tk-veh{font-family:var(--f-display);font-size:18px;font-weight:600;letter-spacing:.02em}
+.tk-veh{font-family:var(--f-display);}
 .tk-sub{color:var(--muted);font-size:14.5px;overflow-wrap:anywhere}
 .tk-foot{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-
-.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap;background:var(--idle-bg);color:var(--idle)}
+.pill{display:inline-flex;;align-items:center;;gap:6px;;padding:3px 10px;;border-radius:999px;;font-size:13px;;font-weight:600;;white-space:nowrap;;color:var(--idle);}
 .pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
 .pill.route{background:var(--info-bg);color:var(--info)}
 .pill.place{background:var(--warn-bg);color:var(--warn)}
 .pill.termine,.pill.paid{background:var(--ok-bg);color:var(--ok)}
 .pill.annule,.pill.noshow{background:var(--bad-bg);color:var(--bad)}
 .pill.unpaid{background:var(--warn-bg);color:var(--warn)}
-
-.empty-card{background:var(--surface);border:2px dashed var(--line-strong);border-radius:14px;padding:22px 18px;display:grid;gap:12px;justify-items:start}
+.empty-card{padding:22px 18px;;display:grid;;gap:12px;;justify-items:start;}
 .empty-card p{max-width:60ch;color:var(--muted)}
 .steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%}
-.steps div{background:var(--sunk);border-radius:10px;padding:10px;font-size:14px}
+.steps div{padding:10px;;font-size:14px;}
 .steps b{display:block;font-family:var(--f-display);font-size:16px}
 @media (max-width:480px){.steps{grid-template-columns:minmax(0,1fr)}}
-
 /* job detail */
 .seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-.seg button{min-height:52px;border-radius:10px;border:1px solid var(--line-strong);background:var(--surface);font-weight:600;font-size:14.5px;cursor:pointer;padding:4px 2px;line-height:1.1}
+.seg button{min-height:52px;;font-weight:600;;font-size:14.5px;;cursor:pointer;;padding:4px 2px;;line-height:1.1;}
 .seg button.on.planifie{background:var(--sel-bg);color:var(--sel-ink);border-color:transparent}
 .seg button.on.route{background:var(--info);color:var(--surface);border-color:var(--info)}
 .seg button.on.place{background:var(--warn);color:var(--surface);border-color:var(--warn)}
@@ -160,7 +119,7 @@ main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .kv{display:grid;gap:10px}
 .kv>div{display:grid;gap:2px;min-width:0}
 .kv dd{margin:0;overflow-wrap:anywhere}
-.kv dt{font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kv dt{font-family:var(--f-display);;font-weight:600;;font-size:13px;}
 .inline-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .sel{user-select:all;-webkit-user-select:all}
 .vin{font-family:var(--f-mono);font-size:17px;letter-spacing:.08em;overflow-wrap:anywhere}
@@ -169,9 +128,8 @@ main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .invbox{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .invbox b{font-family:var(--f-display);font-size:26px;font-variant-numeric:tabular-nums}
 .when{font-family:var(--f-display);font-size:22px;font-weight:600}
-
 /* invoice editor */
-.line{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:10px;background:var(--paper)}
+.line{padding:12px;;display:grid;;gap:10px;}
 .line-top{display:flex;gap:8px;align-items:center}
 .line-top select{flex:1}
 .line-nums{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr);gap:10px;align-items:end}
@@ -183,12 +141,10 @@ main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .tot .grand{border-top:2px solid var(--ink);padding-top:8px;margin-top:4px}
 .tot .grand dt,.tot .grand dd{color:var(--ink);font-family:var(--f-display);font-size:26px;font-weight:700}
 .radio2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.radio2 label{display:flex;align-items:center;gap:8px;border:1px solid var(--line-strong);border-radius:10px;padding:10px 12px;cursor:pointer;font-weight:600;min-height:48px}
-.radio2 input{width:20px;height:20px;min-height:0;accent-color:var(--steel)}
-.radio2 label:has(input:checked){border-color:var(--steel);background:var(--steel-soft)}
-
+.radio2 label{display:flex;;align-items:center;;gap:8px;;border:1px solid var(--line-strong);;padding:10px 12px;;cursor:pointer;;font-weight:600;;min-height:48px;}
+.radio2 input{width:20px;;height:20px;;min-height:0;}
 /* invoice paper */
-.paper{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;display:grid;gap:18px}
+.paper{padding:20px;;display:grid;;gap:18px;}
 .paper-head{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:3px solid var(--signal);padding-bottom:14px}
 .paper-head>div{min-width:0}
 .paper-head h2{font-size:26px;overflow-wrap:anywhere}
@@ -201,32 +157,30 @@ main.wrap{padding-block:16px 8px;display:grid;gap:16px}
 .stamp{border-radius:10px;padding:12px 14px;font-family:var(--f-display);font-size:20px;font-weight:700;letter-spacing:.03em}
 .stamp.ok{background:var(--ok-bg);color:var(--ok)} .stamp.warn{background:var(--warn-bg);color:var(--warn)}
 .payrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
-
 /* invoices list */
-.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;color:var(--ink)}
+.row{display:grid;;grid-template-columns:minmax(0,1fr) auto;;gap:4px 12px;;width:100%;;text-align:left;;padding:12px 14px;;cursor:pointer;;color:var(--ink);}
 .row .r-no{font-family:var(--f-mono);font-size:14px;color:var(--muted)}
 .row .r-name{font-weight:600;overflow-wrap:anywhere;min-width:0}
 .row .r-amt{font-family:var(--f-display);font-size:21px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
 .row .r-meta{font-size:14px;color:var(--muted)}
-
 /* service picker */
-.picker{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);padding:6px;min-height:46px}
+.picker{display:flex;;flex-wrap:wrap;;gap:6px;;align-items:center;;border:1px solid var(--line-strong);;padding:6px;;min-height:46px;}
 .picker:focus-within{outline:3px solid var(--steel);outline-offset:2px}
 .picker input{border:0;min-height:36px;padding:4px 6px;flex:1 1 170px;background:transparent}
 .picker input:focus-visible{outline:none}
 .picked{display:contents}
-.pchip{display:inline-flex;align-items:center;gap:6px;background:var(--steel-soft);color:var(--ink);border-radius:999px;padding:3px 3px 3px 12px;font-weight:600;font-size:15px;max-width:100%;overflow-wrap:anywhere}
+.pchip{display:inline-flex;;align-items:center;;gap:6px;;color:var(--ink);;border-radius:999px;;padding:3px 3px 3px 12px;;font-weight:600;;font-size:15px;;max-width:100%;;overflow-wrap:anywhere;}
 .pchip small{font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .pchip button{flex:none;width:30px;height:30px;border-radius:50%;border:0;background:transparent;cursor:pointer;color:var(--muted);font-size:15px}
 .pchip button:hover{background:var(--surface);color:var(--ink)}
-.opts{display:grid;grid-auto-rows:max-content;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);overflow:hidden}
+.opts{display:grid;;grid-auto-rows:max-content;;overflow:hidden;}
 #svc-opts{position:relative;max-height:min(55vh,420px);overflow-y:auto;overscroll-behavior:contain}
 label[for="f-svc-in"]{scroll-margin-top:96px}
 #sheet-body label[for="f-svc-in"]{scroll-margin-top:12px}
-#svc-est .est{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-top:8px;padding:10px 12px;border-radius:10px;background:var(--steel-soft);color:var(--ink)}
+#svc-est .est{display:flex;;flex-wrap:wrap;;align-items:center;;justify-content:space-between;;gap:8px 12px;;margin-top:8px;;padding:10px 12px;;color:var(--ink);}
 #svc-est .est > div{display:grid;gap:2px;min-width:0}
 #svc-est .est-miss{color:var(--warn)}
-.opts .opt-count{position:sticky;top:0;z-index:1;padding:7px 14px;font-size:13px;font-weight:600;color:var(--muted);background:var(--sunk);border-bottom:1px solid var(--line)}
+.opts .opt-count{position:sticky;;top:0;;z-index:1;;padding:7px 14px;;font-size:13px;;font-weight:600;;color:var(--muted);;border-bottom:1px solid var(--line);}
 .opt mark{background:var(--signal-soft, rgba(242,178,0,.32));color:inherit;border-radius:3px;padding:0 1px}
 .opt{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 14px;border:0;border-bottom:1px solid var(--line);background:transparent;cursor:pointer;font-size:16px;min-height:48px;color:var(--ink)}
 .opt:last-child{border-bottom:0}
@@ -239,23 +193,21 @@ label[for="f-svc-in"]{scroll-margin-top:96px}
 .draftmsg.ok::before{background:var(--ok)} .draftmsg.bad::before{background:var(--bad)}
 .draftmsg:empty{display:none}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
-.tag{background:var(--sunk);border-radius:999px;padding:4px 12px;font-weight:600;font-size:15px}
-
+.tag{border-radius:999px;;padding:4px 12px;;font-weight:600;;font-size:15px;}
 /* day schedule grid (dental-agenda style) */
 .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
 .hoursline{color:var(--muted);font-size:15px}
 .hoursline b{color:var(--ink)}
-.cal{overflow:auto;max-height:max(340px,calc(100vh - 410px));max-height:max(340px,calc(100dvh - 410px));border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.cal{overflow:auto;;max-height:max(340px,calc(100vh - 410px));;max-height:max(340px,calc(100dvh - 410px));}
 .cal-in{min-width:calc(52px + var(--n) * var(--cw,124px))}
 .cal-head,.cal-body{display:grid;grid-template-columns:52px repeat(var(--n),minmax(var(--cw,124px),1fr))}
-.cal-head{border-bottom:1px solid var(--line-strong);position:sticky;top:0;z-index:4;background:var(--surface)}
-.cal-head>div:first-child{position:sticky;left:0;z-index:5;background:var(--surface)}
-.colh{padding:9px 8px;font-family:var(--f-display);font-weight:700;font-size:17px;text-align:center;border-left:1px solid var(--line);overflow-wrap:anywhere}
+.cal-head{position:sticky;;top:0;;z-index:4;}
+.cal-head>div:first-child{position:sticky;;left:0;;z-index:5;}
+.colh{padding:9px 8px;;font-family:var(--f-display);;text-align:center;;border-left:1px solid var(--line);;overflow-wrap:anywhere;}
 .colh small{display:block;font-family:var(--f-body);font-weight:500;font-size:12.5px;color:var(--muted)}
-.gutter{position:relative;position:sticky;left:0;z-index:3;background:var(--surface)}
+.gutter{position:relative;;position:sticky;;left:0;;z-index:3;}
 .dayh{background:transparent;border:0;border-left:1px solid var(--line);cursor:pointer;color:var(--ink);line-height:1.15}
 .dayh:hover{background:var(--sunk)}
-.dayh.today{background:var(--sel-bg);color:var(--sel-ink)}
 .dayh.today small{color:inherit;opacity:.8}
 .dayh.closedday{color:var(--muted)}
 .cal.week .appt{padding:3px 5px;font-size:12px}
@@ -263,7 +215,7 @@ label[for="f-svc-in"]{scroll-margin-top:96px}
 .cal.week .slot{font-size:12px}
 .hl{position:absolute;left:0;right:6px;text-align:right;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;padding-top:3px}
 .col{position:relative;border-left:1px solid var(--line)}
-.slot{display:block;width:100%;border:0;border-top:1px solid var(--line-faint);background:transparent;padding:0;cursor:pointer;color:var(--steel);font-weight:700;font-size:12.5px;line-height:1}
+.slot{display:block;;width:100%;;border:0;;border-top:1px solid var(--line-faint);;background:transparent;;padding:0;;cursor:pointer;;font-weight:700;;font-size:12.5px;;line-height:1;}
 .slot.half{border-top-color:var(--line)}
 .slot.hr{border-top-color:var(--line-strong)}
 .slot:first-child{border-top-color:transparent}
@@ -275,33 +227,32 @@ label[for="f-svc-in"]{scroll-margin-top:96px}
 .cal.editing .slot.open{background:var(--ok-bg)}
 .cal.editing .slot.open:hover::after{content:"Fermer"}
 .cal.editing .slot.closed:hover::after{content:"Ouvrir"}
-.appt{position:absolute;display:grid;align-content:start;gap:1px;padding:4px 7px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);text-align:left;overflow:hidden;font-size:13px;line-height:1.25;cursor:pointer;color:var(--ink);z-index:1;min-width:0}
+.appt{position:absolute;;display:grid;;align-content:start;;gap:1px;;padding:4px 7px;;text-align:left;;overflow:hidden;;font-size:13px;;line-height:1.25;;cursor:pointer;;color:var(--ink);;z-index:1;;min-width:0;}
 .appt b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .appt span{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.appt.s-planifie{background:var(--steel-soft);border-color:var(--steel)}
-.appt.s-route{background:var(--info-bg);border-color:var(--info)}
-.appt.s-place{background:var(--warn-bg);border-color:var(--warn)}
-.appt.s-termine{background:var(--ok-bg);border-color:var(--ok)}
+.appt.s-planifie{border-color:var(--steel);}
+.appt.s-route{border-color:var(--info);}
+.appt.s-place{border-color:var(--warn);}
+.appt.s-termine{border-color:var(--ok);}
 .cal.editing .appt{pointer-events:none;opacity:.4}
 .now{position:absolute;left:0;right:0;height:2px;background:var(--bad);z-index:2;pointer-events:none}
 .now::before{content:"";position:absolute;left:-1px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--bad)}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
-.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:6px;border:1px solid var(--line-strong);background:var(--surface)}
+.legend i{display:inline-block;;width:14px;;height:14px;;vertical-align:-2px;;margin-right:6px;;border:1px solid var(--line-strong);;background:var(--surface);}
 .legend i.cl{background:repeating-linear-gradient(135deg,var(--closed-a) 0 3px,var(--closed-b) 3px 6px)}
-.hours-panel{background:var(--warn-bg);border:1px solid var(--warn);border-radius:12px;padding:14px;display:grid;gap:12px}
+.hours-panel{border:1px solid var(--warn);;padding:14px;;display:grid;;gap:12px;}
 .hours-panel .row2{display:flex;flex-wrap:wrap;gap:8px}
 .hrow{display:grid;grid-template-columns:minmax(0,1fr) 96px auto 96px;gap:8px;align-items:center}
 .hrow select{min-height:42px;padding:6px 8px}
 body.locked{overflow:hidden}
 .sheet-wrap{position:fixed;inset:0;z-index:30;display:flex;align-items:flex-end;justify-content:center}
 .sheet-back{position:absolute;inset:0;background:var(--scrim)}
-.sheet{position:relative;width:100%;max-width:620px;max-height:calc(100% - env(safe-area-inset-top,0px) - 20px);background:var(--paper);border-radius:16px 16px 0 0;display:flex;flex-direction:column;box-shadow:0 -10px 40px rgba(0,0,0,.25)}
+.sheet{position:relative;;width:100%;;max-width:620px;;max-height:calc(100% - env(safe-area-inset-top,0px) - 20px);;display:flex;;flex-direction:column;}
 .sheet-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
 .sheet-head h2{font-size:22px}
 .sheet-body{overflow-y:auto;padding:14px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));overscroll-behavior:contain}
-@media (min-width:700px){.sheet-wrap{align-items:center;padding:24px}.sheet{border-radius:16px;max-height:calc(100% - 48px)}}
+@media (min-width:700px){.sheet-wrap{align-items:center;padding:24px}.sheet{max-height:calc(100% - 48px);}}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .2s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}}
-
 /* postal-code optimisation */
 .addrwrap{position:relative}
 .addrsug{margin-top:6px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:min(60vh,440px);overflow-y:auto;overscroll-behavior:contain}
@@ -312,20 +263,19 @@ body.locked{overflow:hidden}
 .addrsug .opt.street small{color:var(--steel)}
 #c-addrfix .banner,#c-sameaddr .banner{margin-top:8px}
 .addrsug .opt.local small{color:var(--ok)}
-.addrsug .opt-head{position:sticky;top:0;z-index:1;padding:8px 14px 6px;font:600 12.5px/1.2 var(--f-body);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--sunk);border-bottom:1px solid var(--line)}
+.addrsug .opt-head{position:sticky;;top:0;;z-index:1;;padding:8px 14px 6px;;font:600 12.5px/1.2 var(--f-body);;letter-spacing:.04em;;text-transform:uppercase;;color:var(--muted);;border-bottom:1px solid var(--line);}
 .addrsug .opt-wait{display:flex;align-items:center;gap:10px;padding:12px 14px;color:var(--muted);font-size:15px;border-bottom:1px solid var(--line)}
 .addrsug .spin{width:16px;height:16px;flex:none;border:2px solid var(--line-strong);border-top-color:var(--steel);border-radius:50%;animation:gmspin .7s linear infinite}
 @keyframes gmspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion: reduce){.addrsug .spin{animation-duration:2s}}
-.addrsug .src{padding:6px 14px;font-size:12px;color:var(--muted);border-top:1px solid var(--line);background:var(--sunk)}
+.addrsug .src{padding:6px 14px;;font-size:12px;;color:var(--muted);;border-top:1px solid var(--line);}
 .ttnote{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .ttnote:empty{display:none}
-.sugbox{border:1px solid var(--steel);background:var(--steel-soft);border-radius:12px;padding:12px;display:grid;gap:10px}
+.sugbox{padding:12px;;display:grid;;gap:10px;}
 .sug-head{display:flex;flex-wrap:wrap;gap:2px 10px;align-items:baseline}
 .sugs{display:grid;gap:8px}
-.sug{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;text-align:left;width:100%;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);padding:10px 12px;cursor:pointer;color:var(--ink);font-size:16px}
+.sug{display:grid;;grid-template-columns:minmax(0,1fr) auto;;gap:2px 10px;;align-items:center;;text-align:left;;width:100%;;padding:10px 12px;;cursor:pointer;;color:var(--ink);;font-size:16px;}
 .sug:hover{border-color:var(--steel)}
-.sug.on{border-color:var(--steel);box-shadow:inset 0 0 0 2px var(--steel)}
 .sug-when{grid-column:1;grid-row:1;font-weight:600}
 .sug-when .nw{white-space:nowrap}
 .sug-when small{color:var(--muted);font-weight:500;margin-left:6px;font-size:14px}
@@ -342,7 +292,6 @@ body.locked{overflow:hidden}
 .stops{margin:0;padding-left:22px;display:grid;gap:5px;font-size:15px}
 .stops .mono{font-size:13px;background:var(--sunk);border-radius:6px;padding:1px 6px;margin-right:6px}
 .tight{color:var(--warn);font-size:14px;font-weight:600;margin:0}
-
 /* duration in units */
 .stepper{display:grid;grid-template-columns:46px minmax(0,1fr) 46px;gap:6px;align-items:center}
 .stepper .iconbtn{width:46px;height:46px;font-size:22px}
@@ -350,57 +299,48 @@ body.locked{overflow:hidden}
 .period{display:grid;gap:8px;border-top:1px solid var(--warn);padding-top:12px}
 .prow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .prow select{width:auto;min-width:96px;min-height:42px;padding:6px 8px;flex:1 1 96px}
-
 /* clients */
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.crow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;color:var(--ink)}
-.crow:hover{border-color:var(--line-strong)}
+.crow{display:grid;;grid-template-columns:minmax(0,1fr) auto;;gap:4px 12px;;align-items:center;;width:100%;;text-align:left;;padding:11px 14px;;cursor:pointer;;color:var(--ink);}
 .crow-main{display:grid;gap:1px;min-width:0}
 .crow-main b{font-size:17px;overflow-wrap:anywhere}
 .crow-main span{overflow-wrap:anywhere}
 .crow-side{display:grid;gap:4px;justify-items:end}
-.ccard{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px}
+.ccard{display:flex;;justify-content:space-between;;align-items:flex-start;;gap:12px;;padding:12px;}
 .ccard-main{display:grid;gap:2px;min-width:0}
 .ccard-main b{font-size:18px}
 .ccard-main span{overflow-wrap:anywhere}
 .tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.tile{display:grid;gap:4px;align-content:center;justify-items:start;text-align:left;min-height:84px;padding:12px 14px;border-radius:12px;border:1px solid var(--line-strong);background:var(--surface);cursor:pointer;color:var(--ink);font-family:var(--f-display);font-size:19px;font-weight:700;line-height:1.1}
+.tile{display:grid;;gap:4px;;align-content:center;;justify-items:start;;text-align:left;;min-height:84px;;padding:12px 14px;;cursor:pointer;;color:var(--ink);;font-family:var(--f-display);;line-height:1.1;}
 .tile small{font-family:var(--f-body);font-size:13.5px;font-weight:500;color:var(--muted)}
-.tile.book{background:var(--signal);border-color:var(--signal);color:var(--on-signal)}
-.tile.book small{color:var(--on-signal);opacity:.8}
-.tile.on{border-color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}
+
 .tile svg{width:22px;height:22px}
-.vrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:center;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;color:var(--ink)}
+.vrow{display:grid;;grid-template-columns:auto minmax(0,1fr) auto;;gap:4px 12px;;align-items:center;;width:100%;;text-align:left;;padding:10px 12px;;cursor:pointer;;color:var(--ink);}
 .vrow .vdate{font-family:var(--f-display);font-weight:700;font-size:16px;white-space:nowrap}
 .vrow .vmain{min-width:0;display:grid;gap:1px}
 .vrow .vmain span{overflow-wrap:anywhere}
 .note{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:start;border-top:1px solid var(--line);padding-top:10px}
 .note p{white-space:pre-wrap;overflow-wrap:anywhere}
 .due-big{font-family:var(--f-display);font-size:34px;font-weight:700;font-variant-numeric:tabular-nums}
-.rec{display:grid;gap:8px;border:1px solid var(--line);border-radius:10px;padding:12px}
+.rec{display:grid;;gap:8px;;padding:12px;}
 .rec-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
 .dayboxes{display:flex;flex-wrap:wrap;gap:2px 14px}
 .daybox{min-height:36px}
-
 /* settings */
-.promo-row{display:grid;gap:6px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--sunk)}
-.promo-tag{display:inline-block;margin-right:6px;padding:1px 6px;border-radius:4px;background:var(--signal);color:var(--on-signal);font:700 11px/1.5 var(--f-body);font-style:normal;letter-spacing:.06em;text-transform:uppercase;vertical-align:1px}
+.promo-row{display:grid;;gap:6px;;padding:10px;}
+.promo-tag{display:inline-block;;margin-right:6px;;padding:1px 6px;;border-radius:4px;;font:700 11px/1.5 var(--f-body);;font-style:normal;;letter-spacing:.06em;;text-transform:uppercase;;vertical-align:1px;}
 .promo-inc{display:block;margin-top:2px;font-size:13px;color:var(--muted)}
 .opt.promo{flex-direction:column;align-items:stretch;gap:4px}
 .opt.promo small{color:var(--ink);font-weight:600}
-.chip.add.promo{border-color:var(--signal);background:var(--signal);color:var(--on-signal);font-weight:600}
+.chip.add.promo{font-weight:600;}
 .svc-row{display:grid;grid-template-columns:minmax(0,1fr) 110px 40px;gap:8px;align-items:center}
 .copyfb textarea{min-height:160px;font-family:var(--f-mono);font-size:14px}
-
 /* tab bar + toast */
-.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
-.tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px;padding-block:6px}
-.tab{display:grid;justify-items:center;gap:2px;background:none;border:0;border-radius:10px;padding:6px 0;font-weight:600;font-size:13.5px;color:var(--muted);cursor:pointer;min-height:52px}
-.tab[aria-current="page"]{color:var(--ink);background:var(--sunk)}
-.tab[aria-current="page"] svg{color:var(--signal)}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:40;background:var(--ink);color:var(--paper);padding:11px 16px;border-radius:10px;font-weight:600;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.tabbar{position:fixed;;bottom:0;;z-index:6;;border-top:1px solid var(--line);}
+.tabs{display:grid;;grid-auto-flow:column;;grid-auto-columns:minmax(0,1fr);}
+.tab{display:grid;;justify-items:center;;gap:2px;;background:none;;border:0;;color:var(--muted);;cursor:pointer;}
+.toast{position:fixed;;left:50%;;transform:translateX(-50%);;bottom:calc(84px + env(safe-area-inset-bottom,0px));;z-index:40;;padding:11px 16px;;font-weight:600;;max-width:calc(100% - 32px);;box-shadow:0 6px 20px rgba(0,0,0,.18);}
 @media (prefers-reduced-motion:no-preference){.toast{animation:pop .18s ease-out}@keyframes pop{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}}
-
 /* ===================== Glass look =====================
    Frosted panels over a warm, softly lit backdrop (light) or a smoky night garage (dark).
    Big panels blur what is behind them; repeated small cards are translucent without blur (lighter for phones). */
@@ -417,6 +357,7 @@ body.locked{overflow:hidden}
   --glass-shadow:0 1px 0 rgba(255,255,255,.85) inset, 0 0 0 .5px rgba(150,110,60,.16), 0 14px 38px rgba(80,48,22,.13);
   --card-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 4px 14px rgba(80,48,22,.08);
   --blur:saturate(180%) blur(26px);
+  --blur-soft:saturate(160%) blur(12px);
   --accent:linear-gradient(135deg,#F7974F 0%,#E9572A 100%);
   --r:14px;
   --f-lux:"Playfair Display",Georgia,"Times New Roman",serif;
@@ -487,11 +428,11 @@ h1{font-family:var(--f-lux);font-weight:600;letter-spacing:-.006em;line-height:1
 .field>label{font:600 14px/1.3 var(--f-body);letter-spacing:0;text-transform:none;color:var(--ink)}
 .kv dt{font:500 13px/1.3 var(--f-body);letter-spacing:0;text-transform:none;color:var(--muted)}
 :focus-visible{outline:2.5px solid var(--ink);outline-offset:2px;box-shadow:0 0 0 6px rgba(238,106,47,.28);box-shadow:0 0 0 6px color-mix(in srgb,var(--signal) 30%,transparent)}
-
 /* frosted panels */
-.top,.sect,.stat,.empty-card,.cal,.sheet,.hours-panel,.gpanel{-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
+.ui-phone .sect,.ui-phone .stat,.ui-phone .empty-card{-webkit-backdrop-filter:var(--blur-soft);backdrop-filter:var(--blur-soft)}   /* phone: many panels on one page, a lighter glass so it scrolls smoothly */
+.top,.sect,.stat,.empty-card,.cal,.sheet,.hours-panel{-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
 .top{top:calc(env(safe-area-inset-top,0px) + 8px);margin:8px 10px 0;background:var(--glass);border:1px solid var(--glass-edge);border-radius:24px;box-shadow:var(--glass-shadow)}
-.sect,.gpanel{background:var(--glass);border:1px solid var(--glass-edge);border-radius:22px;padding:18px;box-shadow:var(--glass-shadow)}
+.sect{background:var(--glass);border:1px solid var(--glass-edge);border-radius:22px;padding:18px;box-shadow:var(--glass-shadow)}
 .stat{background:var(--glass);border:1px solid var(--glass-edge);border-radius:18px;box-shadow:var(--card-shadow)}
 .stat b{font-family:var(--f-display);letter-spacing:-.02em}
 .empty-card{background:var(--glass);border:1.5px dashed var(--line-strong);border-radius:22px}
@@ -500,7 +441,6 @@ h1{font-family:var(--f-lux);font-weight:600;letter-spacing:-.006em;line-height:1
 .banner.warn{background:var(--warn-bg);border-color:transparent}
 .hours-panel{background:var(--warn-bg);border-color:rgba(245,158,45,.45);border-radius:18px}
 .err{border-radius:12px}
-
 /* cards in lists: translucent, no blur */
 .ticket,.row,.crow,.tile,.vrow,.sug,.ccard,.rec,.line,.promo-row{background:var(--card);border:1px solid var(--glass-edge);box-shadow:var(--card-shadow)}
 .ticket{border-radius:18px} .row,.crow{border-radius:18px} .tile{border-radius:18px} .vrow,.sug,.ccard,.rec,.line,.promo-row{border-radius:14px}
@@ -514,7 +454,6 @@ h1{font-family:var(--f-lux);font-weight:600;letter-spacing:-.006em;line-height:1
 .tile.book{background:var(--btn-bg);border-color:transparent;color:var(--btn-ink)}
 .tile.book small{color:var(--btn-ink);opacity:.75}
 .tile.on{border-color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}
-
 /* controls */
 .btn{border-radius:999px;border:1px solid var(--glass-edge);background:var(--card);box-shadow:var(--card-shadow);font-weight:600;transition:transform .12s ease,box-shadow .12s ease}
 .btn:active{transform:scale(.98)}
@@ -545,7 +484,6 @@ input[disabled],select[disabled],textarea[disabled]{background:var(--sunk)}
 #svc-est .est{background:var(--glass-strong);border:1px solid var(--glass-edge);border-radius:14px}
 .sugbox{background:var(--steel-soft);border:1px solid var(--glass-edge);border-radius:18px}
 .sug.on{border-color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}
-
 /* week strip */
 .day{border-radius:16px}
 .day.on{background:var(--sel-bg);color:var(--sel-ink);box-shadow:0 8px 18px rgba(30,20,12,.22)}
@@ -554,7 +492,6 @@ input[disabled],select[disabled],textarea[disabled]{background:var(--sunk)}
 .day.on .dc i{background:var(--sel-dot,var(--signal))}
 .day.today .dn{text-decoration:none}
 .day.today:not(.on) .dn{color:var(--signal)}
-
 /* schedule grid */
 .cal{background:var(--glass);border:1px solid var(--glass-edge);border-radius:22px;box-shadow:var(--glass-shadow)}
 .cal-head,.cal-head>div:first-child,.gutter{background:var(--glass-strong);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
@@ -569,12 +506,10 @@ input[disabled],select[disabled],textarea[disabled]{background:var(--sunk)}
 .appt.s-place{background:rgba(253,240,222,.94);border-left-color:var(--warn)}
 .appt.s-termine{background:rgba(226,244,233,.92);border-left-color:var(--ok)}
 .legend i{border-radius:4px}
-
 /* invoice paper stays like paper */
 .paper{background:var(--surface-solid);border:1px solid var(--glass-edge);border-radius:22px;box-shadow:var(--glass-shadow)}
 .paper-head{border-bottom-color:var(--signal)}
 .tot .grand{border-top-color:var(--ink)}
-
 /* sheet, tab bar, toast */
 .sheet{background:var(--glass-strong);border:1px solid var(--glass-edge);border-radius:26px 26px 0 0;box-shadow:0 -14px 50px rgba(30,18,8,.28)}
 .sheet-back{-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
@@ -589,7 +524,6 @@ input[disabled],select[disabled],textarea[disabled]{background:var(--sunk)}
 .tab[aria-current="page"] svg{color:var(--signal)}
 .toast{border-radius:18px;background:rgba(28,22,18,.88);color:#F7F1EA;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);bottom:calc(88px + env(safe-area-inset-bottom,0px))}
 body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
-
 /* dark mode: inputs and grid colours */
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]) .stub{background:rgba(255,255,255,.04)}
@@ -606,7 +540,6 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
 :root[data-theme="dark"] .appt.s-place{background:rgba(60,44,24,.94)}
 :root[data-theme="dark"] .appt.s-termine{background:rgba(26,52,38,.94)}
 :root[data-theme="dark"] .toast{background:rgba(245,239,233,.92);color:#15110E}
-
 /* ===================== Couleurs de luxe (Réglages → Couleurs de l'app) =====================
    One attribute on <html>: data-lux. Light palettes force the light look, dark palettes the dark look; « Sable » follows the phone. */
 :root[data-lux="champagne"]{
@@ -762,7 +695,6 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
   :root,:root[data-lux]{--glass:var(--surface-solid);--glass-strong:var(--surface-solid)}
 }
 @media (prefers-reduced-motion: reduce){.btn{transition:none}.btn:active{transform:none}}
-
 /* ===================== Téléphone ===================== */
 .ui-phone{font-size:17px}
 .ui-phone .top-in{padding-block:12px 10px;gap:10px}
@@ -911,7 +843,6 @@ form:not(.ph-sets) .ph-secback{display:none}
 .paybtns{display:flex;flex-wrap:wrap;gap:8px}
 .paybtns .chip{min-height:48px;padding:10px 16px;font-size:16px}
 @media (prefers-reduced-motion: reduce){.switch i,.fold summary::after{transition:none}}
-
 /* ===================== Tableau de bord ===================== */
 .dash{display:grid;gap:14px}
 .quick{display:flex;flex-wrap:wrap;gap:8px}
@@ -980,7 +911,6 @@ form:not(.ph-sets) .ph-secback{display:none}
 .two{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
 @media (min-width:760px){.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 .money-due{font:700 30px/1 var(--f-display);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
-
 /* ===================== Aide « ? » et simplicité ===================== */
 .qhelp{position:relative;display:inline-grid;place-items:center;width:24px;height:24px;margin:0 0 0 6px;padding:0;border-radius:50%;border:1.5px solid var(--line-strong);background:var(--surface);color:var(--muted);font:700 13px/1 var(--f-body);cursor:pointer;vertical-align:middle;flex:none}
 .qhelp::after{content:"";position:absolute;inset:-10px}
@@ -1012,7 +942,7 @@ details.adv[open] > summary{margin-bottom:8px}
 .qrbox{width:200px;height:200px;padding:10px;border-radius:14px;background:#fff;justify-self:center;border:1px solid var(--line)}
 .qrbox svg{width:100%;height:100%;display:block}
 .inst-url{text-align:center;font-size:19px;font-weight:700;word-break:break-all;letter-spacing:.01em}
-.touring{overflow:hidden}
+.touring{overflow:hidden}.touring.tt-free{overflow:visible}
 /* the schedule window (glass) */
 #sched{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:16px}
 #sched .sch-back{position:absolute;inset:0;background:rgba(20,14,10,.32);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
@@ -1048,22 +978,34 @@ details.adv[open] > summary{margin-bottom:8px}
 #tour-ov.out,#tour-ov.out *{pointer-events:none!important}
 #tour-ov.out{opacity:0}
 #tour-ov .tt-block{position:absolute;inset:0;pointer-events:auto}
-#tour-ov .tt-hole{position:absolute;border-radius:18px;pointer-events:none;will-change:left,top,width,height;
-  box-shadow:0 0 0 200vmax rgba(12,9,6,.56),0 0 0 2px var(--signal),0 0 26px 6px rgba(238,106,47,.35);
-  box-shadow:0 0 0 200vmax rgba(12,9,6,.56),0 0 0 2px var(--signal),0 0 26px 6px color-mix(in srgb,var(--signal) 40%,transparent);
-  transition:left .42s cubic-bezier(.4,0,.2,1),top .42s cubic-bezier(.4,0,.2,1),width .42s cubic-bezier(.4,0,.2,1),height .42s cubic-bezier(.4,0,.2,1),box-shadow .24s ease}
-#tour-ov .tt-hole::after{content:"";position:absolute;inset:-1px;border-radius:inherit;background:rgba(12,9,6,.56);opacity:0;transition:opacity .22s ease}
+/* moved with transform (the phone's graphics chip does it), and a halo without blur: smooth on iPhone too */
+#tour-ov .tt-hole{position:absolute;left:0;top:0;width:0;height:0;border-radius:18px;pointer-events:none;will-change:transform;transform:translate3d(var(--hx,50vw),var(--hy,50vh),0);
+  box-shadow:0 0 0 200vmax rgba(12,9,6,.56),0 0 0 2px var(--signal),0 0 0 7px rgba(238,106,47,.2);
+  box-shadow:0 0 0 200vmax rgba(12,9,6,.56),0 0 0 2px var(--signal),0 0 0 7px color-mix(in srgb,var(--signal) 22%,transparent);
+  transition:transform .42s cubic-bezier(.4,0,.2,1),width .42s cubic-bezier(.4,0,.2,1),height .42s cubic-bezier(.4,0,.2,1),box-shadow .24s ease}
+#tour-ov .tt-hole::after{content:"";position:absolute;inset:0;border-radius:inherit;background:rgba(12,9,6,.56);opacity:0;transition:opacity .22s ease}
 #tour-ov .tt-hole.shut{box-shadow:0 0 0 200vmax rgba(12,9,6,.56),0 0 0 0 rgba(238,106,47,0),0 0 0 0 rgba(238,106,47,0)}
 #tour-ov .tt-hole.shut::after{opacity:1}
 #tour-ov .tt-hole.jump{transition:none}
-#tour-ov .tt-tip{position:absolute;left:12px;top:40%;pointer-events:auto;color:var(--ink);border-radius:24px;padding:14px 18px 14px;background:var(--glass-strong,rgba(255,253,250,.9));border:1px solid var(--glass-edge,rgba(255,255,255,.7));-webkit-backdrop-filter:saturate(170%) blur(26px);backdrop-filter:saturate(170%) blur(26px);box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 24px 60px rgba(0,0,0,.38);
-  transition:top .42s cubic-bezier(.4,0,.2,1),left .42s cubic-bezier(.4,0,.2,1),opacity .24s ease,transform .3s cubic-bezier(.2,.8,.2,1)}
-#tour-ov .tt-tip.gone{opacity:0;transform:translateY(10px)}
+/* a step where the person does it: the lit part can be touched (the rest of the screen still waits) */
+#tour-ov.open .tt-block{pointer-events:none}
+#tour-ov.scrolling .tt-hole,#tour-ov.scrolling .tt-tip{transition:none}
+#tour-ov .tt-hole.tap::before{content:"";position:absolute;inset:-3px;border-radius:inherit;border:2px solid var(--signal);opacity:0;animation:ttPulse 1.6s cubic-bezier(.2,.6,.3,1) .35s infinite}
+@keyframes ttPulse{0%{transform:scale(1);opacity:.9}100%{transform:scale(1.14);opacity:0}}
+#tour-ov .tt-tip{position:absolute;left:0;top:0;will-change:transform,opacity;transform:translate3d(var(--tx,12px),calc(var(--ty,40vh) + var(--dy,0px)),0);pointer-events:auto;color:var(--ink);border-radius:24px;padding:14px 18px 14px;background:var(--glass-strong,rgba(255,253,250,.9));border:1px solid var(--glass-edge,rgba(255,255,255,.7));-webkit-backdrop-filter:saturate(170%) blur(26px);backdrop-filter:saturate(170%) blur(26px);box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 24px 60px rgba(0,0,0,.38);
+  transition:transform .42s cubic-bezier(.4,0,.2,1),opacity .24s ease}
+#tour-ov .tt-tip.gone{opacity:0;--dy:10px}
+/* phone: a solid glass bubble (no live blur behind a moving bubble: that is what stutters on iPhone) */
+.ui-phone #tour-ov .tt-tip{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--surface-solid,#FFFDF8)}
 #tour-ov .tt-tip.still{transition:none}
 #tour-ov .tt-in{display:grid;gap:9px;transition:opacity .22s ease}
 #tour-ov .tt-tip.fade .tt-in{opacity:0;transition-duration:.12s}
 #tour-ov .tt-tip.swap .tt-in{opacity:0;transition:none}
 #tour-ov .tt-tip.fade{pointer-events:none}
+.tt-do,.tt-try{font-size:14.5px;line-height:1.45;font-weight:600;padding:9px 12px;border-radius:14px;background:rgba(238,106,47,.12);background:color-mix(in srgb,var(--signal) 13%,transparent)}
+.tt-done{display:none;font-size:14.5px;line-height:1.45;padding:9px 12px;border-radius:14px;background:rgba(43,168,74,.13);font-weight:600}
+#tour-ov .tt-tip.tried .tt-try{display:none}#tour-ov .tt-tip.tried .tt-done{display:block}
+#tour-ov .tt-tip.compact .tt-p,#tour-ov .tt-tip.compact .tt-x2{display:none}
 .tt-top{display:flex;align-items:center;gap:10px;min-height:24px}
 .tt-ch{flex:1;min-width:0;font-size:12.5px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--signal)}
 .tt-n{font-size:12.5px;color:var(--muted);white-space:nowrap}
@@ -1075,7 +1017,7 @@ details.adv[open] > summary{margin-bottom:8px}
 .tt-x2{font-size:14px;line-height:1.45;color:var(--muted);padding-left:10px;border-left:2px solid var(--signal)}
 .tt-btns{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px}
 .tt-btns .btn.primary{min-width:132px}
-@media (prefers-reduced-motion:reduce){#tour-ov,#tour-ov .tt-hole,#tour-ov .tt-hole::after,#tour-ov .tt-tip,#tour-ov .tt-in{transition:none!important}}
+@media (prefers-reduced-motion:reduce){#tour-ov,#tour-ov .tt-hole,#tour-ov .tt-hole::after,#tour-ov .tt-tip,#tour-ov .tt-in{transition:none!important}#tour-ov .tt-hole.tap::before{animation:none;opacity:.9}}
 .guide{display:grid;gap:10px}
 .guide ol{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .guide li a,.guide li button.g-go{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:10px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);color:var(--ink);text-decoration:none;font:inherit;font-weight:600;text-align:left;cursor:pointer}
@@ -1086,7 +1028,6 @@ details.adv[open] > summary{margin-bottom:8px}
 .guide .g-t span{font-size:14px;color:var(--muted);font-weight:400;text-decoration:none}
 .guide .g-bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
 .guide .g-bar i{display:block;height:100%;background:var(--ok);border-radius:99px}
-
 /* ===================== Ordinateur =====================
    A computer gets its own frame: the sections in a menu on the left, and the page uses the width of the screen.
    Below 900 px (a small window) it keeps the bar at the bottom. */
@@ -1784,14 +1725,17 @@ function renderNav(){
   var cur = phone() && tabOk('jour') && ['accueil','reglages','heures','equipe','dispos','tresor','stock'].concat(extTabs().map(function(t){ return t.key; })).indexOf(S.tab) >= 0 ? 'plus' : S.tab;
   $$('.tab[data-t]').forEach(function(b){ if (b.dataset.t === cur) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
 }
+var renderT = 0;
+function renderSoon(){ if (renderT) return; renderT = requestAnimationFrame(function(){ renderT = 0; render(); }); }   /* data arriving: one redraw per frame at most */
 function render(){
-  if (S.cfgLoaded) applyLux(S.cfg.lux);   /* until the garage's settings arrive, the device's last colors stay (no flash) */
+  if (renderT){ cancelAnimationFrame(renderT); renderT = 0; }
+  if (S.cfgLoaded && !(TOUR && TOUR.luxBack != null)) applyLux(S.cfg.lux);   /* (a color being tried in the guided tour stays) */   /* until the garage's settings arrive, the device's last colors stay (no flash) */
   if (!tabOk(S.tab)) S.tab = defTab();
   fitTab();
   var lm = lockedMech(); if (lm) S.mech = truckMode() ? '' : lm;
   renderNav();
   if (S.screen === 'edit' || S.screen === 'invoice' || S.screen === 'cform') return;
-  if (S.tab === 'reglages' && !S.screen && S.settingsDirty) return;
+  if (S.tab === 'reglages' && !S.screen && S.settingsDirty && $('#setform')) return;   /* don't wipe what is being typed in the settings */
   var v;
   if (S.screen === 'job') v = phone() ? viewJobPhone() : viewJob();
   else if (S.screen === 'preview') v = viewPreview();
@@ -2242,10 +2186,14 @@ function clientDraftSave(){
 }
 function clientDraftChanged(){ if (S.cformEdit || S.linkJob || !clientDraftPath()) return; clearTimeout(cdT); cdT = setTimeout(clientDraftSave, 700); }
 function flushClientDraft(){ return cdT ? clientDraftSave() : Promise.resolve(); }
+/* where the person is now (a form that opens after a short wait checks it first) */
+function here(){ return location.hash + '|' + (S.screen || '') + '|' + (S.jobId || '') + '|' + (S.sheet ? 1 : 0); }
 function openClientNew(mode){
   var path = clientDraftPath();
   if (!path) return buildClientForm(null, mode, null);
-  S.db.doc(path).get().then(function(sn){ buildClientForm(null, mode, sn.exists ? clone(sn.data()) : null); }, function(){ buildClientForm(null, mode, null); });
+  var at = here(), done = false, go = function(d){ if (done) return; done = true; clearTimeout(t); if (here() === at) buildClientForm(null, mode, d); };
+  var t = setTimeout(function(){ go(null); }, 1500);
+  S.db.doc(path).get().then(function(sn){ go(sn.exists ? clone(sn.data()) : null); }, function(){ go(null); });
 }
 function linkJobs(cid, c){
   var lj = S.linkJob, d = digits(c.phone); S.linkJob = null;
@@ -2753,16 +2701,9 @@ function closeSheet(){
   try { if (sheetReturn && document.contains(sheetReturn)) sheetReturn.focus(); } catch(e){}
 }
 function unitsLabelUpdate(){ var l = $('#f-units-lbl'); if (!l) return; var u = parseInt(val('f-units'), 10); l.textContent = u > 0 ? '= ' + dur(Math.min(u, 96) * unitMin()) + ' (' + unitsLabel(Math.min(u, 96)) + ')' : 'Touche + ou − pour choisir la durée.'; }
-function unitsChanged(){ unitsLabelUpdate(); renderSug(); updateMoment(); }
-function renderPostal(){
-  var el = $('#f-postal'), box = $('#pcmsg'); if (!el || !box) return;
-  var v = el.value.trim();
-  if (!v){ box.className = 'hint'; box.textContent = 'Sert à proposer les moments où un mécano est déjà dans le coin.'; return; }
-  var p = ptOf(v);
-  if (p){ box.className = 'hint ok'; box.textContent = 'Zone ' + p.fsa + ' · ' + frZone(p.name) + (PC_RE.test(normPostal(v)) ? '' : ' (code incomplet, la zone suffit pour les distances)'); }
-  else if (fsaOf(v)){ box.className = 'hint warn'; box.textContent = 'Zone ' + fsaOf(v) + ' introuvable (hors Québec ?) : pas de calcul de distance.'; }
-  else { box.className = 'hint warn'; box.textContent = 'Format attendu : H4P 2B5.'; }
-}
+var sugT = 0;
+function renderSugSoon(){ clearTimeout(sugT); sugT = setTimeout(renderSug, 180); }   /* recomputed once the typing or the ± taps pause */
+function unitsChanged(){ unitsLabelUpdate(); renderSugSoon(); updateMoment(); }
 function renderSug(){
   var box = $('#sugbox'); if (!box) return;
   var pc = formPostal(), p = ptOf(pc);
@@ -3032,13 +2973,14 @@ function openEdit(id, quick, preset, inSheet, client){
   S.editId = id || null; S.quick = !!quick; clearTimeout(draftT); draftExists = false;
   var path = draftPath();
   if (!path) return buildEdit(id, quick, null, preset, inSheet, client);
-  var done = false;
-  var t = setTimeout(function(){ if (!done){ done = true; buildEdit(id, quick, null, preset, inSheet, client); } }, 1500);
+  var done = false, at = here();
+  var t = setTimeout(function(){ if (!done){ done = true; if (here() === at) buildEdit(id, quick, null, preset, inSheet, client); } }, 1500);
   S.db.doc(path).get().then(function(snap){
     if (done) return; done = true; clearTimeout(t);
+    if (here() !== at) return;   /* the person went elsewhere meanwhile */
     var d = snap.exists ? snap.data() : null;
     buildEdit(id, quick, d ? clone(d) : null, preset, inSheet, client);
-  }, function(){ if (done) return; done = true; clearTimeout(t); buildEdit(id, quick, null, preset, inSheet, client); });
+  }, function(){ if (done) return; done = true; clearTimeout(t); if (here() === at) buildEdit(id, quick, null, preset, inSheet, client); });
 }
 function clientCardHTML(c, canChange){
   var p = ptOf(c.postal || findPostal(c.address));
@@ -3052,7 +2994,7 @@ function bookNoShow(j, draft){
 }
 function formPostal(){ var c = S.formClient; return c ? (c.postal || findPostal(c.address)) : ''; }
 function buildEdit(id, quick, draft, preset, inSheet, clientArg){
-  var j = id ? findJob(id) : null;
+  var j = id ? findJob(id) : null; stopScan();
   /* on the phone the booking is a full page (the client-choice sheet closes) */
   if (phone()){ inSheet = false; if (S.sheet){ S.sheet = false; $('#sheet').hidden = true; $('#sheet-body').innerHTML = ''; document.body.classList.remove('locked'); } }
   if (!j){
@@ -3334,7 +3276,7 @@ function bindForm(){
 }
 function val(id){ var e = $('#' + id); return e ? String(e.value || '').trim() : ''; }
 function submitJob(e){
-  e.preventDefault();
+  e.preventDefault(); stopScan();
   if (val('f-svc-in')){ var left = val('f-svc-in'); if (!PK.picked.some(function(n){ return norm(n) === norm(left); })) PK.picked.push(left); $('#f-svc-in').value = ''; renderPicked(); }
   var data = collectForm();
   data.service = data.services.join(', '); data.updatedAt = Date.now();
@@ -3447,7 +3389,7 @@ function addLine(type){
   var d = $('#l' + (S.inv.lines.length-1) + '-' + (l.desc ? 'price' : 'desc')); if (d) d.focus();
 }
 function hideInvErr(){ var e = $('#inverr'); if (e && !e.hidden) e.hidden = true; }
-function invErr(msg){ var e = $('#inverr'); e.textContent = msg; e.hidden = false; e.scrollIntoView({block:'center'}); }
+function invErr(msg){ var e = $('#inverr'); if (!e){ toast(msg); return; } e.textContent = msg; e.hidden = false; e.scrollIntoView({block:'center'}); }
 function claimNumber(){
   var pre = prefix(), start = Math.max(1, parseInt(cfg().startNo, 10) || 1), ref = S.db.doc('meta/invoices');
   if (ext() && typeof ext().nextInvoiceNo === 'function') return ext().nextInvoiceNo(start).then(function(n){ return pre + String(n).padStart(4, '0'); }, function(){ return fallback(); });
@@ -3487,6 +3429,7 @@ function saveInvoice(finalize){
     return write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update(patch); }, finalize ? 'Facture ' + number + ' enregistrée' : 'Facture gardée : tu pourras la finir plus tard');
   }).then(function(ok){
     if (!ok){ bF.disabled = false; if (bD) bD.disabled = false; return; }
+    if (S.screen !== 'invoice' || S.invJob !== j.id) return;   /* saved; the person is already on another screen */
     S.inv = null; S.jobId = j.id; S.screen = finalize ? 'preview' : 'job'; render(); window.scrollTo(0, 0);
   }).catch(function(){ bF.disabled = false; if (bD) bD.disabled = false; invErr("La facture n'a pas pu s'enregistrer. Réessaie."); });
 }
@@ -3495,7 +3438,7 @@ function saveInvoice(finalize){
 function viewPreview(){
   var j = findJob(S.jobId);
   if (!j || !j.invoice) return viewJob();
-  var v = j.invoice, b = biz(), c = cl(j), veh = j.vehicle || {}, is = invState(j), w = canWrite(), wi = canInvoice(), cf = cfg();
+  var v = j.invoice, b = biz(), c = cl(j), veh = j.vehicle || {}, is = invState(j), wi = canInvoice(), cf = cfg();
   var lines = (v.lines || []).map(function(l){
     return '<div class="il"><div class="il-d"><b>' + esc(l.desc) + '</b><span class="muted small">' + esc(LT[l.type] || '') + ' · ' + esc(fmtQty(l.qty)) + (l.type === 'mo' ? ' h' : '') + ' × ' + esc(money(l.price)) + '</span></div><div class="il-a">' + esc(money(lineAmt(l))) + '</div></div>';
   }).join('');
@@ -3736,6 +3679,7 @@ function viewSettings(){
   return {top:top, body:body};
 }
 /* rarely used settings: folded under « Options avancées » */
+/* window.__allSettings: the automatic tests open every settings section at once (never set in normal use) */
 function advOpen(){ return '<details class="adv"' + (window.__allSettings ? ' open' : '') + '><summary>Options avancées</summary><div class="stack">'; }
 function advClose(){ return '</div></details>'; }
 function bindSettings(){
@@ -3794,6 +3738,7 @@ document.addEventListener('click', function(e){
       var lxk = luxOf(v).k, lxp = cfg().lux, lxref = S.db.doc('config/main'), lxt = Date.now();
       var lxMark = function(k){ $$('.lux-sw').forEach(function(x){ x.setAttribute('aria-pressed', String(x.dataset.v === luxOf(k).k)); }); };
       applyLux(lxk); lxMark(lxk);
+      if (TOUR && TOUR.steps[TOUR.i] && TOUR.steps[TOUR.i].try){ if (TOUR.luxBack == null) TOUR.luxBack = luxOf(lxp).k; break; }   /* the guided tour: only tried, not saved */
       write('config/main', function(){ return S.cfg && Object.keys(S.cfg).length ? lxref.update({lux:lxk, updatedAt:lxt}) : lxref.set(Object.assign(clone(cfg()), {lux:lxk, updatedAt:lxt})); }, 'Couleurs de l\'app : ' + luxOf(lxk).n).then(function(ok){
         if (ok){ S.cfg = Object.assign(clone(cfg()), {lux:lxk}); S.cfgLoaded = true; }
         else { applyLux(lxp); lxMark(lxp); }
@@ -3885,7 +3830,7 @@ document.addEventListener('click', function(e){
       if (ft) ft.value = b.dataset.t;
       if (truckMode()){ var ftk = $('#f-truck'); if (ftk && mv) ftk.value = mv; syncMech(); }
       else if (fm){ if (fm.tagName === 'SELECT' && mv && !Array.prototype.some.call(fm.options, function(o){ return o.value === mv; })) fm.insertAdjacentHTML('beforeend', opt(mv, mv, false)); fm.value = mv; }
-      checkHours(); renderSug(); updateMoment(); updateSheetSub(); formChanged();
+      checkHours(); renderSugSoon(); updateMoment(); updateSheetSub(); formChanged();
       var mm = $('#momentmsg'); if (mm && mm.scrollIntoView) mm.scrollIntoView({block:'nearest'});
       break;
     }
@@ -3913,7 +3858,7 @@ document.addEventListener('click', function(e){
     case 'quick': openEdit(null, true); break;
     case 'open': S.screen = 'job'; S.jobId = id; S.confirmDel = false; S.backTo = null; render(); window.scrollTo(0, 0); break;
     case 'back': if (S.backTo === 'client' && S.screen === 'job' && findClient(S.clientId)){ S.screen = 'client'; S.backTo = null; } else if (S.backTo === 'job' && S.screen === 'client' && findJob(S.jobId)){ S.screen = 'job'; S.backTo = null; } else { S.screen = null; S.backTo = null; } render(); window.scrollTo(0, 0); break;
-    case 'back-edit': flushDraft(); if (S.sheet){ closeSheet(); break; } S.screen = S.editId ? 'job' : null; S.quick = false; render(); window.scrollTo(0, 0); break;
+    case 'back-edit': flushDraft(); stopScan(); if (S.sheet){ closeSheet(); break; } S.screen = S.editId ? 'job' : null; S.quick = false; render(); window.scrollTo(0, 0); break;
     case 'pick': pickSvc(v); break;
     case 'addr-pick': addrPick(+v); break;
     case 'addr-fix': addrFix(); break;
@@ -4008,7 +3953,6 @@ document.addEventListener('click', function(e){
     case 'delsvc': { var row = b.closest('.svc-row'); if (row){ row.remove(); S.settingsDirty = true; var rr = $('#s-reset'); if (rr) rr.hidden = false; } break; }
     case 'setreset': S.settingsDirty = false; render(); break;
     case 'ph-day': S.day = addDays(S.day || today(), +v); render(); break;
-    case 'ph-today': S.day = today(); render(); break;
     case 'ph-book': openEdit(null, false, {date:S.day || today(), time:b.dataset.t, col:b.dataset.m || ''}, false); break;
     case 'ph-new': openSheet('Ajouter', 'Que veux-tu faire ?', phoneNewMenu()); break;
     case 'ph-go': { closeSheet(); if (v === 'new') openEdit(null, false, {date:S.tab === 'jour' ? (S.day || today()) : today()}, false); else if (v === 'quick') openEdit(null, true); else if (v === 'client') { S.linkJob = null; openClientNew('page'); } else if (v === 'exp') openExpense(null); break; }
@@ -4058,7 +4002,8 @@ document.addEventListener('input', function(e){
 });
 window.addEventListener('hashchange', function(){
   if (S.screen === 'edit' || S.sheet) flushDraft();
-  flushClientDraft(); S.backTo = null;
+  flushClientDraft(); S.backTo = null; stopScan();   /* the camera stops when you leave the screen */
+  if (location.hash.slice(1) !== 'reglages') S.settingsDirty = false;   /* settings left without saving */
   if (S.sheet){ S.sheet = false; $('#sheet').hidden = true; $('#sheet-body').innerHTML = ''; document.body.classList.remove('locked'); }
   S.hoursEdit = false;
   var h = location.hash.slice(1);
@@ -4066,7 +4011,7 @@ window.addEventListener('hashchange', function(){
   S.screen = null; S.inv = null; render(); window.scrollTo(0, 0);
 });
 
-document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'hidden' && (S.screen === 'edit' || S.sheet)) flushDraft(); });
+document.addEventListener('visibilitychange', function(){ if (document.visibilityState !== 'hidden') return; if (S.screen === 'edit' || S.sheet) flushDraft(); flushClientDraft(); });
 
 /* ---------- boot ---------- */
 function boot(){
@@ -4082,14 +4027,14 @@ function boot(){
       if (!db){ S.noDb = true; render(); return; }
       S.db = db;
       db.collection('jobs').onSnapshot(function(snap){
-        S.jobs = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); }); S.loaded = true; S.loadErr = false; render();
-      }, function(){ S.loadErr = true; render(); });
-      db.doc('config/main').onSnapshot(function(snap){ S.cfg = snap.exists ? snap.data() : {}; S.cfgLoaded = true; render(); }, function(){});
-      db.collection('clients').onSnapshot(function(snap){ S.clients = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); }); render(); if (S.sheet && $('#cs-results')) renderClientResults(); }, function(){});
-      db.collection('days').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ m[d.id] = d.data(); }); S.days = m; render(); }, function(){});
-      db.collection('stock').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ m[d.id] = Object.assign({id:d.id}, d.data()); }); S.stock = m; render(); }, function(){});
-      db.collection('specs').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ m[d.id] = Object.assign({id:d.id}, d.data()); }); S.specs = m; render(); }, function(){});
-      db.collection('avail').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ var x = d.data(); if (x && x.mechanic) m[slug(x.mechanic)] = Object.assign({id:d.id}, x); }); S.avail = m; render(); }, function(){});
+        S.jobs = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); }); S.loaded = true; S.loadErr = false; renderSoon();
+      }, function(){ S.loadErr = true; renderSoon(); });
+      db.doc('config/main').onSnapshot(function(snap){ S.cfg = snap.exists ? snap.data() : {}; S.cfgLoaded = true; renderSoon(); }, function(){});
+      db.collection('clients').onSnapshot(function(snap){ S.clients = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); }); renderSoon(); if (S.sheet && $('#cs-results')) renderClientResults(); }, function(){});
+      db.collection('days').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ m[d.id] = d.data(); }); S.days = m; renderSoon(); }, function(){});
+      db.collection('stock').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ m[d.id] = Object.assign({id:d.id}, d.data()); }); S.stock = m; renderSoon(); }, function(){});
+      db.collection('specs').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ m[d.id] = Object.assign({id:d.id}, d.data()); }); S.specs = m; renderSoon(); }, function(){});
+      db.collection('avail').onSnapshot(function(snap){ var m = {}; snap.docs.forEach(function(d){ var x = d.data(); if (x && x.mechanic) m[slug(x.mechanic)] = Object.assign({id:d.id}, x); }); S.avail = m; renderSoon(); }, function(){});
       render();
     });
   });
@@ -4122,7 +4067,7 @@ function viewDay(){
     '<label class="daypick"><span class="dp-t">' + esc(cap(DPH.format(parseISO(d)).replace('.', ''))) + '</span><span class="dp-s">' + (d === t ? 'Aujourd\'hui · ' : '') + (live.length ? live.length + ' job' + (live.length > 1 ? 's' : '') + (done ? ' · ' + done + ' terminée' + (done > 1 ? 's' : '') : '') : 'Aucune job') + '</span>' +
     '<input type="date" id="ph-date" value="' + esc(d) + '" aria-label="Choisir une date"></label>' +
     '<button type="button" class="iconbtn" data-act="ph-day" data-v="1" aria-label="Jour suivant">›</button></div>' +
-    ((!tm && ms.length > 1 && !lm) || d !== t ? '<div class="dayopts">' + (!tm && ms.length > 1 && !lm ? '<select id="ph-mech" aria-label="Mécano"><option value="">Tous les mécanos</option>' + ms.map(function(m){ return '<option' + (m === sel ? ' selected' : '') + '>' + esc(m) + '</option>'; }).join('') + '</select>' : '') + (d !== t ? '<button type="button" class="chip" data-act="ph-today">Aujourd\'hui</button>' : '') + '</div>' : '') +
+    ((!tm && ms.length > 1 && !lm) || d !== t ? '<div class="dayopts">' + (!tm && ms.length > 1 && !lm ? '<select id="ph-mech" aria-label="Mécano"><option value="">Tous les mécanos</option>' + ms.map(function(m){ return '<option' + (m === sel ? ' selected' : '') + '>' + esc(m) + '</option>'; }).join('') + '</select>' : '') + (d !== t ? '<button type="button" class="chip" data-act="today">Aujourd\'hui</button>' : '') + '</div>' : '') +
     (tm && !lm ? '<div class="chips trucks" role="group" aria-label="Camion">' + chip('mech', '', 'Tous', !sel) + ms.map(function(k){ var tr = truckById(k), dv = driverOf(d, k); return chip('mech', k, colName(k) + (tr.on === false ? ' · fermé' : dv ? ' · ' + dv : ''), sel === k); }).join('') + '</div>' : '') + '</div>';
   var b = banners();
   if (d === t && e && typeof e.phoneTop === 'function') b += e.phoneTop() || '';
@@ -4318,7 +4263,7 @@ function tourSteps(){ var e = ext(); try { return e && typeof e.tourSteps === 'f
 function tourPath(){ return S.db && S.uid ? 'data/users/' + S.uid + '/tour' : null; }
 function tourCheck(){
   var e = ext();
-  if (S.tourAsked || !S.loaded || !tourPath() || !e || (e.previewing && e.previewing()) || !tourSteps().length || (typeof e.tourAuto === 'function' && !e.tourAuto())) return;
+  if (S.tourAsked || !S.loaded || !tourPath() || !e || (e.previewing && e.previewing()) || (typeof e.tourAuto === 'function' && !e.tourAuto()) || !tourSteps().length) return;
   S.tourAsked = true;
   S.db.doc(tourPath()).get().then(function(sn){
     if (sn.exists && sn.data() && sn.data().seenAt) return;
@@ -4343,7 +4288,9 @@ function tourStart(replay){
   if (S.sheet) closeSheet();
   if (SCH) schedClose();
   if (TOUR) tourEnd(true, true);
-  TOUR = {steps:st, i:0, dir:1, replay:!!replay, seq:0, busy:true, rk:''};
+  st.forEach(function(x){ if (!x.sel) x.sel = x.tap || x.try || null; });
+  TOUR = {steps:st, i:0, dir:1, replay:!!replay, seq:0, busy:true, rk:'', tried:false, luxBack:null};
+  clearInterval(ttWatch); ttWatch = setInterval(function(){ if (TOUR) tourFollow(false); else { clearInterval(ttWatch); ttWatch = 0; } }, 300);
   tourMount();
   tourShow();
 }
@@ -4352,14 +4299,16 @@ function tourMount(){
   ov = document.createElement('div'); ov.id = 'tour-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-labelledby', 'tt-t'); ov.dataset.ready = '0';
   ov.innerHTML = '<div class="tt-block"></div><div class="tt-hole shut"></div><div class="tt-tip fade"><div class="tt-in" aria-live="polite"></div></div>';
   document.body.appendChild(ov); document.body.classList.add('touring');
-  var h = ov.querySelector('.tt-hole'); h.style.left = Math.round(window.innerWidth / 2) + 'px'; h.style.top = Math.round(window.innerHeight / 2) + 'px'; h.style.width = '0px'; h.style.height = '0px';
+  var h = ov.querySelector('.tt-hole'); h.style.setProperty('--hx', Math.round(window.innerWidth / 2) + 'px'); h.style.setProperty('--hy', Math.round(window.innerHeight / 2) + 'px'); h.style.width = '0px'; h.style.height = '0px';
   ov.getBoundingClientRect();   /* the dim fades in from nothing */
   ov.classList.add('on');
 }
 function tourEl(sel){   /* the first selector that is on the screen wins (in the order written) */
   if (!sel) return null;
   var parts = String(sel).split(',');
-  for (var p = 0; p < parts.length; p++){ var l = $$(parts[p].trim()); for (var k = 0; k < l.length; k++){ var r = l[k].getBoundingClientRect(); if (r.width > 0 && r.height > 0 && getComputedStyle(l[k]).visibility !== 'hidden' && !l[k].closest('#tour-ov')) return l[k]; } }
+  for (var p = 0; p < parts.length; p++){ var l = $$(parts[p].trim()); for (var k = 0; k < l.length; k++){
+    var d = l[k].closest('details:not([open])'); if (d && !l[k].closest('summary')) l[k] = d;   /* inside a closed section: light the section */
+    var r = l[k].getBoundingClientRect(); if (r.width > 0 && r.height > 0 && getComputedStyle(l[k]).visibility !== 'hidden' && !l[k].closest('#tour-ov')) return l[k]; } }
   return null;
 }
 function tourJob(){
@@ -4370,20 +4319,21 @@ function tourJob(){
 function tourHash(h){ S.screen = null; S.inv = null; if (location.hash.slice(1) !== h) location.hash = h; else { S.tab = h; render(); } }
 /* will this step change what is on the screen? (then the light closes while it changes) */
 function tourMoves(go){
-  if (!go) return false;
+  if (!go) return !!SCH;   /* a step on the screen as it is: only the schedule window has to close */
   var h = location.hash.slice(1) || S.tab;
   if (go.indexOf('sched:') === 0) return !SCH || SCH.kind !== go.slice(6);
   if (SCH) return true;
   if (go === 'home') return !!S.screen || h !== defTab();
   if (go.indexOf('tab:') === 0) return !!S.screen || h !== go.slice(4);
-  if (go === 'job'){ var j = tourJob(); return !!j && (S.screen !== 'job' || S.jobId !== j.id); }
+  if (go === 'job'){ if (S.screen === 'job' && findJob(S.jobId)) return false; return !!tourJob(); }
   if (go.indexOf('view:') === 0) return !!S.screen || h !== 'tresor' || S.trView !== go.slice(5);
   if (go.indexOf('set:') === 0){ var nm = go.slice(4); return !!S.screen || h !== 'reglages' || (nm ? S.setSec == null : S.setSec != null); }
   return !!S.screen || h !== go;
 }
 function tourGo(go){
-  if (!go || !tourMoves(go)) return;
-  if (SCH && go.indexOf('sched:') !== 0) schedClose();
+  if (!tourMoves(go)) return;
+  if (SCH && (!go || go.indexOf('sched:') !== 0)) schedClose();   /* closed without saving what was tried */
+  if (!go) return;
   if (go === 'home') tourHash(defTab());
   else if (go.indexOf('tab:') === 0){ var t = go.slice(4); if (tabOk(t)) tourHash(t); }
   else if (go === 'job'){ var j = tourJob(); if (j){ S.jobId = j.id; S.screen = 'job'; S.backTo = null; render(); } }
@@ -4403,18 +4353,25 @@ function ttSettle(sel, seq, maxMs){
       var el = sel ? tourEl(sel) : null, m = $('#main'), probe = el || m, r = probe ? probe.getBoundingClientRect() : null;
       var k = r ? [r.left, r.top, r.width, r.height].map(Math.round).join(',') + '|' + (m ? m.childElementCount : 0) + '|' + (SCH ? 1 : 0) : '';
       if (k === last) same++; else { same = 0; last = k; }
-      if (((sel ? !!el : true) && same >= 2) || Date.now() - t0 > maxMs) return res(el || null);
+      /* the screen is ready and still: the part is there, or it is not on this screen (no use waiting longer) */
+      if (((sel ? !!el : true) && same >= 2) || (sel && !el && same >= 4 && m && m.childElementCount) || Date.now() - t0 > maxMs) return res(el || null);
       setTimeout(tick, 60);
     })();
   });
 }
+/* the screen's free band: under the top bar, above the phone's tab bar */
+function ttSafe(el){
+  if (el && el.closest && el.closest('#sched')) return {top:8, bot:8};   /* the schedule window covers the whole screen */
+  var H = window.innerHeight, tb = $('#top'), bar = $('#tabbar'), tr = tb ? tb.getBoundingClientRect() : null, br = bar ? bar.getBoundingClientRect() : null;
+  return {top: tr && tr.height && tr.bottom < H * .4 ? Math.max(0, tr.bottom) + 10 : 16, bot: br && br.height && br.top > H * .6 ? H - br.top + 10 : 16};
+}
+/* too tall to fit with the words under it */
+function ttTall(h, el){ var sf = ttSafe(el); return h + 16 + 14 + ((TOUR && TOUR.th) || 230) + 8 > window.innerHeight - sf.top - sf.bot; }
 /* where the page should be so the part is well in view, with room for the words (null = it already is) */
 function ttScrollFor(el){
   if (!el || el.closest('#sched') || el.closest('#top') || el.closest('#tabbar')) return null;
-  var r = el.getBoundingClientRect(), H = window.innerHeight, tb = $('#top'), bar = $('#tabbar');
-  var topSafe = tb ? Math.max(0, tb.getBoundingClientRect().bottom) + 10 : 16;
-  var botSafe = bar && bar.getBoundingClientRect().top > H * .6 ? H - bar.getBoundingClientRect().top + 10 : 16;
-  var tall = r.height > H * .62, roomBelow = H - botSafe - r.bottom, roomAbove = r.top - topSafe;
+  var r = el.getBoundingClientRect(), H = window.innerHeight, sf = ttSafe(), topSafe = sf.top, botSafe = sf.bot;
+  var tall = ttTall(r.height), roomBelow = H - botSafe - r.bottom, roomAbove = r.top - topSafe;
   if (!tall && r.top >= topSafe && r.bottom <= H - botSafe && (roomBelow > 240 || roomAbove > 240)) return null;
   var want = tall ? r.top - topSafe : r.top - Math.max(topSafe, Math.round(H * .16));
   var max = Math.max(0, document.documentElement.scrollHeight - H), y = Math.max(0, Math.min(max, Math.round(window.scrollY + want)));
@@ -4434,7 +4391,7 @@ function ttScrolled(seq){   /* the soft scroll is done (or a short time passed) 
 function tourShow(){
   if (!TOUR) return;
   var seq = ++TOUR.seq, x = TOUR.steps[TOUR.i], ov = $('#tour-ov');
-  TOUR.busy = true; if (ov) ov.dataset.ready = '0';
+  TOUR.busy = true; TOUR.tried = false; tourUndo(); document.body.classList.remove('tt-free'); if (ov){ ov.dataset.ready = '0'; ov.classList.remove('open'); var hl0 = ov.querySelector('.tt-hole'); if (hl0) hl0.classList.remove('tap'); }
   var tip = ov && ov.querySelector('.tt-tip'), moves = tourMoves(x.go), red = ttReduced();
   if (tip){ tip.classList.add('fade'); if (moves) tip.classList.add('gone'); }   /* another screen: the bubble leaves too, and comes back where it belongs */
   if (moves) tourLight(null);   /* close the light: the screen changes in the dark */
@@ -4453,27 +4410,63 @@ function tourShow(){
     if (y == null) return tourDraw(el, seq);
     if (moves || red){ window.scrollTo(0, y); return ttWait(40).then(function(){ tourDraw(el, seq); }); }
     /* soft scroll; a lit part: the light leaves now for where the part will be, both arrive together */
-    if (!shut){ var d = y - window.scrollY, r = el.getBoundingClientRect(); tourLight({left:r.left, top:r.top - d, width:r.width, height:r.height, bottom:r.bottom - d}); }
+    if (!shut){ var d = y - window.scrollY, r = el.getBoundingClientRect(); tourLight({left:r.left, top:r.top - d, width:r.width, height:r.height, bottom:r.bottom - d, right:r.right}, el, d); }
     try { window.scrollTo({top:y, behavior:'smooth'}); } catch(e){ window.scrollTo(0, y); }
     return ttScrolled(seq).then(function(){ tourDraw(el, seq); });
   });
 }
 function ttq(t){ return String(t).replace(/« /g, '« ').replace(/ »/g, ' »').replace(/ ([?!:;])/g, ' $1'); }
-/* the lit rectangle for this part (a very tall part: its top only) */
-function ttHole(r){
+/* a clean place to stop the light in a tall part: under a whole card or row, never through one (null = none) */
+function ttCut(el, top, limit, d){
+  var avail = limit - top; if (!el || avail < 140) return null;
+  if (el.matches('.leaflet-container, canvas, img, iframe, video') || el.querySelector('.leaflet-container, canvas, iframe')) return null;   /* a map or a picture is never cut in two */
+  var sc = [el].concat($$('*', el).slice(0, 400)).some(function(e){ var cs = getComputedStyle(e); return /auto|scroll/.test(cs.overflowY) && e.scrollHeight > e.clientHeight + 4 && e.clientHeight > avail * .5; });
+  if (sc) return null;   /* a grid that scrolls by itself (the agenda): it is shown whole */
+  var all = el.querySelectorAll('*'), n = Math.min(all.length, 1500), box = [], i, b, t, bt, cand = [];
+  for (i = 0; i < n; i++){
+    b = all[i].getBoundingClientRect(); if (!b.height || !b.width) continue;
+    t = b.top - d; bt = b.bottom - d;
+    if (bt <= top + 1 || t >= limit - 1) continue;   /* outside the lit band */
+    if (t < top + 2 && b.height >= avail * .9) continue;   /* a frame around the whole part, not a card in it */
+    box.push([t, bt]);
+    if (bt <= limit && bt >= top + avail * .4) cand.push(bt);   /* under a card */
+    if (t > top + 2 && t - 6 >= top + avail * .4) cand.push(t - 6);   /* or just above the next one */
+  }
+  cand.sort(function(a, c){ return c - a; });
+  for (i = 0; i < cand.length; i++){ var y = cand[i]; if (!box.some(function(q){ return q[0] < y - 2 && q[1] > y + 2; })) return y; }
+  return null;
+}
+/* the lit rectangle for this part. Too tall for the words under it: the words go beside it if there is room,
+   or the light stops under a whole card / row, or (a map, one big picture) it lights what shows and the words sit over its bottom */
+function ttHole(r, el, d){
   if (!r) return null;
-  var W = window.innerWidth, H = window.innerHeight, pad = 8;
-  if (r.height > H * .62){ var t0 = Math.max(r.top, 70); r = {left:r.left, top:t0, width:r.width, height:Math.min(r.bottom - t0, H * .5)}; }
-  return {x:Math.round(Math.max(4, r.left - pad)), y:Math.round(Math.max(4, r.top - pad)), w:Math.round(Math.min(W - 8, r.width + pad * 2)), h:Math.round(r.height + pad * 2)};
+  var W = window.innerWidth, H = window.innerHeight, pad = 8, side = false, over = false;
+  var tw = Math.min(400, W - 24), th = (TOUR && TOUR.th) || 230;
+  if (ttTall(r.height, el) && !(el && el.closest && el.closest('#tabbar'))){
+    var sf = ttSafe(el), t0 = Math.max(r.top, sf.top), right = W - (r.right || r.left + r.width) - pad, x = TOUR && TOUR.steps[TOUR.i];
+    side = Math.max(right, r.left - pad) >= 328;   /* the words beside it (a bit narrower if needed) */
+    var limit = side ? H - sf.bot - pad : H - sf.bot - th - 14 - pad, b0 = Math.min(r.bottom, H - sf.bot - pad), cut = null;
+    if (!side && r.bottom > limit && !(x && (x.try || x.tap))) cut = ttCut(el, t0, limit, d || 0);   /* something to try is never cut */
+    if (cut == null && !side && r.bottom > limit) over = true;
+    var bot = side ? Math.min(r.bottom, limit) : cut != null ? cut : Math.min(r.bottom, b0);
+    r = {left:r.left, top:t0, width:r.width, height:Math.max(40, bot - t0)};
+  }
+  return {x:Math.round(Math.max(4, r.left - pad)), y:Math.round(Math.max(4, r.top - pad)), w:Math.round(Math.min(W - 8, r.width + pad * 2)), h:Math.round(r.height + pad * 2), side:side, over:over};
 }
 /* the light: on a part (it glides from the last one), or shut (null: the whole screen dims evenly, in place) */
-function tourLight(r){
+function tourLight(r, el, d){
   var ov = $('#tour-ov'); if (!ov) return null;
-  var h = ov.querySelector('.tt-hole'), hole = ttHole(r);
-  if (!hole){ h.classList.add('shut'); return null; }
+  var h = ov.querySelector('.tt-hole'), hole = ttHole(r, el, d);
+  if (!hole){
+    h.classList.add('shut');
+    /* nothing to light: once dark, the light folds away to nothing (no empty frame left on the screen) */
+    clearTimeout(h._fold); h._fold = setTimeout(function(){ if (!h.classList.contains('shut')) return; h.classList.add('jump'); h.style.width = '0px'; h.style.height = '0px'; h.style.setProperty('--hx', (window.innerWidth / 2) + 'px'); h.style.setProperty('--hy', (window.innerHeight / 2) + 'px'); h.getBoundingClientRect(); h.classList.remove('jump'); }, ttReduced() ? 0 : 240);
+    return null;
+  }
+  clearTimeout(h._fold);
   var shut = h.classList.contains('shut');
   if (shut) h.classList.add('jump');   /* shut: it moves in the dark, then fades open there */
-  h.style.left = hole.x + 'px'; h.style.top = hole.y + 'px'; h.style.width = hole.w + 'px'; h.style.height = hole.h + 'px';
+  h.style.setProperty('--hx', hole.x + 'px'); h.style.setProperty('--hy', hole.y + 'px'); h.style.width = hole.w + 'px'; h.style.height = hole.h + 'px';
   if (shut){ h.getBoundingClientRect(); h.classList.remove('jump'); h.classList.remove('shut'); }
   return hole;
 }
@@ -4484,35 +4477,55 @@ function ttTipHTML(x){
     '<div class="tt-bar" aria-hidden="true"><i style="width:' + Math.round((TOUR.i + 1) / n * 100) + '%"></i></div>' +
     '<div class="tt-head">' + (x.icon ? '<span class="tt-ic" aria-hidden="true">' + x.icon + '</span>' : '') + '<h3 id="tt-t">' + ttq(esc(x.t)) + '</h3></div><p class="tt-p">' + ttq(x.p) + '</p>' +
     (x.x ? '<p class="tt-x2">' + ttq(x.x) + '</p>' : '') +
+    (x.tap && !TOUR.noEl ? '<p class="tt-do"><span aria-hidden="true">👆 </span>' + ttq(x.do || 'Touche la partie éclairée.') + '</p>' : '') +
+    (x.try && !TOUR.noEl ? '<p class="tt-try"><span aria-hidden="true">👉 </span>' + ttq(x.tryT || 'Essaie-le.') + '</p><p class="tt-done"><span aria-hidden="true">✓ </span>' + ttq(x.done || 'C\'est ça.') + '</p>' : '') +
     '<div class="tt-btns">' + (first ? '<button type="button" class="btn sm ghost" data-act="tt-skip">Plus tard</button>' : '<button type="button" class="btn sm ghost" data-act="tt-prev">‹ Retour</button>') +
-    (last ? '<button type="button" class="btn sm primary" data-act="tt-end">Terminer</button>' : '<button type="button" class="btn sm primary" data-act="tt-next">' + (first ? 'Commencer la visite' : 'Suivant ›') + '</button>') + '</div>';
+    (last ? '<button type="button" class="btn sm primary" data-act="tt-end">Terminer</button>' : x.tap && !TOUR.noEl ? '<button type="button" class="btn sm ghost" data-act="tt-next">Passer ›</button>' : '<button type="button" class="btn sm primary" data-act="tt-next">' + (first ? 'Commencer la visite' : 'Suivant ›') + '</button>') + '</div>';
 }
 /* put the light and the bubble where they belong (the bubble glides; its words stay as they are) */
 function tourPlace(el){
   var ov = $('#tour-ov'); if (!ov || !TOUR) return;
-  var r = el ? el.getBoundingClientRect() : null, hole = tourLight(r), t = ov.querySelector('.tt-tip');
-  var W = window.innerWidth, H = window.innerHeight, tw = Math.min(400, W - 24), th;
-  t.style.width = tw + 'px'; th = t.offsetHeight;
-  var left, top;
+  var t = ov.querySelector('.tt-tip'), W = window.innerWidth, H = window.innerHeight, tw = Math.min(400, W - 24), th;
+  var x0 = TOUR.steps[TOUR.i];
+  if (el && !el.isConnected) el = x0 && x0.sel ? tourEl(x0.sel) : null;   /* the screen was redrawn meanwhile (the map refreshes itself) */
+  t.classList.remove('compact'); t.style.width = tw + 'px'; th = t.offsetHeight; TOUR.th = th;   /* the words' size first: the light makes room for them */
+  var r = el ? el.getBoundingClientRect() : null, ra = TOUR.tried && x0 && x0.after ? tourEl(x0.after) : null, left, top;
+  if (r && ra){ ra = ra.getBoundingClientRect(); r = {left:Math.min(r.left, ra.left), top:Math.min(r.top, ra.top), right:Math.max(r.right, ra.right), bottom:Math.max(r.bottom, ra.bottom)}; r.width = r.right - r.left; r.height = r.bottom - r.top; }   /* the part and what it opened */
+  var hole = tourLight(r, el);
+  if (hole && x0 && x0.tap && !phone() && hole.w < 340 && hole.h < 140 && (W - hole.x - hole.w >= tw + 28 || hole.x >= tw + 28)) hole.side = true;   /* a menu item: the words beside it, not over the menu */
   if (!hole){ left = (W - tw) / 2; top = Math.max(16, (H - th) / 2); }
+  else if (hole.side){   /* beside the part, level with its top (narrower when the room is tight) */
+    var room = Math.max(W - (hole.x + hole.w), hole.x) - 28;
+    if (room < tw){ tw = Math.max(300, room); t.style.width = tw + 'px'; th = t.offsetHeight; TOUR.th = th; }
+    left = W - (hole.x + hole.w) >= tw + 28 ? hole.x + hole.w + 14 : hole.x - 14 - tw;
+    top = Math.max(8, Math.min(H - th - 8, hole.h < 140 ? hole.y + hole.h / 2 - th / 2 : hole.y));
+  }
+  else if (hole.over){
+    if (x0 && (x0.try || x0.tap)){ t.classList.add('compact'); th = t.offsetHeight; }   /* a map to try: short words over its bottom */
+    top = Math.max(8, Math.min(H - th - 8, hole.y + hole.h - th - 16)); left = Math.max(12, Math.min(W - tw - 12, hole.x + hole.w / 2 - tw / 2)); }
   else {
     var below = hole.y + hole.h + 14, above = hole.y - 14 - th;
-    top = below + th <= H - 8 ? below : above >= 8 ? above : Math.max(8, H - th - 8);
+    if ((x0.try || x0.tap) && !TOUR.noEl && below + th > H - 8 && above < 8){   /* something to do: the words get short so they don't cover it */
+      t.classList.add('compact'); th = t.offsetHeight; above = hole.y - 14 - th;
+    }
+    top = below + th <= H - 8 ? below : above >= 8 ? above : H - (hole.y + hole.h) > hole.y ? Math.max(8, H - th - 8) : 8;
     left = Math.max(12, Math.min(W - tw - 12, hole.x + hole.w / 2 - tw / 2));
   }
-  t.style.left = Math.round(left) + 'px'; t.style.top = Math.round(top) + 'px';
+  t.style.setProperty('--tx', Math.round(left) + 'px'); t.style.setProperty('--ty', Math.round(top) + 'px');
   TOUR.rk = r ? [r.left, r.top, r.width, r.height].map(Math.round).join(',') : 'mid';
 }
 function tourDraw(el, seq){
   var ov = $('#tour-ov'); if (!ov || !TOUR || (seq && TOUR.seq !== seq)) return;
   var x = TOUR.steps[TOUR.i], t = ov.querySelector('.tt-tip'), inn = t.querySelector('.tt-in'), hidden = !t.dataset.placed || t.classList.contains('gone');
-  t.classList.add('swap'); t.classList.add('fade'); inn.innerHTML = ttTipHTML(x); t.getBoundingClientRect(); t.classList.remove('swap');   /* the new words come in hidden, then fade in */
+  TOUR.noEl = !el;   /* nothing to touch on this screen: the step only explains */
+  t.classList.add('swap'); t.classList.add('fade'); t.classList.remove('tried'); inn.innerHTML = ttTipHTML(x); t.getBoundingClientRect(); t.classList.remove('swap');   /* the new words come in hidden, then fade in */
   if (hidden){ t.classList.add('still'); t.classList.add('gone'); }   /* a bubble that was away appears in place (no glide from elsewhere) */
   tourPlace(el);
   if (hidden){ t.getBoundingClientRect(); t.classList.remove('still'); t.dataset.placed = '1'; }
   var s = TOUR.seq, red = ttReduced();
   setTimeout(function(){ if (TOUR && TOUR.seq === s){ t.classList.remove('gone'); t.classList.remove('fade'); var f = ov.querySelector('[data-act="tt-next"], [data-act="tt-end"]'); if (f) try { f.focus({preventScroll:true}); } catch(e){} } }, red ? 0 : hidden ? 200 : 170);
-  setTimeout(function(){ if (TOUR && TOUR.seq === s){ TOUR.busy = false; ov.dataset.ready = '1'; } }, red ? 0 : TT_MS + 40);
+  if (x.tap && el) ov.querySelector('.tt-hole').classList.add('tap');
+  setTimeout(function(){ if (TOUR && TOUR.seq === s){ TOUR.busy = false; ov.classList.toggle('open', !!((x.tap || x.try) && el)); document.body.classList.toggle('tt-free', ov.classList.contains('open')); ov.dataset.ready = '1'; } }, red ? 0 : TT_MS + 40);
 }
 /* while you read: if the page moves (data arriving, a picture loading), the light follows */
 function tourFollow(force){
@@ -4521,15 +4534,15 @@ function tourFollow(force){
   var k = r ? [r.left, r.top, r.width, r.height].map(Math.round).join(',') : 'mid';
   if (force || k !== TOUR.rk) tourPlace(el);
 }
-setInterval(function(){ tourFollow(false); }, 300);
+var ttWatch = 0;   /* while a tour is open: the light follows the page if it moves (data arriving, a picture loading) */
 function tourNext(){ if (!TOUR || TOUR.busy) return; TOUR.dir = 1; if (TOUR.i < TOUR.steps.length - 1){ TOUR.i++; tourShow(); } else tourEnd(false); }
 function tourPrev(){ if (!TOUR || TOUR.busy || !TOUR.i) return; TOUR.dir = -1; TOUR.i--; tourShow(); }
 function tourEnd(skipped, quiet){
   if (!TOUR) return;
   var replay = TOUR.replay, p = tourPath(), ov = $('#tour-ov'), home;
-  TOUR = null;
+  tourUndo(); TOUR = null;
   if (ov){ ov.removeAttribute('id'); ov.classList.remove('on'); ov.classList.add('out'); setTimeout(function(){ ov.remove(); }, ttReduced() ? 0 : 260); }
-  document.body.classList.remove('touring');
+  document.body.classList.remove('touring'); document.body.classList.remove('tt-free');
   if (quiet) return;
   if (SCH) schedClose();
   S.screen = null; S.setSec = null; home = defTab(); if (location.hash.slice(1) !== home) location.hash = home; else { S.tab = home; render(); }
@@ -4554,6 +4567,46 @@ document.addEventListener('keydown', function(ev){
   else if (ev.key === 'ArrowRight'){ ev.preventDefault(); tourNext(); }
   else if (ev.key === 'ArrowLeft'){ ev.preventDefault(); tourPrev(); }
 }, true);
+/* a step where the person does it himself: only the lit part answers (and the bubble); a touch elsewhere does nothing.
+   « tap »: touching it does what it always does, then the visit goes on by itself. « try »: play with it, nothing is saved. */
+function ttGuard(ev){
+  if (!TOUR) return;
+  var ov = $('#tour-ov'), t = ev.target;
+  if (!ov || !ov.classList.contains('open') || !t || !t.closest) return;
+  var x = TOUR.steps[TOUR.i], sel = x.tap || x.try, ok = false;
+  if (ev.type === 'pointerup'){   /* the end of a touch is never stopped (a swipe on the grid must end where it ends) */
+    if (TOUR.downIn && x.try) setTimeout(tourTried, 60);
+    TOUR.downIn = false; return;
+  }
+  if (t.closest('#tour-ov .tt-tip')) return;
+  try { ok = !!(sel && t.closest(sel)); } catch(e){}
+  if (!ok){ ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); return; }
+  if (ev.type === 'pointerdown') TOUR.downIn = true;
+  if (x.tap && ev.type === 'click'){
+    var s = TOUR.seq; ov.classList.remove('open');
+    setTimeout(function(){ if (TOUR && TOUR.seq === s) tourNext(); }, 90);   /* the app does what the button does, then the next step */
+  }
+  else if (x.try && ev.type === 'click') setTimeout(tourTried, 60);
+}
+['pointerdown', 'mousedown', 'pointerup', 'click'].forEach(function(n){ document.addEventListener(n, ttGuard, true); });
+function tourTried(){
+  var tip = $('#tour-ov .tt-tip');
+  if (!TOUR || !tip || TOUR.tried) return;
+  TOUR.tried = true; tip.classList.add('tried');
+  setTimeout(function(){ tourFollow(true); }, 40);   /* the bubble's words changed, and what was tried may have opened something */
+}
+/* what was only tried goes back as it was (a color tried during the visit is not kept) */
+function tourUndo(){
+  if (!TOUR || TOUR.luxBack == null) return;
+  var k = TOUR.luxBack; TOUR.luxBack = null; applyLux(k);
+  $$('.lux-sw').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.v === luxOf(k).k)); });
+}
+/* the person scrolls: the light and the words stay on the part, without lagging behind */
+var ttSc = 0, ttScT = 0;
+window.addEventListener('scroll', function(){
+  if (!TOUR || TOUR.busy || ttSc) return;
+  ttSc = requestAnimationFrame(function(){ ttSc = 0; var ov = $('#tour-ov'); if (!ov) return; ov.classList.add('scrolling'); tourFollow(false); clearTimeout(ttScT); ttScT = setTimeout(function(){ ov.classList.remove('scrolling'); }, 160); });
+}, {passive:true});
 /* the phone's address bar showing / hiding, turning the phone: move things, do not redraw them */
 var ttRz = 0;
 window.addEventListener('resize', function(){ if (!TOUR || ttRz) return; ttRz = requestAnimationFrame(function(){ ttRz = 0; tourFollow(true); }); });
@@ -4677,7 +4730,7 @@ function schedSave(){
       var hrs = {}; [0, 1, 2, 3, 4, 5, 6].forEach(function(dw){ var w = weekHours(dw); hrs[String(dw)] = {open:!!w.open, start:w.start, end:w.end}; if (w.breaks && w.breaks.length) hrs[String(dw)].breaks = w.breaks; });
       var dws = [];
       ch.forEach(function(d){ var dw = parseISO(d).getDay(), sp = spec(d); dws.push(dw); hrs[String(dw)] = sp.open ? {open:true, start:sp.start, end:sp.end, breaks:sp.breaks} : Object.assign({}, hrs[String(dw)], {open:false}); });
-      ps.push(write('config/main', function(){ return S.db.doc('config/main').set(Object.assign({}, cfg(), {hours:hrs})); }, ''));
+      ps.push(write('config/main', function(){ return S.cfg && Object.keys(S.cfg).length ? S.db.doc('config/main').update({hours:hrs, updatedAt:Date.now()}) : S.db.doc('config/main').set(Object.assign({}, cfg(), {hours:hrs})); }, ''));
       /* from today on, those weekdays follow the new hours (closed days — holidays — stay closed) */
       Object.keys(S.days).forEach(function(dd){ if (dd < t0 || dws.indexOf(parseISO(dd).getDay()) < 0) return; var x = S.days[dd]; if (x.closed === true) return; if (x.start || x.end || x.breaks || x.closed === false){ var nd = Object.assign({}, x); delete nd.start; delete nd.end; delete nd.breaks; delete nd.closed; ps.push(saveDay(dd, nd)); } });
     } else ch.forEach(function(d){
@@ -4905,11 +4958,11 @@ function deleteExpense(){
 }
 function showReceipt(id){
   var x = findExp(id); if (!x || !x.receipt) return;
-  openSheet('Reçu', [x.vendor, cap(dateMed(x.date)), money(x.total)].filter(Boolean).join(' · '), '<p class="muted">Ouverture de la photo…</p>');
+  openSheet('Reçu', [x.vendor, cap(dateMed(x.date)), money(x.total)].filter(Boolean).join(' · '), '<p class="muted" id="rc-wait">Ouverture de la photo…</p>');
   S.db.doc(x.receipt).get().then(function(sn){
-    var d = sn.exists ? sn.data() : null, bd = $('#sheet-body'); if (!bd || !S.sheet) return;
+    var d = sn.exists ? sn.data() : null, bd = $('#sheet-body'); if (!bd || !S.sheet || !$('#rc-wait')) return;
     bd.innerHTML = (d && d.img ? '<img src="' + d.img + '" alt="Photo du reçu" class="rcimg" id="rc-img">' : '<p class="muted">La photo n\'est plus là.</p>') + '<button type="button" class="btn block" data-act="exp-open" data-id="' + esc(x.id) + '">Retour à la dépense</button>';
-  }, function(){ var bd = $('#sheet-body'); if (bd) bd.innerHTML = '<p class="muted">La photo n\'a pas pu s\'ouvrir. Vérifie ta connexion.</p>'; });
+  }, function(){ var w = $('#rc-wait'); if (w) w.textContent = 'La photo n\'a pas pu s\'ouvrir. Vérifie ta connexion.'; });
 }
 /* ---------- Excel for the accountant ---------- */
 var xlsxP = null;
@@ -5043,6 +5096,7 @@ function phoneInvoice(){
     else if (el.dataset && el.dataset.crew){ setCrew(S.day || today(), el.dataset.crew, el.value); }
     else if (el.dataset && el.dataset.av){ var dwv = el.dataset.dw, fld = el.dataset.av, vv = el.value; editAvail(function(cur){ var x = cur.week[dwv] || {on:true, start:'08:00', end:'17:00'}; x[fld] = vv; cur.week[dwv] = x; if (x.end <= x.start){ toast('La fin doit être après le début.'); render(); return false; } }); }
     else if (el.dataset && el.dataset.hz){
+      if (!canHours()){ toast('Tu n\'as pas le droit de changer l\'horaire du garage.'); render(); return; }
       var d = el.dataset.d, info = dayInfo(d), nd = Object.assign({}, info.doc), other = $('select[data-hz="' + (el.dataset.hz === 'start' ? 'end' : 'start') + '"][data-d="' + d + '"]');
       nd[el.dataset.hz] = el.value; nd[el.dataset.hz === 'start' ? 'end' : 'start'] = other ? other.value : (el.dataset.hz === 'start' ? info.end : info.start);
       if (nd.end <= nd.start){ toast('La fermeture doit être après l\'ouverture.'); render(); return; }
@@ -5055,7 +5109,6 @@ function phoneInvoice(){
 function changeStatus(v, extra){
   var j = findJob(S.jobId); if (!j || !ST[v] || (j.status === v && !extra)) return Promise.resolve(false);
   var was = j.status || 'planifie', ex = ext();
-  if (ex && typeof ex.beforeStatus === 'function' && ex.beforeStatus(j, v, was) === false) return Promise.resolve(false);
   var patch = Object.assign({status:v, updatedAt:Date.now()}, extra || {});
   if (!isOffSt(v) && (j.lost || j.noshowAt)){ patch.lost = null; patch.noshowAt = null; }
   return write('jobs/' + j.id, function(){ return S.db.doc('jobs/' + j.id).update(patch); }, ex && typeof ex.onStatus === 'function' ? '' : ST[v]).then(function(ok){ if (ok && ex && typeof ex.onStatus === 'function') ex.onStatus(j, v, was); return ok; });
@@ -5289,10 +5342,16 @@ function photoSrc(id){
   if (!id) return null;
   if (PHOTO.cache[id] !== undefined) return PHOTO.cache[id];
   if (!PHOTO.loading[id] && S.db){
-    PHOTO.loading[id] = S.db.doc('photos/' + id).get().then(function(s){ PHOTO.cache[id] = s.exists ? (s.data().img || '') : ''; PHOTO.loading[id] = null; render(); },
-      function(){ setTimeout(function(){ PHOTO.loading[id] = null; }, 15000); });
+    PHOTO.loading[id] = S.db.doc('photos/' + id).get().then(function(s){ PHOTO.cache[id] = s.exists ? (s.data().img || '') : ''; PHOTO.loading[id] = null; photoBig(id); renderSoon(); },
+      function(){ photoBig(id, true); setTimeout(function(){ PHOTO.loading[id] = null; }, 15000); });
   }
   return null;
+}
+/* the enlarged photo, if it is open and was still loading */
+function photoBig(id, failed){
+  var big = $('.pbig[data-pid="' + id + '"]'); if (!big) return;
+  var src = PHOTO.cache[id];
+  big.innerHTML = src ? '<img src="' + src + '" alt="Photo du travail">' : '<p class="muted">' + (failed ? 'La photo n\'a pas pu se charger. Vérifie Internet, puis rouvre-la.' : 'Cette photo n\'est plus là.') + '</p>';
 }
 function whenTxt(at){ var d = new Date(at); return dateMed(isoDate(d)) + ' à ' + hm(pad(d.getHours()) + ':' + pad(d.getMinutes())); }
 function canPhotos(j){ return canWrite() && allow('photos') && !isOff(j); }
@@ -5340,7 +5399,7 @@ function openPhoto(id){
   var p = jobPhotos(j).filter(function(x){ return x.id === id; })[0]; if (!p) return;
   var src = photoSrc(id);
   openSheet(p.kind === 'avant' ? 'Photo avant' : 'Photo après', whenTxt(p.at) + (p.by ? ' · ' + p.by : ''),
-    '<div class="stack"><div class="pbig">' + (src ? '<img src="' + src + '" alt="Photo ' + (p.kind === 'avant' ? 'avant' : 'après') + ' du travail">' : '<p class="muted">Chargement de la photo…</p>') + '</div>' +
+    '<div class="stack"><div class="pbig" data-pid="' + esc(id) + '">' + (src ? '<img src="' + src + '" alt="Photo ' + (p.kind === 'avant' ? 'avant' : 'après') + ' du travail">' : '<p class="muted">Chargement de la photo…</p>') + '</div>' +
     (canPhotos(j) ? '<button type="button" class="btn danger block" data-act="photo-del" data-id="' + esc(id) + '">Supprimer cette photo</button>' : '') + '</div>');
 }
 function delPhoto(id){

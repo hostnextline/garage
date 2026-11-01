@@ -50,7 +50,7 @@
   function kvGet(k){ return tx('kv', 'readonly', function(st){ return st.get(k); }).catch(function(){ return undefined; }); }
   function kvSet(k, v){ return tx('kv', 'readwrite', function(st){ return v === undefined ? st.delete(k) : st.put(v, k); }).catch(function(){}); }
   var OB = [], failed = [], flushing = false, flushT = null, netL = [];
-  var NET = {online:navigator.onLine !== false, offlineMode:false, pending:0, sending:false, failed:failed, lastOk:null, queuedAt:null};
+  var NET = {online:navigator.onLine !== false, offlineMode:false, pending:0, sending:false, failed:failed, storeErr:''};
   T.net = NET;
   T.onNet = function(f){ netL.push(f); };
   function netChanged(){ NET.pending = OB.length; netL.slice().forEach(function(f){ try { f(NET); } catch(e){} }); }
@@ -66,7 +66,7 @@
     if (c.loaded || c.hydrated || !T.uid) return Promise.resolve();
     c.hydrated = kvGet(cacheKey(col)).then(function(v){
       if (!v || c.loaded || !v.docs) return;
-      c.docs = v.docs; c.since = v.since || null; c.loaded = true; c.fromCache = true;
+      c.docs = v.docs; c.since = v.since || null; c.loaded = true;
       overlay(col); notify(col, null);
     });
     return c.hydrated;
@@ -90,7 +90,6 @@
 
   /* ---------- the shared notebook: same calls as claude.use('db') ---------- */
   var cols = {};       // col -> {docs:{id:data}, loaded, since, listeners:[], docListeners:{id:[fn]}, loading}
-  var seq = 0;
   function colOf(path){ return path.split('/').slice(0, -1).join('/'); }
   function idOf(path){ return path.split('/').pop(); }
   function C(col){ return cols[col] || (cols[col] = {docs:{}, loaded:false, since:null, listeners:[], docListeners:{}, loading:null, full:0}); }
@@ -125,7 +124,7 @@
   /* first time: everything (page by page); after: only what changed, plus what was deleted */
   function load(col, full){
     var c = C(col);
-    if (c.loading) return c.loading.then(function(){ return full ? load(col, true) : null; });
+    if (c.loading){ if (!full) c.again = true; return c.loading.then(function(){ return full ? load(col, true) : null; }); }
     var sb = T.sb, start = (full || !c.loaded) ? null : since(c), changed = {}, maxAt = c.since;
     function page(from){
       var q = sb.from('docs').select('id,data,updated_at').eq('col', col).order('updated_at', {ascending:true}).order('path', {ascending:true}).range(from, from + 999);
@@ -151,14 +150,16 @@
       gone.forEach(function(g){ if (c.docs[g.id] !== undefined && !(g.id in changed)){ delete c.docs[g.id]; ids.push(g.id); } });
       if (OB.length) ids = ids.concat(overlay(col));
       c.since = maxAt || c.since || new Date().toISOString();
-      var first = !c.loaded; c.loaded = true; c.fromCache = false; if (!start) c.full = Date.now();
+      var first = !c.loaded; c.loaded = true; if (!start) c.full = Date.now();
       if (ids.length || first) notify(col, first ? null : ids);
-      c.err = null; NET.lastOk = Date.now();
       if (ids.length || first || !start) saveCol(col);
-    }, function(e){ c.err = e; if (!c.loaded) c.listeners.forEach(function(f){ if (f.__onErr) f.__onErr(e); }); throw e; });
+    }, function(e){ if (!c.loaded) c.listeners.forEach(function(f){ if (f.__onErr) f.__onErr(e); }); throw e; });
     c.loading = p.then(function(){ c.loading = null; }, function(){ c.loading = null; });
+    p.then(function(){ if (c.again){ c.again = false; load(col, false).catch(function(){}); } }, function(){ c.again = false; });   /* a change came in meanwhile */
     return p;
   }
+  /* the first load of a collection is shared by everyone who starts listening to it (not one full download each) */
+  function firstLoad(col){ var c = C(col); return c.first || (c.first = hydrate(col).then(function(){ return load(col, true); }).catch(function(e){ c.first = null; throw e; })); }
   var timers = {};
   function soon(col){ clearTimeout(timers[col]); timers[col] = setTimeout(function(){ if (C(col).listeners.length || Object.keys(C(col).docListeners).length) load(col, false).catch(function(){}); }, 150); }
   function watched(){ return Object.keys(cols).filter(function(k){ var c = cols[k]; return c.listeners.length || Object.keys(c.docListeners).some(function(i){ return c.docListeners[i].length; }); }); }
@@ -192,7 +193,7 @@
       acquire:function(){ return Promise.resolve({acquired:true, version:1}); },
       onSnapshot:function(n, onErr){
         var c = C(col); (c.docListeners[id] = c.docListeners[id] || []).push(n);
-        if (c.loaded) setTimeout(function(){ n(snapDoc(col, id)); }, 0); else hydrate(col).then(function(){ return load(col, true); }).catch(function(e){ if (onErr && !c.loaded) onErr(e); });
+        if (c.loaded) setTimeout(function(){ n(snapDoc(col, id)); }, 0); else firstLoad(col).catch(function(e){ if (onErr && !c.loaded) onErr(e); });
         return function(){ c.docListeners[id] = (c.docListeners[id] || []).filter(function(f){ return f !== n; }); };
       },
       collection:function(p){ return colRef(path + '/' + p); }
@@ -211,17 +212,17 @@
     if (OB.length) overlay(col);
     notify(col, [id]); saveCol(col);
   }
-  function persistOp(op){ return tx('outbox', 'readwrite', function(st){ return st.add({uid:op.uid, kind:op.kind, path:op.path, data:op.data, at:op.at}); }).then(function(n){ op.n = n; }).catch(function(e){ NET.storeErr = String(e && e.message || e); }); }
+  function persistOp(op){ return tx('outbox', 'readwrite', function(st){ return st.add({uid:op.uid, kind:op.kind, path:op.path, data:op.data, at:op.at}); }).then(function(n){ op.n = n; }).catch(function(e){ NET.storeErr = String(e && e.message || e); netChanged(); }); }
   function dropOp(op){ if (op.n != null) tx('outbox', 'readwrite', function(st){ return st.delete(op.n); }).catch(function(){}); }
   function queue(op){
     applyLocal(op); notify(colOf(op.path), [idOf(op.path)]); saveCol(colOf(op.path));
-    OB.push(op); persistOp(op); NET.queuedAt = Date.now(); netChanged(); flushSoon(1500);
+    OB.push(op); persistOp(op); netChanged(); flushSoon(1500);
     return Promise.resolve({queued:true});
   }
   function write(kind, path, d){
     var op = {uid:T.uid, kind:kind, path:path, data:d == null ? null : clone(d), at:Date.now()};
     if (OB.length || NET.offlineMode || navigator.onLine === false) return queue(op);
-    return withTimeout(send(op), 12000).then(function(out){ NET.lastOk = Date.now(); landed(op, out); }, function(e){
+    return withTimeout(send(op), 12000).then(function(out){ landed(op, out); }, function(e){
       if (e && e.code === 'unavailable') return queue(op);
       throw e;
     });
@@ -245,12 +246,11 @@
           netChanged(); return next();
         });
       })();
-    }).then(function(){ flushing = false; NET.sending = false; NET.lastOk = Date.now(); netChanged(); T.resync(false); },
+    }).then(function(){ flushing = false; NET.sending = false; netChanged(); T.resync(false); },
             function(){ flushing = false; NET.sending = false; netChanged(); flushSoon(20000); });
   }
   T.flush = flush;
   T.pending = function(){ return OB.length; };
-  T.outbox = function(){ return OB.map(function(op){ return {n:op.n, kind:op.kind, path:op.path, at:op.at}; }); };
   T.clearFailed = function(){ failed.length = 0; netChanged(); };
   function loadOutbox(){
     return tx('outbox', 'readonly', function(st){ return st.getAll(); }).then(function(all){
@@ -266,7 +266,7 @@
       doc:function(id){ return docRef(path + '/' + (id || newId())); },
       onSnapshot:function(n, onErr){
         var c = C(path); if (onErr) n.__onErr = onErr; c.listeners.push(n);
-        if (c.loaded) setTimeout(function(){ n(snapCol(path)); }, 0); else hydrate(path).then(function(){ return load(path, true); }).catch(function(e){ if (onErr && !c.loaded) onErr(e); });
+        if (c.loaded) setTimeout(function(){ n(snapCol(path)); }, 0); else firstLoad(path).catch(function(e){ if (onErr && !c.loaded) onErr(e); });
         return function(){ c.listeners = c.listeners.filter(function(f){ return f !== n; }); };
       },
       get:function(){ return load(path, !C(path).loaded).then(function(){ return snapCol(path); }); }
@@ -292,7 +292,7 @@
       if (document.visibilityState === 'hidden'){ hiddenAt = Date.now(); return; }
       T.resync(hiddenAt && Date.now() - hiddenAt > 5 * 60000);
     });
-    window.addEventListener('online', function(){ NET.online = true; netChanged(); flush(); T.resync(false); });
+    window.addEventListener('online', function(){ NET.online = true; netChanged(); if (NET.offlineMode) return; flush(); T.resync(false); });
     window.addEventListener('offline', function(){ NET.online = false; netChanged(); });
     setInterval(function(){ if (OB.length && !flushing) flush(); }, 30000);
   }
@@ -321,7 +321,9 @@
       '#gate .g-f{display:grid;gap:6px}#gate .g-msg{border-radius:10px;padding:10px 12px;background:var(--bad-bg);color:var(--bad);font-weight:600}#gate .g-msg.ok{background:var(--ok-bg);color:var(--ok)}' +
       '#gate .g-help{color:var(--muted);font-size:14.5px}#gate .g-link{background:none;border:0;color:var(--steel);font-weight:600;text-decoration:underline;padding:6px 0;cursor:pointer;justify-self:start;min-height:40px}' +
       '#gate .g-go{min-height:50px;border-radius:10px;border:1px solid var(--signal);background:var(--signal);color:var(--on-signal);font-weight:700;font-size:17px;cursor:pointer}' +
-      '#gate .g-go[disabled]{opacity:.6;cursor:wait}';
+      '#gate .g-go[disabled]{opacity:.6;cursor:wait}' +
+      '#gate .g-or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px}#gate .g-or::before,#gate .g-or::after{content:"";flex:1;height:1px;background:var(--line)}' +
+      '#gate .g-gg{min-height:50px;border-radius:10px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-weight:700;font-size:16.5px;cursor:pointer;width:100%}#gate .g-gg[disabled]{opacity:.6;cursor:wait}';
     document.head.appendChild(st);
   }
   var LOGO = '<svg viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><path d="M18 44l8-8m10-10l10-10M26 36a8 8 0 1 0 10-10" stroke="#F2B200" stroke-width="6" fill="none" stroke-linecap="round"/></svg>';
@@ -330,13 +332,50 @@
     if (!g){ g = document.createElement('div'); g.id = 'gate'; g.setAttribute('role', 'dialog'); g.setAttribute('aria-modal', 'true'); g.setAttribute('aria-labelledby', 'g-title'); document.body.appendChild(g); }
     g.innerHTML = '<div class="g-box"><div class="g-brand"><div class="g-logo">' + LOGO + '</div><div><div class="eyebrow">Garage mobile · équipe</div><h1 id="g-title">' + html.title + '</h1></div></div>' + html.body + '</div>';
     g.hidden = false; document.body.classList.add('locked');
-    var f = g.querySelector('input'); if (f) setTimeout(function(){ try { f.focus(); } catch(e){} }, 30);
+    var f = g.querySelector('input:not([readonly])'); if (f) setTimeout(function(){ try { f.focus(); } catch(e){} }, 30);
     return g;
   }
   function closeGate(){ var g = document.getElementById('gate'); if (g) g.remove(); document.body.classList.remove('locked'); }
   function msg(text, ok){ var m = document.getElementById('g-msg'); if (!m) return; m.textContent = text || ''; m.hidden = !text; m.className = 'g-msg' + (ok ? ' ok' : ''); }
   function busy(on){ var b = document.getElementById('g-go'); if (b){ b.disabled = on; b.textContent = on ? 'Un instant…' : b.dataset.label; } }
 
+  /* ---- sign in with Google (Gmail): only for people the owner invited with that same address.
+     The button shows only once Google is turned on for the garage's server (Supabase → Authentication → Google). ---- */
+  var GOOGLE = null;
+  function googleOn(){
+    if (GOOGLE) return GOOGLE;
+    GOOGLE = withTimeout(fetch(CFG.url + '/auth/v1/settings', {headers:{apikey:CFG.key}}).then(function(r){ return r.ok ? r.json() : {}; }), 5000)
+      .then(function(j){ return !!(j && j.external && j.external.google); }, function(){ GOOGLE = null; return false; });
+    return GOOGLE;
+  }
+  function googleBlock(id, note){
+    return '<div id="' + id + '" hidden><p class="g-or">ou</p><button type="button" class="g-gg" id="' + id + '-go">Continuer avec Google</button>' + (note ? '<p class="g-help">' + note + '</p>' : '') + '</div>';
+  }
+  function googleWire(id){
+    var box = document.getElementById(id), b = document.getElementById(id + '-go'); if (!box || !b) return;
+    googleOn().then(function(on){ if (on && box.isConnected) box.hidden = false; });
+    b.onclick = function(){
+      b.disabled = true; b.textContent = 'Un instant…';
+      T.sb.auth.signInWithOAuth({provider:'google', options:{redirectTo:location.origin + location.pathname, queryParams:{prompt:'select_account'}}}).then(function(r){
+        if (r && r.error){ b.disabled = false; b.textContent = 'Continuer avec Google'; msg('Google ne répond pas : ' + r.error.message); }
+      }, function(){ b.disabled = false; b.textContent = 'Continuer avec Google'; msg('Pas de connexion au serveur. Vérifie Internet.'); });
+    };
+  }
+  /* back from Google: ?code=… (or an error) in the address */
+  function googleReturn(){
+    var q = new URLSearchParams(location.search), hq = new URLSearchParams(String(location.hash).replace(/^#/, ''));
+    var code = q.get('code'), er = q.get('error_description') || q.get('error') || (hq.get('error') ? hq.get('error_description') || hq.get('error') : '');
+    if (!code && !er) return false;
+    try { history.replaceState(null, '', location.pathname); } catch(e){}
+    if (er){ showLogin(/not enabled|unsupported provider/i.test(er) ? 'La connexion avec Google n\'est pas encore activée pour le garage.' : /signup|sign ups|not allowed/i.test(er) ? 'Ce compte Google n\'est pas invité au garage. Demande au propriétaire de t\'inviter avec ce courriel.' : /access_denied|cancel/i.test(er) ? 'Connexion avec Google annulée.' : 'La connexion avec Google n\'a pas marché (' + er + ').'); return true; }
+    gate({title:'Connexion', body:'<p class="g-help">Connexion avec Google…</p>'});
+    withTimeout(T.sb.auth.exchangeCodeForSession(code), 12000).then(function(r){
+      if (r.error || !r.data || !r.data.session){ showLogin('La connexion avec Google n\'a pas marché. Réessaie.'); return; }
+      T.viaGoogle = true; lsSet('gm.team.email', r.data.session.user.email || '');
+      afterSession(r.data.session);
+    }, function(){ showLogin('Pas de connexion au serveur. Vérifie Internet.'); });
+    return true;
+  }
   function standalone(){ try { return !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)); } catch(e){ return false; } }
   function showLogin(note){
     gate({title:'Connexion', body:
@@ -344,8 +383,10 @@
       '<form id="g-form" novalidate><div class="g-f"><label for="g-email">Courriel</label><input id="g-email" type="email" autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false" value="' + esc(lsGet('gm.team.email') || '') + '"></div>' +
       '<div class="g-f"><label for="g-pw">Mot de passe</label><input id="g-pw" type="password" autocomplete="current-password"></div>' +
       '<p class="g-msg" id="g-msg" role="alert" hidden></p><button class="g-go" id="g-go" data-label="Se connecter" type="submit">Se connecter</button>' +
-      '<button type="button" class="g-link" id="g-forgot">Mot de passe oublié ?</button><p class="g-help" id="g-forgot-help" hidden>Demande au propriétaire du garage : il te donne un nouveau mot de passe dans Réglages → Équipe et accès.</p></form>'});
+      '<button type="button" class="g-link" id="g-forgot">Mot de passe oublié ?</button><p class="g-help" id="g-forgot-help" hidden>Demande au propriétaire du garage : il te donne un nouveau mot de passe dans Réglages → Équipe et accès.</p>' +
+      googleBlock('g-google', '') + '</form>'});
     if (note) msg(note, false);
+    googleWire('g-google');
     document.getElementById('g-forgot').onclick = function(){ document.getElementById('g-forgot-help').hidden = false; };
     document.getElementById('g-form').onsubmit = function(e){
       e.preventDefault();
@@ -398,7 +439,9 @@
         '<form id="g-form" novalidate><div class="g-f"><label for="g-email">Ton courriel</label><input id="g-email" type="email" autocomplete="username" value="' + esc(d.email) + '" readonly></div>' +
         '<div class="g-f"><label for="g-pw">Choisis ton mot de passe <span class="g-help">(8 caractères ou plus)</span></label><input id="g-pw" type="password" autocomplete="new-password"></div>' +
         '<div class="g-f"><label for="g-pw2">Écris-le encore une fois</label><input id="g-pw2" type="password" autocomplete="new-password"></div>' +
-        '<p class="g-msg" id="g-msg" role="alert" hidden></p><button class="g-go" id="g-go" data-label="Activer mon compte" type="submit">Activer mon compte</button></form>'});
+        '<p class="g-msg" id="g-msg" role="alert" hidden></p><button class="g-go" id="g-go" data-label="Activer mon compte" type="submit">Activer mon compte</button>' +
+        googleBlock('g-google', 'Seulement si <b>' + esc(d.email) + '</b> est ton compte Google : pas besoin de mot de passe.') + '</form>'});
+      googleWire('g-google');
       document.getElementById('g-form').onsubmit = function(e){
         e.preventDefault();
         var pw = document.getElementById('g-pw').value, pw2 = document.getElementById('g-pw2').value;
@@ -418,7 +461,9 @@
     }, function(){ bad('Pas de connexion au serveur. Vérifie Internet, puis rouvre le lien.'); });
   }
   function showNoAccess(){
-    gate({title:'Pas d\'accès', body:'<div class="g-msg">Ce compte n\'a pas (ou plus) accès au carnet du garage. Parle au propriétaire.</div><button class="g-go" id="g-go" data-label="Changer de compte" type="button">Changer de compte</button>'});
+    var em = T.session && T.session.user && T.session.user.email;
+    gate({title:'Pas d\'accès', body:'<div class="g-msg">' + (em ? 'Le compte <b>' + esc(em) + '</b>' : 'Ce compte') + ' n\'a pas (ou plus) accès au carnet du garage.</div>' +
+      '<p class="g-help">' + (T.viaGoogle ? 'Avec Google, il faut que le propriétaire t\'invite avec ce même courriel (Réglages → Équipe et accès).' : 'Parle au propriétaire du garage.') + '</p><button class="g-go" id="g-go" data-label="Changer de compte" type="button">Changer de compte</button>'});
     document.getElementById('g-go').onclick = function(){ T.sb.auth.signOut().then(function(){ showLogin(); }, function(){ showLogin(); }); };
   }
   function showConfigMissing(){
@@ -485,8 +530,9 @@
   function start(){
     css();
     if (!CFG.url || !CFG.key || !window.supabase){ showConfigMissing(); failReady(err('no_config')); return; }
-    T.sb = window.supabase.createClient(CFG.url, CFG.key, {auth:{persistSession:true, autoRefreshToken:true, storageKey:'gm.team.auth', detectSessionInUrl:false}});
+    T.sb = window.supabase.createClient(CFG.url, CFG.key, {auth:{persistSession:true, autoRefreshToken:true, storageKey:'gm.team.auth', detectSessionInUrl:false, flowType:'pkce'}});
     T.sb.auth.onAuthStateChange(function(ev){ if (ev === 'SIGNED_OUT' && started) location.reload(); });
+    if (googleReturn()) return;
     var inv = (String(location.hash).match(/^#invite=([A-Za-z0-9_-]{20,80})$/) || [])[1];
     if (inv){ try { history.replaceState(null, '', location.pathname + location.search); } catch(e){} showInvite(inv); return; }
     var su = storedUser();

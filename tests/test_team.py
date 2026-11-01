@@ -304,7 +304,7 @@ with sync_playwright() as pw:
     mp.screenshot(path=os.path.join(SC, 'team_phone_mech.png'))
     mp.click('[data-act="ph-day"][data-v="1"]'); mp.wait_for_timeout(300)
     check('phone · mechanic: workday card only on today', mp.locator('[data-act="sh-start"]').count() == 0)
-    mp.click('[data-act="ph-today"]'); mp.wait_for_timeout(300)
+    mp.click('[data-act="today"]'); mp.wait_for_timeout(300)
     mp.click('.ph-job[data-id="j2"]'); mp.wait_for_selector('.nextbtn', timeout=8000)
     check('phone · mechanic job: big button « Je suis arrivé » (job is en route)', mp.text_content('.nextbtn') == 'Je suis arrivé', mp.text_content('.nextbtn'))
     check('phone · mechanic job: tracking details shown, no duplicate buttons', mp.locator('.er').count() == 1 and mp.locator('.er [data-act="status"]').count() == 0)

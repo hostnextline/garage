@@ -80,9 +80,9 @@ with sync_playwright() as p:
     check('2. no sideways scroll', no_hscroll(pg))
     pg.click('[data-act="ph-day"][data-v="1"]'); wait(pg)
     check('2. › goes to tomorrow', S(pg, 'day') == iso(T + datetime.timedelta(days=1)) and 'job:a5' in rows(pg), rows(pg))
-    check('2. « Aujourd\'hui » chip appears off today', pg.locator('[data-act="ph-today"]').count() == 1)
-    pg.click('[data-act="ph-today"]'); wait(pg)
-    check('2. chip brings back today', S(pg, 'day') == iso(T) and pg.locator('[data-act="ph-today"]').count() == 0)
+    check('2. « Aujourd\'hui » chip appears off today', pg.locator('[data-act="today"]').count() == 1)
+    pg.click('[data-act="today"]'); wait(pg)
+    check('2. chip brings back today', S(pg, 'day') == iso(T) and pg.locator('[data-act="today"]').count() == 0)
     swipe(pg, -150); wait(pg)
     check('2. swipe left = next day', S(pg, 'day') == iso(T + datetime.timedelta(days=1)), S(pg, 'day'))
     swipe(pg, 150); wait(pg)
@@ -127,7 +127,7 @@ with sync_playwright() as p:
     newid = new[0][0][5:] if new else ''
     # ---------- 4. one job: next-step button ----------
     pg.click('.tab[data-t="jour"]'); wait(pg)
-    pg.click('[data-act="ph-today"]') if pg.locator('[data-act="ph-today"]').count() else None; wait(pg)
+    pg.click('[data-act="today"]') if pg.locator('[data-act="today"]').count() else None; wait(pg)
     pg.click('.ph-job[data-id="a4"]'); wait(pg, 400)
     check('4. job page: car + services on top', 'Honda Civic' in txt(pg, '.pj-what') and 'Inspection multipoints' in txt(pg, '.pj-what'))
     hrefs = pg.evaluate("[...document.querySelectorAll('.rounds .round')].map(a => [a.textContent.trim(), a.getAttribute('href')])")
