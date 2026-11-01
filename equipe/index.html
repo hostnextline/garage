@@ -1041,26 +1041,41 @@ details.adv[open] > summary{margin-bottom:8px}
 .ui-phone #sched{padding:0;place-items:end stretch;grid-template-columns:minmax(0,1fr)}.ui-phone #sched .sch-win{width:100%}.ui-phone .sch-hint{font-size:13px}
 .ui-phone #sched .sch-win{border-radius:26px 26px 0 0;height:100dvh;max-height:100dvh;padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px))}
 .ui-phone .sch-grid{grid-template-columns:52px 1fr}
-/* the guided tour: a soft light on the part being explained, a glass bubble with the words */
-#tour-ov{position:fixed;inset:0;z-index:80;pointer-events:none}
+/* the guided tour: a soft light on the part being explained, a glass bubble with the words.
+   One light and one bubble for the whole visit: they glide from one part to the next (nothing is rebuilt, nothing pops). */
+#tour-ov{position:fixed;inset:0;z-index:80;pointer-events:none;opacity:0;transition:opacity .26s ease}
+#tour-ov.on{opacity:1}
+#tour-ov.out,#tour-ov.out *{pointer-events:none!important}
+#tour-ov.out{opacity:0}
 #tour-ov .tt-block{position:absolute;inset:0;pointer-events:auto}
-#tour-ov .tt-dim{position:absolute;inset:0;background:rgba(12,9,6,.56);pointer-events:auto}
-#tour-ov .tt-hole{position:absolute;border-radius:18px;box-shadow:0 0 0 9999px rgba(12,9,6,.56),0 0 0 2px var(--signal),0 0 26px 6px rgba(238,106,47,.35);box-shadow:0 0 0 9999px rgba(12,9,6,.56),0 0 0 2px var(--signal),0 0 26px 6px color-mix(in srgb,var(--signal) 40%,transparent);transition:left .45s cubic-bezier(.2,.8,.2,1),top .45s cubic-bezier(.2,.8,.2,1),width .45s cubic-bezier(.2,.8,.2,1),height .45s cubic-bezier(.2,.8,.2,1);pointer-events:none}
-#tour-ov .tt-tip{position:absolute;pointer-events:auto;color:var(--ink);border-radius:24px;padding:14px 18px 14px;display:grid;gap:9px;background:var(--glass-strong,rgba(255,253,250,.9));border:1px solid var(--glass-edge,rgba(255,255,255,.7));-webkit-backdrop-filter:saturate(170%) blur(26px);backdrop-filter:saturate(170%) blur(26px);box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 24px 60px rgba(0,0,0,.38)}
-@media (prefers-reduced-motion:no-preference){#tour-ov .tt-tip{animation:ttin .35s cubic-bezier(.2,.8,.2,1)}@keyframes ttin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}}
+#tour-ov .tt-hole{position:absolute;border-radius:18px;pointer-events:none;will-change:left,top,width,height;
+  box-shadow:0 0 0 200vmax rgba(12,9,6,.56),0 0 0 2px var(--signal),0 0 26px 6px rgba(238,106,47,.35);
+  box-shadow:0 0 0 200vmax rgba(12,9,6,.56),0 0 0 2px var(--signal),0 0 26px 6px color-mix(in srgb,var(--signal) 40%,transparent);
+  transition:left .42s cubic-bezier(.4,0,.2,1),top .42s cubic-bezier(.4,0,.2,1),width .42s cubic-bezier(.4,0,.2,1),height .42s cubic-bezier(.4,0,.2,1),box-shadow .24s ease}
+#tour-ov .tt-hole::after{content:"";position:absolute;inset:-1px;border-radius:inherit;background:rgba(12,9,6,.56);opacity:0;transition:opacity .22s ease}
+#tour-ov .tt-hole.shut{box-shadow:0 0 0 200vmax rgba(12,9,6,.56),0 0 0 0 rgba(238,106,47,0),0 0 0 0 rgba(238,106,47,0)}
+#tour-ov .tt-hole.shut::after{opacity:1}
+#tour-ov .tt-hole.jump{transition:none}
+#tour-ov .tt-tip{position:absolute;left:12px;top:40%;pointer-events:auto;color:var(--ink);border-radius:24px;padding:14px 18px 14px;background:var(--glass-strong,rgba(255,253,250,.9));border:1px solid var(--glass-edge,rgba(255,255,255,.7));-webkit-backdrop-filter:saturate(170%) blur(26px);backdrop-filter:saturate(170%) blur(26px);box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 24px 60px rgba(0,0,0,.38);
+  transition:top .42s cubic-bezier(.4,0,.2,1),left .42s cubic-bezier(.4,0,.2,1),opacity .24s ease,transform .3s cubic-bezier(.2,.8,.2,1)}
+#tour-ov .tt-tip.gone{opacity:0;transform:translateY(10px)}
+#tour-ov .tt-tip.still{transition:none}
+#tour-ov .tt-in{display:grid;gap:9px;transition:opacity .22s ease}
+#tour-ov .tt-tip.fade .tt-in{opacity:0;transition-duration:.12s}
+#tour-ov .tt-tip.swap .tt-in{opacity:0;transition:none}
+#tour-ov .tt-tip.fade{pointer-events:none}
 .tt-top{display:flex;align-items:center;gap:10px;min-height:24px}
 .tt-ch{flex:1;min-width:0;font-size:12.5px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--signal)}
 .tt-n{font-size:12.5px;color:var(--muted);white-space:nowrap}
 .tt-x{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font-size:13px;line-height:1;display:grid;place-items:center;flex:none}
-.tt-bar{height:3px;border-radius:2px;background:var(--line);overflow:hidden}.tt-bar i{display:block;height:100%;background:var(--accent,#EE6A2F);border-radius:2px;transition:width .45s cubic-bezier(.2,.8,.2,1)}
+.tt-bar{height:3px;border-radius:2px;background:var(--line);overflow:hidden}.tt-bar i{display:block;height:100%;background:var(--accent,#EE6A2F);border-radius:2px}
 .tt-head{display:flex;align-items:center;gap:11px}.tt-ic{font-size:26px;line-height:1;flex:none}
 .tt-head h3{font:600 21px/1.15 var(--f-lux,Georgia,serif);letter-spacing:-.005em}
 .tt-p{font-size:15.5px;line-height:1.5}
 .tt-x2{font-size:14px;line-height:1.45;color:var(--muted);padding-left:10px;border-left:2px solid var(--signal)}
 .tt-btns{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px}
 .tt-btns .btn.primary{min-width:132px}
-#tour-ov .tt-tip.mid{text-align:left}
-#tour-ov .tt-tip.going{opacity:.35;transition:opacity .2s;pointer-events:none}
+@media (prefers-reduced-motion:reduce){#tour-ov,#tour-ov .tt-hole,#tour-ov .tt-hole::after,#tour-ov .tt-tip,#tour-ov .tt-in{transition:none!important}}
 .guide{display:grid;gap:10px}
 .guide ol{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .guide li a,.guide li button.g-go{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:10px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);color:var(--ink);text-decoration:none;font:inherit;font-weight:600;text-align:left;cursor:pointer}
@@ -6269,17 +6284,36 @@ function tourCheck(){
    Steps: {ch: chapter, icon, t: title, p: text, x: a tip (optional), sel: what to light up, go: which screen, need: skip it when that part is not there}.
    When the part to light up is not on the screen, the bubble is shown in the middle (the explanation still counts). ---- */
 var TOUR = null;
+/* how it moves (smooth and in step):
+   1. the words fade out;
+   2. if the next part is on another screen: the light closes (the whole screen dims), the screen changes underneath;
+   3. we wait until the part is really there and has stopped moving;
+   4. the page scrolls softly while the light glides to the part, both arriving together;
+   5. the words of the step fade in. The light follows the part if the page changes while you read. */
+var TT_MS = 420;
+function ttReduced(){ try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){ return false; } }
 function tourStart(replay){
   var st = tourSteps(); if (!st.length) return;
   if (S.sheet) closeSheet();
   if (SCH) schedClose();
-  TOUR = {steps:st, i:0, dir:1, replay:!!replay, home:location.hash.slice(1) || S.tab};
+  if (TOUR) tourEnd(true, true);
+  TOUR = {steps:st, i:0, dir:1, replay:!!replay, seq:0, busy:true, rk:''};
+  tourMount();
   tourShow();
+}
+function tourMount(){
+  var ov = $('#tour-ov'); if (ov) ov.remove();
+  ov = document.createElement('div'); ov.id = 'tour-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-labelledby', 'tt-t'); ov.dataset.ready = '0';
+  ov.innerHTML = '<div class="tt-block"></div><div class="tt-hole shut"></div><div class="tt-tip fade"><div class="tt-in" aria-live="polite"></div></div>';
+  document.body.appendChild(ov); document.body.classList.add('touring');
+  var h = ov.querySelector('.tt-hole'); h.style.left = Math.round(window.innerWidth / 2) + 'px'; h.style.top = Math.round(window.innerHeight / 2) + 'px'; h.style.width = '0px'; h.style.height = '0px';
+  ov.getBoundingClientRect();   /* the dim fades in from nothing */
+  ov.classList.add('on');
 }
 function tourEl(sel){   /* the first selector that is on the screen wins (in the order written) */
   if (!sel) return null;
   var parts = String(sel).split(',');
-  for (var p = 0; p < parts.length; p++){ var l = $$(parts[p].trim()); for (var k = 0; k < l.length; k++){ var r = l[k].getBoundingClientRect(); if (r.width > 0 && r.height > 0 && getComputedStyle(l[k]).visibility !== 'hidden') return l[k]; } }
+  for (var p = 0; p < parts.length; p++){ var l = $$(parts[p].trim()); for (var k = 0; k < l.length; k++){ var r = l[k].getBoundingClientRect(); if (r.width > 0 && r.height > 0 && getComputedStyle(l[k]).visibility !== 'hidden' && !l[k].closest('#tour-ov')) return l[k]; } }
   return null;
 }
 function tourJob(){
@@ -6288,8 +6322,21 @@ function tourJob(){
   return td[0] || nx[0] || pa[0] || null;
 }
 function tourHash(h){ S.screen = null; S.inv = null; if (location.hash.slice(1) !== h) location.hash = h; else { S.tab = h; render(); } }
+/* will this step change what is on the screen? (then the light closes while it changes) */
+function tourMoves(go){
+  if (!go) return false;
+  var h = location.hash.slice(1) || S.tab;
+  if (go.indexOf('sched:') === 0) return !SCH || SCH.kind !== go.slice(6);
+  if (SCH) return true;
+  if (go === 'home') return !!S.screen || h !== defTab();
+  if (go.indexOf('tab:') === 0) return !!S.screen || h !== go.slice(4);
+  if (go === 'job'){ var j = tourJob(); return !!j && (S.screen !== 'job' || S.jobId !== j.id); }
+  if (go.indexOf('view:') === 0) return !!S.screen || h !== 'tresor' || S.trView !== go.slice(5);
+  if (go.indexOf('set:') === 0){ var nm = go.slice(4); return !!S.screen || h !== 'reglages' || (nm ? S.setSec == null : S.setSec != null); }
+  return !!S.screen || h !== go;
+}
 function tourGo(go){
-  if (!go) return;
+  if (!go || !tourMoves(go)) return;
   if (SCH && go.indexOf('sched:') !== 0) schedClose();
   if (go === 'home') tourHash(defTab());
   else if (go.indexOf('tab:') === 0){ var t = go.slice(4); if (tabOk(t)) tourHash(t); }
@@ -6300,60 +6347,144 @@ function tourGo(go){
   else if (tabOk(go)) tourHash(go);
   if (!SCH) window.scrollTo(0, 0);
 }
+function ttWait(ms){ return new Promise(function(res){ setTimeout(res, ms); }); }
+/* wait until the part is there and has stopped moving (a screen that is still opening, data that arrives) */
+function ttSettle(sel, seq, maxMs){
+  return new Promise(function(res){
+    var t0 = Date.now(), last = '', same = 0;
+    (function tick(){
+      if (!TOUR || TOUR.seq !== seq) return res(undefined);
+      var el = sel ? tourEl(sel) : null, m = $('#main'), probe = el || m, r = probe ? probe.getBoundingClientRect() : null;
+      var k = r ? [r.left, r.top, r.width, r.height].map(Math.round).join(',') + '|' + (m ? m.childElementCount : 0) + '|' + (SCH ? 1 : 0) : '';
+      if (k === last) same++; else { same = 0; last = k; }
+      if (((sel ? !!el : true) && same >= 2) || Date.now() - t0 > maxMs) return res(el || null);
+      setTimeout(tick, 60);
+    })();
+  });
+}
+/* where the page should be so the part is well in view, with room for the words (null = it already is) */
+function ttScrollFor(el){
+  if (!el || el.closest('#sched') || el.closest('#top') || el.closest('#tabbar')) return null;
+  var r = el.getBoundingClientRect(), H = window.innerHeight, tb = $('#top'), bar = $('#tabbar');
+  var topSafe = tb ? Math.max(0, tb.getBoundingClientRect().bottom) + 10 : 16;
+  var botSafe = bar && bar.getBoundingClientRect().top > H * .6 ? H - bar.getBoundingClientRect().top + 10 : 16;
+  var tall = r.height > H * .62, roomBelow = H - botSafe - r.bottom, roomAbove = r.top - topSafe;
+  if (!tall && r.top >= topSafe && r.bottom <= H - botSafe && (roomBelow > 240 || roomAbove > 240)) return null;
+  var want = tall ? r.top - topSafe : r.top - Math.max(topSafe, Math.round(H * .16));
+  var max = Math.max(0, document.documentElement.scrollHeight - H), y = Math.max(0, Math.min(max, Math.round(window.scrollY + want)));
+  return Math.abs(y - window.scrollY) < 6 ? null : y;
+}
+function ttScrolled(seq){   /* the soft scroll is done (or a short time passed) */
+  return new Promise(function(res){
+    var t0 = Date.now(), last = -1, same = 0;
+    (function tick(){
+      if (!TOUR || TOUR.seq !== seq) return res();
+      var y = Math.round(window.scrollY); if (y === last) same++; else { same = 0; last = y; }
+      if (same >= 3 || Date.now() - t0 > 1100) return res();
+      requestAnimationFrame(tick);
+    })();
+  });
+}
 function tourShow(){
   if (!TOUR) return;
-  var x = TOUR.steps[TOUR.i], old = $('#tour-ov .tt-tip');
-  TOUR.busy = true; if (old) old.classList.add('going');   /* the bubble fades while the next screen opens (no double « Suivant ») */
-  tourGo(x.go);
-  setTimeout(function(){
-    if (!TOUR) return;
-    var el = tourEl(x.sel);
+  var seq = ++TOUR.seq, x = TOUR.steps[TOUR.i], ov = $('#tour-ov');
+  TOUR.busy = true; if (ov) ov.dataset.ready = '0';
+  var tip = ov && ov.querySelector('.tt-tip'), moves = tourMoves(x.go), red = ttReduced();
+  if (tip){ tip.classList.add('fade'); if (moves) tip.classList.add('gone'); }   /* another screen: the bubble leaves too, and comes back where it belongs */
+  if (moves) tourLight(null);   /* close the light: the screen changes in the dark */
+  ttWait(red ? 0 : moves ? 260 : 110).then(function(){
+    if (!TOUR || TOUR.seq !== seq) return;
+    tourGo(x.go);
+    if (!moves){ var e0 = x.sel ? tourEl(x.sel) : null; if (!x.sel || e0) return e0; }   /* same screen, the part is there: go now */
+    return ttSettle(x.sel, seq, moves ? 2600 : 700);
+  }).then(function(el){
+    if (!TOUR || TOUR.seq !== seq || el === undefined) return;
     if (x.sel && !el && x.need){   /* that part is not there for this person: skip it, in the direction we are going */
       if (TOUR.dir < 0 && TOUR.i > 0){ TOUR.i--; tourShow(); } else if (TOUR.dir >= 0 && TOUR.i < TOUR.steps.length - 1){ TOUR.i++; tourShow(); } else if (TOUR.dir >= 0) tourEnd(false); else { TOUR.dir = 1; tourShow(); }
-      return; }
-    if (el && !(SCH && el.closest('#sched'))){   /* a tall part (a whole form): show its top, under the bar */
-      if (el.getBoundingClientRect().height > window.innerHeight * .62){ el.scrollIntoView({block:'start', behavior:'instant'}); window.scrollBy(0, -96); }
-      else el.scrollIntoView({block:'center', behavior:'instant'});
+      return;
     }
-    tourDraw();
-  }, x.go ? 480 : 80);
+    var y = ttScrollFor(el), hl = ov.querySelector('.tt-hole'), shut = hl && hl.classList.contains('shut');
+    if (y == null) return tourDraw(el, seq);
+    if (moves || red){ window.scrollTo(0, y); return ttWait(40).then(function(){ tourDraw(el, seq); }); }
+    /* soft scroll; a lit part: the light leaves now for where the part will be, both arrive together */
+    if (!shut){ var d = y - window.scrollY, r = el.getBoundingClientRect(); tourLight({left:r.left, top:r.top - d, width:r.width, height:r.height, bottom:r.bottom - d}); }
+    try { window.scrollTo({top:y, behavior:'smooth'}); } catch(e){ window.scrollTo(0, y); }
+    return ttScrolled(seq).then(function(){ tourDraw(el, seq); });
+  });
 }
 function ttq(t){ return String(t).replace(/« /g, '« ').replace(/ »/g, ' »').replace(/ ([?!:;])/g, ' $1'); }
-function tourDraw(){
-  if (!TOUR) return;
-  TOUR.busy = false;
-  var x = TOUR.steps[TOUR.i], el = tourEl(x.sel), n = TOUR.steps.length, ov = $('#tour-ov');
-  if (!ov){ ov = document.createElement('div'); ov.id = 'tour-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-labelledby', 'tt-t'); document.body.appendChild(ov); document.body.classList.add('touring'); }
-  var W = window.innerWidth, H = window.innerHeight, pad = 8, r = el ? el.getBoundingClientRect() : null;
-  if (r && (r.height > H * .62)){ var t0 = Math.max(r.top, 70); r = {left:r.left, top:t0, width:r.width, height:Math.min(r.bottom - t0, H * .5)}; }   /* a whole screen: light up its top part, the bubble goes below */
-  var hole = r ? {x:Math.max(4, r.left - pad), y:Math.max(4, r.top - pad), w:Math.min(W - 8, r.width + pad * 2), h:r.height + pad * 2} : null;
-  var first = TOUR.i === 0, last = TOUR.i === n - 1, chs = [], chN = 0, chI = 0;
-  TOUR.steps.forEach(function(s, k){ if (chs.indexOf(s.ch) < 0) chs.push(s.ch); if (s.ch === x.ch){ chN++; if (k <= TOUR.i) chI++; } });
-  var tip = '<div class="tt-top"><span class="tt-ch">' + esc(x.ch || 'Visite guidée') + (chN > 1 ? ' · ' + chI + '/' + chN : '') + '</span><span class="tt-n">' + (TOUR.i + 1) + ' sur ' + n + '</span>' + (last ? '' : '<button type="button" class="tt-x" data-act="tt-skip" aria-label="Quitter la visite" title="Quitter la visite">✕</button>') + '</div>' +
+/* the lit rectangle for this part (a very tall part: its top only) */
+function ttHole(r){
+  if (!r) return null;
+  var W = window.innerWidth, H = window.innerHeight, pad = 8;
+  if (r.height > H * .62){ var t0 = Math.max(r.top, 70); r = {left:r.left, top:t0, width:r.width, height:Math.min(r.bottom - t0, H * .5)}; }
+  return {x:Math.round(Math.max(4, r.left - pad)), y:Math.round(Math.max(4, r.top - pad)), w:Math.round(Math.min(W - 8, r.width + pad * 2)), h:Math.round(r.height + pad * 2)};
+}
+/* the light: on a part (it glides from the last one), or shut (null: the whole screen dims evenly, in place) */
+function tourLight(r){
+  var ov = $('#tour-ov'); if (!ov) return null;
+  var h = ov.querySelector('.tt-hole'), hole = ttHole(r);
+  if (!hole){ h.classList.add('shut'); return null; }
+  var shut = h.classList.contains('shut');
+  if (shut) h.classList.add('jump');   /* shut: it moves in the dark, then fades open there */
+  h.style.left = hole.x + 'px'; h.style.top = hole.y + 'px'; h.style.width = hole.w + 'px'; h.style.height = hole.h + 'px';
+  if (shut){ h.getBoundingClientRect(); h.classList.remove('jump'); h.classList.remove('shut'); }
+  return hole;
+}
+function ttTipHTML(x){
+  var n = TOUR.steps.length, first = TOUR.i === 0, last = TOUR.i === n - 1, chN = 0, chI = 0;
+  TOUR.steps.forEach(function(s, k){ if (s.ch === x.ch){ chN++; if (k <= TOUR.i) chI++; } });
+  return '<div class="tt-top"><span class="tt-ch">' + esc(x.ch || 'Visite guidée') + (chN > 1 ? ' · ' + chI + '/' + chN : '') + '</span><span class="tt-n">' + (TOUR.i + 1) + ' sur ' + n + '</span>' + (last ? '' : '<button type="button" class="tt-x" data-act="tt-skip" aria-label="Quitter la visite" title="Quitter la visite">✕</button>') + '</div>' +
     '<div class="tt-bar" aria-hidden="true"><i style="width:' + Math.round((TOUR.i + 1) / n * 100) + '%"></i></div>' +
     '<div class="tt-head">' + (x.icon ? '<span class="tt-ic" aria-hidden="true">' + x.icon + '</span>' : '') + '<h3 id="tt-t">' + ttq(esc(x.t)) + '</h3></div><p class="tt-p">' + ttq(x.p) + '</p>' +
     (x.x ? '<p class="tt-x2">' + ttq(x.x) + '</p>' : '') +
     '<div class="tt-btns">' + (first ? '<button type="button" class="btn sm ghost" data-act="tt-skip">Plus tard</button>' : '<button type="button" class="btn sm ghost" data-act="tt-prev">‹ Retour</button>') +
     (last ? '<button type="button" class="btn sm primary" data-act="tt-end">Terminer</button>' : '<button type="button" class="btn sm primary" data-act="tt-next">' + (first ? 'Commencer la visite' : 'Suivant ›') + '</button>') + '</div>';
-  ov.innerHTML = '<div class="tt-block"></div>' + (hole ? '<div class="tt-hole" style="left:' + hole.x + 'px;top:' + hole.y + 'px;width:' + hole.w + 'px;height:' + hole.h + 'px"></div>' : '<div class="tt-dim"></div>') +
-    '<div class="tt-tip' + (hole ? '' : ' mid') + '">' + tip + '</div>';
-  var t = ov.querySelector('.tt-tip'), tw = Math.min(400, W - 24);
-  t.style.width = tw + 'px';
-  if (!hole){ t.style.left = Math.round((W - tw) / 2) + 'px'; t.style.top = Math.max(16, Math.round((H - t.offsetHeight) / 2)) + 'px'; }
-  else {
-    var below = hole.y + hole.h + 14, above = hole.y - 14 - t.offsetHeight;
-    var top = below + t.offsetHeight < H - 8 ? below : above > 8 ? above : Math.max(8, H - t.offsetHeight - 8);
-    t.style.top = Math.round(top) + 'px';
-    t.style.left = Math.round(Math.max(12, Math.min(W - tw - 12, hole.x + hole.w / 2 - tw / 2))) + 'px';
-  }
-  var f = ov.querySelector('[data-act="tt-next"], [data-act="tt-end"]'); if (f) setTimeout(function(){ try { f.focus({preventScroll:true}); } catch(e){} }, 30);
 }
-function tourNext(){ if (!TOUR) return; TOUR.dir = 1; if (TOUR.i < TOUR.steps.length - 1){ TOUR.i++; tourShow(); } else tourEnd(false); }
-function tourPrev(){ if (!TOUR || !TOUR.i) return; TOUR.dir = -1; TOUR.i--; tourShow(); }
-function tourEnd(skipped){
+/* put the light and the bubble where they belong (the bubble glides; its words stay as they are) */
+function tourPlace(el){
+  var ov = $('#tour-ov'); if (!ov || !TOUR) return;
+  var r = el ? el.getBoundingClientRect() : null, hole = tourLight(r), t = ov.querySelector('.tt-tip');
+  var W = window.innerWidth, H = window.innerHeight, tw = Math.min(400, W - 24), th;
+  t.style.width = tw + 'px'; th = t.offsetHeight;
+  var left, top;
+  if (!hole){ left = (W - tw) / 2; top = Math.max(16, (H - th) / 2); }
+  else {
+    var below = hole.y + hole.h + 14, above = hole.y - 14 - th;
+    top = below + th <= H - 8 ? below : above >= 8 ? above : Math.max(8, H - th - 8);
+    left = Math.max(12, Math.min(W - tw - 12, hole.x + hole.w / 2 - tw / 2));
+  }
+  t.style.left = Math.round(left) + 'px'; t.style.top = Math.round(top) + 'px';
+  TOUR.rk = r ? [r.left, r.top, r.width, r.height].map(Math.round).join(',') : 'mid';
+}
+function tourDraw(el, seq){
+  var ov = $('#tour-ov'); if (!ov || !TOUR || (seq && TOUR.seq !== seq)) return;
+  var x = TOUR.steps[TOUR.i], t = ov.querySelector('.tt-tip'), inn = t.querySelector('.tt-in'), hidden = !t.dataset.placed || t.classList.contains('gone');
+  t.classList.add('swap'); t.classList.add('fade'); inn.innerHTML = ttTipHTML(x); t.getBoundingClientRect(); t.classList.remove('swap');   /* the new words come in hidden, then fade in */
+  if (hidden){ t.classList.add('still'); t.classList.add('gone'); }   /* a bubble that was away appears in place (no glide from elsewhere) */
+  tourPlace(el);
+  if (hidden){ t.getBoundingClientRect(); t.classList.remove('still'); t.dataset.placed = '1'; }
+  var s = TOUR.seq, red = ttReduced();
+  setTimeout(function(){ if (TOUR && TOUR.seq === s){ t.classList.remove('gone'); t.classList.remove('fade'); var f = ov.querySelector('[data-act="tt-next"], [data-act="tt-end"]'); if (f) try { f.focus({preventScroll:true}); } catch(e){} } }, red ? 0 : hidden ? 200 : 170);
+  setTimeout(function(){ if (TOUR && TOUR.seq === s){ TOUR.busy = false; ov.dataset.ready = '1'; } }, red ? 0 : TT_MS + 40);
+}
+/* while you read: if the page moves (data arriving, a picture loading), the light follows */
+function tourFollow(force){
+  if (!TOUR || TOUR.busy || !$('#tour-ov')) return;
+  var x = TOUR.steps[TOUR.i], el = x.sel ? tourEl(x.sel) : null, r = el ? el.getBoundingClientRect() : null;
+  var k = r ? [r.left, r.top, r.width, r.height].map(Math.round).join(',') : 'mid';
+  if (force || k !== TOUR.rk) tourPlace(el);
+}
+setInterval(function(){ tourFollow(false); }, 300);
+function tourNext(){ if (!TOUR || TOUR.busy) return; TOUR.dir = 1; if (TOUR.i < TOUR.steps.length - 1){ TOUR.i++; tourShow(); } else tourEnd(false); }
+function tourPrev(){ if (!TOUR || TOUR.busy || !TOUR.i) return; TOUR.dir = -1; TOUR.i--; tourShow(); }
+function tourEnd(skipped, quiet){
   if (!TOUR) return;
-  var replay = TOUR.replay, home = TOUR.home, p = tourPath(), ov = $('#tour-ov');
-  TOUR = null; if (ov) ov.remove(); document.body.classList.remove('touring');
+  var replay = TOUR.replay, p = tourPath(), ov = $('#tour-ov'), home;
+  TOUR = null;
+  if (ov){ ov.removeAttribute('id'); ov.classList.remove('on'); ov.classList.add('out'); setTimeout(function(){ ov.remove(); }, ttReduced() ? 0 : 260); }
+  document.body.classList.remove('touring');
+  if (quiet) return;
   if (SCH) schedClose();
   S.screen = null; S.setSec = null; home = defTab(); if (location.hash.slice(1) !== home) location.hash = home; else { S.tab = home; render(); }
   window.scrollTo(0, 0);
@@ -6369,16 +6500,17 @@ document.addEventListener('click', function(ev){
   if (!b) return;
   ev.stopPropagation(); ev.preventDefault();
   var a = b.dataset.act;
-  if (TOUR.busy && (a === 'tt-next' || a === 'tt-prev')) return;
   if (a === 'tt-next') tourNext(); else if (a === 'tt-prev') tourPrev(); else if (a === 'tt-skip') tourEnd(true); else if (a === 'tt-end') tourEnd(false);
 }, true);
 document.addEventListener('keydown', function(ev){
   if (!TOUR) return;
   if (ev.key === 'Escape'){ ev.preventDefault(); tourEnd(true); }
-  else if (ev.key === 'ArrowRight'){ ev.preventDefault(); if (!TOUR.busy) tourNext(); }
-  else if (ev.key === 'ArrowLeft'){ ev.preventDefault(); if (!TOUR.busy) tourPrev(); }
+  else if (ev.key === 'ArrowRight'){ ev.preventDefault(); tourNext(); }
+  else if (ev.key === 'ArrowLeft'){ ev.preventDefault(); tourPrev(); }
 }, true);
-window.addEventListener('resize', function(){ if (TOUR && $('#tour-ov')) tourDraw(); });
+/* the phone's address bar showing / hiding, turning the phone: move things, do not redraw them */
+var ttRz = 0;
+window.addEventListener('resize', function(){ if (!TOUR || ttRz) return; ttRz = requestAnimationFrame(function(){ ttRz = 0; tourFollow(true); }); });
 /* opening hours, one day at a time */
 /* ===================== Horaire : la fenêtre vitrée (glisser sur les cases pour les choisir) =====================
    Pour le garage (heures d'ouverture) ou pour un mécano (ses disponibilités). L'ordinateur montre la semaine
