@@ -32,7 +32,7 @@ with sync_playwright() as p:
     check('guide step opens Réglages right at « Le garage »', pg.is_visible('#s-name') and not pg.is_visible('#s-tps') and pg.locator('.tab[data-t="reglages"][aria-current="page"]').count() == 1)
     # a « ? » bubble
     pg.click('section.cur .ph-secback'); pg.wait_for_timeout(150)
-    check('Réglages: a list of parts with a line each (now with « Couleurs de l\'app »)', pg.locator('#ph-setlist .ph-row').count() == 10 and 'TPS et TVQ' in txt(pg, '#ph-setlist') and 'Couleurs de l\'app' in txt(pg, '#ph-setlist'), txt(pg, '#ph-setlist'))
+    check('Réglages: a list of parts with a line each (now with « Couleurs de l\'app »)', pg.locator('#ph-setlist .ph-row').count() == 12 and 'Façon de réserver' in txt(pg, '#ph-setlist') and 'Décharge du client' in txt(pg, '#ph-setlist') and 'TPS et TVQ' in txt(pg, '#ph-setlist') and 'Couleurs de l\'app' in txt(pg, '#ph-setlist'), txt(pg, '#ph-setlist'))
     pg.click('#ph-setlist .ph-row:has-text("Taxes")'); pg.wait_for_timeout(150)
     q = pg.locator('section.cur .qhelp').first
     q.click(); pg.wait_for_timeout(100)
@@ -87,9 +87,9 @@ with sync_playwright() as p:
     pg.evaluate("() => { const b = document.querySelector('[data-act=open][data-id=\"a4\"]'); if (b) b.click(); }"); pg.wait_for_timeout(400)
     check('phone job: one big button « Je pars »', txt(pg, '.nextbtn') == 'Je pars' and pg.eval_on_selector_all('#main .btn.primary', 'els => els.filter(e => e.offsetParent).length') == 1)
     check('phone job: step menu moved into « Autres actions »', pg.locator('#more-fold #ph-st').count() == 1 and not pg.is_visible('#ph-st') and 'Changer l\'étape à la main' in pg.text_content('#more-fold'))
-    d = pg.locator('#ph-fold')
+    d = pg.locator('#wv-fold')
     d.locator('.qhelp').click(); pg.wait_for_timeout(100)
-    check('« ? » in a fold title explains without opening the fold', d.get_attribute('open') is None and pg.locator('.helptip').count() == 1 and 'photo' in txt(pg, '.helptip').lower())
+    check('« ? » in a fold title explains without opening the fold', d.get_attribute('open') is None and pg.locator('.helptip').count() == 1 and 'décharge' in txt(pg, '.helptip').lower())
     scan(pg, 'téléphone job')
     check('no page errors (phone)', not errs, errs)
     ctx.close()

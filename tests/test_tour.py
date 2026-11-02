@@ -106,12 +106,12 @@ check('expense amount tried, then « Entrée » pressed (which saves an expense 
 check('the « ? » opens its explanation, lit with it', all(s.get('helptip', 0) >= 1 for s in tries if s.get('did') == '?'))
 ph = [s['t'] for s in walks['mécano · téléphone']]
 check('mechanic: his day (› then « Aujourd\'hui »), he opens Marie\'s job himself, opens the sections, the « + », clients, invoices, the map, his hours (grid, « Annuler »), the stock',
-      all(t in ph for t in ('Changer de jour', 'Revenir à aujourd\'hui', 'Ouvre un rendez-vous', 'Les sections', 'Le bouton « + »', 'Chercher', 'Les filtres', 'La grille', 'Fermer sans enregistrer', 'Le stock des camions')), ph)
+      all(t in ph for t in ('Changer de jour', 'Revenir à aujourd\'hui', 'Ouvre un rendez-vous', 'Les sections', 'Le bouton « + »', 'Chercher', 'Les filtres', 'La grille', 'Fermer sans enregistrer', 'L\'inventaire')), ph)
 ow = [s['t'] for s in walks['propriétaire · ordi']]
 check('owner: agenda (days, views, schedule grid), clients, invoices, treasury (expense, report, period), stock, map, availability, colors, team (roles)',
-      all(t in ow for t in ('Changer de jour', 'Jour, semaine ou liste', 'La grille', 'Le montant', 'La période', 'Le stock des camions', 'La carte de l\'équipe', 'Les couleurs', 'Les rôles')), ow)
+      all(t in ow for t in ('Changer de jour', 'Jour, semaine ou liste', 'La grille', 'Le montant', 'La période', 'L\'inventaire', 'La carte de l\'équipe', 'Les couleurs', 'Les rôles')), ow)
 tr = [s['t'] for s in walks['trésorier · téléphone']]
-check('treasurer: her treasury first (expense amount, report, period), the stock through « Plus », invoices and clients', tr.index('Le montant') < tr.index('Le rapport') < tr.index('La période') and 'Le stock des camions' in tr and 'Les filtres' in tr, tr)
+check('treasurer: her treasury first (expense amount, report, period), the stock through « Plus », invoices and clients', tr.index('Le montant') < tr.index('Le rapport') < tr.index('La période') and 'L\'inventaire' in tr and 'Les filtres' in tr, tr)
 after = {k: v for k, v in WALKS.items() if k.endswith('(après)')}
 nolux = lambda d: {k: v for k, v in d.items() if k != 'lux'}
 check('after each visit: his view is back as it was (agenda view, invoice filter, search, report view, day)', all(nolux(v['before']) == nolux(v['after']) for v in after.values()), {k: (v['before'], v['after']) for k, v in after.items() if nolux(v['before']) != nolux(v['after'])})

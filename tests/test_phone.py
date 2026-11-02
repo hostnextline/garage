@@ -133,7 +133,7 @@ with sync_playwright() as p:
     hrefs = pg.evaluate("[...document.querySelectorAll('.rounds .round')].map(a => [a.textContent.trim(), a.getAttribute('href')])")
     check('4. round buttons: Appeler (tel), Texter (sms), Itinéraire (maps)', [h[0] for h in hrefs] == ['Appeler', 'Texter', 'Itinéraire'] and hrefs[0][1].startswith('tel:') and hrefs[1][1] == 'sms:4505550404' and 'google.com/maps' in hrefs[2][1], hrefs)
     check('4. 4 steps, current = Planifiée', pg.locator('.steps4 li').count() == 4 and pg.locator('.steps4 li.here').count() == 1)
-    check('4. notes open, other details folded (incl. « Autres actions »)', pg.locator('details.fold[open]').count() == 1 and 'Bruit en freinant' in txt(pg, 'details.fold[open]') and pg.locator('details.fold').count() == 7 and pg.locator('#more-fold:not([open])').count() == 1 and pg.locator('#xp-fold').count() == 1 and pg.locator('#ph-fold').count() == 1)
+    check('4. notes open, other details folded (incl. « Autres actions »)', pg.locator('details.fold[open]').count() == 1 and 'Bruit en freinant' in txt(pg, 'details.fold[open]') and pg.locator('details.fold').count() == 7 and pg.locator('#more-fold:not([open])').count() == 1 and pg.locator('#xp-fold').count() == 1 and pg.locator('#wv-fold').count() == 1)   # (« Décharge du client » in place of « Photos et signature »)
     check('4. no sideways scroll (job)', no_hscroll(pg))
     flow = []
     for want in ('route', 'place'):
@@ -181,7 +181,7 @@ with sync_playwright() as p:
     check('4. « Supprimer » removes it (back to the original state)', store(pg, 'jobs/' + newid) is None and 'job:' + newid not in rows(pg), rows(pg))
     # ---------- 5. « + » menu ----------
     pg.click('.tab-new'); wait(pg, 400)
-    check('5. « + » offers 4 choices', pg.evaluate("[...document.querySelectorAll('#sheet .ph-row b')].map(b=>b.textContent)") == ['Nouvelle réservation', 'Facture sur place', 'Nouveau client', 'Nouvelle dépense'])
+    check('5. « + » offers 5 choices (with « Estimé rapide »)', pg.evaluate("[...document.querySelectorAll('#sheet .ph-row b')].map(b=>b.textContent)") == ['Nouvelle réservation', 'Facture sur place', 'Estimé rapide', 'Nouveau client', 'Nouvelle dépense'])
     pg.click('[data-act="ph-go"][data-v="quick"]'); wait(pg, 500)
     pg.fill('#cs-q', 'Marie'); wait(pg); pg.locator('#cs-results .crow').first.click(); wait(pg, 600)
     check('5. on-the-spot invoice: 3 steps, last one is « Confirmer »', 'Confirmer' in pg.evaluate("document.getElementById('wiz').textContent"))
@@ -202,7 +202,7 @@ with sync_playwright() as p:
     # ---------- 6. Plus ----------
     pg.click('.tab[data-t="plus"]'); wait(pg)
     pl = sorted(pg.evaluate("[...document.querySelectorAll('#tiles a.tile')].filter(a => !['#jour', '#agenda', '#clients', '#factures'].includes(a.getAttribute('href'))).map(a => a.querySelector('b').textContent)"))
-    check('6. Plus: Tableau de bord, Heures d\'ouverture, Disponibilités des mécanos, Réglages', pl == sorted(['Tableau de bord', 'Heures d\'ouverture', 'Disponibilités des mécanos', 'Trésorerie', 'Stock des camions', 'Réglages']), pl)
+    check('6. Plus: Tableau de bord, Heures d\'ouverture, Disponibilités des mécanos, Réglages', pl == sorted(['Tableau de bord', 'Heures d\'ouverture', 'Disponibilités des mécanos', 'Trésorerie', 'Inventaire', 'Réglages']), pl)
     check('6. Plus: today on top, then the tiles', pg.locator('.tstrip').count() == 1 and pg.locator('#tiles .tile').count() >= 8)
     check('6. Plus: « Version ordinateur » row', pg.locator('[data-act="ui-full"]').count() == 1)
     check('6. no sideways scroll (Plus)', no_hscroll(pg))
