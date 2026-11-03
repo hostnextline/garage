@@ -67,7 +67,7 @@ input.mono::placeholder{text-transform:none;font-family:var(--f-body);letter-spa
 @media (max-width:440px){.grid2.stack-sm{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:370px){.veh{grid-template-columns:84px minmax(0,1fr)}.veh .field:last-child{grid-column:1/-1}}
 .check{display:flex;align-items:center;gap:10px;font-weight:500;cursor:pointer;min-height:40px}
-.check input{width:22px;height:22px;min-height:0;}
+.check input{width:22px;height:22px;min-height:0;flex:none}
 .err{background:var(--bad-bg);color:var(--bad);padding:10px 12px;font-weight:500;}
 .actions{display:grid;gap:10px}
 /* sections & cards */
@@ -251,6 +251,11 @@ body.locked{overflow:hidden}
 .sheet-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
 .sheet-head h2{font-size:22px}
 .sheet-body{overflow-y:auto;padding:14px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));overscroll-behavior:contain}
+/* the booking form: one column (phone, small window); two columns in a big window on a computer */
+.fcols,.fcol{display:contents}
+@media (min-width:1000px){.sheet.wide{max-width:min(1180px,calc(100vw - 64px))}
+.sheet.wide .fcols{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start}
+.sheet.wide .fcol{display:grid;gap:14px;align-content:start}}
 @media (min-width:700px){.sheet-wrap{align-items:center;padding:24px}.sheet{max-height:calc(100% - 48px);}}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .2s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}}
 /* postal-code optimisation */
@@ -4192,7 +4197,7 @@ function blockCols(date, k){
     var first = null, cap = 0;
     for (var m = s0; m < e0; m += sm) if (slotOpen(info, c, toHM(m))){ cap += sm; if (first === null) first = m; }
     return {col:c, start:first === null ? s0 : first, cap:cap, driver:truckMode() ? driverOf(date, c) : (c === '_all' ? '' : c)};
-  }).filter(function(x){ return x.cap > 0 && (!truckMode() || x.driver); });
+  }).filter(function(x){ return x.cap > 0; });   /* (a truck in service counts even before it has its mechanic: his name comes when he is given the truck) */
 }
 function legMin(a, b){ return driveMin(a && b ? km(a, b) : null); }
 function routeMin(home, stops){ var t = 0, prev = home; stops.forEach(function(o){ t += legMin(prev, o.pt) + o.dur; prev = o.pt; }); return t; }
@@ -5473,6 +5478,7 @@ function openSheet(title, sub, html){
   S.sheet = true;
   $('#sheet-title').textContent = title; $('#sheet-sub').textContent = sub || '';
   $('#sheet-body').innerHTML = html; $('#sheet-body').scrollTop = 0;
+  $('#sheet .sheet').classList.remove('wide');
   $('#sheet').hidden = false; document.body.classList.add('locked');
 }
 function closeSheet(){
@@ -5953,6 +5959,7 @@ function buildEdit(id, quick, draft, preset, inSheet, clientArg){
   var body = '<form id="jobform" class="stack" novalidate>' +
     (draft ? '<div class="banner" id="draftbanner"><p>On a repris ce que tu avais commencé' + (draft.savedAt ? ' le ' + esc(dayLong(isoDate(new Date(draft.savedAt)))) + ' à ' + esc(hm(pad(new Date(draft.savedAt).getHours()) + ':' + pad(new Date(draft.savedAt).getMinutes()))) : '') + '.</p><button type="button" class="btn sm" data-act="draft-reset">Recommencer à zéro</button></div>' : '') +
     (auto ? '<p id="draftmsg" class="hint draftmsg' + (draft ? ' ok' : '') + '" aria-live="polite">' + (draft ? 'Gardé automatiquement' : 'Sauvegarde automatique : tout ce que tu tapes est gardé, même si tu fermes.') + '</p>' : '') +
+    '<div class="fcols"><div class="fcol">' +
     '<section class="sect" data-step="1"><h3>Client</h3>' + clientCardHTML(S.formClient, !id) + bookNoShow(j, draft) +
       '<div id="sugbox" class="sugbox" aria-live="polite" hidden></div>' +
     '</section>' +
@@ -5969,7 +5976,7 @@ function buildEdit(id, quick, draft, preset, inSheet, clientArg){
         '<div class="opts" id="svc-opts" role="listbox" aria-label="Choix de services" hidden></div>' +
         '<div class="hint">Choisis-en autant que tu veux. Pas dans la liste ? Tape-le, puis « Ajouter ».</div><div id="svc-est" aria-live="polite"></div></div>' +
       '<div class="field"><label for="f-prob">Ce que le client décrit</label><textarea id="f-prob" placeholder="Ex. Le témoin de batterie s\'allume, l\'auto ne redémarre plus">' + esc(d.problem) + '</textarea></div>' +
-    '</section>' +
+    '</section></div><div class="fcol">' +
     '<section class="sect" data-step="3"><h3>Rendez-vous</h3>' +
       (bm ? inputF('f-date', 'Date', d.date, 'type="date" required') +
         '<input type="hidden" id="f-time" value="' + esc(d.time) + '"><input type="hidden" id="f-block" value="' + esc(d.block || '') + '">' +
@@ -5982,12 +5989,13 @@ function buildEdit(id, quick, draft, preset, inSheet, clientArg){
         : truckMode() ? '<div class="field"><label for="f-truck">Camion</label><select id="f-truck">' + trucks().map(function(t){ return opt(t.id, (t.name || 'Camion') + (t.on === false ? ' (fermé)' : ''), d.truck === t.id); }).join('') + '</select>' + (crewT && !lockedMech() ? '<p class="hint">Le mécano suit le camion : celui qui part avec ce jour-là.</p>' : '') + '</div>' : '') +
       '<div class="grid2 stack-sm"><div class="field"><label for="f-units">Durée' + help('duree', 'la durée') + '</label><div class="stepper"><button type="button" class="iconbtn" data-act="units" data-v="-1" aria-label="Plus court">−</button><input id="f-units" inputmode="numeric" autocomplete="off" maxlength="2" aria-describedby="f-units-lbl" value="' + unitsOf(d.durationMin || 60) + '"><button type="button" class="iconbtn" data-act="units" data-v="1" aria-label="Plus long">+</button></div><div id="f-units-lbl" class="hint"></div></div>' + mechField + '</div>' +
       '<div class="field"><label for="f-notes">Notes pour le mécano</label><textarea id="f-notes" placeholder="Code de porte, stationnement, pièce déjà commandée…">' + esc(d.notes) + '</textarea></div>' +
-    '</section>' +
+    '</section></div></div>' +
     '<div id="formerr" class="err" role="alert" hidden></div>' +
     '<div class="actions"><button type="submit" class="btn primary block" id="f-save">' + (id ? 'Enregistrer les changements' : (quick ? 'Enregistrer et faire la facture' : 'Enregistrer la réservation')) + '</button>' +
     '<button type="button" class="btn ghost block" data-act="back-edit">' + (auto ? 'Fermer (ce que tu as tapé reste gardé)' : 'Annuler') + '</button></div></form>';
   if (inSheet){
     openSheet('Nouvelle réservation', d.date ? cap(dayLong(d.date)) + (d.time ? ' · ' + hm(d.time) : '') + (d.mechanic ? ' · ' + d.mechanic : '') : 'Au téléphone', body);
+    $('#sheet .sheet').classList.add('wide');   /* (on a computer: a big window, in two columns) */
   } else {
     setView({top:topBack(id ? 'Modifier la réservation' : (quick ? 'Facture sur place' : 'Nouvelle réservation'), 'back-edit', quick ? 'Client sans réservation' : 'Au téléphone'), body:body});
     window.scrollTo(0, 0);
