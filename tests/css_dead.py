@@ -2,8 +2,9 @@
 selector in the same @media/@supports context (same specificity, later wins). Fallback-sensitive values are kept.
 Usage: python3 css_dead.py [--apply]  (apply removes fully dead rules and dead declarations, keeps everything else as is)."""
 import sys, re, tinycss2
+from chemins import GARAGE, SAUVEGARDES   # (où est l'app : ici ou dans le dépôt)
 
-P = '/home/claude/garage/carnet.html'
+P = GARAGE + '/carnet.html'
 src = open(P, encoding='utf8').read()
 a = src.index('<style>') + len('<style>'); b = src.index('</style>', a)
 css = src[a:b]

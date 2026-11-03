@@ -65,7 +65,7 @@ with sync_playwright() as pl:
     ac = ctx(b, phone=True); ap = page(ac, 'ali'); login(ap, 'ali@garage.test', pw['ali']); ap.wait_for_timeout(1500)
     check('Ali\'s phone: no Clients tab any more (his box), still his day', 'clients' not in tabs(ap) and 'jour' in tabs(ap), tabs(ap))
     ap.click('.tab[data-t="plus"]'); ap.wait_for_timeout(400)
-    check('…and « Trésorerie » in his Plus', ap.locator('.ph-row', has_text='Trésorerie').count() >= 1)
+    check('…and « Trésorerie » in his Plus', ap.locator('#tiles .tile', has_text='Trésorerie').count() >= 1)
     ac.close()
     op.locator('.eqp', has_text='ali@garage.test').locator('[data-act="eq-edit"]').click(); op.wait_for_timeout(400)
     ra = rights(op, 'ed')

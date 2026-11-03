@@ -1,9 +1,10 @@
 """Treasurer screen (owner in Claude): expenses with receipt photo, taxes, report per period, per truck, taxes to remit, Excel export."""
 import json, os, datetime, re, sys, base64, io
+from chemins import GARAGE, SAUVEGARDES   # (où est l'app : ici ou dans le dépôt)
 from playwright.sync_api import sync_playwright
 import openpyxl
 SC = os.path.dirname(os.path.abspath(__file__))
-PAGE = open('/home/claude/garage/carnet.html', encoding='utf8').read()
+PAGE = open(GARAGE + '/carnet.html', encoding='utf8').read()
 MOCK = open(os.path.join(SC, 'mock.js'), encoding='utf8').read()
 XLSX = open(os.path.join(SC, 'xlsxlib/node_modules/xlsx/dist/xlsx.full.min.js'), encoding='utf8').read()
 RESET = 'html{color-scheme:light}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}'

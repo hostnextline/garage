@@ -39,7 +39,7 @@ def fn(tok, name, body): return http('POST', API + '/functions/v1/' + name, body
 def seed(stripe=False):
     """Empty garage → owner Hassan, mechanics Saleh and Ali, office Lina, treasurer Nadia; config with 2 open trucks; Marie (Saleh) and Paul (Ali) today."""
     psql("truncate public.members, public.docs, public.docs_deleted, public.mech_live, public.mech_positions, public.tracks, public.setup_codes, public.app_secrets cascade; delete from auth.users;")
-    for t in ('client_links', 'stripe_events'):
+    for t in ('client_links', 'stripe_events', 'block_marks'):
         psql("do $$ begin if to_regclass('public.%s') is not null then execute 'truncate public.%s cascade'; end if; end $$;" % (t, t))
     urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:9200/__reset', data=b'{}', method='POST'))
     code = 'R4ND-0M7X-Q2PZ'

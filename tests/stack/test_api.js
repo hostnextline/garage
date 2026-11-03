@@ -42,10 +42,11 @@ const ghl = async (path, body) => (await fetch('http://127.0.0.1:9200' + path, {
   r = await fn(owner, 'members', { action: 'create', email: 'ali@test.ca', name: 'Ali', role: 'mecano', mechanic: 'Ali', password: 'alipass123' });
   check('create second mecano', r.ok, r);
   const aliId = r.user_id;
-  r = await fn(owner, 'members', { action: 'create', email: 'x@test.ca', name: 'X', role: 'mecano' });
-  check('mecano needs mechanic name', r.error && /mécano/.test(r.error.message), r);
+  r = await fn(owner, 'members', { action: 'create', email: 'x@test.ca', name: 'X Nouveau', role: 'mecano' });
+  check('mecano without a typed name: his own name is his agenda name', r.ok && psql(`select mechanic from public.members where user_id='${r.user_id}'`) === 'X Nouveau', r);
+  if (r.ok) await fn(owner, 'members', { action: 'remove', user_id: r.user_id });
   r = await fn(owner, 'members', { action: 'create', email: 'saleh2@test.ca', name: 'Saleh bis', role: 'mecano', mechanic: ' saleh ' });
-  check('same mechanic twice refused', r.error && /déjà un compte/.test(r.error.message), r);
+  check('same mechanic twice refused', r.error && /s'appelle déjà/.test(r.error.message), r);
   r = await fn(owner, 'members', { action: 'create', email: 'saleh@test.ca', name: 'Dup', role: 'bureau' });
   check('same email refused', r.error && /déjà un compte/.test(r.error.message), r);
   check('failed create left no ghost user', psql("select count(*) from auth.users where email in ('saleh2@test.ca','x@test.ca')") === '0');
@@ -271,7 +272,7 @@ const ghl = async (path, body) => (await fetch('http://127.0.0.1:9200' + path, {
   check('mecano -> bureau', r.ok, r);
   check('Saleh now sees all jobs', (await rows(saleh, 'jobs')).length === 4);
   r = await fn(owner, 'members', { action: 'update', user_id: salehId, role: 'mecano' });
-  check('mecano without name refused', r.error && /nom du mécano/.test(r.error.message), r);
+  check('mecano again without a typed name: his own name', r.ok && psql(`select mechanic from public.members where user_id='${salehId}'`) === 'Saleh Haddad', r);
   r = await fn(owner, 'members', { action: 'update', user_id: salehId, role: 'mecano', mechanic: 'Saleh' });
   check('back to mecano', r.ok, r);
   const { error: ue } = await owner.from('members').update({ role: 'bureau' }).eq('user_id', owner._uid);

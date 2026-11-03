@@ -1,9 +1,10 @@
 """VIN: live camera scan (fake camera playing a real Code 39 barcode), photo, typing; free decoding; the garage's engine sheet (oil etc.)."""
 import json, os, datetime, re, sys
+from chemins import GARAGE, SAUVEGARDES   # (où est l'app : ici ou dans le dépôt)
 from playwright.sync_api import sync_playwright
 SC = os.path.dirname(os.path.abspath(__file__))
 V = os.path.join(SC, 'vin')
-PAGE = open('/home/claude/garage/carnet.html', encoding='utf8').read()
+PAGE = open(GARAGE + '/carnet.html', encoding='utf8').read()
 MOCK = open(os.path.join(SC, 'mock.js'), encoding='utf8').read()
 ZX = open(os.path.join(SC, 'zxinglib/node_modules/@zxing/library/umd/index.min.js'), encoding='utf8').read()
 ZX_URL = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js'

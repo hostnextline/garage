@@ -1,9 +1,10 @@
 """Mode vitrine plus transparent + couleurs de luxe (Réglages → Couleurs de l'app), version essai (sans serveur).
 Le choix est gardé pour tout le garage (config), l'appareil s'en souvient pour ouvrir dans les bonnes couleurs."""
 import json, os, re
+from chemins import GARAGE, SAUVEGARDES   # (où est l'app : ici ou dans le dépôt)
 from playwright.sync_api import sync_playwright
 SC = os.path.dirname(os.path.abspath(__file__))
-PAGE = open('/home/claude/garage/carnet.html', encoding='utf8').read()
+PAGE = open(GARAGE + '/carnet.html', encoding='utf8').read()
 MOCK = open(os.path.join(SC, 'mock.js'), encoding='utf8').read()
 RESET = 'html{color-scheme:light}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}'
 METAS = '<meta name="theme-color" media="(prefers-color-scheme: light)" content="#E9DED2"><meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1E1915">'

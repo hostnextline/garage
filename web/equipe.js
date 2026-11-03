@@ -1296,7 +1296,16 @@
     accountRow:function(){ var m = eff(); return m ? '<section class="sect"><p class="small">Connecté : <b>' + esc(m.name) + '</b> · ' + esc(rolesLabel(m)) + '</p><button type="button" class="btn block" data-act="acct-out">Se déconnecter</button>' + leaveBtn('btn ghost block danger-t') + '</section>' : ''; },
     dashTop:agendaTop, dashExtra:dashExtra,
     agendaTop:agendaTop, settingsTop:settingsTop, jobExtra:jobExtra, onStatus:onStatus, onAction:onAction,
-    nextInvoiceNo:function(start){ return T.sb.rpc('next_invoice_number', {p_start:start}).then(function(r){ if (r.error || typeof r.data !== 'number') throw r.error || new Error('no number'); return r.data; }); }
+    /* the next invoice number (without network: no number, the invoice waits for it — asked again when the signal is back) */
+    nextInvoiceNo:function(start){
+      if ((T.net && T.net.offlineMode) || navigator.onLine === false) return Promise.reject(new Error('offline'));
+      var ask = T.sb.rpc('next_invoice_number', {p_start:start}).then(function(r){ if (r.error || typeof r.data !== 'number') throw r.error || new Error('no number'); return r.data; });
+      return Promise.race([ask, new Promise(function(res, rej){ setTimeout(function(){ rej(new Error('timeout')); }, 8000); })]);
+    },
+    numberInvoice:function(id){ if ((T.net && T.net.offlineMode) || navigator.onLine === false) return Promise.reject(new Error('offline')); return T.numberInvoice(id); },
+    /* booking in a block: the count of the block, and the bookings as they are on the server now */
+    blockMark:function(key){ if ((T.net && (T.net.offlineMode || T.pending())) || navigator.onLine === false) return Promise.reject(Object.assign(new Error('offline'), {code:'unavailable'})); return T.blockMark(key); },
+    fresh:function(col){ return T.fresh(col); }
   };
 
   /* at the start: is his workday already running (app reopened during the day)? With a weak signal the answer may not come:

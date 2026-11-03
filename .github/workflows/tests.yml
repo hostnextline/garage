@@ -1,0 +1,52 @@
+# Les tests du Carnet du garage, sur une copie locale de Supabase (jamais la vraie base, aucun vrai service appelé).
+# À chaque envoi sur la branche « source » : les tests essentiels (environ 20 min).
+# Bouton « Run workflow » (onglet Actions) : au choix, tout tester (environ 1 h 30).
+name: Tests
+on:
+  push:
+    branches: [source]
+  workflow_dispatch:
+    inputs:
+      tout:
+        description: "Tout tester (environ 1 h 30) au lieu des tests essentiels"
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    env:
+      TZ: America/Toronto
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Postgres 16 et outils de test
+        run: |
+          [ -x /usr/lib/postgresql/16/bin/initdb ] && command -v ffmpeg >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-16 ffmpeg; }
+          sudo systemctl stop postgresql 2>/dev/null || true
+          python3 -m pip install --quiet --break-system-packages playwright==1.63.0 pypdf pillow openpyxl cryptography
+          python3 -m playwright install --with-deps chromium
+      - name: Copie locale de Supabase
+        run: bash tests/stack/installer.sh
+      - name: Tests essentiels
+        if: ${{ !inputs.tout }}
+        run: bash tests/essentiels.sh
+      - name: Tout tester
+        if: ${{ inputs.tout }}
+        run: bash tests/tout_tester.sh
+      - name: Journaux
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: journaux
+          path: |
+            tests/*.log
+            tests/stack/*.log
+          if-no-files-found: ignore

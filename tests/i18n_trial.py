@@ -1,7 +1,8 @@
 """The trial version (the hosted « version rapide » and the claude.ai page) in English: its screens, nothing left in French."""
 import json, re
+from chemins import GARAGE, SAUVEGARDES   # (où est l'app : ici ou dans le dépôt)
 from playwright.sync_api import sync_playwright
-PAGE = open('/home/claude/garage/web/index.html', encoding='utf8').read()
+PAGE = open(GARAGE + '/web/index.html', encoding='utf8').read()
 with sync_playwright() as pl:
     b = pl.chromium.launch(); out = {}
     for w in (390, 1280):

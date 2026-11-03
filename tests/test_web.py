@@ -1,7 +1,8 @@
 import json, os, time, urllib.parse
+from chemins import GARAGE, SAUVEGARDES   # (où est l'app : ici ou dans le dépôt)
 from playwright.sync_api import sync_playwright
 SC = os.path.dirname(os.path.abspath(__file__))
-PAGE = open('/home/claude/garage/web/index.html', encoding='utf8').read()
+PAGE = open(GARAGE + '/web/index.html', encoding='utf8').read()
 JSPDF = os.path.join(SC, 'deps/node_modules/jspdf/dist/jspdf.umd.min.js')
 results = []
 def check(name, cond, detail=''):

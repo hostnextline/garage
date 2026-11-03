@@ -1,7 +1,8 @@
 import json, os, time, math, urllib.parse
+from chemins import GARAGE, SAUVEGARDES   # (où est l'app : ici ou dans le dépôt)
 from playwright.sync_api import sync_playwright
 exec(open("test_pclist.py").read().split("\nwith sync_playwright() as p:")[0])
-PAGE = open('/home/claude/garage/web/index.html', encoding='utf8').read()
+PAGE = open(GARAGE + '/web/index.html', encoding='utf8').read()
 def nearest(lon, lat, rad):
     kx = 111320 * math.cos(math.radians(lat)); best = None; bd = 1e9
     for h in houses:

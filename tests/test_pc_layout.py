@@ -1,6 +1,7 @@
 # L'ordinateur a sa propre interface : menu à gauche, page large. Le téléphone garde la sienne.
 from playwright.sync_api import sync_playwright
-PAGE = open('/home/claude/garage/web/index.html', encoding='utf8').read()
+from chemins import GARAGE, SAUVEGARDES   # (où est l'app : ici ou dans le dépôt)
+PAGE = open(GARAGE + '/web/index.html', encoding='utf8').read()
 IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'
 ok = 0; bad = []
 def chk(c, m):
@@ -36,7 +37,7 @@ with sync_playwright() as p:
     pg.click('#tabbar .tab[data-t="reglages"]'); pg.wait_for_timeout(200)
     chk(pg.get_attribute('body', 'data-w') == 'narrow', 'ordi : réglages en colonne plus étroite')
     mw = box(pg, '#main')['w']; chk(860 <= mw <= 900, f'ordi : largeur des réglages {mw}')
-    chk(pg.locator('#ph-setlist .ph-row').count() == 10 and not pg.is_visible('#s-name'), 'ordi : réglages = une liste de parties (avec « Couleurs de l\'app »)')
+    chk(pg.locator('#ph-setlist .ph-row').count() == 12 and not pg.is_visible('#s-name'), 'ordi : réglages = une liste de parties (avec « Couleurs de l\'app »)')
     pg.click('#ph-setlist .ph-row:has-text("Le garage")'); pg.wait_for_timeout(150)
     chk(pg.is_visible('#s-name') and not pg.is_visible('#s-tps'), 'ordi : une partie à la fois')
     pg.fill('#s-name', 'Garage Hassan'); pg.wait_for_timeout(100)
@@ -45,7 +46,7 @@ with sync_playwright() as p:
     # nouvelle réservation : le menu se cache, la page reprend toute la largeur
     btn = True
     if btn:
-        pg.click('text=+ Nouveau client'); pg.wait_for_timeout(300)
+        pg.click('#tiles [data-act="cl-new"]'); pg.wait_for_timeout(300)   # (the « Nouveau client » tile)
         chk(pg.evaluate("document.body.classList.contains('nav-off') && document.getElementById('tabbar').hidden"), 'ordi : formulaire = menu caché')
         chk(pg.evaluate("parseFloat(getComputedStyle(document.body).paddingLeft)") == 0, 'ordi : formulaire sans marge de menu')
         pg.click('#top [data-act="cform-back"]'); pg.wait_for_timeout(300)

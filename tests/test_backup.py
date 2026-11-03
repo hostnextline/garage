@@ -1,7 +1,8 @@
 """Automatic backup: the backup server function (key, pages, what is left out), the nightly copy script, and putting data back."""
 import json, os, subprocess, sys, tempfile, shutil, glob, urllib.request, urllib.error
+from chemins import GARAGE, SAUVEGARDES   # (où est l'app : ici ou dans le dépôt)
 SC = os.path.dirname(os.path.abspath(__file__))
-REPO = '/home/claude/garage/sauvegardes-repo'
+REPO = SAUVEGARDES
 K = json.load(open(os.path.join(SC, 'stack/keys.json')))
 API = 'http://127.0.0.1:54321'
 results = []

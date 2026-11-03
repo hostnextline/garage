@@ -8,7 +8,7 @@ http.createServer((req, res) => {
   if (!r){ res.writeHead(404, {...CORS, 'content-type':'application/json'}); return res.end('{"message":"no route"}'); }
   const path = req.url.slice(r[0].length) || '/';
   const headers = {...req.headers}; delete headers.host;
-  const up = http.request({host:'127.0.0.1', port:r[1], path: path.startsWith('/') ? path : '/' + path, method:req.method, headers}, (u) => {
+  const up = http.request({host:'127.0.0.1', port:r[1], path: path.startsWith('/') ? path : '/' + path, method:req.method, headers, agent:false}, (u) => {   // (a new connection each time: a reused one closed by the other side gave « socket hang up »)
     const h = {...u.headers}; Object.keys(h).forEach(k => { if (k.startsWith('access-control-')) delete h[k]; });
     res.writeHead(u.statusCode, {...h, ...CORS}); u.pipe(res);
   });

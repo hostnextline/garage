@@ -27,6 +27,8 @@
       get:function(){ return Promise.resolve(snapDoc(path)); },
       set:function(d){ store[path] = clone(d); persist(); notify(path); return Promise.resolve(); },
       update:function(d){ if (!store[path]) return Promise.reject(err('not_found')); store[path] = merge(store[path], d); persist(); notify(path); return Promise.resolve(); },
+      /* only the parts given are replaced; the others (maybe changed in another tab) stay */
+      patch:function(set, unset){ var cur = clone(store[path]) || {}; (unset || []).forEach(function(k){ delete cur[k]; }); Object.keys(set || {}).forEach(function(k){ cur[k] = clone(set[k]); }); store[path] = cur; persist(); notify(path); return Promise.resolve(); },
       delete:function(){ delete store[path]; persist(); notify(path); return Promise.resolve(); },
       acquire:function(o){ var now = Date.now(), l = leases[path]; if (l && l.until > now && l.holder !== o.holder) return Promise.resolve({acquired:false, expiresAt:new Date(l.until).toISOString()}); leases[path] = {holder:o.holder, until:now + (o.ttlMs || 30000)}; return Promise.resolve({acquired:true, version:1, holder:o.holder}); },
       onSnapshot:function(n){ (docL[path] = docL[path] || []).push(n); setTimeout(function(){ n(snapDoc(path)); }, 0); return function(){ docL[path] = (docL[path] || []).filter(function(f){ return f !== n; }); }; },

@@ -1,8 +1,9 @@
 """Version d'essai : « Mettre l'app sur ton téléphone » envoie vers la vraie app du garage (equipe/), code QR lisible, lien dans la barre d'essai."""
 import os, re, numpy as np, cv2
+from chemins import GARAGE, SAUVEGARDES   # (où est l'app : ici ou dans le dépôt)
 from playwright.sync_api import sync_playwright
 SC = os.path.dirname(os.path.abspath(__file__))
-PAGE = open('/home/claude/garage/web/index.html', encoding='utf8').read()
+PAGE = open(GARAGE + '/web/index.html', encoding='utf8').read()
 IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1'
 SAMSUNG = 'Mozilla/5.0 (Linux; Android 14; SM-S921W) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/26.0 Chrome/122.0 Mobile Safari/537.36'
 GSA = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Mobile Safari/537.36 GSA/15.30'
@@ -35,7 +36,8 @@ with sync_playwright() as p:
     shot = pg.locator('#inst-qr').screenshot()
     val = cv2.QRCodeDetector().detectAndDecode(cv2.imdecode(np.frombuffer(shot, np.uint8), cv2.IMREAD_COLOR))[0]
     check('the code read by a camera gives the real app address (not the trial)', val == REAL, val)
-    check('computer: iPhone + Android steps shown, Samsung / Chrome iPhone folded', pg.locator('.inst > .inst-b').count() == 2 and pg.locator('.inst details .inst-b').count() == 2)
+    check('computer: first « Sur cet ordinateur : une icône sur le bureau » (Chrome / Edge, Safari), then iPhone + Android steps, Samsung / Chrome iPhone folded',
+          pg.locator('.inst > .inst-b').count() == 3 and pg.locator('.inst > .inst-b').first.get_attribute('data-p') == 'pc' and 'icône sur le bureau' in txt(pg, '.inst > .inst-b[data-p="pc"]') and pg.locator('.inst details .inst-b').count() == 2)
     pg.screenshot(path=os.path.join(SC, 'inst_essai_pc.png'))
     ctx.close()
     ctx, pg, errs2 = open_page(br, IPHONE); errs += errs2

@@ -1,9 +1,10 @@
 import json, base64, io, os, sys, datetime
+from chemins import GARAGE, SAUVEGARDES   # (où est l'app : ici ou dans le dépôt)
 from playwright.sync_api import sync_playwright
 from pypdf import PdfReader
 
 SC = os.path.dirname(os.path.abspath(__file__))
-PAGE = open('/home/claude/garage/carnet.html', encoding='utf8').read()
+PAGE = open(GARAGE + '/carnet.html', encoding='utf8').read()
 MOCK = open(os.path.join(SC, 'mock.js'), encoding='utf8').read()
 JSPDF = os.path.join(SC, 'deps/node_modules/jspdf/dist/jspdf.umd.min.js')
 if not os.path.exists(JSPDF):
@@ -305,7 +306,7 @@ with sync_playwright() as p:
     pg.select_option('#h-6-start', '09:00'); pg.select_option('#h-6-end', '15:00')
     pg.click('#s-save'); pg.wait_for_timeout(150)
     hrs = store(pg)['config/main'].get('hours', {})
-    check('H0. Weekly hours saved (7 days open, Saturday 9 h–15 h, 1 unité = 10 min by default)', all(hrs[str(d)]['open'] for d in range(7)) and hrs['6']['start'] == '09:00' and hrs['6']['end'] == '15:00' and store(pg)['config/main'].get('slotMin') == 10, hrs)
+    check('H0. Weekly hours saved (7 days open, Saturday 9 h–15 h, 1 unité = 10 min by default)', all(hrs[str(d)]['open'] for d in range(7)) and hrs['6']['start'] == '09:00' and hrs['6']['end'] == '15:00' and store(pg)['config/main'].get('slotMin', 10) == 10, hrs)   # (10 min: the default, not written unless changed)
     pg.select_option('#h-1-start', '18:00'); pg.select_option('#h-1-end', '08:00'); pg.click('#s-save'); pg.wait_for_timeout(100)
     check('H0b. Closing before opening is refused', 'fermeture doit être après' in pg.inner_text('#toast') and store(pg)['config/main']['hours']['1']['start'] == '08:00')
     pg.click('[data-act="setreset"]'); pg.wait_for_timeout(50)

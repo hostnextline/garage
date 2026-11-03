@@ -18,6 +18,7 @@
   function mapErr(e){
     if (!e) return err('unknown');
     var m = String(e.message || e.details || e), c = e.code;
+    if (c === 'PGRST202' || /Could not find the function/i.test(m)) return err('no_function', m);   /* (a server not yet updated) */
     if (c === '42501' || /row-level security|not_granted|permission denied/i.test(m)) return err('not_granted', m);
     if (c === 'P0002') return err('invalid_argument', m);
     if (/fetch|network|Failed to|timeout|Load failed/i.test(m)) return err('unavailable', m);
@@ -58,7 +59,7 @@
   var saveT = {};
   function saveCol(col){
     clearTimeout(saveT[col]);
-    saveT[col] = setTimeout(function(){ var c = C(col); if (T.uid && c.loaded) kvSet(cacheKey(col), {docs:c.docs, since:c.since, at:Date.now()}); }, 1200);
+    saveT[col] = setTimeout(function(){ var c = C(col); if (T.uid && c.loaded) kvSet(cacheKey(col), {docs:c.docs, since:c.since, stamps:c.stamps, full:c.full, checked:c.checked, at:Date.now()}); }, 1200);
   }
   /* the copy kept on the phone: shown at once (even without network), then the server's version replaces it */
   function hydrate(col){
@@ -67,6 +68,8 @@
     c.hydrated = kvGet(cacheKey(col)).then(function(v){
       if (!v || c.loaded || !v.docs) return;
       c.docs = v.docs; c.since = v.since || null; c.loaded = true;
+      /* (when each document last changed on the server: what lets the next opening fetch only what changed) */
+      if (v.stamps && typeof v.stamps === 'object'){ c.stamps = v.stamps; c.full = +v.full || 0; c.checked = +v.checked || 0; c.cached = true; }
       overlay(col); notify(col, null);
     });
     return c.hydrated;
@@ -79,11 +82,18 @@
     });
     return out;
   }
+  /* patch: only the parts given are replaced (the others stay as they are) */
+  function patchObj(v, p){
+    var out = (v && typeof v === 'object' && !Array.isArray(v)) ? clone(v) : {};
+    ((p && p.unset) || []).forEach(function(k){ delete out[k]; });
+    Object.keys((p && p.set) || {}).forEach(function(k){ out[k] = clone(p.set[k]); });
+    return out;
+  }
+  function applyOp(v, op){ return op.kind === 'delete' ? undefined : op.kind === 'set' ? clone(op.data) : op.kind === 'patch' ? patchObj(v, op.data) : mergeDeep(v, op.data); }
   function applyLocal(op){
-    var c = C(colOf(op.path)), id = idOf(op.path);
-    if (op.kind === 'set') c.docs[id] = clone(op.data);
-    else if (op.kind === 'merge') c.docs[id] = mergeDeep(c.docs[id], op.data);
-    else delete c.docs[id];
+    var c = C(colOf(op.path)), id = idOf(op.path), v = applyOp(c.docs[id], op);
+    if (v === undefined) delete c.docs[id]; else c.docs[id] = v;
+    if (c.stamps) c.stamps[id] = '';   /* (changed here: the next check asks the server for its version) */
   }
   /* changes not yet on the server stay visible on top of what the server sends */
   function overlay(col){ var ids = []; OB.forEach(function(op){ if (colOf(op.path) === col){ applyLocal(op); ids.push(idOf(op.path)); } }); return ids; }
@@ -121,17 +131,20 @@
     }, 0);
   }
   function since(c){ return c.since ? new Date(Date.parse(c.since) - 30000).toISOString() : null; }
-  /* first time: everything (page by page); after: only what changed, plus what was deleted */
+  /* how often the phone talks to the server (the tests make it faster) */
+  var SYNC = Object.assign({tick:15000, check:10 * 60000, full:7 * 24 * 3600000, away:60000}, window.__syncCfg || {});
+  T.syncCfg = SYNC;
+  /* first time on this phone: everything (page by page); after: only what changed, plus what was deleted */
   function load(col, full){
     var c = C(col);
     if (c.loading){ if (!full) c.again = true; return c.loading.then(function(){ return full ? load(col, true) : null; }); }
-    var sb = T.sb, start = (full || !c.loaded) ? null : since(c), changed = {}, maxAt = c.since;
+    var sb = T.sb, start = (full || !c.loaded) ? null : since(c), changed = {}, stamp = {}, maxAt = c.since;
     function page(from){
       var q = sb.from('docs').select('id,data,updated_at').eq('col', col).order('updated_at', {ascending:true}).order('path', {ascending:true}).range(from, from + 999);
       if (start) q = q.gte('updated_at', start);
       return q.then(function(r){
         if (r.error) throw mapErr(r.error);
-        r.data.forEach(function(x){ changed[x.id] = x.data; if (!maxAt || x.updated_at > maxAt) maxAt = x.updated_at; });
+        r.data.forEach(function(x){ changed[x.id] = x.data; stamp[x.id] = x.updated_at; if (!maxAt || x.updated_at > maxAt) maxAt = x.updated_at; });
         if (r.data.length === 1000) return page(from + 1000);
       });
     }
@@ -144,13 +157,18 @@
       });
     }).then(function(){
       var ids = [];
+      if (!start || !c.stamps) c.stamps = {};
       if (!start){ Object.keys(c.docs).forEach(function(id){ if (!(id in changed)){ delete c.docs[id]; ids.push(id); } }); }
-      Object.keys(changed).forEach(function(id){ if (JSON.stringify(c.docs[id]) !== JSON.stringify(changed[id])){ c.docs[id] = changed[id]; ids.push(id); } });
+      Object.keys(changed).forEach(function(id){
+        if (start && c.stamps[id] && stamp[id] < c.stamps[id]) return;   /* (a newer version is already here) */
+        if (JSON.stringify(c.docs[id]) !== JSON.stringify(changed[id])){ c.docs[id] = changed[id]; ids.push(id); }
+        c.stamps[id] = stamp[id];
+      });
       /* a deletion counts only if the document was not saved again after it */
-      gone.forEach(function(g){ if (c.docs[g.id] !== undefined && !(g.id in changed)){ delete c.docs[g.id]; ids.push(g.id); } });
+      gone.forEach(function(g){ if (c.docs[g.id] !== undefined && !(g.id in changed)){ delete c.docs[g.id]; delete c.stamps[g.id]; ids.push(g.id); } });
       if (OB.length) ids = ids.concat(overlay(col));
       c.since = maxAt || c.since || new Date().toISOString();
-      var first = !c.loaded; c.loaded = true; if (!start) c.full = Date.now();
+      var first = !c.loaded; c.loaded = true; if (!start){ c.full = Date.now(); c.checked = c.full; }
       if (ids.length || first) notify(col, first ? null : ids);
       if (ids.length || first || !start) saveCol(col);
     }, function(e){ if (!c.loaded) c.listeners.forEach(function(f){ if (f.__onErr) f.__onErr(e); }); throw e; });
@@ -159,8 +177,56 @@
       function(){ if (c.again){ c.again = false; setTimeout(function(){ load(col, false).catch(function(){}); }, 3000); } });   /* (even if this load failed: asked again a moment later) */
     return p;
   }
-  /* the first load of a collection is shared by everyone who starts listening to it (not one full download each) */
-  function firstLoad(col){ var c = C(col); return c.first || (c.first = hydrate(col).then(function(){ return load(col, true); }).catch(function(e){ c.first = null; throw e; })); }
+  /* the light check, instead of downloading everything again: the server sends only the list of what this person
+     may see, with when each document last changed. The phone fetches what is new or changed, and drops what it may
+     no longer see (a job moved to another truck, a deleted fiche). */
+  function check(col){
+    var c = C(col);
+    if (!c.loaded || !c.stamps) return load(col, true);
+    if (c.checking) return c.checking;
+    var sb = T.sb, srv = {}, known = {}, got = {}, gotAt = {};
+    Object.keys(c.docs).forEach(function(id){ known[id] = true; });   /* (what arrives during the check is not dropped) */
+    function page(from){
+      return sb.from('docs').select('id,updated_at').eq('col', col).order('path', {ascending:true}).range(from, from + 999).then(function(r){
+        if (r.error) throw mapErr(r.error);
+        r.data.forEach(function(x){ srv[x.id] = x.updated_at; });
+        if (r.data.length === 1000) return page(from + 1000);
+      });
+    }
+    var p = page(0).then(function(){
+      var need = Object.keys(srv).filter(function(id){ return !(id in c.docs) || c.stamps[id] !== srv[id]; }), parts = [];
+      for (var i = 0; i < need.length; i += 150) parts.push(need.slice(i, i + 150));
+      return parts.reduce(function(pr, ids){ return pr.then(function(){
+        return sb.from('docs').select('id,data,updated_at').eq('col', col).in('id', ids).then(function(r){
+          if (r.error) throw mapErr(r.error);
+          r.data.forEach(function(x){ got[x.id] = x.data; gotAt[x.id] = x.updated_at; });
+        });
+      }); }, Promise.resolve());
+    }).then(function(){
+      var ids = [];
+      Object.keys(known).forEach(function(id){ if (!(id in srv) && c.docs[id] !== undefined){ delete c.docs[id]; delete c.stamps[id]; ids.push(id); } });
+      Object.keys(got).forEach(function(id){
+        if (c.stamps[id] && gotAt[id] < c.stamps[id]) return;   /* (a newer version came in meanwhile) */
+        if (JSON.stringify(c.docs[id]) !== JSON.stringify(got[id])){ c.docs[id] = got[id]; ids.push(id); }
+        c.stamps[id] = gotAt[id];
+      });
+      if (OB.length) ids = ids.concat(overlay(col));
+      c.checked = Date.now();
+      if (ids.length) notify(col, ids);
+      saveCol(col);
+    });
+    c.checking = p.then(function(){ c.checking = null; }, function(){ c.checking = null; });
+    return p;
+  }
+  /* the count of a block: a booking passes only if nobody booked in that block since the room was counted */
+  T.blockMark = function(key){ return withTimeout(rpc('block_mark', {p_key:key}), 8000); };
+  /* a finished invoice waiting for its number: the next one of the series (once, even if two phones ask) */
+  T.numberInvoice = function(jobId){ return withTimeout(rpc('number_invoice', {p_path:'jobs/' + jobId}), 10000).then(function(n){ soon('jobs'); return n; }); };
+  /* what is on the server right now (a load that starts after this call): for the room in a block */
+  T.fresh = function(col){ var c = C(col); return (c.loading ? c.loading.catch(function(){}) : Promise.resolve()).then(function(){ return load(col, !c.loaded); }); };
+  /* the first load of a collection is shared by everyone who starts listening to it (not one full download each);
+     with the copy kept on the phone, only the light check (not everything again) */
+  function firstLoad(col){ var c = C(col); return c.first || (c.first = hydrate(col).then(function(){ return C(col).cached ? load(col, false).then(function(){ return check(col); }) : load(col, true); }).catch(function(e){ c.first = null; throw e; })); }   /* (the changes first: what was just changed shows at once) */
   var timers = {};
   function soon(col){ clearTimeout(timers[col]); timers[col] = setTimeout(function(){ if (C(col).listeners.length || Object.keys(C(col).docListeners).length) load(col, false).catch(function(){}); }, 150); }
   function watched(){ return Object.keys(cols).filter(function(k){ var c = cols[k]; return c.listeners.length || Object.keys(c.docListeners).some(function(i){ return c.docListeners[i].length; }); }); }
@@ -182,14 +248,17 @@
           if (!e || e.code !== 'unavailable') throw e;
           var mine = OB.filter(function(op){ return op.path === path; });
           return kvGet(kk).then(function(v){
-            mine.forEach(function(op){ v = op.kind === 'delete' ? undefined : op.kind === 'set' ? clone(op.data) : mergeDeep(v, op.data); });
+            mine.forEach(function(op){ v = applyOp(v, op); });
             if (v === undefined && !mine.length) throw e;
             return {id:id, exists:v !== undefined, data:function(){ return v === undefined ? undefined : freeze(clone(v)); }, metadata:{fromCache:true, hasPendingWrites:!!mine.length}};
           });
         });
       },
-      set:function(d){ return write('set', path, d); },
-      update:function(d){ return write('merge', path, d); },
+      /* o.block, o.mark: a booking in a block (the server checks that nobody booked there since the room was counted) */
+      set:function(d, o){ return write('set', path, d, o); },
+      update:function(d, o){ return write('merge', path, d, o); },
+      /* only the parts given are replaced; the others (maybe changed meanwhile by someone else) stay */
+      patch:function(set, unset){ return write('patch', path, {set:set || {}, unset:unset || []}); },
       delete:function(){ return write('delete', path, null); },
       acquire:function(){ return Promise.resolve({acquired:true, version:1}); },
       onSnapshot:function(n, onErr){
@@ -201,30 +270,45 @@
     };
   }
   function withTimeout(p, ms){ return new Promise(function(res, rej){ var t = setTimeout(function(){ rej(err('unavailable', 'timeout')); }, ms); p.then(function(v){ clearTimeout(t); res(v); }, function(e){ clearTimeout(t); rej(e); }); }); }
-  function send(op){
+  /* each change, sent to the server; the answer is the document as it is now on the server */
+  function plain(op){
     if (op.kind === 'set') return rpc('doc_set', {p_path:op.path, p_data:op.data}).then(function(){ return op.data; });
     if (op.kind === 'merge') return rpc('doc_merge', {p_path:op.path, p_patch:op.data});
+    if (op.kind === 'patch') return rpc('doc_patch', {p_path:op.path, p_set:op.data.set, p_unset:op.data.unset || []}).catch(function(e){
+      if (!e || e.code !== 'no_function') throw e;
+      return rpc('doc_set', {p_path:op.path, p_data:applyOp(C(colOf(op.path)).docs[idOf(op.path)], op)}).then(function(){ return applyOp(C(colOf(op.path)).docs[idOf(op.path)], op); });   /* (a server not yet updated: the whole document, as before) */
+    });
     return rpc('doc_delete', {p_path:op.path});
+  }
+  function send(op){
+    if (!op.bk || (op.kind !== 'set' && op.kind !== 'merge') || T.noBlockBook) return plain(op);
+    return rpc('block_book', {p_key:op.bk, p_mark:op.mark == null ? null : op.mark, p_path:op.path, p_data:op.data, p_merge:op.kind === 'merge'}).then(function(r){
+      if (!r || r.ok !== true){ var e = err('block_changed', 'block changed'); e.mark = r && r.mark; throw e; }
+      return r.data;
+    }, function(e){ if (e && e.code === 'no_function'){ T.noBlockBook = true; return plain(op); } throw e; });
   }
   function landed(op, out){
     var col = colOf(op.path), id = idOf(op.path), c = C(col);
     if (op.kind === 'delete'){ if (c.docs[id] !== undefined) delete c.docs[id]; }
-    else c.docs[id] = op.kind === 'merge' ? out : clone(op.data);
+    else c.docs[id] = clone(out !== undefined && out !== null ? out : op.data);
+    if (c.stamps) c.stamps[id] = '';   /* (the server's time of this version comes with the next update) */
     if (OB.length) overlay(col);
     notify(col, [id]); saveCol(col);
   }
-  function persistOp(op){ return tx('outbox', 'readwrite', function(st){ return st.add({uid:op.uid, kind:op.kind, path:op.path, data:op.data, at:op.at}); }).then(function(n){ op.n = n; }).catch(function(e){ NET.storeErr = String(e && e.message || e); netChanged(); }); }
+  function persistOp(op){ return tx('outbox', 'readwrite', function(st){ return st.add({uid:op.uid, kind:op.kind, path:op.path, data:op.data, at:op.at, bk:op.bk || null}); }).then(function(n){ op.n = n; }).catch(function(e){ NET.storeErr = String(e && e.message || e); netChanged(); }); }
   function dropOp(op){ if (op.n != null) tx('outbox', 'readwrite', function(st){ return st.delete(op.n); }).catch(function(){}); }
   function queue(op){
     applyLocal(op); notify(colOf(op.path), [idOf(op.path)]); saveCol(colOf(op.path));
     OB.push(op); persistOp(op); netChanged(); flushSoon(1500);
     return Promise.resolve({queued:true});
   }
-  function write(kind, path, d){
+  function write(kind, path, d, o){
     var op = {uid:T.uid, kind:kind, path:path, data:d == null ? null : clone(d), at:Date.now()};
-    if (OB.length || NET.offlineMode || navigator.onLine === false) return queue(op);
+    if (o && o.block){ op.bk = o.block; op.mark = o.mark == null ? null : o.mark; }
+    /* (a change sent later, from the waiting list: a booking made without network takes its place without the check) */
+    if (OB.length || NET.offlineMode || navigator.onLine === false){ op.mark = null; return queue(op); }
     return withTimeout(send(op), 12000).then(function(out){ landed(op, out); }, function(e){
-      if (e && e.code === 'unavailable') return queue(op);
+      if (e && e.code === 'unavailable'){ op.mark = null; return queue(op); }
       throw e;
     });
   }
@@ -243,7 +327,7 @@
           if (e && (e.code === 'unavailable' || /JWT|jwt|token/.test(String(e.message)))) throw e;   /* not the change's fault: try again later */
           OB.shift(); dropOp(op);
           failed.push({path:op.path, kind:op.kind, at:op.at, msg:String(e && e.message || e), code:e && e.code});
-          load(colOf(op.path), true).catch(function(){});
+          check(colOf(op.path)).catch(function(){});   /* (the server's version comes back on the phone) */
           netChanged(); return next();
         });
       })();
@@ -275,7 +359,8 @@
   }
   var db = Object.freeze({doc:docRef, collection:colRef});
   T.db = db;
-  T.resync = function(full){ return Promise.all(watched().map(function(col){ return load(col, !!full).catch(function(){}); })); };
+  /* deep: also the light check (what appeared or may no longer be seen) — never everything again */
+  T.resync = function(deep){ return Promise.all(watched().map(function(col){ return (deep ? check(col) : load(col, false)).catch(function(){}); })); };
 
   /* live updates: instant when the realtime service answers, otherwise every 15 s */
   var live = false, hiddenAt = 0;
@@ -285,13 +370,20 @@
         var path = (p.new && p.new.path) || (p.old && p.old.path); if (path) soon(colOf(path));
       }).subscribe(function(st){ live = st === 'SUBSCRIBED'; });
     } catch(e){ live = false; }
+    /* while the app is open: the changes (instant, or each minute as a safety), the light check every 10 minutes,
+       and a whole new copy only once a week (it used to be every 10 minutes, and each time the app came back) */
     setInterval(function(){
       if (document.visibilityState === 'hidden') return;
-      watched().forEach(function(col){ var c = C(col), full = Date.now() - c.full > 10 * 60000; if (full || !live || Date.now() % 60000 < 15000) load(col, full).catch(function(){}); });
-    }, 15000);
+      watched().forEach(function(col){
+        var c = C(col), now = Date.now();
+        if (!c.stamps || now - (c.full || 0) > SYNC.full) load(col, true).catch(function(){});
+        else if (now - (c.checked || 0) > SYNC.check) check(col).catch(function(){});
+        else if (!live || now % 60000 < SYNC.tick) load(col, false).catch(function(){});
+      });
+    }, SYNC.tick);
     document.addEventListener('visibilitychange', function(){
       if (document.visibilityState === 'hidden'){ hiddenAt = Date.now(); return; }
-      T.resync(hiddenAt && Date.now() - hiddenAt > 5 * 60000);
+      T.resync(hiddenAt && Date.now() - hiddenAt > SYNC.away);
     });
     window.addEventListener('online', function(){ NET.online = true; netChanged(); if (NET.offlineMode) return; flush(); T.resync(false); });
     window.addEventListener('offline', function(){ NET.online = false; netChanged(); });
