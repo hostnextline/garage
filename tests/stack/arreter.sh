@@ -6,5 +6,5 @@ PGBIN=${PGBIN:-$(ls -d /usr/lib/postgresql/*/bin 2>/dev/null | sort -V | tail -1
 as_pg(){ if [ "$(id -u)" = 0 ]; then su postgres -c "$*"; else bash -c "$*"; fi; }
 cd $S; pkill -f "node_modules/deno/deno run" 2>/dev/null
 for f in *.pid *.pid2; do [ -f "$f" ] && kill $(cat "$f") 2>/dev/null; rm -f "$f"; done
-for n in gateway.js mocks.js; do for pid in $(pgrep -f "node $n"); do kill $pid 2>/dev/null; done; done
+for n in "node gateway.js" "node mocks.js" "http.server 8088"; do pkill -f "$n" 2>/dev/null; done; pkill -x postgrest 2>/dev/null; pkill -x auth 2>/dev/null
 as_pg "$PGBIN/pg_ctl -D $D/data stop -m fast" >/dev/null 2>&1; true
