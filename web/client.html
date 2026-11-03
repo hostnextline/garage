@@ -29,6 +29,7 @@ h2{font:700 19px/1.2 var(--f-display);letter-spacing:-.01em;margin:0}
 main{display:grid;gap:14px;padding:14px 0 28px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;display:grid;gap:12px}
 .lines{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.when{font-size:19px;line-height:1.4;margin:6px 0 8px}.when b{font-weight:650}
 .lines li{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
 .lines li span:first-child{min-width:0;overflow-wrap:anywhere}
 .num{font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -74,6 +75,10 @@ main{display:grid;gap:14px;padding:14px 0 28px}
   function money(n){ return CUR.format(Math.round((+n || 0) * 100) / 100); }
   var DF = new Intl.DateTimeFormat('fr-CA', {day:'numeric', month:'long', year:'numeric'});
   function day(iso){ if (!iso) return ''; var p = String(iso).slice(0, 10).split('-'); return DF.format(new Date(+p[0], +p[1] - 1, +p[2])); }
+  function isEn(){ return !!(window.I18N && I18N.lang === 'en'); }
+  function dayW(iso){ var p = String(iso).slice(0, 10).split('-'); return new Intl.DateTimeFormat(isEn() ? 'en-CA' : 'fr-CA', {weekday:'long', day:'numeric', month:'long'}).format(new Date(+p[0], +p[1] - 1, +p[2])); }
+  function hm(t){ var p = String(t || '').split(':'), h = +p[0], mi = +p[1] || 0, mm = (mi < 10 ? '0' : '') + mi; return isEn() ? (h % 12 || 12) + (mi ? ':' + mm : '') + (h < 12 ? ' AM' : ' PM') : h + ' h' + (mi ? ' ' + mm : ''); }
+  function win(J){ return J.from ? (isEn() ? 'between ' + hm(J.from) + ' and ' + hm(J.to) : 'entre ' + hm(J.from) + ' et ' + hm(J.to)) : (isEn() ? 'at ' : 'à ') + hm(J.at); }
   function call(body){
     var h = {'Content-Type':'application/json', apikey:CFG.key, Authorization:'Bearer ' + CFG.key};
     return fetch(CFG.url + '/functions/v1/client', {method:'POST', headers:h, body:JSON.stringify(Object.assign({token:token, lang:window.I18N ? I18N.lang : 'fr'}, body)), cache:'no-store'}).then(function(r){
@@ -83,7 +88,8 @@ main{display:grid;gap:14px;padding:14px 0 28px}
   function fail(t){ $('#title').textContent = 'Lien indisponible'; $('#main').innerHTML = '<div class="msg bad" role="alert">' + esc(t) + '</div>'; }
   function render(flash){
     var g = D.garage, inv = D.invoice, xs = D.extras || [], wait = xs.filter(function(x){ return x.status === 'attente'; });
-    document.title = (inv ? 'Facture ' + inv.number : 'Votre dossier') + ' · ' + g.name;
+    var J = D.job || {}, rdv = !inv && J.date && (J.from || J.at), q = D.quote, pre = D.prepaid;
+    document.title = (inv ? 'Facture ' + inv.number : rdv ? 'Votre rendez-vous' : 'Votre dossier') + ' · ' + g.name;
     $('#garage').textContent = g.name;
     $('#title').textContent = 'Bonjour' + (D.client.first ? ' ' + D.client.first : '') + (D.job.vehicle ? ' · ' + D.job.vehicle : '');
     var h = flash ? '<div class="msg ' + (flash.bad ? 'bad' : flash.wait ? 'wait' : 'ok') + '" role="status">' + esc(flash.text) + '</div>' : '';
@@ -118,17 +124,32 @@ main{display:grid;gap:14px;padding:14px 0 28px}
         '<ul class="lines">' + inv.lines.map(function(l){ var q = +l.qty || 1; return '<li><span>' + esc(l.desc) + (q !== 1 ? ' × ' + esc(String(q).replace('.', ',')) : '') + '</span><span class="num">' + esc(money(q * l.price * (l.type === 'rabais' ? -1 : 1))) + '</span></li>'; }).join('') + '</ul>' +
         '<div class="tot"><div><span>Sous-total</span><span class="num">' + esc(money(inv.sub)) + '</span></div>' +
         (inv.taxesOn ? '<div><span>TPS (5 %)</span><span class="num">' + esc(money(inv.tps)) + '</span></div><div><span>TVQ (9,975 %)</span><span class="num">' + esc(money(inv.tvq)) + '</span></div>' : '') +
-        '<div class="grand"><span>Total</span><span class="num">' + esc(money(inv.total)) + '</span></div></div>' +
+        '<div class="grand"><span>Total</span><span class="num">' + esc(money(inv.total)) + '</span></div>' +
+        (pre ? '<div><span>Payé d\'avance</span><span class="num">− ' + esc(money(pre.amount)) + '</span></div>' + (!inv.paid ? '<div class="grand"><span>Reste à payer</span><span class="num">' + esc(money(D.balance)) + '</span></div>' : '') : '') + '</div>' +
         (inv.paid ? '<p class="small">Payée' + (inv.method ? ' · ' + esc(inv.method) : '') + (inv.paidAt ? ' · ' + esc(day(inv.paidAt)) : '') + '. Merci !</p>' : '') +
         (inv.online && inv.online.short ? '<p class="msg bad">Paiement reçu (' + esc(money(inv.online.amount)) + '), mais il ne correspond pas au total. Le garage vous contactera.</p>' : '') +
-        (!inv.paid && D.pay && !(flash && flash.wait) ? '<button type="button" class="btn pay" id="pay">Payer ' + esc(money(inv.total)) + ' par carte</button><p class="muted small">Paiement sécurisé par Stripe (carte, Apple Pay, Google Pay). Le garage ne voit jamais votre numéro de carte.</p>' : '') +
+        (!inv.paid && D.pay && !(flash && flash.wait) ? '<button type="button" class="btn pay" id="pay">Payer ' + esc(money(D.balance != null ? D.balance : inv.total)) + ' par carte</button><p class="muted small">Paiement sécurisé par Stripe (carte, Apple Pay, Google Pay). Le garage ne voit jamais votre numéro de carte.</p>' : '') +
         (inv.note ? '<p class="note small">' + esc(inv.note) + '</p>' : '') +
         (g.taxIds ? '<p class="muted small">' + esc(g.taxIds) + '</p>' : '') + (g.footer ? '<p class="muted small">' + esc(g.footer) + '</p>' : '') +
         '<button type="button" class="btn noprint" id="print">Imprimer ou enregistrer en PDF</button></section>';
     }
+    /* the appointment: the day, the window, the price told at booking — paid ahead by card if he wants */
+    if (rdv){
+      h += '<section class="card" aria-labelledby="rdv-h"><div class="head-row"><h2 id="rdv-h">Votre rendez-vous</h2>' + (pre ? '<span class="pill ok">Payé d\'avance</span>' : '') + '</div>' +
+        '<p class="when" translate="no"><b>' + esc(dayW(J.date)) + '</b><br>' + esc(win(J)) + '</p>' +
+        (J.from ? '<p class="muted small">Le mécano arrive pendant ce bloc. Vous recevez un texto quand il part vers chez vous.</p>' : '') +
+        (q ? '<ul class="lines">' + q.lines.map(function(l){ var qq = +l.qty || 1; return '<li><span>' + esc(l.desc) + (qq !== 1 ? ' × ' + esc(String(qq).replace('.', ',')) : '') + '</span><span class="num">' + esc(money(qq * l.price)) + '</span></li>'; }).join('') + '</ul>' +
+          '<div class="tot"><div><span>Sous-total</span><span class="num">' + esc(money(q.sub)) + '</span></div>' +
+          (q.taxesOn ? '<div><span>TPS (5 %)</span><span class="num">' + esc(money(q.tps)) + '</span></div><div><span>TVQ (9,975 %)</span><span class="num">' + esc(money(q.tvq)) + '</span></div>' : '') +
+          '<div class="grand"><span>Total prévu</span><span class="num">' + esc(money(q.total)) + '</span></div></div>' +
+          '<p class="muted small">Prix prévu : la facture finale suit les travaux faits (s\'il y a autre chose, le mécano vous demande d\'abord).</p>' : '') +
+        (pre ? '<p class="small">Payé d\'avance par carte : ' + esc(money(pre.amount)) + (pre.date ? ' · ' + esc(day(pre.date)) : '') + '. Merci !</p>' : '') +
+        (!pre && D.pay && q && !(flash && flash.wait) ? '<button type="button" class="btn pay" id="pay">Payer d\'avance ' + esc(money(q.total)) + ' par carte</button><p class="muted small">Paiement sécurisé par Stripe. Vous pouvez aussi payer sur place : le paiement se fait avant le départ du mécano.</p>' : '') +
+        '</section>';
+    }
     var done = xs.filter(function(x){ return x.status !== 'attente'; });
     if (done.length) h += '<section class="card" aria-labelledby="xd-h"><h2 id="xd-h">Travaux proposés' + (D.job.mechanic ? ' par ' + esc(D.job.mechanic) : '') + '</h2><ul class="lines">' + done.map(xdone).join('') + '</ul><p class="muted small">Montants avant taxes. Les travaux acceptés sont sur la facture.</p></section>';
-    if (!inv && !xs.length) h += '<section class="card"><p>Rien à voir pour l\'instant : le garage vous enverra votre facture ici.</p></section>';
+    if (!inv && !xs.length && !rdv) h += '<section class="card"><p>Rien à voir pour l\'instant : le garage vous enverra votre facture ici.</p></section>';
     $('#main').innerHTML = h;
     $('#foot').innerHTML = esc(g.name) + (g.phone ? ' · <a href="tel:' + esc(String(g.phone).replace(/[^\d+]/g, '')) + '">' + esc(g.phone) + '</a>' : '') + (g.email ? ' · <a href="mailto:' + esc(g.email) + '">' + esc(g.email) + '</a>' : '');
   }
@@ -159,7 +180,7 @@ main{display:grid;gap:14px;padding:14px 0 28px}
       if (window.I18N && !I18N.chosen && !I18N.linked && r.client && r.client.lang && r.client.lang !== I18N.lang){ I18N.set(r.client.lang, true, true); langMark(); }   /* (the language on his file) */
       if (!back){ render(null); return; }
       var inv = r.invoice;
-      if (inv && inv.paid){ back = false; checks = 0; history.replaceState(null, '', location.pathname + '#t=' + token + lnk()); render({text:'Paiement reçu. Merci !'}); return; }
+      if ((inv && inv.paid) || (!inv && r.prepaid)){ back = false; checks = 0; history.replaceState(null, '', location.pathname + '#t=' + token + lnk()); render({text:'Paiement reçu. Merci !'}); return; }
       if (inv && inv.online && inv.online.short){ back = false; checks = 0; history.replaceState(null, '', location.pathname + '#t=' + token + lnk()); render(null); return; }   /* received, but not the right amount: the invoice says it */
       if (++checks < 15){ render({wait:true, text:'Paiement en vérification…'}); checkT = setTimeout(load, 3000); return; }
       checks = 0; render({wait:true, bad:true, text:'Votre paiement est en route, mais pas encore confirmé. Ne payez pas une deuxième fois : rechargez cette page dans quelques minutes.'});
@@ -171,7 +192,7 @@ main{display:grid;gap:14px;padding:14px 0 28px}
   }
   /* the page's language: the client's own choice, otherwise the one on his file at the garage (in the link), otherwise his phone's */
   function langMark(){ var l = window.I18N ? I18N.lang : 'fr'; Array.prototype.forEach.call(document.querySelectorAll('[data-lang-set]'), function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-lang-set') === l)); }); }
-  document.addEventListener('click', function(ev){ var b = ev.target.closest('[data-lang-set]'); if (!b || !window.I18N) return; I18N.set(b.getAttribute('data-lang-set')); langMark(); });
+  document.addEventListener('click', function(ev){ var b = ev.target.closest('[data-lang-set]'); if (!b || !window.I18N) return; I18N.set(b.getAttribute('data-lang-set')); langMark(); if (D) render(null); });   /* (the day and hours, written in the new language) */
   langMark();
   load();
 })();

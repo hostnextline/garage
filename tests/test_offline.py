@@ -63,11 +63,11 @@ with sync_playwright() as pw:
     sp.reload(); sp.wait_for_timeout(3000)
     check('expired session + no network: still opens with the phone copy', sp.locator('#gate').count() == 0 and 'Hors ligne' in txt(sp, '.banner.net'), (txt(sp, '#gate'), txt(sp, '.banner.net')))
     sp.evaluate("() => { const S = window.__garageApi.S; S.screen = 'job'; S.jobId = 'j1'; window.__garageApi.render(); }"); sp.wait_for_timeout(400)
-    sp.evaluate("document.querySelectorAll('#more-fold').forEach(d => d.open = true)"); sp.select_option('#ph-st', 'termine'); sp.wait_for_timeout(800)
+    sp.evaluate("document.querySelectorAll('#more-fold').forEach(d => d.open = true)"); sp.select_option('#ph-st', 'planifie'); sp.wait_for_timeout(800)   # (back to « Planifié »: « Terminée » waits for the payment now)
     check('offline change while the session is expired', '1 changement' in txt(sp, '.banner.net'))
     sc.set_offline(False); sp.evaluate("window.dispatchEvent(new Event('online'))")
     ok = wait_for(sp, "window.__supa.pending() === 0 && !window.__supa.net.offlineMode", 45000)
-    check('signal back: the session renews itself and the change goes out', ok and (doc('jobs/j1') or {}).get('status') == 'termine', (sp.evaluate("JSON.stringify(window.__supa.net)"), (doc('jobs/j1') or {}).get('status')))
+    check('signal back: the session renews itself and the change goes out', ok and (doc('jobs/j1') or {}).get('status') == 'planifie', (sp.evaluate("JSON.stringify(window.__supa.net)"), (doc('jobs/j1') or {}).get('status')))
     check('no login was asked', sp.locator('#gate').count() == 0)
 
     # ---------- 5. other phone changed the same job meanwhile: both changes kept ----------

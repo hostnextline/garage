@@ -76,7 +76,7 @@ with sync_playwright() as pl:
     c['trucks'] = [{'id': 'c1', 'name': 'Camion 1', 'on': True, 'mech': 'Saleh'}, {'id': 'c2', 'name': 'Camion 2', 'on': False, 'mech': 'Ali'}, {'id': 'c3', 'name': 'Camion 3', 'on': False, 'mech': ''}]
     doc_set(otok, 'config/main', c)
     snapc = lambda n: {'id': 'c1', 'name': n, 'firstName': n, 'lastName': '', 'postal': 'H4P 2B5', 'phone': '514 555-0101'}
-    for i in range(2): doc_set(otok, 'jobs/m%d' % i, {'date': D, 'time': '08:00', 'block': 'am', 'durationMin': 60, 'mechanic': '', 'truck': '', 'clientId': 'c1', 'client': snapc('Déjà %d' % i), 'services': ['Inspection'], 'status': 'planifie', 'createdAt': 5})
+    for i in range(3): doc_set(otok, 'jobs/m%d' % i, {'date': D, 'time': '08:00', 'block': 'am', 'durationMin': 60, 'mechanic': '', 'truck': '', 'clientId': 'c1', 'client': snapc('Déjà %d' % i), 'services': ['Inspection'], 'status': 'planifie', 'createdAt': 5})
     for cid, pc in (('c1', 'H4P 2B5'), ('c2', 'H4P 2B6')):
         cl = doc('clients/' + cid); cl['postal'] = pc; doc_set(otok, 'clients/' + cid, cl)
     cA = ctx(b); cA.add_init_script("window.__syncCfg = {tick: 600000};")    # (this one hears of the others' bookings only when it asks)
@@ -91,12 +91,14 @@ with sync_playwright() as pl:
     open_form(A, 'Marie'); open_form(B, 'Paul')
     em = lambda p: p.inner_text('#blkpick [data-v="am"] em')
     check('two people book the last place of the morning at the same time (both forms say there is room)', A.input_value('#f-block') == 'am' and B.input_value('#f-block') == 'am' and em(A) != 'Complet' and em(B) != 'Complet', (em(A), em(B)))
+    sr = A.evaluate("[...document.querySelectorAll('#sugbox .sug-road')].map(e => e.textContent)")
+    check('the block picker shows the road time as an estimate only (« ≈ 5 min de route »), said not counted in the units', sr and all(re.match(r'^≈ (\d+ min|\d+ h( \d+)?) de route$', x) for x in sr) and 'pas compté dans tes unités' in txt(A, '#sugbox'), (sr, txt(A, '#sugbox')[-140:]))
     A.evaluate("() => { const T = window.__supa, f0 = T.fresh; window.__gate = new Promise(r => { window.__open = r; }); T.fresh = function(c){ return f0(c).then(() => window.__gate); }; }")
     A.evaluate("document.getElementById('jobform').requestSubmit()"); A.wait_for_timeout(1500)   # A counted the room… and is held there
     B.evaluate("document.getElementById('jobform').requestSubmit()"); B.wait_for_timeout(2500)   # B books meanwhile
     A.evaluate("window.__open()"); A.wait_for_timeout(3500)
     am = json.loads(psql("select coalesce(json_agg(data->'client'->>'name'), '[]') from public.docs where path like 'jobs/%%' and data->>'date' = '%s' and data->>'block' = 'am'" % D))
-    check('only one of the two gets it (3 jobs in the morning, not 4)', len(am) == 3 and 'Paul Roy' in am and 'Marie Tremblay' not in am, am)
+    check('only one of the two gets it (4 jobs of 60 min in the 4 h morning, not 5: no road time added)', len(am) == 4 and 'Paul Roy' in am and 'Marie Tremblay' not in am, am)
     check('…the other is told right away: « Ce bloc vient de se remplir »', 'vient de se remplir' in (A.inner_text('#formerr') if A.locator('#formerr').count() else ''), A.inner_text('#formerr') if A.locator('#formerr').count() else '')
     check('…his form now shows the morning « Complet » and stays open (nothing lost: another block, another day)', em(A) == 'Complet' and A.locator('#jobform').count() == 1, em(A))
     check('…the server counted one booking in that block', mark(D + '|am') == 1, mark(D + '|am'))
@@ -121,6 +123,9 @@ with sync_playwright() as pl:
     check('server: a mechanic cannot book a job for someone else this way (refused, the count does not move)', isinstance(r, dict) and r.get('_status') in (401, 403) and not doc('jobs/zz') and mark(D + '|am') == 1, r)
     r = rpc(ltok, 'block_book', {'p_key': 'pas-un-bloc', 'p_mark': None, 'p_path': 'jobs/zz', 'p_data': jd, 'p_merge': False})
     check('server: a block that does not exist is refused', isinstance(r, dict) and r.get('_status') == 400 and not doc('jobs/zz'), r)
+    A.goto(BASE + '#agenda'); A.wait_for_timeout(500); A.evaluate("(d) => { const S = window.__garageApi.S; S.day = d; window.__garageApi.render(); }", D); A.wait_for_timeout(500)
+    band = txt(A, '#bbar .bband[data-blk="am"]')
+    check('the day\'s block bar: the morning full with 4 jobs, its road time shown apart (« ≈ … de route (estimé) »)', 'complet' in band and re.search(r'≈ (\d+ min|\d+ h( \d+)?) de route \(estimé\)', band) is not None, band)
     check('no errors (blocks)', not [e for e in ERRS if e.split(':')[0] in ('owner-A', 'lina')], ERRS[:3])
     for cx in (cA, cB): cx.close()
 

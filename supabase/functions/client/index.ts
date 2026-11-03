@@ -1,7 +1,9 @@
 // La page du client (lien secret envoyé par texto) : voir sa facture, la payer par carte (Stripe Checkout),
 // accepter ou refuser des travaux supplémentaires proposés par le mécano.
 //
-// Équipe (connecté)     POST { action:'link', jobId, send?:'facture'|'travaux', extraId?, base? } -> { ok, token, link, sms }
+// Équipe (connecté)     POST { action:'link', jobId, send?:'facture'|'travaux'|'rdv', extraId?, base?, force? } -> { ok, token, link, sms }
+//                       'rdv' : le texto de rendez-vous (date, bloc) avec le lien où il peut payer d'avance par carte ;
+//                       une seule fois par date + bloc (un nouveau jour ou un nouveau bloc : un nouveau texto)
 // Client (lien secret)  POST { action:'view'|'answer'|'pay'|'check', token, extraId?, accept? }
 // Stripe (webhook)      POST avec l'en-tête Stripe-Signature (vérifié avec le secret créé à l'enregistrement de la clé)
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0';
@@ -119,13 +121,21 @@ async function stripeSigOk(raw: string, header: string, secret: string) {
   return v1.some((s) => same(s, want));
 }
 
-// a paid Checkout Session → the invoice is paid (once; a different amount is kept but flagged)
+const prepaidOf = (job: any) => (job?.prepaid && +job.prepaid.amount > 0 ? r2(+job.prepaid.amount) : 0);
+const balanceOf = (job: any) => r2(Math.max(0, r2(job?.invoice?.total) - prepaidOf(job)));
+// a paid Checkout Session → paid ahead (before the invoice), or the invoice is paid (once; a different amount is kept but flagged)
 async function markPaid(jobId: string, s: any) {
   const job = await docGet('jobs/' + jobId);
+  if (s.metadata?.kind === 'prepay') {
+    if (job?.prepaid?.session === s.id) return { ok: true, already: true };
+    const amt = r2((+s.amount_total || 0) / 100), at = Date.now();
+    await docMerge('jobs/' + jobId, { prepaid: { amount: r2(prepaidOf(job) + amt), session: s.id, at, date: todayTO(), method: 'Carte (en ligne)' }, updatedAt: at });
+    return { ok: true, prepaid: amt };
+  }
   const inv = job?.invoice;
   if (!inv || !inv.number) return { ok: false, reason: 'no_invoice' };
   if (inv.stripe?.session === s.id && inv.stripe?.amount != null) return { ok: true, already: true };
-  const cents = Math.round(r2(inv.total) * 100), got = +s.amount_total || 0, full = Math.abs(got - cents) <= 1;
+  const cents = Math.round(balanceOf(job) * 100), got = +s.amount_total || 0, full = Math.abs(got - cents) <= 1;
   const patch: any = { invoice: { stripe: { session: s.id, amount: r2(got / 100), at: Date.now(), short: !full }, updatedAt: Date.now() }, updatedAt: Date.now() };
   if (full) Object.assign(patch.invoice, { paid: true, method: 'Carte (en ligne)', paidAt: todayTO() });
   await docMerge('jobs/' + jobId, patch);
@@ -146,6 +156,24 @@ async function linkRow(token: string) {
 function first(s: unknown) { return String(s || '').trim().split(/\s+/)[0] || ''; }
 function vehicleLabel(v: any) { return [v?.year, v?.make, v?.model].filter(Boolean).join(' '); }
 
+// the appointment: its block (8 h to 12 h…) or, booked by the hour, its time
+const BLOCK_H: Record<string, [string, string]> = { am: ['08:00', '12:00'], pm: ['12:00', '16:00'], eve: ['16:00', '20:00'] };
+function blockOfTime(t: string) { return t < '12:00' ? 'am' : t < '16:00' ? 'pm' : 'eve'; }
+function when(job: any, conf: any) {
+  if (conf?.bookMode === 'hours') return { from: '', to: '', at: String(job.time || '') };
+  const b = BLOCK_H[String(job.block || '')] ? String(job.block) : blockOfTime(String(job.time || '08:00'));
+  return { from: BLOCK_H[b][0], to: BLOCK_H[b][1], at: '' };
+}
+function hmTxt(t: string, en: boolean) {
+  const [h, m] = String(t).split(':').map(Number);
+  if (en) return (h % 12 || 12) + (m ? ':' + String(m).padStart(2, '0') : '') + (h < 12 ? ' AM' : ' PM');
+  return h + ' h' + (m ? ' ' + String(m).padStart(2, '0') : '');
+}
+function dayTxt(iso: string, en: boolean) {
+  const [y, mo, d] = String(iso).split('-').map(Number);
+  return new Intl.DateTimeFormat(en ? 'en-CA' : 'fr-CA', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(y, mo - 1, d)));
+}
+
 // what the client may see: no internal notes, no other client, no team phone numbers
 async function view(row: any, cfg?: any) {
   const job = await docGet('jobs/' + row.job_id);
@@ -156,16 +184,21 @@ async function view(row: any, cfg?: any) {
   if (job.clientId) { const c = await docGet('clients/' + job.clientId); if (c) client = { ...client, ...c }; }
   const inv = job.invoice && job.invoice.number ? job.invoice : null;
   cfg = cfg || await secrets();
+  const pre = prepaidOf(job), q = !inv && job.quote && +job.quote.total > 0 ? job.quote : null, live = !['annule', 'noshow', 'termine'].includes(String(job.status || 'planifie'));
+  const w = when(job, conf);
   return {
     ok: true,
     garage: { name: biz.name || 'Garage mobile', phone: biz.phone || '', email: biz.email || '', address: biz.address || '', taxIds: [biz.tps ? 'TPS ' + biz.tps : '', biz.tvq ? 'TVQ ' + biz.tvq : ''].filter(Boolean).join(' · '), footer: conf.footer || '' },
     client: { first: first(client.firstName || client.name), lang: langOf(client) },
-    job: { date: job.date || '', vehicle: vehicleLabel(job.vehicle), mechanic: first(job.mechanic) },
+    job: { date: job.date || '', vehicle: vehicleLabel(job.vehicle), mechanic: first(job.mechanic), status: String(job.status || 'planifie'), from: live ? w.from : '', to: live ? w.to : '', at: live ? w.at : '' },
+    quote: q ? { lines: (q.lines || []).map((l: any) => ({ desc: l.desc, qty: l.qty, price: l.price, type: l.type })), sub: q.sub, tps: q.tps, tvq: q.tvq, total: q.total, taxesOn: q.taxesOn !== false } : null,
+    prepaid: pre ? { amount: pre, date: job.prepaid.date || '' } : null,
+    balance: inv ? balanceOf(job) : null,
     invoice: inv ? { number: inv.number, issuedAt: inv.issuedAt, lines: (inv.lines || []).map((l: any) => ({ desc: l.desc, qty: l.qty, price: l.price, type: l.type })),
       sub: inv.sub, tps: inv.tps, tvq: inv.tvq, total: inv.total, taxesOn: inv.taxesOn !== false, paid: !!inv.paid, method: inv.method || '', paidAt: inv.paidAt || null, note: inv.note || '',
       online: inv.stripe ? { amount: inv.stripe.amount, short: !!inv.stripe.short } : null } : null,
     extras: (Array.isArray(job.extras) ? job.extras : []).map((x: any) => ({ id: x.id, items: (x.items || []).map((i: any) => ({ desc: i.desc, price: i.price, qty: i.qty || 1 })), note: x.note || '', total: x.total, status: x.status || 'attente', at: x.at, answeredAt: x.answeredAt || null })),
-    pay: !!(cfg.stripeKey && inv && !inv.paid),
+    pay: !!(cfg.stripeKey && (inv ? !inv.paid && balanceOf(job) >= 0.5 : (q && !pre && live && +q.total >= 0.5))),
   };
 }
 
@@ -202,10 +235,11 @@ Deno.serve(async (req) => {
       const job = await docGet('jobs/' + jobId);
       if (!job) return fail('Cette job n\'existe plus.', 404, 'no_job');
       if (me.role === 'mecano' && norm(job.mechanic) !== norm(me.mechanic)) return fail('Cette job n\'est pas à toi.', 403, 'forbidden');
-      const send = body.send === 'facture' || body.send === 'travaux' ? body.send : null;
+      const send = body.send === 'facture' || body.send === 'travaux' || body.send === 'rdv' ? body.send : null;
       const extra = send === 'travaux' ? (job.extras || []).find((x: any) => x.id === body.extraId) : null;
       if (send === 'facture' && !(job.invoice && job.invoice.number)) return fail('Finalise la facture avant de l\'envoyer.');
       if (send === 'travaux' && !extra) return fail('Cette proposition n\'existe plus.');
+      if (send === 'rdv' && (String(job.status || 'planifie') !== 'planifie' || String(job.date || '') < todayTO())) return fail('Ce rendez-vous est passé ou commencé : pas de texto de rendez-vous.');
       const cfg = await secrets();
       // the link always points to the garage's own site
       const baseIn = String(body.base || '');
@@ -230,13 +264,25 @@ Deno.serve(async (req) => {
 
       const conf = (await docGet('config/main')) || {};
       const fn = first(client.firstName || client.name);
+      const w = when(job, conf), rkey = [job.date, conf.bookMode === 'hours' ? job.time || '' : (w.from ? Object.keys(BLOCK_H).find((k) => BLOCK_H[k][0] === w.from) : '')].join('|');
+      if (send === 'rdv' && job.rdvSms?.key === rkey && job.rdvSms?.status === 'sent' && !body.force) return json({ ok: true, token: row.token, link, sms: { status: 'already' } });
+      const pre = prepaidOf(job), bal = job.invoice?.number ? balanceOf(job) : 0;
+      const winTxt = (e: boolean) => w.from ? (e ? `between ${hmTxt(w.from, true)} and ${hmTxt(w.to, true)}` : `entre ${hmTxt(w.from, false)} et ${hmTxt(w.to, false)}`) : (e ? `at ${hmTxt(w.at, true)}` : `à ${hmTxt(w.at, false)}`);
+      const moved = send === 'rdv' && job.rdvSms?.key && job.rdvSms.key !== rkey && job.rdvSms.status === 'sent';
+      const payAhead = !!(cfg.stripeKey && job.quote && +job.quote.total >= 0.5 && !pre);
+      const q = job.quote && +job.quote.total > 0 ? job.quote : null;   // the price told at booking (his invoice starts from it)
+      const totTxt = (e: boolean) => q ? (e ? ` Expected total: ${money(q.total, 'en')}${q.taxesOn !== false ? ' (taxes included)' : ''}.` : ` Total prévu : ${money(q.total)}${q.taxesOn !== false ? ' (taxes incluses)' : ''}.`) : '';
       const garage = String(conf.biz?.name || (en ? 'your mobile garage' : 'votre garage mobile')).trim(), hi = (en ? 'Hello' : 'Bonjour') + (fn ? ' ' + fn : '');
-      const message = en
+      const message = send === 'rdv'
+        ? (en
+          ? `${hi}, your appointment with ${garage} ${moved ? 'has changed' : 'is confirmed'}: ${dayTxt(job.date, true)}, ${winTxt(true)}.${totTxt(true)} ${payAhead ? 'To see the details or pay ahead by card' : 'The details'}: ${link}`
+          : `${hi}, votre rendez-vous avec ${garage} ${moved ? 'a changé' : 'est confirmé'} : ${dayTxt(job.date, false)}, ${winTxt(false)}.${totTxt(false)} ${payAhead ? 'Pour voir les détails ou payer d\'avance par carte' : 'Les détails'} : ${link}`)
+        : en
         ? (send === 'facture'
-          ? `${hi}, here is your invoice ${job.invoice.number} from ${garage} (${money(job.invoice.total, 'en')}): ${link}` + (cfg.stripeKey && !job.invoice.paid ? ' You can pay it online by card.' : '')
+          ? `${hi}, here is your invoice ${job.invoice.number} from ${garage} (${money(job.invoice.total, 'en')}${pre ? `, already paid ${money(pre, 'en')}: ${money(bal, 'en')} left` : ''}): ${link}` + (cfg.stripeKey && !job.invoice.paid && (!pre || bal >= 0.5) ? ' You can pay it online by card.' : '')
           : `${hi}, ${first(me.name) || 'your mechanic'} from ${garage} is proposing extra work on your ${vehicleLabel(job.vehicle) || 'vehicle'} (${money(extra.total, 'en')} before tax). To see it and accept or decline: ${link}`)
         : (send === 'facture'
-          ? `${hi}, voici votre facture ${job.invoice.number} de ${garage} (${money(job.invoice.total)}) : ${link}` + (cfg.stripeKey && !job.invoice.paid ? ' Vous pouvez la payer en ligne par carte.' : '')
+          ? `${hi}, voici votre facture ${job.invoice.number} de ${garage} (${money(job.invoice.total)}${pre ? `, déjà payé ${money(pre)} : reste ${money(bal)}` : ''}) : ${link}` + (cfg.stripeKey && !job.invoice.paid && (!pre || bal >= 0.5) ? ' Vous pouvez la payer en ligne par carte.' : '')
           : `${hi}, ${first(me.name) || 'votre mécano'} de ${garage} propose des travaux supplémentaires sur votre ${vehicleLabel(job.vehicle) || 'véhicule'} (${money(extra.total)} avant taxes). Pour voir et accepter ou refuser : ${link}`);
       let sms: any = { status: 'off', body: message, phone: client.phone || '' };
       if (cfg.ghlToken && cfg.ghlLocation) {
@@ -244,7 +290,8 @@ Deno.serve(async (req) => {
         catch (e) { sms = { status: 'error', error: String((e as Error).message || e), body: message, phone: client.phone || '' }; }
       }
       const at = Date.now();
-      if (send === 'facture') await docMerge('jobs/' + jobId, { invoice: { sentAt: at, smsStatus: sms.status }, updatedAt: at });
+      if (send === 'rdv') await docMerge('jobs/' + jobId, { rdvSms: { key: rkey, status: sms.status, at, error: sms.status === 'error' ? String(sms.error || '').slice(0, 200) : null }, updatedAt: at });
+      else if (send === 'facture') await docMerge('jobs/' + jobId, { invoice: { sentAt: at, smsStatus: sms.status }, updatedAt: at });
       else await docMerge('jobs/' + jobId, { extras: (job.extras || []).map((x: any) => x.id === extra.id ? { ...x, sentAt: at, smsStatus: sms.status } : x), updatedAt: at });
       return json({ ok: true, token: row.token, link, sms });
     }
@@ -270,19 +317,25 @@ Deno.serve(async (req) => {
     if (action === 'pay') {
       const cfg = await secrets();
       if (!cfg.stripeKey) return fail('Le paiement en ligne n\'est pas offert par ce garage.', 400, 'no_stripe');
-      const job = await docGet('jobs/' + row.job_id), inv = job?.invoice;
-      if (!inv?.number) return fail('La facture n\'est pas encore prête.');
-      if (inv.paid) return json({ ok: true, paid: true });
-      const cents = Math.round(r2(inv.total) * 100);
+      const job = await docGet('jobs/' + row.job_id), inv = job?.invoice, en = body.lang === 'en';
+      const conf = (await docGet('config/main')) || {}, gname = conf.biz?.name || (en ? 'Mobile garage' : 'Garage mobile');
+      let cents = 0, name = '', meta: Record<string, string> = { job_id: row.job_id };
+      if (inv?.number) {   // the invoice: what is left to pay
+        if (inv.paid) return json({ ok: true, paid: true });
+        cents = Math.round(balanceOf(job) * 100); name = `${en ? 'Invoice' : 'Facture'} ${inv.number} — ${gname}`; meta = { job_id: row.job_id, invoice: inv.number, kind: 'invoice' };
+      } else {             // before the job: the price of the booking, paid ahead
+        if (prepaidOf(job)) return json({ ok: true, paid: true });
+        if (!job?.quote || ['annule', 'noshow', 'termine'].includes(String(job.status || 'planifie'))) return fail('La facture n\'est pas encore prête.');
+        cents = Math.round(r2(job.quote.total) * 100); name = `${en ? 'Appointment' : 'Rendez-vous'} ${job.date} — ${gname}`; meta = { job_id: row.job_id, kind: 'prepay' };
+      }
       if (cents < 50) return fail('Montant trop petit pour un paiement par carte.');
-      const conf = (await docGet('config/main')) || {};
-      const back = `${row.base}client.html#t=${row.token}&l=${body.lang === 'en' ? 'en' : 'fr'}`;   // (back from paying: the page in the same language)
+      const back = `${row.base}client.html#t=${row.token}&l=${en ? 'en' : 'fr'}`;   // (back from paying: the page in the same language)
       const s = await stripeCall(cfg.stripeKey, 'POST', '/checkout/sessions', {
-        mode: 'payment', locale: body.lang === 'en' ? 'en' : 'fr-CA', client_reference_id: row.job_id,
+        mode: 'payment', locale: en ? 'en' : 'fr-CA', client_reference_id: row.job_id,
         success_url: back + '&retour=paye', cancel_url: back,
-        line_items: { 0: { quantity: 1, price_data: { currency: 'cad', unit_amount: cents, product_data: { name: `${body.lang === 'en' ? 'Invoice' : 'Facture'} ${inv.number} — ${conf.biz?.name || (body.lang === 'en' ? 'Mobile garage' : 'Garage mobile')}` } } } },
-        metadata: { job_id: row.job_id, invoice: inv.number },
-        payment_intent_data: { metadata: { job_id: row.job_id, invoice: inv.number }, description: `${body.lang === 'en' ? 'Invoice' : 'Facture'} ${inv.number}` },
+        line_items: { 0: { quantity: 1, price_data: { currency: 'cad', unit_amount: cents, product_data: { name } } } },
+        metadata: meta,
+        payment_intent_data: { metadata: meta, description: name },
       });
       await admin.from('client_links').update({ last_session: s.id }).eq('token', row.token);
       return json({ ok: true, url: s.url });

@@ -19,7 +19,7 @@
     var rs = VA.roles && VA.roles.length ? VA.roles.slice() : [VA.role || 'mecano'];
     return {role:mainRole(rs), roles:rs, mechanic:VA.mechanic || null, name:VA.name, perms:VA.perms || {}, user_id:me.user_id, active:true, preview:true};
   }
-  var X = {tracks:{}, trackLoading:{}, trackSt:{}, busy:{}, live:[], members:[], active:[], showPath:{}, paths:{}, pathBusy:{}, eq:{list:null, err:'', created:null, secrets:null, confirm:null, editing:null, draft:{}}, enRoute:null, near:false, warnedNear:false, roles:{}};
+  var X = {tracks:{}, trackLoading:{}, trackSt:{}, busy:{}, quiet:{}, live:[], members:[], active:[], showPath:{}, paths:{}, pathBusy:{}, eq:{list:null, err:'', created:null, secrets:null, confirm:null, editing:null, draft:{}}, enRoute:null, near:false, warnedNear:false, roles:{}};
   var ROLE = {owner:'Propriétaire', bureau:'Bureau', mecano:'Mécano', tresorier:'Trésorier'};
 
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -58,11 +58,13 @@
   function mineOf(m, j){ return !!(m && m.mechanic && (norm(j.mechanic) === norm(m.mechanic) || (!j.mechanic && hasR(m, 'mecano')))); }
   function mineJob(j){ return mineOf(me, j); }          /* the real account (position, texts) */
   function mineView(j){ return mineOf(eff(), j); }      /* what the screen shows (« Voir comme ») */
+  /* a job without a mechanic: whoever presses « En route » on his phone goes himself — if he can be the one driving (the office does not) */
+  function goesHimself(j){ return !!me && !previewing() && !j.mechanic && canTrack() && (hasR(me, 'owner') || hasR(me, 'mecano') || !!me.mechanic); }
   function onPhone(){ var a = A(); return !!(a && a.phone && a.phone()); }
   function isStaff(){ return !!me && (hasR(me, 'owner') || hasR(me, 'bureau')); }
   function worksShifts(){ return !!(me && (hasR(me, 'mecano') || me.mechanic)); }
   function staffView(){ var m = eff(); return !!(m && (hasR(m, 'owner') || hasR(m, 'bureau'))); }
-  function shiftsView(){ var m = eff(); return !!(m && (hasR(m, 'mecano') || m.mechanic)); }
+  function shiftsView(){ var m = eff(); return !!(m && (hasR(m, 'mecano') || m.mechanic || (m === me && G.on))); }   /* (someone else who went himself: his day card shows until he closes it) */
 
   /* THE RIGHTS: one list for everyone. Each role ticks some of them at the start (« Ce que chaque rôle donne au départ »,
      changeable); then a right can be added or removed for ONE person (Équipe et accès → Modifier).
@@ -73,7 +75,7 @@
     {k:'book', t:'Prendre des rendez-vous', s:'Un mécano : dans son agenda. Le bureau : pour tout le monde.', on:[], r:['bureau', 'mecano'], d:{bureau:true}},
     {k:'clients', t:'Voir les clients', s:'Un mécano : les clients de ses jobs.', on:[], r:['bureau', 'mecano', 'tresorier'], d:{bureau:true, mecano:true, tresorier:true}},
     {k:'factures', t:'Voir les factures', s:'Un mécano : les factures de ses jobs.', on:[], r:['bureau', 'mecano', 'tresorier'], d:{bureau:true, mecano:true, tresorier:true}},
-    {k:'editinv', t:'Modifier les factures et les marquer payées', s:'Le trésorier : la facture seulement, rien d\'autre dans la job.', on:[], r:['bureau', 'tresorier'], d:{bureau:true}},
+    {k:'editinv', t:'Modifier les factures et les marquer payées', s:'Un mécano : les factures de ses jobs, toujours (il encaisse avant de partir). Le trésorier : la facture seulement, rien d\'autre dans la job.', on:['mecano'], r:['bureau', 'tresorier'], d:{bureau:true}},
     {k:'money', t:'Voir les chiffres du garage', s:'Ventes du mois et factures payées, sur l\'écran d\'accueil.', on:[], r:['bureau', 'mecano', 'tresorier'], d:{bureau:true, tresorier:true}},
     {k:'tresor', t:'Trésorerie : dépenses, reçus, rapport, taxes', s:'', on:['tresorier'], r:['bureau', 'mecano'], d:{}},
     {k:'stock', t:'Voir et changer l\'inventaire', s:'', on:[], r:['bureau', 'mecano', 'tresorier'], d:{bureau:true, mecano:true, tresorier:true}},
@@ -169,10 +171,10 @@
       gpsStart(); render();
     }, function(e){ G.starting = false; toast(e && e.code === 'timeout' ? 'Pas de réponse du serveur après 15 secondes. Réessaie.' : 'Pas de connexion au serveur. Réessaie.'); render(); });
   }
-  function shiftEnd(){
+  function shiftEnd(quiet){
     return T.sb.rpc('shift_end').then(function(r){
       if (r.error){ toast('La journée n\'a pas été fermée : ' + r.error.message); return; }
-      G.on = false; G.since = null; X.enRoute = null; gpsStop(); toast('Bonne soirée ! Ta position n\'est plus envoyée.'); render();
+      G.on = false; G.since = null; X.enRoute = null; X.autoShift = false; gpsStop(); toast(quiet ? 'Le client ne voit plus ta position.' : 'Bonne soirée ! Ta position n\'est plus envoyée.'); render();
     }, function(){ toast('Pas de connexion au serveur. Réessaie.'); });
   }
   function freshPos(ms){
@@ -248,17 +250,19 @@
     opt = opt || {};
     if (X.busy[j.id]) return;
     X.busy[j.id] = true; render();
-    var mine = mineJob(j), p = Promise.resolve();
-    if (mine && !G.on) p = shiftStart();
+    /* who the client follows (same rule as the server): the job's mechanic; a job without a mechanic follows whoever presses
+       « En route », when he has his phone or tablet in hand (a desk computer has no position worth sending) and can be the one driving */
+    var mine = mineJob(j) || goesHimself(j), p = Promise.resolve();
+    if (mine && !G.on){ p = shiftStart(); if (!shiftsView()) X.autoShift = true; }   /* not a mechanic: his position stops when the trip ends */
     p.then(function(){ return mine ? freshPos(7000) : null; }).then(function(pos){
-      return invoke('en-route', {jobId:j.id, action:'start', resend:!!opt.resend, base:trackBase(), pos:pos ? {lat:pos.lat, lon:pos.lon, acc:pos.acc} : null});
+      return invoke('en-route', {jobId:j.id, action:'start', resend:!!opt.resend, notify:!X.quiet[j.id], base:trackBase(), pos:pos ? {lat:pos.lat, lon:pos.lon, acc:pos.acc} : null});
     }).then(function(res){
       X.busy[j.id] = false;
       var t = Object.assign({}, X.tracks[j.id] || {}, {token:res.token, job_id:j.id, status:'active', route:res.route, minutes:res.minutes, km:res.km, eta_at:res.eta_at, dest_lat:res.dest ? res.dest.lat : null, dest_lon:res.dest ? res.dest.lon : null, sms_status:res.sms.status === 'already' ? 'sent' : res.sms.status, sms_error:res.sms.error || null, sms_at:res.sms.status === 'sent' ? new Date().toISOString() : (X.tracks[j.id] || {}).sms_at, mech_name:(X.tracks[j.id] || {}).mech_name});
       X.tracks[j.id] = t;
       if (mine){ X.enRoute = {jobId:j.id, refreshedAt:Date.now()}; X.near = false; X.warnedNear = false; maybeSend(true); }
       var c = A().cl(j), who = first(c.firstName || c.name) || 'le client';
-      toast(res.sms.status === 'sent' ? 'Texto envoyé à ' + who + ' ✓' : res.sms.status === 'already' ? who + ' a déjà le lien de suivi' : res.sms.status === 'error' ? 'Texto pas envoyé : envoie le lien toi-même' : 'Lien de suivi prêt : envoie-le à ' + who);
+      toast(res.sms.status === 'quiet' ? 'Parti sans texto : ' + who + ' n\'est pas avisé' : res.sms.status === 'sent' ? 'Texto envoyé à ' + who + ' ✓' : res.sms.status === 'already' ? who + ' a déjà le lien de suivi' : res.sms.status === 'error' ? 'Texto pas envoyé : envoie le lien toi-même' : 'Lien de suivi prêt : envoie-le à ' + who);
       render();
       fetchTrack(j.id);
     }, function(e){
@@ -272,7 +276,7 @@
   function endTrack(j, reason){
     invoke('en-route', {jobId:j.id, action:'end', reason:reason}).then(function(){
       if (X.tracks[j.id]) X.tracks[j.id].status = reason;
-      if (X.enRoute && X.enRoute.jobId === j.id){ X.enRoute = null; X.near = false; }
+      if (X.enRoute && X.enRoute.jobId === j.id){ X.enRoute = null; X.near = false; if (X.autoShift && G.on){ X.autoShift = false; shiftEnd(true); } }
       fetchTrack(j.id);
     }, function(){});
   }
@@ -293,8 +297,11 @@
     var h = '<section class="sect er" aria-labelledby="er-h"><h3 id="er-h">' + (st === 'route' ? 'En route vers ' + esc(who) : st === 'place' ? 'Sur place' : 'Départ vers le client') + '</h3>';
     if (st === 'planifie'){
       if (busy) h += '<p class="er-line">Envoi du texto…</p>';
-      h += '<p class="muted small">' + (phone ? 'Au départ, ' + esc(who) + ' reçoit un texto pour suivre le camion.' : 'Pas de téléphone au dossier : le lien de suivi sera prêt à partager.') + '</p>';
+      h += '<p class="muted small">' + (phone ? (X.quiet[j.id] ? 'Au départ, pas de texto : ' + esc(who) + ' ne sera pas avisé (le suivi marche quand même).' : 'Au départ, ' + esc(who) + ' reçoit un texto pour suivre le camion.') : 'Pas de téléphone au dossier : le lien de suivi sera prêt à partager.') + '</p>';
+      /* (to test, or a client who asked not to be texted: off for this departure only, back on for the next job) */
+      if (phone && !busy) h += '<label class="check er-notify"><input type="checkbox" data-act="er-notify" data-id="' + esc(j.id) + '"' + (X.quiet[j.id] ? '' : ' checked') + '> Aviser ' + esc(who) + ' par texto</label>';
       if (!mine && j.mechanic) h += '<p class="muted small">Le client suivra la position de ' + esc(j.mechanic) + '.</p>';
+      else if (!mine && !j.mechanic && !goesHimself(j)) h += '<p class="muted small">Pas de mécano sur cette job : appuie « En route » sur le téléphone de celui qui part, pour que le client voie le camion avancer.</p>';
     } else if (st === 'route'){
       var act = t && t.status === 'active';
       if (busy) h += '<p class="er-line">Envoi en cours…</p>';
@@ -954,7 +961,7 @@
         mec && ph ? [] : dayTry,   /* (the mechanic tried the days on his phone screen already) */
         ph ? [] : [{icon:'👉', go:'tab:agenda', try:'[data-g="affichage"]', need:true, t:'Jour, semaine ou liste', p:'Trois façons de voir l\'agenda.', tryT:'Essaie : touche « Semaine », puis « Jour ».', done:'La vue change tout de suite.'}],
         (own || bur || can('book')) ? [{icon:'➕', go:ph ? 'home' : 'tab:agenda', sel:'#top [data-act="new"]', need:true, t:'« + Réservation »', p:BLK ? 'Choisis le client, le service, puis le bloc (matin, après-midi ou soir) : l\'app propose les meilleurs blocs, près des autres jobs du coin. Personne n\'est assigné : l\'app fait les routes.' : 'Choisis le client et le service : l\'app propose les moments libres, près des autres jobs du même coin. Le client reçoit sa confirmation.', x:'On ne réserve pas pendant la visite.'}] : [],
-        can('hours_others') ? (ph ? nav('heures', 'Les heures d\'ouverture', 'Les heures d\'ouverture du garage.') : []).concat(sched('garage', '[data-act="sched"][data-v="garage"]', 'Touche « Modifier l\'horaire ».', 'Modifier l\'horaire', 'Les heures d\'ouverture du garage s\'ouvrent dans une grande grille.')) : [])],
+        can('hours_others') ? (ph ? nav('heures', 'Les heures d\'ouverture', 'Les heures d\'ouverture du garage.') : []).concat(sched('garage', '[data-act="sched"][data-v="garage"]', 'Touche « Modifier l\'horaire ».', 'Modifier l\'horaire', A().truckMode && A().truckMode() ? 'Chaque camion a son horaire, dans une grande grille : un onglet par camion, et « De base » pour les heures du garage.' : 'Les heures d\'ouverture du garage s\'ouvrent dans une grande grille.')) : [])],
       clients:can('clients') && ['Les clients', nav('clients', solo ? 'Tes clients' : 'Les clients', 'Les fiches des clients.').concat([
         {icon:'👤', go:'tab:clients', sel:'main', t:solo ? 'Tes clients' : 'Les clients', p:'La fiche de chaque client : téléphone, adresse, ses autos et l\'historique de ses visites.'},
         {icon:'🔎', go:'tab:clients', try:'#cl-q', after:'#cl-list', need:true, t:'Chercher', p:'Par nom, téléphone ou code postal.', tryT:'Essaie : touche la case et écris les premières lettres d\'un nom.', done:'La liste se raccourcit pendant que tu écris.'},
@@ -1054,6 +1061,7 @@
       case 'sh-wake': G.wakeWant = !G.wake; lsSet('gm.team.wake', G.wakeWant ? '1' : null); wake(G.wakeWant); setTimeout(shiftLine, 300); break;
       case 'er-start': { var j1 = api.findJob(id); if (j1) startEnRoute(j1); break; }
       case 'er-resend': { var j2 = api.findJob(id); if (j2) startEnRoute(j2, {resend:true}); break; }
+      case 'er-notify': X.quiet[id] = typeof b.checked === 'boolean' ? !b.checked : !X.quiet[id]; render(); break;
       case 'er-copy': { var t = X.tracks[id]; if (t && navigator.clipboard) navigator.clipboard.writeText(trackLink(t)).then(function(){ toast('Lien copié'); }, function(){ toast(trackLink(t)); }); else if (t) toast(trackLink(t)); break; }
       case 'map-fit': fit(); break;
       case 'tm-mech': X.tmHide = X.tmHide || {}; X.tmHide[v] = !X.tmHide[v]; drawMap(); render(); break;
@@ -1273,7 +1281,7 @@
     myMechanic:function(){ var m = eff(); return m && hasR(m, 'mecano') && !hasR(m, 'owner') && !hasR(m, 'bureau') ? m.mechanic : null; },
     homeTab:function(){ var m = eff(); return m && rolesOf(m).join() === 'tresorier' ? 'tresor' : null; },
     greetName:function(){ var m = eff(); return m ? first(m.name) : ''; },
-    tellsClient:true, isMine:mineView, previewing:previewing, onUi:onUi, tourSteps:tourSteps, tourAuto:tourAuto,
+    tellsClient:true, quietFor:function(j){ return !!(j && X.quiet[j.id]); }, isMine:function(j){ return mineView(j) || goesHimself(j); }, previewing:previewing, onUi:onUi, tourSteps:tourSteps, tourAuto:tourAuto,
     decodeVin:function(vin){ return invoke('vehicle', {vin:vin}).then(function(d){ return (d && d.r) || {}; }); },
     phoneTop:function(){ return me ? shiftCard() : ''; },
     navFoot:navFoot,

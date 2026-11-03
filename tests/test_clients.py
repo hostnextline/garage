@@ -114,6 +114,11 @@ with sync_playwright() as p:
     pg.click('[data-act="finalize"]'); pg.wait_for_timeout(400)
     q = [(k, v) for k, v in jobs(pg).items() if v.get('clientId') == 'jean' and v.get('invoice', {}).get('number') == 'F-0004']
     check('K11c. Invoice F-0004 (103,47) saved on Jean\'s fiche, unpaid', len(q) == 1 and q[0][1]['invoice']['total'] == 103.47 and q[0][1]['invoice']['paid'] is False, [v.get('invoice', {}).get('number') for v in jobs(pg).values()])
+    check('K11c2. on site, not paid: « Paiement requis avant de partir »', 'Paiement requis' in pg.inner_text('#sheet'))
+    pg.click('#sheet [data-act="pay-waive"]'); pg.wait_for_timeout(200)   # (the owner lets him go: Jean pays later, the invoice stays to receive)
+    qj = [k for k, v in jobs(pg).items() if v.get('clientId') == 'jean' and v.get('invoice', {}).get('number') == 'F-0004'][0]
+    pg.evaluate("(id) => { const A = window.__garageApi; A.S.jobId = id; return A.changeStatus('termine'); }", qj.split('/')[-1]); pg.wait_for_timeout(200)
+    check('K11c3. « Laisser partir sans paiement » (owner) → the job can finish, the invoice stays unpaid', jobs(pg)[qj].get('status') == 'termine' and jobs(pg)[qj].get('payWaived') and jobs(pg)[qj]['invoice']['paid'] is False, (jobs(pg)[qj].get('status'), jobs(pg)[qj].get('payWaived'), pg.inner_text('#toast') if pg.locator('#toast').count() else ''))
     for a in ['back-prev', 'back']:
         if pg.locator(f'#top [data-act="{a}"]').count(): pg.click(f'#top [data-act="{a}"]'); pg.wait_for_timeout(150)
     check('K11d. Back arrows return to Jean\'s fiche', 'Jean Tremblay' in pg.inner_text('#top') and pg.locator('.tile').count() == 4, pg.inner_text('#top'))

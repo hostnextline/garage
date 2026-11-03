@@ -146,7 +146,7 @@ with sync_playwright() as pw:
     cp.screenshot(path=os.path.join(SC, 'c_facture_dark.png'))
     cp.click('#pay'); cp.wait_for_url(re.compile(r'127\.0\.0\.1:9202/pay/'), timeout=15000)
     sess = list(stripe_log()['sessions'].values())[-1]
-    check('Stripe Checkout opened: CAD, exact total in cents, French, invoice + job in the metadata', sess['currency'] == 'cad' and sess['amount_total'] == round(total * 100) and sess['locale'] == 'fr-CA' and sess['metadata'] == {'job_id': 'j1', 'invoice': 'F-0001'} and '#t=' in sess['success_url'], sess)
+    check('Stripe Checkout opened: CAD, exact total in cents, French, invoice + job in the metadata', sess['currency'] == 'cad' and sess['amount_total'] == round(total * 100) and sess['locale'] == 'fr-CA' and sess['metadata'] == {'job_id': 'j1', 'invoice': 'F-0001', 'kind': 'invoice'} and '#t=' in sess['success_url'], sess)
     cp.click('#pay'); cp.wait_for_url(re.compile(r'client\.html'), timeout=15000); cp.wait_for_timeout(2000)
     dl = stripe_log()['delivered']
     check('Stripe\'s signed notice reached the garage server (200)', dl and dl[-1]['status'] == 200 and '"full":true' in dl[-1]['body'].replace(' ', ''), dl[-1:])

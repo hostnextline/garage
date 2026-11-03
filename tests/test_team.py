@@ -254,6 +254,8 @@ with sync_playwright() as pw:
     num = psql("select data->'invoice'->>'number' from public.docs where path='jobs/j1'")
     check('mechanic finalizes invoice on site, number from the garage counter', num == 'F-0001', num)
     check('counter moved', psql("select data->>'next' from public.docs where path='meta/invoices'") == '2')
+    check('on site, not paid yet: « Paiement requis avant de partir » opens, the job stays « Sur place »', 'Paiement requis avant de partir' in (sp.text_content('#sheet') or '') and psql("select data->>'status' from public.docs where path='jobs/j1'") == 'place', psql("select data->>'status' from public.docs where path='jobs/j1'"))
+    sp.evaluate("document.querySelector('#sheet [data-act=\"sheet-close\"]') && document.querySelector('#sheet [data-act=\"sheet-close\"]').click()"); sp.wait_for_timeout(300)
 
     # ---------- 8. office person ----------
     lc = ctx_for(br); lp = page_for(lc, 'lina'); login(lp, 'lina@garage.test', LINA_PW); lp.wait_for_selector('.acct', timeout=15000)
@@ -314,7 +316,7 @@ with sync_playwright() as pw:
         time.sleep(0.4)
     check('phone · mechanic: « Je suis arrivé » saved + client tracking closed (real base)', ok, psql("select data->>'status' from public.docs where path='jobs/j2'"))
     mp.wait_for_timeout(500)
-    check('phone · mechanic job: next = « Terminer la job »', (mp.text_content('.nextbtn') or '') == 'Terminer la job', mp.text_content('.nextbtn'))
+    check('phone · mechanic job: next = « Travail fini : faire la facture » (the mechanic leaves once it is paid)', (mp.text_content('.nextbtn') or '') == 'Travail fini : faire la facture', mp.text_content('.nextbtn'))
     mp.click('.tab[data-t="plus"]'); mp.wait_for_timeout(400)
     check('phone · mechanic Plus: dashboard, the team map, « Mes disponibilités », stock (no team, hours, money, settings)', plus_rows(mp) == sorted(['Tableau de bord', "Carte de l'équipe", 'Mes disponibilités', 'Inventaire']), plus_rows(mp))
     # his own availability, through the real rules

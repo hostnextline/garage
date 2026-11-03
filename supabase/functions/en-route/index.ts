@@ -1,5 +1,5 @@
 // « En route » : crée le lien de suivi, calcule l'itinéraire et texte le client (GoHighLevel).
-// POST { jobId, action: 'start' | 'refresh' | 'end', pos?: {lat, lon, acc}, resend?: boolean, reason?: 'arrived' | 'cancelled', base?: string }
+// POST { jobId, action: 'start' | 'refresh' | 'end', pos?: {lat, lon, acc}, resend?: boolean, notify?: boolean (false = no text to the client), reason?: 'arrived' | 'cancelled', base?: string }
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0';
 
 const SB_URL = Deno.env.get('SUPABASE_URL')!;
@@ -243,7 +243,10 @@ Deno.serve(async (req) => {
 
     let sms: any = { status: 'off', body: message, phone: client.phone || '' };
     if (active && active.sms_status === 'sent' && !body.resend) sms = { status: 'already', body: message, phone: client.phone || '', at: active.sms_at };
-    else if (cfg.ghlToken && cfg.ghlLocation) {
+    else if (body.notify === false) {   // « sans texto » (a test, or the client asked not to be texted): the tracking only
+      sms = { status: 'quiet', body: message, phone: client.phone || '' };
+      await admin.from('tracks').update({ sms_status: 'quiet', sms_error: null, sms_at: null }).eq('token', tk);
+    } else if (cfg.ghlToken && cfg.ghlLocation) {
       try {
         const res = await sendSms(cfg, { first, last, phone: client.phone, email: client.email, address: client.address, postal: client.postal }, message);
         sms = { status: 'sent', body: message, phone: client.phone, messageId: res.messageId };

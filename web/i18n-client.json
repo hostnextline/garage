@@ -93,5 +93,16 @@
  "Arrivé à {0}. Bon service !": "Arrived at {0}. Enjoy the service!",
  "Suivi de votre mécano": "Your mechanic's trip",
  "Cette page se met à jour toute seule.": "This page updates by itself.",
- "Carte du trajet": "Map of the trip"
+ "Carte du trajet": "Map of the trip",
+ "Votre rendez-vous": "Your appointment",
+ "Total prévu": "Expected total",
+ "Payé d'avance": "Paid ahead",
+ "Reste à payer": "Left to pay",
+ "Le mécano arrive pendant ce bloc. Vous recevez un texto quand il part vers chez vous.": "The mechanic arrives during this block. You get a text when they head your way.",
+ "Prix prévu : la facture finale suit les travaux faits (s'il y a autre chose, le mécano vous demande d'abord).": "Expected price: the final invoice follows the work done (if anything else is needed, the mechanic asks you first).",
+ "Payer d'avance {0} par carte": "Pay {0} ahead by card",
+ "Paiement sécurisé par Stripe. Vous pouvez aussi payer sur place : le paiement se fait avant le départ du mécano.": "Secure payment by Stripe. You can also pay on site: payment is made before the mechanic leaves.",
+ "Payé d'avance par carte : {0} · {s0}. Merci !": "Paid ahead by card: {0} · {s0}. Thank you!",
+ "Payé d'avance par carte : {0}. Merci !": "Paid ahead by card: {0}. Thank you!",
+ "Votre rendez-vous · {s0}": "Your appointment · {s0}"
 }

@@ -272,9 +272,10 @@ with sync_playwright() as p:
     J = jobs(pg); qid = [k for k, v in J.items() if v['client']['name'] == 'Marie Côté'][0]
     qinv = J[qid]['invoice']
     check('16c. Second invoice numbered F-0002, unpaid, total 103,47', qinv['number'] == 'F-0002' and qinv['paid'] is False and qinv['total'] == 103.47, qinv)
-    pg.select_option('#p-method', 'Comptant'); pg.click('[data-act="markpaid"]'); pg.wait_for_timeout(150)
+    check('16c2. a walk-in on site, not paid: « Paiement requis avant de partir » over the invoice', 'Paiement requis avant de partir' in pg.inner_text('#sheet') and J[qid].get('status') == 'place', J[qid].get('status'))
+    pg.click('#sheet [data-act="pay-here"][data-v="Comptant"]'); pg.wait_for_timeout(250)
     qinv = jobs(pg)[qid]['invoice']
-    check('16d. "Marquer payée" records Comptant + date, keeps lines', qinv['paid'] is True and qinv['method'] == 'Comptant' and qinv['paidAt'] and len(qinv['lines']) == 1, qinv)
+    check('16d. « Payé sur place : Comptant » records Comptant + date, keeps lines', qinv['paid'] is True and qinv['method'] == 'Comptant' and qinv['paidAt'] and len(qinv['lines']) == 1, qinv)
 
     # draft + delete flow
     pg.click('[data-act="back-prev"]'); pg.click('[data-act="back"]'); pg.click('.tab[data-t="agenda"]'); pg.wait_for_timeout(60)
@@ -297,7 +298,7 @@ with sync_playwright() as p:
     # edit booking
     pg.locator('.appt', has_text='Jean Tremblay').click(); pg.click('[data-act="edit"]'); pg.wait_for_timeout(60)
     pg.fill('#f-km', '142500'); pg.click('#f-save'); pg.wait_for_timeout(150)
-    check('18. Editing a booking keeps its invoice, services, and updates the field', jobs(pg)[jid]['vehicle']['km'] == '142500' and jobs(pg)[jid]['invoice']['number'] == 'F-0001' and len(jobs(pg)[jid]['services']) == 3)
+    check('18. Editing a booking keeps its invoice, services, and updates the field', jobs(pg)[jid]['vehicle']['km'] == '142500' and jobs(pg)[jid]['invoice']['number'] == 'F-0001' and len(jobs(pg)[jid]['services']) == 3, (jobs(pg)[jid].get('vehicle'), (jobs(pg)[jid].get('invoice') or {}).get('number'), jobs(pg)[jid].get('services'), jobs(pg)[jid].get('status')))
 
     # ---------- weekly hours in settings ----------
     pg.click('[data-act="back"]'); pg.click('.tab[data-t="reglages"]'); pg.wait_for_timeout(80)

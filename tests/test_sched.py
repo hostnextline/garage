@@ -17,6 +17,8 @@ def drag(p, d, t1, t2, steps=4):
     p.mouse.up(); p.wait_for_timeout(150)
 def summ(p, d): return txt(p, '#sched .sch-sum[data-d="%s"]' % d)
 def mode(p, v): p.click('#sched [data-act="sc-mode"][data-v="%s"]' % v)
+def base_tab(p):   # (with trucks, the window opens on a truck's own schedule: these checks are about the garage's base hours)
+    if p.locator('#sched .sch-tabs [data-v="garage:"]').count(): p.click('#sched .sch-tabs [data-v="garage:"]'); p.wait_for_timeout(300)
 otok, pw = seed()
 CFG0 = doc('config/main')
 with sync_playwright() as pl:
@@ -25,6 +27,7 @@ with sync_playwright() as pl:
     op.evaluate("location.hash = 'agenda'"); op.wait_for_timeout(900)
     check('agenda: one button « 🗓 Modifier l\'horaire »', op.locator('[data-act="sched"][data-v="garage"]').count() == 1)
     op.click('[data-act="sched"][data-v="garage"]'); op.wait_for_selector('#sched .sch-win', timeout=5000); op.wait_for_timeout(300)
+    base_tab(op)
     heads = [h.split(' ')[0] for h in op.evaluate("[...document.querySelectorAll('#sched .sch-dh b')].map(x => x.textContent)")]
     check('computer: a glass window with the whole week, Sunday to Saturday', heads == ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'], heads)
     check('glass look (see-through, blurred)', 'blur' in op.evaluate("getComputedStyle(document.querySelector('#sched .sch-win')).backdropFilter || getComputedStyle(document.querySelector('#sched .sch-win')).webkitBackdropFilter"))
@@ -43,6 +46,7 @@ with sync_playwright() as pl:
     nxt = doc('days/' + (dt.date.fromisoformat(D(3)) + dt.timedelta(days=7)).isoformat())
     check('…next week is not touched', nxt is None, nxt)
     op.click('[data-act="sched"][data-v="garage"]'); op.wait_for_selector('#sched .sch-win'); op.wait_for_timeout(300)
+    base_tab(op)
     check('reopened: the window shows what was saved', summ(op, D(3)) == '8 h à 12 h, 13 h à 17 h' and summ(op, D(6)) == '9 h à 12 h')
     # Thursday closed for 3 weeks
     op.click('#sched [data-act="sc-col"][data-v="%s"]' % D(4)); op.wait_for_timeout(200)
@@ -52,6 +56,7 @@ with sync_playwright() as pl:
     check('« Pendant 3 semaines »: Thursday closed on 3 Thursdays, not the 4th', all(x and x.get('closed') is True for x in th[:3]) and th[3] is None, [bool(x) and x.get('closed') for x in th])
     # Friday 10 h – 15 h for good
     op.click('[data-act="sched"][data-v="garage"]'); op.wait_for_selector('#sched .sch-win'); op.wait_for_timeout(300)
+    base_tab(op)
     op.evaluate("document.querySelector('#sched .sch-scroll').scrollTop = 140"); op.wait_for_timeout(50)
     op.click('#sched [data-act="sc-col"][data-v="%s"]' % D(5)); op.wait_for_timeout(150)
     check('a button inside the window: the grid stays where it was (no jump to the top, no new opening animation)', op.evaluate("document.querySelector('#sched .sch-scroll').scrollTop") == 140 and op.locator('#sched .sch-win.sch-in').count() == 0, op.evaluate("document.querySelector('#sched .sch-scroll').scrollTop"))

@@ -63,7 +63,7 @@ with sync_playwright() as p:
     check('« Autres actions » opens', pg.is_visible('[data-act="noshow"]') and 'Client absent' in txt(pg, '#more-fold'))
     scan(pg, 'job a4')
     open_job(pg, 'a3')
-    check('job on site (office): next = « Travail terminé »', txt(pg, '.nextbtn') == 'Travail terminé', txt(pg, '.nextbtn'))
+    check('job on site (office), no invoice yet: next = « Travail fini : faire la facture » (paid before leaving)', txt(pg, '.nextbtn') == 'Travail fini : faire la facture', txt(pg, '.nextbtn'))
     # invoice: a fixed-price service = one line with its price
     open_job(pg, 'a4'); pg.click('#main [data-act="invoice"]'); pg.wait_for_timeout(400)
     check('invoice pre-filled: priced services are fixed-price lines', pg.input_value('#l0-type') == 'forfait' and pg.input_value('#l0-price') == '89,95' and pg.text_content('label[for="l0-qty"]') == 'Qté', [pg.input_value('#l0-type'), pg.input_value('#l0-price')])

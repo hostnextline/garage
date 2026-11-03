@@ -138,6 +138,7 @@ with sync_playwright() as p:
     pg.fill('#l0-price', '95'); pg.click('[data-act="finalize"]'); pg.wait_for_timeout(500)
     inv = [v['invoice'] for k, v in store(pg).items() if k.startswith('jobs/') and v.get('invoice', {}).get('number')]
     check('H18. Invoice numbered and saved', len(inv) == 1 and inv[0]['number'].startswith('F-'), inv)
+    if pg.locator('#sheet:not([hidden]) [data-act="pay-here"]').count(): pg.evaluate("document.querySelector('#sheet [data-act=\"sheet-close\"]').click()"); pg.wait_for_timeout(200)   # (on site, not paid: the payment window first)
     with pg.expect_download(timeout=15000) as dl:
         pg.click('[data-act="pdf"]')
     d = dl.value

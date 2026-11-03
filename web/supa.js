@@ -118,7 +118,7 @@
       for (var k in js){ if (lc(js[k].mechanic) === m && (col === 'clients' ? js[k].clientId === id : k === jid)) return true; }
       return false;
     }
-    return ['config','days','avail','specs','stock'].indexOf(col) >= 0;
+    return ['config','days','avail','specs','stock','hours'].indexOf(col) >= 0;
   }
   T.setView = function(v){ T.view = v || null; Object.keys(cols).forEach(function(k){ notify(k); }); };
   function snapDoc(col, id){ var d = C(col).docs[id]; if (!visible(col, id, d)) d = undefined; return {id:id, exists:d !== undefined, data:function(){ return d === undefined ? undefined : freeze(clone(d)); }, metadata:{fromCache:false, hasPendingWrites:false}}; }
