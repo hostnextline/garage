@@ -3,11 +3,11 @@
 # (réservation par bloc, factures, hors ligne, page du client, droits, réglages). Ceux que GitHub lance à chaque envoi.
 # Chaque suite garde son détail dans logs/<suite>.log ; en cas d'échec, les lignes utiles sont recopiées ici.
 cd "$(dirname "${BASH_SOURCE[0]}")"
-mkdir -p logs
+mkdir -p logs; export L=$(pwd)/logs
 bash rebuild.sh || exit 1
 bash with_stack.sh '
-  run(){ local n=$1; shift; echo "== $n"; timeout 1200 "$@" > logs/$n.log 2>&1; grep -E "^FAIL|passed|Error|Traceback" logs/$n.log | tail -8
-         if grep -q -E "^FAIL|Traceback|passed, [1-9][0-9]* failed" logs/$n.log; then echo "--- détails ($n)"; grep -E "^FAIL|File \".*(test_|team_seed|tour_walk)|Error|Call log|waiting for|  - " logs/$n.log | tail -25; fi; }
+  run(){ local n=$1; shift; echo "== $n"; timeout 1200 "$@" > $L/$n.log 2>&1; grep -E "^FAIL|passed|Error|Traceback|^DIAG" $L/$n.log | tail -8
+         if grep -q -E "^FAIL|Traceback|passed, [1-9][0-9]* failed" $L/$n.log; then echo "--- détails ($n)"; grep -E "^FAIL|^DIAG|File \".*(test_|team_seed|tour_walk)|Error|Call log|waiting for|  - " $L/$n.log | tail -25; fi; }
   (cd stack && run test_api node test_api.js)
   for t in test_quickfix test_team test_blocks test_offline test_client test_crew test_leave test_quickfix_trial; do run $t python3 $t.py; done
   run test_carnet python3 run_on_day.py $(python3 -c "import datetime as d; t=d.date.today(); print(t + d.timedelta(days=(2 - t.weekday()) % 7))") test_carnet.py

@@ -301,6 +301,9 @@ with sync_playwright() as p:
 
     # ---------- weekly hours in settings ----------
     pg.click('[data-act="back"]'); pg.click('.tab[data-t="reglages"]'); pg.wait_for_timeout(80)
+    pg.wait_for_timeout(300)
+    if not pg.is_visible('#h-0-open'):   # (what hides it, for the log of the automatic run)
+        print('DIAG', pg.evaluate("(() => { const e = document.getElementById('h-0-open'); const out = []; for (let n = e; n; n = n.parentElement) { const cs = getComputedStyle(n); if (cs.display === 'none' || n.hidden || cs.visibility === 'hidden') out.push(n.tagName + '#' + n.id + '.' + String(n.className).slice(0, 60) + ' ' + cs.display + (n.hidden ? ' [hidden]' : '')); } const r = e.getBoundingClientRect(); return {hash: location.hash, w: innerWidth, all: window.__allSettings, ph: (document.getElementById('setform') || {dataset: {}}).dataset.ph, rect: [r.width, r.height], hid: out, scr: window.__garageApi ? [window.__garageApi.S.tab, window.__garageApi.S.screen] : null}; })()"), flush=True)
     for d in range(7):
         pg.check(f'#h-{d}-open')
     pg.select_option('#h-6-start', '09:00'); pg.select_option('#h-6-end', '15:00')
