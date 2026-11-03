@@ -48,5 +48,6 @@ jobs:
           name: journaux
           path: |
             tests/*.log
+            tests/logs/*.log
             tests/stack/*.log
           if-no-files-found: ignore

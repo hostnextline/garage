@@ -18,6 +18,7 @@ zxinglib/
 qrlib/
 ocrlib/
 __pycache__/
+logs/
 *.log
 *.png
 !vin/*.png
