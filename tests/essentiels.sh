@@ -9,7 +9,7 @@ bash with_stack.sh '
   run(){ local n=$1; shift; echo "== $n"; timeout 1200 "$@" > $L/$n.log 2>&1; grep -E "^FAIL|passed|Error|Traceback|^DIAG" $L/$n.log | tail -8
          if grep -q -E "^FAIL|Traceback|passed, [1-9][0-9]* failed" $L/$n.log; then echo "--- détails ($n)"; grep -E "^FAIL|^DIAG|File \".*(test_|team_seed|tour_walk)|Error|Call log|waiting for|  - " $L/$n.log | tail -25; fi; }
   (cd stack && run test_api node test_api.js)
-  for t in test_quickfix test_tracking test_truckbtn test_specref test_payrdv test_dnd test_comptes test_team test_blocks test_offline test_client test_crew test_leave test_quickfix_trial; do run $t python3 $t.py; done
+  for t in test_quickfix test_tracking test_truckbtn test_specref test_payrdv test_dnd test_comptes test_dnd_top test_estimate_svc test_truckname test_team test_blocks test_offline test_client test_crew test_leave test_quickfix_trial; do run $t python3 $t.py; done
   run test_carnet python3 run_on_day.py $(python3 -c "import datetime as d; t=d.date.today(); print(t + d.timedelta(days=(2 - t.weekday()) % 7))") test_carnet.py
 ' > essentiels.log 2>&1
 cat essentiels.log

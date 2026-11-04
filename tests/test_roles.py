@@ -177,6 +177,7 @@ with sync_playwright() as pl:
 
     # ---------- 9. back to the start: boxes as before, test data removed ----------
     box(op, '#rp-mecano-money'); box(op, '#rp-mecano-clients'); box(op, '#rp-tresorier-agenda')
+    op.wait_for_timeout(1500)   # (the last box is saved before the page reloads)
     op.reload(); op.wait_for_selector('#eq-roles', timeout=10000); op.wait_for_timeout(1200)
     check('boxes back exactly as before', all(op.is_checked(k) == v for k, v in defaults.items()), {k: op.is_checked(k) for k in defaults})
     oc.close()

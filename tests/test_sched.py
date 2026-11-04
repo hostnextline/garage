@@ -81,6 +81,8 @@ with sync_playwright() as pl:
     check('Réglages → Horaire d\'ouverture: the grid button, and Friday now 10 h – 15 h', op.locator('#main [data-act="sched"][data-v="garage"]').count() == 1 and op.input_value('#h-5-start') == '10:00' and op.input_value('#h-5-end') == '15:00', [op.locator('#main [data-act="sched"]').count()])
     op.keyboard.press('Escape'); oc.close()
     # ---------- a mechanic, on his phone: his availability, one day at a time ----------
+    # (availability is for a garage without trucks: with trucks, each truck carries its mechanic's name and its schedule decides)
+    doc_set(otok, 'config/main', dict(doc('config/main'), trucks=[]))
     sc = ctx(b, phone=True); sp = page(sc, 'saleh'); login(sp, 'saleh@garage.test', pw['saleh'])
     sp.evaluate("location.hash = 'dispos'"); sp.wait_for_timeout(800)
     check('mechanic: « 🗓 Modifier mes disponibilités »', sp.locator('[data-act="sched"][data-v="avail"]').count() == 1)

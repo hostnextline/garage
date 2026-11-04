@@ -80,7 +80,7 @@
     {k:'tresor', t:'Trésorerie : dépenses, reçus, rapport, taxes', s:'', on:['tresorier'], r:['bureau', 'mecano'], d:{}},
     {k:'stock', t:'Voir et changer l\'inventaire', s:'', on:[], r:['bureau', 'mecano', 'tresorier'], d:{bureau:true, mecano:true, tresorier:true}},
     {k:'map', t:'Voir la carte de l\'équipe', s:'Les mécanos, leurs trajets et tous les rendez-vous du jour (avec le nom du client).', on:[], r:['bureau', 'mecano', 'tresorier'], d:{bureau:true, mecano:true, tresorier:true}},
-    {k:'hours_others', t:'Changer l\'horaire du garage et des autres', s:'Heures d\'ouverture et disponibilités de chaque mécano.', on:[], r:['bureau', 'mecano'], d:{bureau:true}}
+    {k:'hours_others', t:'Changer l\'horaire du garage et des autres', s:'Heures d\'ouverture et horaire de chaque camion.', on:[], r:['bureau', 'mecano'], d:{bureau:true}}
   ];
   function right(k){ return RIGHTS.filter(function(x){ return x.k === k; })[0] || null; }
   /* what a role gives: the owner everything; then « always », then the role template (config/roles), then the start */
@@ -690,8 +690,9 @@
     rightKeys(rs).forEach(function(p){ var e = document.getElementById((pre || 'ed') + '-p-' + p.k); if (!e || e.disabled) return; if (e.checked !== roleDefault(rs, p.k)) out[p.k] = e.checked; });
     return out;
   }
-  /* the agenda goes by truck: a mechanic gets his truck here (one mechanic per truck); his name in the agenda is his own name */
+  /* (no more: a truck carries the name of the mechanic who drives it — named in Réglages → Camions) */
   function truckPick(id, mech){
+    return '';
     var a = A(), ts = a.truckMode && a.truckMode() ? a.trucks() : [], cur = mech && a.truckOfUsual(mech);
     if (!ts.length) return '';
     var opts = '<option value=""' + (cur ? '' : ' selected') + '>Aucun camion</option>' + ts.map(function(t){
@@ -706,7 +707,7 @@
     var os = orphans(); if (!os.length) return '';
     return '<div class="field"><label for="' + id + '">Déjà dans l\'agenda sous un autre nom ?</label><select id="' + id + '"><option value="">Non</option>' + os.map(function(n){ return '<option value="' + esc(n) + '">Oui : ' + esc(n) + '</option>'; }).join('') + '</select></div>';
   }
-  function truckLine(m){ if (!m.mechanic) return ''; var t = A().truckMode() ? A().truckOfUsual(m.mechanic) : null; return (A().truckMode() ? '🚚 ' + (t ? esc(t.name || 'Camion') : 'Aucun camion') + ' · ' : '') + (norm(m.mechanic) !== norm(m.name) ? 'Dans l\'agenda : ' + esc(m.mechanic) + ' · ' : ''); }
+  function truckLine(m){ if (!m.mechanic) return ''; var t = A().truckMode() ? A().truckOfUsual(m.mechanic) : null; return (A().truckMode() ? '🚚 ' + (t ? esc(t.name || 'Camion') : 'Aucun camion à son nom') + ' · ' : '') + (norm(m.mechanic) !== norm(m.name) ? 'Dans l\'agenda : ' + esc(m.mechanic) + ' · ' : ''); }
   function moveJobs(r){ try { if (r && r.moved && Object.keys(r.moved).length) A().retarget(r.moved); } catch (e){} }
   function viewEquipe(){
     var a = A();
@@ -887,7 +888,7 @@
     var solo = mec && !bur;   /* a mechanic alone sees his own jobs, clients and invoices */
     var inBar = function(t){ var e = document.querySelector('#tabbar .tab[data-t="' + t + '"]'); return !!e && !e.hidden && e.getBoundingClientRect().width > 0; };
     var barName = function(t, d){ var e = document.querySelector('#tabbar .tab[data-t="' + t + '"] span'); return (e && e.textContent.trim()) || d; };
-    var BLK = !!(A().blockMode && A().blockMode());   /* (rendez-vous by block: the texts about booking say so) */
+    var BLK = !!(A().blockMode && A().blockMode()), TRK = !!(A().truckMode && A().truckMode());   /* (rendez-vous by block: the texts about booking say so; by truck: no mechanics' availability, each truck's schedule) */
     var PLUS = {accueil:'Tableau de bord', carte:'Carte de l\'équipe', dispos:solo ? 'Mes disponibilités' : 'Disponibilités des mécanos', tresor:'Trésorerie', stock:'Inventaire', reglages:'Réglages', equipe:'Équipe et accès', heures:'Heures d\'ouverture'};
     var where = ph ? 'en bas' : 'dans le menu à gauche';
     /* going to a screen, by touching: the bar (or the menu on the computer); on the phone, « Plus » then the line;
@@ -988,9 +989,9 @@
       map:can('map') && ['La carte de l\'équipe', nav('carte', 'La carte de l\'équipe', 'Où est chacun, et ses rendez-vous du jour.').concat([
         {icon:'🗺️', go:'carte', try:'#map-slot', t:'La carte de l\'équipe', p:'La <b>Centrale</b>, d\'où partent les camions. Chaque mécano a sa couleur, ses rendez-vous <b>numérotés dans l\'ordre</b> (1, 2, 3…) et son trajet de la journée, par les routes.', tryT:'Essaie : touche un numéro, ou glisse la carte avec ton doigt.', done:'Le numéro montre le client, l\'adresse et l\'heure.'},
         {icon:'📍', go:'carte', sel:'.tm-mc', need:true, t:'La journée de chacun', p:'Sous la carte : les arrêts de chaque mécano, la longueur de son trajet depuis la Centrale, et qui est en route vers quel client.'}])],
-      avail:mec && ['Ton horaire', nav('dispos', 'Tes disponibilités', 'Quand tu travailles.').concat(
+      avail:mec && !TRK && ['Ton horaire', nav('dispos', 'Tes disponibilités', 'Quand tu travailles.').concat(
         sched('avail', '[data-act="sched"][data-v="avail"]', 'Touche « Modifier mes disponibilités ».', 'Tes disponibilités', 'Tu dis au bureau quand tu travailles : l\'agenda ne te donne des rendez-vous que dans tes heures.'))],
-      dispos:(own || bur) && ['Les disponibilités', nav('dispos', 'Les disponibilités', 'Quand chaque mécano travaille.').concat([
+      dispos:(own || bur) && !TRK && ['Les disponibilités', nav('dispos', 'Les disponibilités', 'Quand chaque mécano travaille.').concat([
         {icon:'🗓', go:'dispos', sel:'main', t:'Les disponibilités des mécanos', p:'Quand chaque mécano travaille. L\'agenda ne propose que ses heures.' + (can('hours_others') ? ' Tu changes l\'horaire de chacun avec la même grille.' : '')},
         {icon:'👉', go:'dispos', try:'#main [data-g="mecano"]', need:true, t:'Un mécano à la fois', p:'Les noms en haut : la semaine de chacun.', tryT:'Essaie : touche le nom d\'un autre mécano.', done:'Voilà sa semaine : ses jours, ses heures, ses congés.'}])],
       settings:own && ['Les réglages', nav('reglages', 'Les réglages', 'Les réglages du garage.').concat([

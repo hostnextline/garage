@@ -48,6 +48,8 @@ with sync_playwright() as p:
     first.click(); pg.wait_for_timeout(120)
     check('P4. Tapping it fills date, time and mechanic; detour shown in green', pg.input_value('#f-date') == D1 and pg.input_value('#f-time') == f"{t_ali//60:02d}:{t_ali%60:02d}" and pg.input_value('#f-mech') == 'Ali'
           and 'ok' in pg.get_attribute('#momentmsg', 'class') and f"≈ {round(k_ali)} km pour Ali" in pg.inner_text('#momentmsg') and 'ali' in pg.inner_text('#sheet-sub').lower(), pg.inner_text('#momentmsg'))
+    try: pg.wait_for_selector('.sug.on', timeout=1500)   # (the list is redrawn a moment after the tap)
+    except Exception: pass
     check('P4b. Chosen suggestion is highlighted', pg.locator('.sug.on').count() == 1)
     pg.fill('#f-time', '09:30'); pg.dispatch_event('#f-time', 'change'); pg.wait_for_timeout(60)
     check('P5. Overlapping time is flagged in red', 'bad' in pg.get_attribute('#momentmsg', 'class') and 'Chevauche le rendez-vous de Luc Gagnon' in pg.inner_text('#momentmsg'), pg.inner_text('#momentmsg'))

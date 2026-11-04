@@ -192,7 +192,7 @@ with sync_playwright() as pl:
     has = lambda what, i: sp.evaluate("([w, i]) => window.__garageApi.S[w].some(x => x.id === i)", [what, i])
     check('Saleh sees his job and its client (and not Paul, Ali\'s client)', has('jobs', 'j1') and has('clients', 'c1') and not has('clients', 'c2'))
     merge(otok, 'jobs/j1', {'mechanic': 'Ali', 'truck': 'c2'})        # the office moves his job to Ali's truck
-    gone = wait_for(sp, "!window.__garageApi.S.jobs.some(j => j.id === 'j1')", 9000)
+    gone = wait_for(sp, "!window.__garageApi.S.jobs.some(j => j.id === 'j1')", 15000)   # (the light check runs every 4 s here; room for a busy machine)
     check('a job moved to another truck leaves his phone within seconds (before: up to 10 minutes)', gone and not has('clients', 'c1'))
     doc_set(otok, 'jobs/j3', {'date': TODAY, 'time': '15:00', 'durationMin': 60, 'mechanic': 'Saleh', 'truck': 'c1', 'clientId': 'c2', 'client': {'id': 'c2', 'name': 'Paul Roy'}, 'services': ['Inspection'], 'status': 'planifie'})
     seen = wait_for(sp, "window.__garageApi.S.jobs.some(j => j.id === 'j3') && window.__garageApi.S.clients.some(c => c.id === 'c2')", 9000)

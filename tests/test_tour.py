@@ -105,8 +105,8 @@ am = [s for s in tries if s.get('did') == 'amount']
 check('expense amount tried, then « Entrée » pressed (which saves an expense normally): nothing is sent, the window stays open as it was (%d)' % len(am), am and all(s.get('enter') is True for s in am), [s.get('enter') for s in am])
 check('the « ? » opens its explanation, lit with it', all(s.get('helptip', 0) >= 1 for s in tries if s.get('did') == '?'))
 ph = [s['t'] for s in walks['mécano · téléphone']]
-check('mechanic: his day (› then « Aujourd\'hui »), he opens Marie\'s job himself, opens the sections, the « + », clients, invoices, the map, his hours (grid, « Annuler »), the stock',
-      all(t in ph for t in ('Changer de jour', 'Revenir à aujourd\'hui', 'Ouvre un rendez-vous', 'Les sections', 'Le bouton « + »', 'Chercher', 'Les filtres', 'La grille', 'Fermer sans enregistrer', 'L\'inventaire')), ph)
+check('mechanic: his day (› then « Aujourd\'hui »), he opens Marie\'s job himself, opens the sections, the « + », clients, invoices, the map, the stock (no « his hours »: his truck\'s schedule decides)',
+      all(t in ph for t in ('Changer de jour', 'Revenir à aujourd\'hui', 'Ouvre un rendez-vous', 'Les sections', 'Le bouton « + »', 'Chercher', 'Les filtres', 'L\'inventaire')) and 'Tes disponibilités' not in ph, ph)
 ow = [s['t'] for s in walks['propriétaire · ordi']]
 check('owner: agenda (days, views, schedule grid), clients, invoices, treasury (expense, report, period), stock, map, availability, colors, team (roles)',
       all(t in ow for t in ('Changer de jour', 'Jour, semaine ou liste', 'La grille', 'Le montant', 'La période', 'L\'inventaire', 'La carte de l\'équipe', 'Les couleurs', 'Les rôles')), ow)

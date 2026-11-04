@@ -20,7 +20,7 @@ psql("update public.members set roles = '{bureau,mecano}', mechanic = 'Karim' wh
 psql("insert into public.docs (path, data) select 'data/users/' || user_id || '/tour', '{\"seenAt\": 1}' from public.members on conflict (path) do nothing")
 c = doc('config/main'); c.pop('bookMode', None); c['homePostal'] = 'H4P 2B5'; c['mechanics'] = ['Hassan', 'Saleh', 'Ali', 'Karim']
 c['hours'] = {str(x): {'open': True, 'start': '08:00', 'end': '20:00'} for x in range(7)}
-c['trucks'] = [{'id': 'c1', 'name': 'Camion 1', 'on': True, 'mech': 'Saleh'}, {'id': 'c2', 'name': 'Camion 2', 'on': True, 'mech': 'Ali'}, {'id': 'c3', 'name': 'Camion 3', 'on': False, 'mech': ''}]
+c['trucks'] = [{'id': 'c1', 'name': 'Saleh', 'on': True, 'mech': 'Saleh'}, {'id': 'c2', 'name': 'Ali', 'on': True, 'mech': 'Ali'}, {'id': 'c3', 'name': 'Camion 3', 'on': False, 'mech': ''}]
 doc_set(otok, 'config/main', c)
 cl1 = doc('clients/c1'); snap = {'id': 'c1', 'firstName': 'Marie', 'lastName': 'Tremblay', 'name': 'Marie Tremblay', 'phone': cl1['phone'], 'address': cl1['address'], 'postal': cl1['postal'], 'geo': cl1['geo']}
 base = {'durationMin': 60, 'clientId': 'c1', 'client': snap, 'services': ["Changement d'huile et filtre"], 'createdAt': 1}
@@ -93,7 +93,7 @@ with sync_playwright() as pl:
             check('%s · closing a truck: only « that day » (for good: owner only)' % nm, has(p, '#sheet [data-act="truck-close-go"][data-v="day"]') and not has(p, '#sheet [data-act="truck-close-go"][data-v="all"]') and 'seulement le propriétaire' in txt(p, '#sheet'))
             p.click('#sheet [data-act="truck-close-go"][data-v="day"]'); p.wait_for_timeout(1500)
             h = doc('hours/c2') or {}
-            check('%s · …saved in Camion 2\'s schedule (real base, the office\'s rights)' % nm, (h.get('dates') or {}).get(D) == {'on': False}, h)
+            check('%s · …saved in Ali\'s schedule (real base, the office\'s rights)' % nm, (h.get('dates') or {}).get(D) == {'on': False}, h)
             psql("delete from public.docs where path = 'hours/c2'")
         if who == 'zoe':
             r = doc_set(token('zoe@garage.test', pw['zoe']), 'hours/c2', {'week': None, 'dates': {D: {'on': False}}})

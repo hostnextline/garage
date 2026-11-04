@@ -36,7 +36,7 @@ def show(p, d, view='grid'):
 otok, pw = seed()
 c = doc('config/main'); c.pop('bookMode', None); c['homePostal'] = 'H4P 2B5'
 c['hours'] = {str(x): {'open': True, 'start': '08:00', 'end': '20:00'} for x in range(7)}
-c['trucks'] = [{'id': 'c1', 'name': 'Camion 1', 'on': True, 'mech': 'Saleh'}, {'id': 'c2', 'name': 'Camion 2', 'on': True, 'mech': 'Ali'}, {'id': 'c3', 'name': 'Camion 3', 'on': True, 'mech': ''}]
+c['trucks'] = [{'id': 'c1', 'name': 'Saleh', 'on': True, 'mech': 'Saleh'}, {'id': 'c2', 'name': 'Ali', 'on': True, 'mech': 'Ali'}, {'id': 'c3', 'name': 'Camion 3', 'on': True, 'mech': ''}]
 doc_set(otok, 'config/main', c)
 doc_set(otok, 'hours/c2', {'week': None, 'dates': {D2: {'on': False}}})                       # (each truck's schedule)
 doc_set(otok, 'hours/c3', {'week': None, 'dates': {D: {'on': False}, D2: {'on': False}}})
@@ -44,7 +44,7 @@ cl1 = doc('clients/c1')
 snap = {'id': 'c1', 'firstName': 'Marie', 'lastName': 'Tremblay', 'name': 'Marie Tremblay', 'phone': cl1['phone'], 'address': cl1['address'], 'postal': cl1['postal'], 'geo': cl1['geo']}
 doc_set(otok, 'jobs/m1', {'date': D, 'time': '08:00', 'block': 'am', 'durationMin': 60, 'mechanic': 'Saleh', 'truck': 'c1', 'clientId': 'c1', 'client': snap, 'services': ['Inspection multipoints'], 'status': 'planifie', 'createdAt': 1,
                           'rdvSms': {'key': D + '|am', 'status': 'sent', 'at': 1}})
-for i in range(4):   # D2 evening: Camion 1 (the only one running that day) is full
+for i in range(4):   # D2 evening: Saleh (the only one running that day) is full
     doc_set(otok, 'jobs/f%d' % i, {'date': D2, 'time': '16:00', 'block': 'eve', 'durationMin': 60, 'mechanic': 'Saleh', 'truck': 'c1', 'clientId': 'c1', 'client': dict(snap, firstName='Plein %d' % i, name='Plein %d' % i), 'services': ['Inspection multipoints'], 'status': 'planifie', 'createdAt': 1})
 doc_set(otok, 'jobs/r1', {'date': T0.isoformat(), 'time': '10:00', 'block': 'am', 'durationMin': 60, 'mechanic': 'Saleh', 'truck': 'c1', 'clientId': 'c1', 'client': snap, 'services': ['Inspection multipoints'], 'status': 'route', 'createdAt': 1})
 
@@ -56,7 +56,7 @@ with sync_playwright() as pl:
     n0 = len(sms())
     dnd(op, '.appt[data-drag="m1"]', '.col[data-col="c2"] .slot[data-t="13:00"]'); op.wait_for_timeout(500)
     sh = txt(op, '#sheet')
-    check('dropped in Camion 2 at 13 h → « Déplacer ce rendez-vous ? » before / after', 'Déplacer ce rendez-vous' in sh and 'Matin (8 h à 12 h) · Camion 1' in sh and 'Après-midi (12 h à 16 h) · Camion 2' in sh, sh[:300])
+    check('dropped in Ali at 13 h → « Déplacer ce rendez-vous ? » before / after', 'Déplacer ce rendez-vous' in sh and 'Matin (8 h à 12 h) · Saleh' in sh and 'Après-midi (12 h à 16 h) · Ali' in sh, sh[:300])
     check('…says Marie gets a text with the new appointment', 'Marie reçoit un texto' in sh, sh)
     op.screenshot(path=os.path.join(SC, 'dnd_confirm.png'))
     op.click('#sheet [data-act="drop-no"]'); op.wait_for_timeout(800)
@@ -69,16 +69,16 @@ with sync_playwright() as pl:
         if len(sms()) > n0: break
         time.sleep(0.5)
     m1 = job('m1')
-    check('…saved: Camion 2, afternoon, kept in that truck', m1.get('truck') == 'c2' and m1.get('block') == 'pm' and m1.get('pin') is True and m1.get('mechanic') == 'Ali', {k: m1.get(k) for k in ('truck', 'block', 'pin', 'mechanic', 'time')})
+    check('…saved: Ali, afternoon, kept in that truck', m1.get('truck') == 'c2' and m1.get('block') == 'pm' and m1.get('pin') is True and m1.get('mechanic') == 'Ali', {k: m1.get(k) for k in ('truck', 'block', 'pin', 'mechanic', 'time')})
     check('…Marie got the text « a changé … entre 12 h et 16 h »', len(sms()) == n0 + 1 and 'a changé' in sms()[-1] and 'entre 12 h et 16 h' in sms()[-1], sms()[-1:])
 
     # ---------- 2. same block, another truck ----------
     show(op, D); op.wait_for_timeout(500)
     n1 = len(sms())
     mouse_drag(op, '.appt[data-drag="m1"]', '.col[data-col="c1"] .slot[data-t="13:00"]'); op.wait_for_selector('#sheet [data-act="drop-yes"]', timeout=5000)
-    check('a real mouse drag (same block, Camion 1): « il n\'est pas avisé »', 'pas avisé' in txt(op, '#sheet'), txt(op, '#sheet'))
+    check('a real mouse drag (same block, Saleh): « il n\'est pas avisé »', 'pas avisé' in txt(op, '#sheet'), txt(op, '#sheet'))
     op.click('#sheet [data-act="drop-yes"]'); op.wait_for_timeout(2000)
-    check('…moved to Camion 1, no text', job('m1').get('truck') == 'c1' and job('m1').get('block') == 'pm' and len(sms()) == n1, (job('m1').get('truck'), len(sms()) - n1))
+    check('…moved to Saleh, no text', job('m1').get('truck') == 'c1' and job('m1').get('block') == 'pm' and len(sms()) == n1, (job('m1').get('truck'), len(sms()) - n1))
     dnd(op, '.appt[data-drag="m1"]', '.col[data-col="c3"] .slot[data-t="14:00"]'); op.wait_for_timeout(600)
     check('a truck that does not run that day: refused (« Camion 3 ne roule pas »), nothing moves', toast_has(op, 'Camion 3 ne roule pas') and job('m1').get('truck') == 'c1', txt(op, '#toast'))
 

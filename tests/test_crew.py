@@ -1,5 +1,6 @@
-"""Trucks, not typed names: a mechanic's name in the agenda comes from his account, he gets his truck when he is invited
-(one mechanic per truck), the coming appointments follow the truck's mechanic, and the home screen has its tiles.
+"""Trucks, not typed names: a mechanic's name in the agenda comes from his account; each truck carries the name of the
+mechanic who drives it (named in Réglages, nobody assigned by hand), the coming appointments follow the truck's mechanic,
+and the home screen has its tiles (no availability: the trucks' schedules decide).
 Server (members function) and screens (owner on the computer and the phone, a mechanic on his phone)."""
 import json, datetime
 from team_seed import *
@@ -40,50 +41,40 @@ doc_set(otok, 'jobs/f5', J(TOM, '15:00', 'Rami Nouveau', 'c2'))
 r = fn(otok, 'members', {'action': 'remove', 'user_id': rami})
 c = cfgd()
 check('removing Rami: off the mechanics, Camion 2 free, his coming appointment waits for the next mechanic', r.get('ok') and 'Rami Nouveau' not in c['mechanics'] and truck('c2')['mech'] == '' and job('f5').get('mechanic') == '' and job('f5').get('truck') == 'c2', [c['mechanics'], truck('c2'), job('f5').get('mechanic')])
-doc_set(otok, 'config/main', dict(cfgd(), trucks=[{'id': 'c1', 'name': 'Camion 1', 'on': True, 'mech': 'Saleh'}, {'id': 'c2', 'name': 'Camion 2', 'on': True, 'mech': 'Ali'}, {'id': 'c3', 'name': 'Camion 3', 'on': False, 'mech': ''}], mechanics=['Hassan', 'Saleh', 'Ali', 'Marc', 'Zed']))
+doc_set(otok, 'config/main', dict(cfgd(), trucks=[{'id': 'c1', 'name': 'Saleh', 'on': True, 'mech': 'Saleh'}, {'id': 'c2', 'name': 'Ali', 'on': True, 'mech': 'Ali'}, {'id': 'c3', 'name': 'Camion 3', 'on': False, 'mech': ''}], mechanics=['Hassan', 'Saleh', 'Ali', 'Marc', 'Zed']))
 doc_set(otok, 'jobs/f5', J(TOM, '15:00', 'Ali', 'c2'))
 
 with sync_playwright() as pl:
     b = pl.chromium.launch()
-    # ---------- 2. owner, computer: Équipe et accès ----------
+    # ---------- 2. owner, computer: Équipe et accès (no truck to choose: a truck carries its mechanic's name) ----------
     c1 = ctx(b); op = page(c1, 'owner'); login(op, 'hassan@garage.test', pw['hassan'])
     op.goto(BASE + '#equipe'); op.wait_for_selector('.eqp', timeout=12000); op.wait_for_timeout(600)
-    opts = op.evaluate("[...document.querySelectorAll('#nw-truck option')].map(o => [o.value, o.textContent])")
-    check('invite form: « Son camion » (no name to type): each truck, with its mechanic or « libre »', opts == [['', 'Aucun camion'], ['c1', 'Camion 1 · à la place de Saleh'], ['c2', 'Camion 2 · à la place de Ali'], ['c3', 'Camion 3 · fermé']], opts)
+    check('invite form: no « Son camion » to choose (the truck carries the mechanic\'s name)', op.locator('#nw-truck').count() == 0)
     orph = op.evaluate("[...document.querySelectorAll('#nw-mech option')].map(o => o.value)")
     check('names typed in the agenda before (no account) can be picked, so the person gets their appointments', orph == ['', 'Marc', 'Zed'], orph)
     card = op.locator('.eqp', has_text='saleh@garage.test').inner_text()
-    check('each person\'s card shows his truck', 'Camion 1' in card, card[:160])
+    check('each person\'s card shows the truck in his name (« 🚚 Saleh »)', '🚚 Saleh' in card, card[:160])
     op.fill('#nw-name', 'Marc Tremblay'); op.fill('#nw-email', 'marc@garage.test'); pick_roles(op, 'nw', ['mecano'])
-    op.select_option('#nw-mech', 'Marc'); op.select_option('#nw-truck', 'c3')
+    op.select_option('#nw-mech', 'Marc')
     op.click('[data-act="eq-invite"]'); op.wait_for_selector('#eq-invited', timeout=15000); op.wait_for_timeout(1500)
-    check('invited with « Marc » (already in the agenda) and Camion 3', mech_of('marc@garage.test') == 'Marc' and truck('c3')['mech'] == 'Marc' and truck('c3')['on'] is True, [mech_of('marc@garage.test'), truck('c3')])
-    check('…Camion 3\'s coming appointment is now his', wait_for(op, "true") and job('f4').get('mechanic') == 'Marc', job('f4').get('mechanic'))
-    op.reload(); op.wait_for_selector('.eqp', timeout=12000); op.wait_for_timeout(500)
-    op.locator('.eqp', has_text='marc@garage.test').locator('[data-act="eq-edit"]').click(); op.wait_for_timeout(300)
-    check('his card: « Son camion » shows Camion 3', op.input_value('#ed-truck') == 'c3')
-    op.select_option('#ed-truck', 'c2'); op.click('[data-act="eq-save"]'); op.wait_for_timeout(2500)
-    check('moved to Camion 2: Ali is off it, Camion 3 is free', truck('c2')['mech'] == 'Marc' and truck('c3')['mech'] == '', cfgd().get('trucks'))
-    check('…Camion 2\'s coming appointments follow (tomorrow: yes; done or past: no)', job('f1').get('mechanic') == 'Marc' and job('f5').get('mechanic') == 'Marc' and job('f2').get('mechanic') == 'Ali' and job('f3').get('mechanic') == 'Ali', [job(x).get('mechanic') for x in ('f1', 'f5', 'f2', 'f3')])
-    check('…and Camion 3\'s appointment waits for its next mechanic', job('f4').get('mechanic') == '', job('f4').get('mechanic'))
+    check('invited with « Marc » (already in the agenda); no truck in his name yet', mech_of('marc@garage.test') == 'Marc' and 'Aucun camion à son nom' in op.locator('.eqp', has_text='marc@garage.test').inner_text(), mech_of('marc@garage.test'))
+    check('…Camion 3\'s appointment still has nobody (no truck named Marc)', job('f4').get('mechanic') == '', job('f4').get('mechanic'))
 
-    # ---------- 3. Réglages: nothing typed ----------
+    # ---------- 3. Réglages: nothing typed; a truck named after its mechanic ----------
     op.evaluate("window.__allSettings = true")   # (every section open at once)
     op.goto(BASE + '#reglages'); op.wait_for_selector('#crew-sect', timeout=10000)
     cs = op.inner_text('#crew-sect')
-    check('Réglages → Mécanos: no list to type; the names come from the team, with their truck', op.locator('#s-mechs').count() == 0 and 'Marc' in cs and 'Camion 2' in cs and op.locator('#crew-sect a[href="#equipe"]').count() == 1, cs[:200])
+    check('Réglages → Mécanos: no list to type; the names come from the team, with the truck in their name', op.locator('#s-mechs').count() == 0 and '🚚 Saleh' in cs and 'Aucun camion à son nom' in cs and op.locator('#crew-sect a[href="#equipe"]').count() == 1 and op.locator('#crew-sect a[href="#dispos"]').count() == 0, cs[:300])
     check('a name with no account is marked, with « Retirer »', op.locator('#crew-sect [data-act="mech-drop"][data-v="Zed"]').count() == 1 and op.locator('#crew-sect [data-act="mech-drop"][data-v="Saleh"]').count() == 0)
     op.click('#crew-sect [data-act="mech-drop"][data-v="Zed"]'); op.wait_for_timeout(1200)
     check('« Retirer » takes the old name off', 'Zed' not in cfgd()['mechanics'] and 'Marc' in cfgd()['mechanics'], cfgd()['mechanics'])
     op.goto(BASE + '#reglages'); op.wait_for_selector('#trucks-box', timeout=10000)
-    op.select_option('#tk-m-c1', 'Marc'); op.click('#s-save'); op.wait_for_timeout(500)
-    check('the same mechanic on two trucks: refused (one mechanic per truck)', toast_has(op, 'est sur deux camions') and truck('c1')['mech'] == 'Saleh')
-    op.goto(BASE + '#reglages'); op.wait_for_selector('#trucks-box', timeout=10000)
-    op.select_option('#tk-m-c3', 'Saleh'); op.select_option('#tk-m-c1', ''); op.click('#s-save'); op.wait_for_timeout(2000)
-    check('Saleh moved to Camion 3 in Réglages: saved', truck('c3')['mech'] == 'Saleh' and truck('c1')['mech'] == '', cfgd().get('trucks'))
-    check('…Camion 3\'s appointment goes to Saleh; today\'s Camion 1 job waits for its mechanic', job('f4').get('mechanic') == 'Saleh' and job('j1').get('mechanic') == '', [job('f4').get('mechanic'), job('j1').get('mechanic')])
-    doc_set(otok, 'config/main', dict(cfgd(), trucks=[{'id': 'c1', 'name': 'Camion 1', 'on': True, 'mech': 'Saleh'}, {'id': 'c2', 'name': 'Camion 2', 'on': True, 'mech': 'Marc'}, {'id': 'c3', 'name': 'Camion 3', 'on': False, 'mech': ''}]))
-    doc_set(otok, 'days/' + TOM, {'crew': {'c2': 'Hassan'}})
+    op.fill('#tk-n-c2', 'Saleh'); op.click('#s-save'); op.wait_for_timeout(500)
+    check('two trucks named « Saleh »: refused (one name per truck)', toast_has(op, 'Un nom par camion') and truck('c2')['name'] == 'Ali')
+    op.goto(BASE + '#accueil'); op.wait_for_timeout(300); op.goto(BASE + '#reglages'); op.wait_for_selector('#trucks-box', timeout=10000)   # (a fresh form: the refused name is gone)
+    op.fill('#tk-n-c3', 'Marc'); op.check('.tk-row[data-id="c3"] [data-f="on"]'); op.click('#s-save'); op.wait_for_timeout(2000)
+    check('Camion 3 renamed « Marc » (in service): it is Marc\'s truck', truck('c3')['name'] == 'Marc' and truck('c3')['mech'] == 'Marc' and truck('c3')['on'] is True, cfgd().get('trucks'))
+    check('…its coming appointment goes to Marc; the others stay', job('f4').get('mechanic') == 'Marc' and job('f1').get('mechanic') == 'Ali' and job('f5').get('mechanic') == 'Ali', [job(x).get('mechanic') for x in ('f4', 'f1', 'f5')])
     op.wait_for_timeout(800)
 
     # ---------- 4. booking: the mechanic follows the truck ----------
@@ -91,17 +82,16 @@ with sync_playwright() as pl:
     op.click('#top [data-act="new"]'); op.wait_for_selector('#cs-q', timeout=10000)
     op.fill('#cs-q', 'Marie'); op.wait_for_timeout(400); op.locator('#cs-results .crow').first.click(); op.wait_for_selector('#f-truck', state='attached', timeout=10000)
     st = op.evaluate("(() => { const m = document.getElementById('f-mech'); return [m.type, m.value, document.getElementById('f-mech-show').value, document.getElementById('f-mech-show').readOnly, document.getElementById('f-truck').value]; })()")
-    check('booking: no mechanic list; it shows the truck\'s mechanic (read only)', st[0] == 'hidden' and st[3] is True and st[4] == 'c1' and st[1] == 'Saleh' and st[2] == 'Saleh', st)
-    op.evaluate("(() => { const t = document.getElementById('f-truck'); t.value = 'c2'; t.dispatchEvent(new Event('change', {bubbles:true})); })()"); op.wait_for_timeout(200)
-    check('another truck: its mechanic', op.input_value('#f-mech') == 'Marc' and op.input_value('#f-mech-show') == 'Marc')
-    op.evaluate("(d => { const t = document.getElementById('f-date'); t.value = d; t.dispatchEvent(new Event('change', {bubbles:true})); })", TOM); op.wait_for_timeout(200)
-    check('a day someone else drives that truck: that person', op.input_value('#f-mech') == 'Hassan', op.input_value('#f-mech'))
+    check('booking: no mechanic list; it shows the truck\'s mechanic (its name, read only)', st[0] == 'hidden' and st[3] is True and st[4] == 'c1' and st[1] == 'Saleh' and st[2] == 'Saleh', st)
+    op.evaluate("(() => { const t = document.getElementById('f-truck'); t.value = 'c3'; t.dispatchEvent(new Event('change', {bubbles:true})); })()"); op.wait_for_timeout(200)
+    check('another truck: its mechanic (« Marc »)', op.input_value('#f-mech') == 'Marc' and op.input_value('#f-mech-show') == 'Marc')
     op.evaluate("document.querySelector('.sheet [data-act=\"sheet-close\"]').click()"); op.wait_for_timeout(300)
+    check('no « Qui part avec quel camion » in the agenda', op.locator('#crewbox, [data-crew]').count() == 0)
 
     # ---------- 5. home: today, then the tiles ----------
     op.goto(BASE + '#accueil'); op.wait_for_selector('#tiles', timeout=10000)
     tl = op.evaluate("[...document.querySelectorAll('#tiles .tile b')].map(b => b.textContent)")
-    check('computer home: a tile for each part of the app', tl[:3] == ['Agenda', 'Nouvelle réservation', 'Facture sur place'] and all(x in tl for x in ['Clients', 'Factures', 'Disponibilités des mécanos', 'Carte de l\'équipe', 'Équipe et accès', 'Trésorerie', 'Réglages']), tl)
+    check('computer home: a tile for each part of the app (no availability: the trucks\' schedules decide)', tl[:3] == ['Agenda', 'Nouvelle réservation', 'Facture sur place'] and all(x in tl for x in ['Clients', 'Factures', 'Carte de l\'équipe', 'Équipe et accès', 'Trésorerie', 'Réglages']) and 'Disponibilités des mécanos' not in tl, tl)
     check('…under « today » (revenue and the day first)', op.evaluate("(() => { const h = document.querySelector('.dash-hero, [aria-labelledby=\"d-today\"]'), t = document.getElementById('tiles'); return !!h && !!(h.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING); })()"))
     check('…the agenda tile says how many appointments today', '2 rendez-vous aujourd' in op.inner_text('#tiles a[href="#agenda"]'), op.inner_text('#tiles a[href="#agenda"]'))
     op.click('#tiles a[href="#clients"]'); op.wait_for_timeout(600)
@@ -128,23 +118,17 @@ with sync_playwright() as pl:
     c3 = ctx(b, phone=True); sp = page(c3, 'saleh'); login(sp, 'saleh@garage.test', pw['saleh'])
     sp.click('.tab[data-t="plus"]'); sp.wait_for_selector('#tiles', timeout=10000)
     tl = sp.evaluate("[...document.querySelectorAll('#tiles .tile b')].map(b => b.textContent)")
-    check('mechanic\'s tiles: his day, his availability; no settings, no team', tl[0] == 'Ma journée' and 'Mes disponibilités' in tl and 'Réglages' not in tl and 'Équipe et accès' not in tl, tl)
+    check('mechanic\'s tiles: his day; no availability (his truck\'s schedule), no settings, no team', tl[0] == 'Ma journée' and 'Mes disponibilités' not in tl and 'Réglages' not in tl and 'Équipe et accès' not in tl, tl)
     sp.click('.tab-new'); sp.wait_for_timeout(500)
     if sp.locator('#sheet .ph-row', has_text='Nouvelle réservation').count():
         sp.locator('#sheet .ph-row', has_text='Nouvelle réservation').click(); sp.wait_for_selector('#f-mech', state='attached', timeout=8000)
-        check('his booking: he is the mechanic, his truck chosen', sp.input_value('#f-mech') == 'Saleh' and sp.input_value('#f-truck') == 'c1', [sp.input_value('#f-mech'), sp.input_value('#f-truck')])
+        check('his booking: he is the mechanic, the truck in his name chosen', sp.input_value('#f-mech') == 'Saleh' and sp.input_value('#f-truck') == 'c1', [sp.input_value('#f-mech'), sp.input_value('#f-truck')])
     else:
         check('his booking: he is the mechanic (he may not book: nothing to check)', True)
     sp.goto(BASE + '#dispos'); sp.wait_for_timeout(800)
+    check('mechanic: an old « #dispos » link says the truck\'s schedule decides', 'Horaire des camions' in txt(sp, '#top'), txt(sp, '#top'))
     check('mechanic: no errors', not [e for e in ERRS if 'saleh' in e], ERRS[:3])
     c3.close()
-
-    # ---------- 8. office: availability chips show the truck ----------
-    c4 = ctx(b); lp = page(c4, 'lina'); login(lp, 'lina@garage.test', pw['lina'])
-    lp.goto(BASE + '#dispos'); lp.wait_for_timeout(1000)
-    ch = lp.evaluate("[...document.querySelectorAll('[data-g=\"mecano\"] .chip')].map(b => b.textContent)")
-    check('availability: each mechanic with his truck', 'Saleh · Camion 1' in ch and 'Marc · Camion 2' in ch, ch)
-    c4.close()
 
     # ---------- 9. a mechanic deletes his own account ----------
     stok = token('saleh@garage.test', pw['saleh'])
