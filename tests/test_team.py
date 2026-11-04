@@ -360,17 +360,22 @@ with sync_playwright() as pw:
     lp.evaluate("d => { const S = window.__garageApi.S; S.screen = null; S.tab = 'agenda'; S.view = 'grid'; S.day = d; S.mech = ''; }", TOM); resync(lp); lp.evaluate("window.__garageApi.render()"); lp.wait_for_timeout(500)
     check('office: agenda columns are the trucks, named after their mechanics (Camion 3 closed), nobody to pick', [h.split('\n')[0] for h in lp.locator('.cal-head .colh').all_inner_texts()][:3] == ['Saleh', 'Ali', 'Camion 3'] and 'Fermé' in lp.locator('.cal-head .colh').nth(2).inner_text() and lp.locator('#crewbox, [data-crew]').count() == 0, lp.locator('.cal-head .colh').all_inner_texts())
     def move(p, jid, col, t):
+        p.wait_for_selector('.appt[data-drag="%s"]' % jid, timeout=10000); p.wait_for_selector('.col[data-col="%s"] .slot[data-t="%s"]' % (col, t), timeout=10000)   # (the agenda has the job and the truck)
         p.evaluate("""([s, d]) => { const a = document.querySelector(s), b = document.querySelector(d), dt = new DataTransfer();
           a.dispatchEvent(new DragEvent('dragstart', {bubbles:true, dataTransfer:dt})); b.dispatchEvent(new DragEvent('dragover', {bubbles:true, cancelable:true, dataTransfer:dt}));
           b.dispatchEvent(new DragEvent('drop', {bubbles:true, cancelable:true, dataTransfer:dt})); a.dispatchEvent(new DragEvent('dragend', {bubbles:true, dataTransfer:dt})); }""", ['.appt[data-drag="%s"]' % jid, '.col[data-col="%s"] .slot[data-t="%s"]' % (col, t)])
         p.wait_for_selector('#sheet [data-act="drop-yes"]', timeout=6000); p.click('#sheet [data-act="drop-yes"]'); p.wait_for_timeout(2000)
+    http('POST', API + '/rest/v1/rpc/pick_truck', {'p_date': TOM, 'p_truck': 'c2'}, atok)          # (Ali picks the truck « Ali » tomorrow, in his app)
+    http('POST', API + '/rest/v1/rpc/pick_truck', {'p_date': TOM, 'p_truck': 'c1'}, token('saleh@garage.test', SALEH_PW))   # (and Saleh the truck « Saleh »)
+    resync(lp); lp.evaluate("window.__garageApi.render()"); lp.wait_for_timeout(500)
     move(lp, 'j3', 'c2', '09:00')
-    check('office moves the job into the truck « Ali »: now Ali\'s (real base)', psql("select data->>'mechanic' || '|' || (data->>'truck') from public.docs where path='jobs/j3'") == 'Ali|c2')
+    check('office moves the job into the truck Ali picked: now Ali\'s (real base)', psql("select data->>'mechanic' || '|' || (data->>'truck') from public.docs where path='jobs/j3'") == 'Ali|c2')
     rd = http('GET', API + '/rest/v1/docs?select=path&path=eq.jobs/j3', token=atok)
     check('Ali can now read that job, through the rules', isinstance(rd, list) and len(rd) == 1, rd)
     lp.evaluate("window.__garageApi.render()"); lp.wait_for_timeout(500)
     move(lp, 'j3', 'c1', '09:00')
-    check('back into the truck « Saleh »: Saleh\'s again (original state)', psql("select data->>'mechanic' || '|' || (data->>'truck') from public.docs where path='jobs/j3'") == 'Saleh|c1')
+    check('back into the truck Saleh picked: Saleh\'s again (original state)', psql("select data->>'mechanic' || '|' || (data->>'truck') from public.docs where path='jobs/j3'") == 'Saleh|c1')
+    http('POST', API + '/rest/v1/rpc/pick_truck', {'p_date': TOM, 'p_truck': ''}, atok)
     r = doc_set(token('lina@garage.test', LINA_PW), 'config/main', {'trucks': []})
     check('office cannot change the trucks (owner only)', isinstance(r, dict) and r.get('_status') in (400, 401, 403), r)
 

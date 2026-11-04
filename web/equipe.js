@@ -690,7 +690,7 @@
     rightKeys(rs).forEach(function(p){ var e = document.getElementById((pre || 'ed') + '-p-' + p.k); if (!e || e.disabled) return; if (e.checked !== roleDefault(rs, p.k)) out[p.k] = e.checked; });
     return out;
   }
-  /* (no more: a truck carries the name of the mechanic who drives it — named in Réglages → Camions) */
+  /* (no more: nobody assigns a truck — each mechanic picks his own every day, in his app) */
   function truckPick(id, mech){
     return '';
     var a = A(), ts = a.truckMode && a.truckMode() ? a.trucks() : [], cur = mech && a.truckOfUsual(mech);
@@ -707,7 +707,7 @@
     var os = orphans(); if (!os.length) return '';
     return '<div class="field"><label for="' + id + '">Déjà dans l\'agenda sous un autre nom ?</label><select id="' + id + '"><option value="">Non</option>' + os.map(function(n){ return '<option value="' + esc(n) + '">Oui : ' + esc(n) + '</option>'; }).join('') + '</select></div>';
   }
-  function truckLine(m){ if (!m.mechanic) return ''; var t = A().truckMode() ? A().truckOfUsual(m.mechanic) : null; return (A().truckMode() ? '🚚 ' + (t ? esc(t.name || 'Camion') : 'Aucun camion à son nom') + ' · ' : '') + (norm(m.mechanic) !== norm(m.name) ? 'Dans l\'agenda : ' + esc(m.mechanic) + ' · ' : ''); }
+  function truckLine(m){ if (!m.mechanic) return ''; var t = A().truckMode() ? A().truckOfUsual(m.mechanic) : null; return (t ? '🚚 ' + esc(t.name || 'Camion') + ' aujourd\'hui · ' : '') + (norm(m.mechanic) !== norm(m.name) ? 'Dans l\'agenda : ' + esc(m.mechanic) + ' · ' : ''); }   /* (the truck he picked today, if any: nobody assigns one) */
   function moveJobs(r){ try { if (r && r.moved && Object.keys(r.moved).length) A().retarget(r.moved); } catch (e){} }
   function viewEquipe(){
     var a = A();
@@ -1311,6 +1311,7 @@
       var ask = T.sb.rpc('next_invoice_number', {p_start:start}).then(function(r){ if (r.error || typeof r.data !== 'number') throw r.error || new Error('no number'); return r.data; });
       return Promise.race([ask, new Promise(function(res, rej){ setTimeout(function(){ rej(new Error('timeout')); }, 8000); })]);
     },
+    pickTruck:function(d, k){ if ((T.net && T.net.offlineMode) || navigator.onLine === false) return Promise.reject(Object.assign(new Error('offline'), {code:'unavailable'})); return T.pickTruck(d, k); },
     numberInvoice:function(id){ if ((T.net && T.net.offlineMode) || navigator.onLine === false) return Promise.reject(new Error('offline')); return T.numberInvoice(id); },
     /* booking in a block: the count of the block, and the bookings as they are on the server now */
     blockMark:function(key){ if ((T.net && (T.net.offlineMode || T.pending())) || navigator.onLine === false) return Promise.reject(Object.assign(new Error('offline'), {code:'unavailable'})); return T.blockMark(key); },

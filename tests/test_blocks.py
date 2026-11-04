@@ -27,6 +27,9 @@ J = lambda pc, n, extra=None: dict({'date': D, 'time': '08:00', 'block': 'am', '
 for i, (pc, n) in enumerate([('H2J 2L3', 'Ana'), ('H2X 1H1', 'Bob'), ('H2T 1A1', 'Cara'), ('H3N 1A1', 'Dan')]):
     doc_set(otok, 'jobs/b%d' % i, J(pc, n))
 doc_set(otok, 'jobs/bp', J('H2J 2L4', 'Pin', {'truck': 'c2', 'pin': True, 'mechanic': 'Ali'}))   # a truck chosen by hand
+# that morning, each mechanic picked his truck in his app (nobody assigns them)
+for em, k in (('saleh@garage.test', 'c1'), ('ali@garage.test', 'c2')):
+    http('POST', API + '/rest/v1/rpc/pick_truck', {'p_date': D, 'p_truck': k}, token(em, pw[em.split('@')[0]]))
 # the inventory kept by truck before: the same oil in two trucks
 doc_set(otok, 'stock/c1__huile-0w-20', {'truck': 'c1', 'name': 'Huile 0W-20', 'ref': '', 'unit': 'L', 'qty': 10, 'min': 4})
 doc_set(otok, 'stock/c2__huile-0w-20', {'truck': 'c2', 'name': 'Huile 0W-20', 'ref': '', 'unit': 'L', 'qty': 5, 'min': 6})

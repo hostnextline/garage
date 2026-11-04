@@ -14,8 +14,10 @@ def wd(start):
     d = T0 + datetime.timedelta(days=start)
     while d.weekday() >= 5: d += datetime.timedelta(days=1)
     return d
-DD = wd(2); D = DD.isoformat()
-DD2 = wd((DD - T0).days + 1); D2 = DD2.isoformat()
+DD = T0 + datetime.timedelta(days=2)
+while DD.weekday() > 3: DD += datetime.timedelta(days=1)   # (Monday to Thursday: the next day is in the same week, for the week view)
+D = DD.isoformat()
+DD2 = DD + datetime.timedelta(days=1); D2 = DD2.isoformat()
 def job(i): return doc('jobs/' + i) or {}
 def dnd(p, src, dst):
     """the drag as the browser sends it (dragstart → dragover → drop → dragend), for targets far down the scrolling grid"""
@@ -38,6 +40,7 @@ c = doc('config/main'); c.pop('bookMode', None); c['homePostal'] = 'H4P 2B5'
 c['hours'] = {str(x): {'open': True, 'start': '08:00', 'end': '20:00'} for x in range(7)}
 c['trucks'] = [{'id': 'c1', 'name': 'Saleh', 'on': True, 'mech': 'Saleh'}, {'id': 'c2', 'name': 'Ali', 'on': True, 'mech': 'Ali'}, {'id': 'c3', 'name': 'Camion 3', 'on': True, 'mech': ''}]
 doc_set(otok, 'config/main', c)
+for dd in (D, D2): doc_set(otok, 'days/' + dd, {'date': dd, 'opened': [], 'blocked': [], 'crew': {'c1': 'Saleh', 'c2': 'Ali'}})   # (who picked which truck those days, in their app)
 doc_set(otok, 'hours/c2', {'week': None, 'dates': {D2: {'on': False}}})                       # (each truck's schedule)
 doc_set(otok, 'hours/c3', {'week': None, 'dates': {D: {'on': False}, D2: {'on': False}}})
 cl1 = doc('clients/c1')

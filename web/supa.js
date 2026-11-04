@@ -221,6 +221,8 @@
   /* the count of a block: a booking passes only if nobody booked in that block since the room was counted */
   T.blockMark = function(key){ return withTimeout(rpc('block_mark', {p_key:key}), 8000); };
   /* a finished invoice waiting for its number: the next one of the series (once, even if two phones ask) */
+  /* « Je conduis : … » — a mechanic picks his truck for a day: that day's crew, and the planned jobs of that truck become his */
+  T.pickTruck = function(date, truck){ return withTimeout(rpc('pick_truck', {p_date:date, p_truck:truck || ''}), 10000).then(function(r){ soon('days'); soon('jobs'); soon('clients'); return r; }); };
   T.numberInvoice = function(jobId){ return withTimeout(rpc('number_invoice', {p_path:'jobs/' + jobId}), 10000).then(function(n){ soon('jobs'); return n; }); };
   /* what is on the server right now (a load that starts after this call): for the room in a block */
   T.fresh = function(col){ var c = C(col); return (c.loading ? c.loading.catch(function(){}) : Promise.resolve()).then(function(){ return load(col, !c.loaded); }); };

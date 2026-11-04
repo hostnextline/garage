@@ -30,6 +30,9 @@ K2 = dict(base, date=TD, time='12:00', block='pm', mechanic='Saleh', truck='c1',
           invoice={'lines': [{'type': 'forfait', 'desc': 'Inspection multipoints', 'qty': 1, 'price': 59}], 'taxesOn': True, 'sub': 59, 'tps': 2.95, 'tvq': 5.89, 'total': 67.84, 'paid': False, 'number': 'F-0098', 'issuedAt': TD})
 doc_set(otok, 'jobs/k2', K2)
 doc_set(otok, 'jobs/k3', dict(base, date=TD, time='17:00', block='eve', mechanic='', truck='c1', status='planifie'))
+# that day, each mechanic picked his truck in his app (nobody assigns them; k3 today stays without a mechanic)
+for em, k in (('saleh', 'c1'), ('ali', 'c2')):
+    http('POST', API + '/rest/v1/rpc/pick_truck', {'p_date': D, 'p_truck': k}, token(em + '@garage.test', pw[em]))
 
 def show(p, d):
     p.evaluate("(d) => { const A = window.__garageApi, S = A.S; S.tab = 'agenda'; S.screen = null; S.day = d; S.view = 'grid'; S.mech = ''; A.render(); }", d); p.wait_for_timeout(600)

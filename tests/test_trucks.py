@@ -1,5 +1,5 @@
-"""3 trucks as the columns of the schedule (2 closed but visible); each truck carries the name of the mechanic who drives it
-(nobody assigned by hand); its schedule decides; the mechanics' own availability only without trucks."""
+"""3 trucks as the columns of the schedule (2 closed but visible), with any name; nobody assigns mechanics to trucks
+(in the team version each mechanic picks his truck every day); its schedule decides; the mechanics' own availability only without trucks."""
 import json, os, datetime, re, sys
 from chemins import GARAGE, SAUVEGARDES   # (où est l'app : ici ou dans le dépôt)
 from playwright.sync_api import sync_playwright
@@ -73,23 +73,23 @@ with sync_playwright() as p:
     ctx, pg, errs = open_page(br, {'seed': seed})
     go_day(pg, iso(W))
     h = heads(pg)
-    check('the columns are the trucks named after their mechanics (« Saleh », « Ali » closed)', h[0].startswith('Saleh') and h[1].startswith('Ali') and 'Fermé' in h[1] and 'Mécano à choisir' not in ' '.join(h), h)
+    check('the columns are the trucks, any name (« Saleh », « Ali » closed)', h[0].startswith('Saleh') and h[1].startswith('Ali') and 'Fermé' in h[1] and 'Mécano à choisir' not in ' '.join(h), h)
     check('an old job (no truck, mechanic Saleh) shows in Saleh\'s truck', pg.locator('.col[data-col="c1"] .appt[data-id="old1"]').count() == 1)
     check('truck chips: Tous les camions, Saleh, Ali · fermé…', pg.evaluate("[...document.querySelectorAll('[data-act=\"mech\"]')].map(b => b.textContent)") == ['Tous les camions', 'Saleh', 'Ali · fermé', 'Camion 3 · fermé'])
     check('no « Qui part avec quel camion »', pg.locator('#crewbox, [data-crew]').count() == 0)
     # booking in a truck: the mechanic is the one it is named after
     pg.click('.col[data-col="c1"] .slot[data-t="09:00"]'); wait(pg, 500)
     pg.fill('#cs-q', 'Nadia'); wait(pg); pg.locator('#cs-results .crow').first.click(); wait(pg, 700)
-    check('booking form: the truck « Saleh » and its mechanic Saleh already filled', pg.input_value('#f-truck') == 'c1' and pg.input_value('#f-mech') == 'Saleh', [pg.input_value('#f-truck'), pg.input_value('#f-mech')])
+    check('booking form: the truck « Saleh » chosen, nobody assigned (no mechanic picked that truck)', pg.input_value('#f-truck') == 'c1' and pg.input_value('#f-mech') == '', [pg.input_value('#f-truck'), pg.input_value('#f-mech')])
     pg.select_option('#f-truck', 'c2'); wait(pg, 150)
-    check('changing to the truck « Ali »: Ali + closed warning', pg.input_value('#f-mech') == 'Ali' and 'camion est fermé' in txt(pg, '#hourmsg'), [pg.input_value('#f-mech'), txt(pg, '#hourmsg')])
+    check('changing to the truck « Ali »: closed warning', pg.input_value('#f-mech') == '' and 'camion est fermé' in txt(pg, '#hourmsg'), [pg.input_value('#f-mech'), txt(pg, '#hourmsg')])
     pg.select_option('#f-truck', 'c1'); wait(pg, 150)
     pg.fill('#f-svc-in', 'Diagnostic'); pg.keyboard.press('Enter'); pg.keyboard.press('Escape')
     before = set(pg.evaluate('Object.keys(window.__store)'))
     pg.click('#f-save'); wait(pg, 900)
     nid = [k for k in pg.evaluate('Object.keys(window.__store)') if k.startswith('jobs/') and k not in before]
     nj = store(pg, nid[0]) if nid else {}
-    check('saved: truck « Saleh », Saleh, Wednesday 9 h', len(nid) == 1 and nj.get('truck') == 'c1' and nj.get('mechanic') == 'Saleh' and nj.get('time') == '09:00' and nj.get('date') == iso(W), nj)
+    check('saved: truck « Saleh », Wednesday 9 h', len(nid) == 1 and nj.get('truck') == 'c1' and nj.get('time') == '09:00' and nj.get('date') == iso(W), nj)
     go_day(pg, iso(W))
     check('the new job is in the truck « Saleh »', pg.locator('.col[data-col="c1"] .appt[data-id="%s"]' % nid[0][5:]).count() == 1 if nid else False)
     # a day off: his truck closed that day (its schedule decides)
@@ -100,14 +100,14 @@ with sync_playwright() as p:
     pg.evaluate("() => { delete window.__store['hours/c1']; window.__garageApi.S.tkHours = {}; }"); go_day(pg, iso(W))
     # no availability with trucks
     pg.evaluate("() => { const S = window.__garageApi.S; S.screen = null; S.tab = 'dispos'; window.__garageApi.render(); }"); wait(pg, 500)
-    check('« Disponibilités » with trucks: « Horaire des camions », the truck\'s schedule decides', 'horaire du camion' in txt(pg, '#main') and pg.locator('[data-act="av-mech"]').count() == 0, txt(pg, '#main')[:160])
+    check('« Disponibilités » with trucks: « Horaire des camions », the truck\'s schedule decides', 'horaire de chaque camion' in txt(pg, '#main') and pg.locator('[data-act="av-mech"]').count() == 0, txt(pg, '#main')[:160])
     # week view label
     go_day(pg, iso(W)); pg.evaluate("() => { const S = window.__garageApi.S; S.view = 'week'; window.__garageApi.render(); }"); wait(pg)
     check('week view: jobs say their truck (its mechanic\'s name)', 'Saleh' in txt(pg, '.appt[data-id="old1"]'), txt(pg, '.appt[data-id="old1"]'))
     pg.evaluate("() => { const S = window.__garageApi.S; S.view = 'grid'; window.__garageApi.render(); }")
     # settings: one name per truck
     pg.evaluate("() => { const S = window.__garageApi.S; S.screen = null; S.tab = 'reglages'; window.__garageApi.render(); }"); wait(pg)
-    check('Réglages → Camions: one name per truck, no « Mécano habituel »', pg.locator('#trucks-box [data-f="mech"]').count() == 0 and 'La route de Saleh' in txt(pg, '#trucks-box .tk-row'))
+    check('Réglages → Camions: a free name per truck (« Nom »), no mechanic', pg.locator('#trucks-box [data-f="mech"]').count() == 0 and txt(pg, '#trucks-box .tk-row label') == 'Nom' and 'Personne n\'est assigné' in txt(pg, '#main'))
     pg.locator('#trucks-box .tk-row').nth(2).locator('[data-f="name"]').fill('Ali')
     pg.click('#s-save'); wait(pg, 300)
     check('two trucks named « Ali »: refused', 'Un nom par camion' in txt(pg, '#toast') and [t.get('name') for t in (store(pg, 'config/main') or {}).get('trucks', [])][2] == 'Camion 3', txt(pg, '#toast'))
@@ -116,7 +116,7 @@ with sync_playwright() as p:
     check('« + Ajouter un camion » adds Camion 4 (not in service yet), its name ready to type', pg.locator('#trucks-box .tk-row').count() == 4 and pg.locator('#trucks-box .tk-row').nth(3).get_attribute('data-id') == 'c4' and pg.evaluate("document.activeElement && document.activeElement.id") == 'tk-n-c4')
     pg.click('#s-save'); wait(pg, 600)
     cf = store(pg, 'config/main') or {}
-    check('saved: 4 trucks, Camion 3 is now Ali\'s (named « Ali »), the rest of the settings kept', [t['name'] for t in cf.get('trucks')] == ['Saleh', 'Remorque', 'Ali', 'Camion 4'] and cf['trucks'][2]['mech'] == 'Ali' and cf['trucks'][1]['mech'] == '' and cf.get('goal') == 20000 and cf.get('mechanics') == ['Saleh', 'Ali'], cf.get('trucks'))
+    check('saved: 4 trucks with their names, nobody tied to any, the rest of the settings kept', [t['name'] for t in cf.get('trucks')] == ['Saleh', 'Remorque', 'Ali', 'Camion 4'] and all(t.get('mech') == '' for t in cf['trucks']) and cf.get('goal') == 20000 and cf.get('mechanics') == ['Saleh', 'Ali'], cf.get('trucks'))
     pg.evaluate("() => { const c = window.__store['config/main']; c.trucks = c.trucks.slice(0, 3); c.trucks[1].name = 'Ali'; c.trucks[1].mech = 'Ali'; c.trucks[2].name = 'Camion 3'; c.trucks[2].mech = ''; }")   # clean-up (mock)
     pg.evaluate("p => { delete window.__store[p]; }", nid[0] if nid else '')
     check('no page errors', not errs, errs)

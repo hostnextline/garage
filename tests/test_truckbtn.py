@@ -26,8 +26,8 @@ c['hours'] = {str(x): {'open': True, 'start': '08:00', 'end': '20:00'} for x in 
 c['trucks'] = [{'id': 'c1', 'name': 'Camion 1', 'on': True, 'mech': 'Saleh'}, {'id': 'c2', 'name': 'Camion 2', 'on': True, 'mech': 'Ali'}, {'id': 'c3', 'name': 'Camion 3', 'on': False, 'mech': ''}]
 doc_set(otok, 'config/main', c)
 snapc = lambda n: {'id': 'c1', 'name': n, 'firstName': n, 'lastName': '', 'postal': 'H4P 2B5', 'phone': '514 555-0101'}
-for i in range(2):
-    doc_set(otok, 'jobs/k%d' % i, {'date': D, 'time': '08:00', 'block': 'am', 'durationMin': 60, 'mechanic': 'Ali', 'truck': 'c2', 'clientId': 'c1', 'client': snapc('Client %d' % i), 'services': ['Inspection'], 'status': 'planifie', 'createdAt': 5})
+for i in range(2):   # (put in Camion 2 by hand: the route planner keeps them there)
+    doc_set(otok, 'jobs/k%d' % i, {'date': D, 'time': '08:00', 'block': 'am', 'durationMin': 60, 'mechanic': 'Ali', 'truck': 'c2', 'pin': True, 'clientId': 'c1', 'client': snapc('Client %d' % i), 'services': ['Inspection'], 'status': 'planifie', 'createdAt': 5})
 
 def show_day(p, d):
     p.goto(BASE + '#agenda'); p.wait_for_timeout(500)
