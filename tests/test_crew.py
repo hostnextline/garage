@@ -82,10 +82,10 @@ with sync_playwright() as pl:
     op.goto(BASE + '#agenda'); op.reload(); op.wait_for_selector('#top [data-act="new"]', timeout=15000); op.wait_for_timeout(1200)   # (the changes made from outside: fresh)
     op.click('#top [data-act="new"]'); op.wait_for_selector('#cs-q', timeout=10000)
     op.fill('#cs-q', 'Marie'); op.wait_for_timeout(400); op.locator('#cs-results .crow').first.click(); op.wait_for_selector('#f-truck', state='attached', timeout=10000)
-    st = op.evaluate("(() => { const m = document.getElementById('f-mech'); return [m.type, m.value, document.getElementById('f-mech-show').value, document.getElementById('f-mech-show').readOnly, document.getElementById('f-truck').value]; })()")
-    check('booking: no mechanic list; it shows who picked the truck today (Saleh, read only)', st[0] == 'hidden' and st[3] is True and st[4] == 'c1' and st[1] == 'Saleh' and st[2] == 'Saleh', st)
+    st = op.evaluate("(() => { const m = document.getElementById('f-mech'); return [m.type, m.value, document.getElementById('f-truck').value, [...document.querySelectorAll('#jobform label')].some(l => l.textContent.trim().startsWith('Mécano')), !!document.getElementById('f-mech-show')]; })()")
+    check('booking: no « Mécano » field (only the truck); the job goes to who picked the truck today (Saleh)', st[0] == 'hidden' and st[2] == 'c1' and st[1] == 'Saleh' and st[3] is False and st[4] is False, st)
     op.evaluate("(() => { const t = document.getElementById('f-truck'); t.value = 'c3'; t.dispatchEvent(new Event('change', {bubbles:true})); })()"); op.wait_for_timeout(200)
-    check('another truck nobody picked: no mechanic yet', op.input_value('#f-mech') == '' and op.input_value('#f-mech-show') == '')
+    check('another truck nobody picked: no mechanic yet', op.input_value('#f-mech') == '')
     op.evaluate("document.querySelector('.sheet [data-act=\"sheet-close\"]').click()"); op.wait_for_timeout(300)
     check('no « Qui part avec quel camion » in the agenda', op.locator('#crewbox, [data-crew]').count() == 0)
 

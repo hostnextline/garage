@@ -84,9 +84,9 @@ with sync_playwright() as pl:
     check('office agenda: « Camion 1 » says Saleh (he picked it), « Camion 2 » nobody yet; nothing to assign', 'Saleh' in h1 and 'Mécano à choisir' not in h2 and lp.locator('#crewbox, [data-crew]').count() == 0 and lp.locator('#pick').count() == 0, (h1, h2))
     lp.click('.col[data-col="c1"] .slot[data-t="16:00"]'); lp.wait_for_selector('#cs-q', timeout=8000)
     lp.fill('#cs-q', 'Marie'); lp.wait_for_timeout(400); lp.locator('#cs-results .crow').first.click(); lp.wait_for_selector('#f-truck', state='attached', timeout=8000)
-    check('booking in Camion 1 today: its mechanic is Saleh (read only)', lp.input_value('#f-truck') == 'c1' and lp.input_value('#f-mech') == 'Saleh' and lp.input_value('#f-mech-show') == 'Saleh', [lp.input_value('#f-truck'), lp.input_value('#f-mech')])
+    check('booking in Camion 1 today: no « Mécano » field, the job goes to Saleh (he picked it)', lp.input_value('#f-truck') == 'c1' and lp.input_value('#f-mech') == 'Saleh' and lp.locator('#f-mech-show').count() == 0 and not lp.evaluate("[...document.querySelectorAll('#jobform label')].some(l => /^Mécano\\b/.test(l.textContent.trim()))"), [lp.input_value('#f-truck'), lp.input_value('#f-mech')])
     lp.evaluate("(() => { const t = document.getElementById('f-truck'); t.value = 'c2'; t.dispatchEvent(new Event('change', {bubbles:true})); })()"); lp.wait_for_timeout(200)
-    check('…Camion 2: nobody yet (« Le mécano choisit son camion le matin »)', lp.input_value('#f-mech') == '' and 'choisit son camion' in (lp.get_attribute('#f-mech-show', 'placeholder') or ''), lp.input_value('#f-mech'))
+    check('…Camion 2: nobody yet (whoever picks it in the morning)', lp.input_value('#f-mech') == '', lp.input_value('#f-mech'))
     lp.evaluate("document.querySelector('.sheet [data-act=\"sheet-close\"]').click()"); lp.wait_for_timeout(300)
     check('office: no errors', not ERRS, ERRS[:3])
     # ---------- 4. owner: Réglages, Équipe ----------
