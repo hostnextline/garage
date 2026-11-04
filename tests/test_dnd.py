@@ -66,8 +66,10 @@ with sync_playwright() as pl:
     check('« Annuler » : nothing moved', job('m1').get('truck') == 'c1' and job('m1').get('block') == 'am' and len(sms()) == n0)
     show(op, D)
     dnd(op, '.appt[data-drag="m1"]', '.col[data-col="c2"] .slot[data-t="13:00"]'); op.wait_for_selector('#sheet [data-act="drop-yes"]', timeout=5000)
+    op.evaluate("() => { window.__toasts = []; const t = document.getElementById('toast'); if (t) new MutationObserver(() => window.__toasts.push(t.textContent)).observe(t, {childList:true, characterData:true, subtree:true}); }")   # (every message shown: a slow machine may show the next one before we look)
     op.click('#sheet [data-act="drop-yes"]')
-    check('« Oui, déplacer » : « Rendez-vous déplacé »', toast_has(op, 'Rendez-vous déplacé'))
+    seen = wait_for(op, "(window.__toasts || []).some(x => x.includes('Rendez-vous déplacé'))", 8000)
+    check('« Oui, déplacer » : « Rendez-vous déplacé »', seen, op.evaluate("window.__toasts"))
     for _ in range(30):
         if len(sms()) > n0: break
         time.sleep(0.5)

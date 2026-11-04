@@ -175,7 +175,7 @@ const ghl = async (path, body) => (await fetch('http://127.0.0.1:9200' + path, {
   const tok = r.token;
   let t = (await anon.rpc('get_track', { p_token: tok })).data;
   check('client page data', t && t.status === 'active' && t.mech === 'Saleh' && t.client === 'Marie' && t.garage === 'Garage NextLine' && t.pos && Math.abs(t.pos.lat - 45.501) < 1e-6 && t.dest && t.route && t.route.length > 5, t);
-  check('client page hides last name and phone', !JSON.stringify(t).includes('Tremblay') && !JSON.stringify(t).includes('555'));
+  check('client page hides last name and phone', !JSON.stringify(t).includes('Tremblay') && !/555.?0101/.test(JSON.stringify(t)));   // (her number 514 555-0101; a time or a map point may hold « 555 » by chance)
   check('bad token gives nothing', (await anon.rpc('get_track', { p_token: 'x'.repeat(24) })).data === null);
   r = await fn(owner, 'members', { action: 'secrets-set', ghlToken: 'pit-good-token', ghlLocation: 'loc123' });
   check('owner saves GHL keys', r.ok && r.ghl && r.ghlToken === '…oken', r);
