@@ -2,7 +2,7 @@
    La page et ses outils sont gardés sur le téléphone. Avec du réseau, on prend toujours la page la plus récente
    (et on garde la copie à jour) ; sans réseau, on sert la copie. Les données passent par l'app (copie du carnet
    + file des changements), jamais par ce fichier : les appels à la base ne sont jamais gardés ici. */
-var V = '5c38bb1d2632';
+var V = 'c19c1a01e44d';
 var CORE = ['./', 'config.js', 'manifest.webmanifest', 'vendor/supabase.js', 'vendor/leaflet.js', 'vendor/leaflet.css', 'icons/icon-192.png', 'icons/icon-180.png'];
 var LIBS = ['https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js',
             'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
