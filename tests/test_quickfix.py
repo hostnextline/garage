@@ -120,7 +120,8 @@ with sync_playwright() as pl:
     r = rpc(otok, 'block_book', {'p_key': D + '|am', 'p_mark': 0, 'p_path': 'jobs/zz', 'p_data': jd, 'p_merge': False})
     check('server: a booking counted with an old count is refused (nothing written)', isinstance(r, dict) and r.get('ok') is False and r.get('mark') == 1 and not doc('jobs/zz'), r)
     r = rpc(atok, 'block_book', {'p_key': D + '|am', 'p_mark': None, 'p_path': 'jobs/zz', 'p_data': dict(jd, mechanic='Saleh', truck='c1'), 'p_merge': False})
-    check('server: a mechanic cannot book a job for someone else this way (refused, the count does not move)', isinstance(r, dict) and r.get('_status') in (401, 403) and not doc('jobs/zz') and mark(D + '|am') == 1, r)
+    check('server: a mechanic may book a job in another truck this way too (every route; the count moves)', isinstance(r, dict) and r.get('ok') is True and doc('jobs/zz') and mark(D + '|am') == 2, r)
+    psql("delete from public.docs where path = 'jobs/zz'"); psql("update public.block_marks set n = 1 where key = '%s'" % (D + '|am'))   # (back as it was)
     r = rpc(ltok, 'block_book', {'p_key': 'pas-un-bloc', 'p_mark': None, 'p_path': 'jobs/zz', 'p_data': jd, 'p_merge': False})
     check('server: a block that does not exist is refused', isinstance(r, dict) and r.get('_status') == 400 and not doc('jobs/zz'), r)
     A.goto(BASE + '#agenda'); A.wait_for_timeout(500); A.evaluate("(d) => { const S = window.__garageApi.S; S.day = d; window.__garageApi.render(); }", D); A.wait_for_timeout(500)
@@ -170,7 +171,7 @@ with sync_playwright() as pl:
     check('a draft (not finished) gets no number', isinstance(r, dict) and r.get('_status') == 400 and nxt() == 4, r)
     doc_set(otok, 'jobs/k3', pend)
     r = rpc(atok, 'number_invoice', {'p_path': 'jobs/k3'})
-    check('another mechanic cannot number Saleh\'s invoice (and no number is used)', isinstance(r, dict) and r.get('_status') in (400, 401, 403, 404) and nxt() == 4 and not (job('k3').get('invoice') or {}).get('number'), r)
+    check('another mechanic may number Saleh\'s invoice too (every mechanic does every job): the next number', not (isinstance(r, dict) and r.get('_status', 200) >= 400) and nxt() == 5 and (job('k3').get('invoice') or {}).get('number'), r)
     check('phone: no errors (invoices)', not [e for e in ERRS if e.startswith('saleh')], ERRS[:3])
     c3.close()
 
@@ -190,13 +191,13 @@ with sync_playwright() as pl:
     ks = [kind(u) for u in reqs]
     check('the app opened again: what it keeps on the phone + the light check, not everything again', ks.count('full') == 0 and ks.count('check') >= 1, {k: ks.count(k) for k in set(ks)})
     has = lambda what, i: sp.evaluate("([w, i]) => window.__garageApi.S[w].some(x => x.id === i)", [what, i])
-    check('Saleh sees his job and its client (and not Paul, Ali\'s client)', has('jobs', 'j1') and has('clients', 'c1') and not has('clients', 'c2'))
+    check('Saleh sees every route: his job and its client, and Paul (Ali\'s client) too', has('jobs', 'j1') and has('clients', 'c1') and has('clients', 'c2'))
     merge(otok, 'jobs/j1', {'mechanic': 'Ali', 'truck': 'c2'})        # the office moves his job to Ali's truck
-    gone = wait_for(sp, "!window.__garageApi.S.jobs.some(j => j.id === 'j1')", 15000)   # (the light check runs every 4 s here; room for a busy machine)
-    check('a job moved to another truck leaves his phone within seconds (before: up to 10 minutes)', gone and not has('clients', 'c1'))
+    moved = wait_for(sp, "window.__garageApi.S.jobs.some(j => j.id === 'j1' && j.truck === 'c2' && j.mechanic === 'Ali')", 15000)   # (the light check runs every 4 s here; room for a busy machine)
+    check('a job moved to another truck: his phone sees it move within seconds (before: up to 10 minutes)', moved)
     doc_set(otok, 'jobs/j3', {'date': TODAY, 'time': '15:00', 'durationMin': 60, 'mechanic': 'Saleh', 'truck': 'c1', 'clientId': 'c2', 'client': {'id': 'c2', 'name': 'Paul Roy'}, 'services': ['Inspection'], 'status': 'planifie'})
-    seen = wait_for(sp, "window.__garageApi.S.jobs.some(j => j.id === 'j3') && window.__garageApi.S.clients.some(c => c.id === 'c2')", 9000)
-    check('a new job for him arrives, with its client\'s fiche (unchanged, but now his to see)', seen)
+    seen = wait_for(sp, "window.__garageApi.S.jobs.some(j => j.id === 'j3')", 15000)
+    check('a new job arrives on his phone within seconds', seen)
     check('phone: no errors (sync)', not [e for e in ERRS if e.startswith('saleh2')], ERRS[:3])
     c4.close(); c1.close()
 

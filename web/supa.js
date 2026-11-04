@@ -105,20 +105,14 @@
   function C(col){ return cols[col] || (cols[col] = {docs:{}, loaded:false, since:null, listeners:[], docListeners:{}, loading:null, full:0}); }
   function freeze(o){ if (o && typeof o === 'object'){ Object.freeze(o); Object.keys(o).forEach(function(k){ freeze(o[k]); }); } return o; }
   /* « Voir comme un mécano » (the owner, in preview): show only what that mechanic's account would get from the server
-     (same rule as can_read_doc: his jobs, the clients and photos of his jobs, the shared settings). Nothing is deleted. */
+     (same rule as can_read_doc: every route — all the jobs, their clients and photos — and the shared settings; not the
+     money, not the team). Nothing is deleted. */
   function lc(s){ return String(s == null ? '' : s).trim().toLowerCase(); }
   function visible(col, id, d){
     var v = T.view, rs = v ? (v.roles && v.roles.length ? v.roles : [v.role]) : [];
     if (!v || d === undefined || rs.indexOf('mecano') < 0 || rs.some(function(r){ return r !== 'mecano'; })) return true;   /* only a mechanic alone sees less */
     if (col.indexOf('data/') === 0) return true;
-    var m = lc(v.mechanic);
-    if (col === 'jobs') return lc(d.mechanic) === m;
-    if (col === 'clients' || col === 'photos'){
-      var js = C('jobs').docs, jid = id.split('__')[0];
-      for (var k in js){ if (lc(js[k].mechanic) === m && (col === 'clients' ? js[k].clientId === id : k === jid)) return true; }
-      return false;
-    }
-    return ['config','days','avail','specs','stock','hours'].indexOf(col) >= 0;
+    return ['jobs','clients','photos','config','days','avail','specs','stock','hours'].indexOf(col) >= 0;
   }
   T.setView = function(v){ T.view = v || null; Object.keys(cols).forEach(function(k){ notify(k); }); };
   function snapDoc(col, id){ var d = C(col).docs[id]; if (!visible(col, id, d)) d = undefined; return {id:id, exists:d !== undefined, data:function(){ return d === undefined ? undefined : freeze(clone(d)); }, metadata:{fromCache:false, hasPendingWrites:false}}; }

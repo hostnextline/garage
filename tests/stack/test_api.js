@@ -82,10 +82,11 @@ const ghl = async (path, body) => (await fetch('http://127.0.0.1:9200' + path, {
 
   check('owner sees all jobs', JSON.stringify(await rows(owner, 'jobs')) === JSON.stringify(['jobs/j1', 'jobs/j2', 'jobs/j3', 'jobs/j4']));
   check('bureau sees all jobs', (await rows(bureau, 'jobs')).length === 4);
-  check('Saleh sees only his jobs', JSON.stringify(await rows(saleh, 'jobs')) === JSON.stringify(['jobs/j1', 'jobs/j3']), await rows(saleh, 'jobs'));
-  check('Ali sees only his job', JSON.stringify(await rows(ali, 'jobs')) === JSON.stringify(['jobs/j2']));
-  check('Saleh sees only his clients', JSON.stringify(await rows(saleh, 'clients')) === JSON.stringify(['clients/c1', 'clients/c2']), await rows(saleh, 'clients'));
-  check('Ali sees only c2', JSON.stringify(await rows(ali, 'clients')) === JSON.stringify(['clients/c2']));
+  // (a family garage: every mechanic sees every route — all the jobs and all the clients)
+  check('Saleh sees every job', JSON.stringify(await rows(saleh, 'jobs')) === JSON.stringify(await rows(owner, 'jobs')), await rows(saleh, 'jobs'));
+  check('Ali sees every job', JSON.stringify(await rows(ali, 'jobs')) === JSON.stringify(await rows(owner, 'jobs')));
+  check('Saleh sees every client', JSON.stringify(await rows(saleh, 'clients')) === JSON.stringify(await rows(owner, 'clients')), await rows(saleh, 'clients'));
+  check('Ali sees every client', JSON.stringify(await rows(ali, 'clients')) === JSON.stringify(await rows(owner, 'clients')));
   check('mecano reads config', (await rows(saleh, 'config')).length === 1);
   check('mecano reads days', (await rows(saleh, 'days')).length === 1);
   check('mecano cannot read meta', (await rows(saleh, 'meta')).length === 0);
@@ -95,13 +96,15 @@ const ghl = async (path, body) => (await fetch('http://127.0.0.1:9200' + path, {
   r = await merge(saleh, 'jobs/j1', { status: 'route', invoice: { paid: true, method: 'debit' } });
   check('Saleh updates his job (deep merge)', !r.error && r.data.status === 'route' && r.data.invoice.total === 92 && r.data.invoice.lines.length === 1 && r.data.invoice.paid === true, r);
   r = await merge(saleh, 'jobs/j1', { mechanic: 'Ali' });
-  check('Saleh cannot hand job to Ali', !!r.error, r);
-  check('j1 still Saleh', psql("select data->>'mechanic' from public.docs where path='jobs/j1'") === 'Saleh');
-  r = await merge(saleh, 'jobs/j2', { status: 'termine' });
-  check('Saleh cannot touch Ali job', !!r.error, r);
-  check('j2 unchanged', psql("select data->>'status' from public.docs where path='jobs/j2'") === 'planifie');
+  check('Saleh may hand his job to Ali (every mechanic does every job)', !r.error && psql("select data->>'mechanic' from public.docs where path='jobs/j1'") === 'Ali', r);
+  psql("update public.docs set data = jsonb_set(data, '{mechanic}', '\"Saleh\"') where path='jobs/j1'");
+  r = await merge(saleh, 'jobs/j2', { notes: 'Saleh passe aider' });
+  check('Saleh may work on Ali\'s job (to help)', !r.error && psql("select data->>'notes' from public.docs where path='jobs/j2'") === 'Saleh passe aider', r);
+  psql("update public.docs set data = data - 'notes' where path='jobs/j2'");
+  check('j2 still planned', psql("select data->>'status' from public.docs where path='jobs/j2'") === 'planifie');
   r = await set(saleh, 'jobs/jx', { mechanic: 'Ali', status: 'place' });
-  check('mecano cannot create a job for Ali', !!r.error, r);
+  check('mecano may create a job for Ali', !r.error, r);
+  psql("delete from public.docs where path = 'jobs/jx'");
   r = await set(saleh, 'jobs/jq', { mechanic: 'Saleh', status: 'place', clientId: 'cq' });
   check('mecano creates his own job (facture sur place)', !r.error, r);
   r = await set(saleh, 'clients/cq', { firstName: 'Voisin', phone: '5145550404' });
@@ -117,7 +120,7 @@ const ghl = async (path, body) => (await fetch('http://127.0.0.1:9200' + path, {
   r = await set(saleh, 'clients/c1', Object.assign(JSON.parse(psql("select data from public.docs where path='clients/c1'")), { phone: '514 555-0199' }));
   check('mecano edits his client fiche', !r.error, r);
   r = await merge(saleh, 'clients/c3', { notes: [] });
-  check('mecano cannot touch other client', !!r.error, r);
+  check('mecano may touch any client (every route)', !r.error, r);
   r = await merge(owner, 'jobs/nope', { a: 1 });
   check('update of missing doc refused', r.error && r.error.code === 'P0002', r);
   r = await del(owner, 'jobs/nope');
@@ -167,8 +170,9 @@ const ghl = async (path, body) => (await fetch('http://127.0.0.1:9200' + path, {
   check('mecano cannot insert positions directly', !!(await saleh.from('mech_positions').insert({ user_id: salehId, lat: 1, lon: 1 })).error);
 
   // ---- en route ----
-  r = await fn(ali, 'en-route', { jobId: 'j1', action: 'start' });
-  check('Ali cannot start Saleh job', r.error && r.error.error === 'forbidden', r);
+  r = await fn(ali, 'en-route', { jobId: 'j1', action: 'start', self: true });
+  check('Ali may go on Saleh\'s job (to help): the client follows Ali', r.ok && psql(`select (select email from auth.users where id = user_id) from public.tracks where job_id = 'j1' and status = 'active'`) === 'ali@test.ca', r);
+  await fn(ali, 'en-route', { jobId: 'j1', action: 'end', reason: 'cancelled', self: true });
   r = await fn(saleh, 'en-route', { jobId: 'j1', action: 'start', pos: { lat: 45.5010, lon: -73.6000, acc: 9 }, base: 'http://127.0.0.1:8088/' });
   check('Saleh start: ok, link, route', r.ok && /^http:\/\/127\.0\.0\.1:8088\/suivi\.html#t=[A-Za-z0-9_-]{20,}$/.test(r.link) && r.route && r.route.length > 5 && r.route_src === 'osm' && r.minutes > 0, r);
   check('no SMS key yet: status off + message ready', r.sms && r.sms.status === 'off' && /^Bonjour Marie, Saleh de Garage NextLine est en route vers chez vous : arrivée prévue vers \d{1,2} h \d{2} \(environ \d+ min\)\. Suivez son trajet en direct : http/.test(r.sms.body), r.sms);
@@ -261,7 +265,7 @@ const ghl = async (path, body) => (await fetch('http://127.0.0.1:9200' + path, {
   r = await fn(owner, 'members', { action: 'update', user_id: aliId, active: true });
   check('reactivate Ali', r.ok);
   const ali2 = await login('ali@test.ca', 'alipass123');
-  check('Ali back', (await rows(ali2, 'jobs')).length === 1);
+  check('Ali back (he sees every route again)', (await rows(ali2, 'jobs')).length === (await rows(owner, 'jobs')).length && (await rows(ali2, 'jobs')).length > 0);
   r = await fn(owner, 'members', { action: 'password', user_id: aliId });
   check('reset password', r.ok && /^Garage-/.test(r.password), r);
   e = null; try { await login('ali@test.ca', 'alipass123'); } catch (x) { e = x; } check('old password refused', !!e);

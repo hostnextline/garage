@@ -2,6 +2,7 @@
 // accepter ou refuser des travaux supplémentaires proposés par le mécano.
 //
 // Équipe (connecté)     POST { action:'link', jobId, send?:'facture'|'travaux'|'rdv', extraId?, base?, force? } -> { ok, token, link, sms }
+//                       (any member but the treasurer, on any job: a mechanic may help on another truck's job)
 //                       'rdv' : le texto de rendez-vous (date, bloc) avec le lien où il peut payer d'avance par carte ;
 //                       une seule fois par date + bloc (un nouveau jour ou un nouveau bloc : un nouveau texto)
 // Client (lien secret)  POST { action:'view'|'answer'|'pay'|'check', token, extraId?, accept? }
@@ -234,7 +235,6 @@ Deno.serve(async (req) => {
       if (!/^[A-Za-z0-9_-]{1,80}$/.test(jobId)) return fail('Job invalide.');
       const job = await docGet('jobs/' + jobId);
       if (!job) return fail('Cette job n\'existe plus.', 404, 'no_job');
-      if (me.role === 'mecano' && norm(job.mechanic) !== norm(me.mechanic)) return fail('Cette job n\'est pas à toi.', 403, 'forbidden');
       const send = body.send === 'facture' || body.send === 'travaux' || body.send === 'rdv' ? body.send : null;
       const extra = send === 'travaux' ? (job.extras || []).find((x: any) => x.id === body.extraId) : null;
       if (send === 'facture' && !(job.invoice && job.invoice.number)) return fail('Finalise la facture avant de l\'envoyer.');

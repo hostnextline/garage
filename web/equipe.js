@@ -59,7 +59,9 @@
   function mineJob(j){ return mineOf(me, j); }          /* the real account (position, texts) */
   function mineView(j){ return mineOf(eff(), j); }      /* what the screen shows (« Voir comme ») */
   /* a job without a mechanic: whoever presses « En route » on his phone goes himself — if he can be the one driving (the office does not) */
-  function goesHimself(j){ return !!me && !previewing() && !j.mechanic && canTrack() && (hasR(me, 'owner') || hasR(me, 'mecano') || !!me.mechanic); }
+  /* who drives there when this person presses « En route »: a mechanic, always himself (his job, or helping on another
+     truck's job: everyone sees every route); someone else (owner, office): himself only for a job without a mechanic */
+  function goesHimself(j){ return !!me && !previewing() && canTrack() && (hasR(me, 'mecano') || (!j.mechanic && (hasR(me, 'owner') || !!me.mechanic))); }
   function onPhone(){ var a = A(); return !!(a && a.phone && a.phone()); }
   function isStaff(){ return !!me && (hasR(me, 'owner') || hasR(me, 'bureau')); }
   function worksShifts(){ return !!(me && (hasR(me, 'mecano') || me.mechanic)); }
@@ -73,9 +75,9 @@
   var RIGHTS = [
     {k:'agenda', t:'Voir l\'agenda de toute l\'équipe', s:'Tous les rendez-vous, sans rien y changer.', on:['bureau'], r:['tresorier'], d:{}},
     {k:'book', t:'Prendre des rendez-vous', s:'Un mécano : dans son agenda. Le bureau : pour tout le monde.', on:[], r:['bureau', 'mecano'], d:{bureau:true}},
-    {k:'clients', t:'Voir les clients', s:'Un mécano : les clients de ses jobs.', on:[], r:['bureau', 'mecano', 'tresorier'], d:{bureau:true, mecano:true, tresorier:true}},
-    {k:'factures', t:'Voir les factures', s:'Un mécano : les factures de ses jobs.', on:[], r:['bureau', 'mecano', 'tresorier'], d:{bureau:true, mecano:true, tresorier:true}},
-    {k:'editinv', t:'Modifier les factures et les marquer payées', s:'Un mécano : les factures de ses jobs, toujours (il encaisse avant de partir). Le trésorier : la facture seulement, rien d\'autre dans la job.', on:['mecano'], r:['bureau', 'tresorier'], d:{bureau:true}},
+    {k:'clients', t:'Voir les clients', s:'Un mécano : tous les clients (il voit toutes les routes).', on:[], r:['bureau', 'mecano', 'tresorier'], d:{bureau:true, mecano:true, tresorier:true}},
+    {k:'factures', t:'Voir les factures', s:'Un mécano : les factures de toutes les jobs.', on:[], r:['bureau', 'mecano', 'tresorier'], d:{bureau:true, mecano:true, tresorier:true}},
+    {k:'editinv', t:'Modifier les factures et les marquer payées', s:'Un mécano : les factures de toutes les jobs, toujours (il encaisse avant de partir). Le trésorier : la facture seulement, rien d\'autre dans la job.', on:['mecano'], r:['bureau', 'tresorier'], d:{bureau:true}},
     {k:'money', t:'Voir les chiffres du garage', s:'Ventes du mois et factures payées, sur l\'écran d\'accueil.', on:[], r:['bureau', 'mecano', 'tresorier'], d:{bureau:true, tresorier:true}},
     {k:'tresor', t:'Trésorerie : dépenses, reçus, rapport, taxes', s:'', on:['tresorier'], r:['bureau', 'mecano'], d:{}},
     {k:'stock', t:'Voir et changer l\'inventaire', s:'', on:[], r:['bureau', 'mecano', 'tresorier'], d:{bureau:true, mecano:true, tresorier:true}},
@@ -218,7 +220,7 @@
     }
     if (t && t.route && offRoute(G.last, t.route) > 300 && Date.now() - (r.refreshedAt || 0) > 60000){
       r.refreshedAt = Date.now();
-      invoke('en-route', {jobId:r.jobId, action:'refresh', pos:{lat:G.last.lat, lon:G.last.lon, acc:G.last.acc}, force:true}).then(function(res){
+      invoke('en-route', {jobId:r.jobId, action:'refresh', self:true, pos:{lat:G.last.lat, lon:G.last.lon, acc:G.last.acc}, force:true}).then(function(res){
         if (res && res.route){ Object.assign(t, {route:res.route, minutes:res.minutes, km:res.km, eta_at:res.eta_at}); render(); }
       }, function(){});
     }
@@ -255,7 +257,7 @@
     var mine = mineJob(j) || goesHimself(j), p = Promise.resolve();
     if (mine && !G.on){ p = shiftStart(); if (!shiftsView()) X.autoShift = true; }   /* not a mechanic: his position stops when the trip ends */
     p.then(function(){ return mine ? freshPos(7000) : null; }).then(function(pos){
-      return invoke('en-route', {jobId:j.id, action:'start', resend:!!opt.resend, notify:!X.quiet[j.id], base:trackBase(), pos:pos ? {lat:pos.lat, lon:pos.lon, acc:pos.acc} : null});
+      return invoke('en-route', {jobId:j.id, action:'start', resend:!!opt.resend, notify:!X.quiet[j.id], self:!!mine, base:trackBase(), pos:pos ? {lat:pos.lat, lon:pos.lon, acc:pos.acc} : null});
     }).then(function(res){
       X.busy[j.id] = false;
       var t = Object.assign({}, X.tracks[j.id] || {}, {token:res.token, job_id:j.id, status:'active', route:res.route, minutes:res.minutes, km:res.km, eta_at:res.eta_at, dest_lat:res.dest ? res.dest.lat : null, dest_lon:res.dest ? res.dest.lon : null, sms_status:res.sms.status === 'already' ? 'sent' : res.sms.status, sms_error:res.sms.error || null, sms_at:res.sms.status === 'sent' ? new Date().toISOString() : (X.tracks[j.id] || {}).sms_at, mech_name:(X.tracks[j.id] || {}).mech_name});
@@ -274,7 +276,7 @@
     });
   }
   function endTrack(j, reason){
-    invoke('en-route', {jobId:j.id, action:'end', reason:reason}).then(function(){
+    invoke('en-route', {jobId:j.id, action:'end', reason:reason, self:!!(mineJob(j) || goesHimself(j))}).then(function(){
       if (X.tracks[j.id]) X.tracks[j.id].status = reason;
       if (X.enRoute && X.enRoute.jobId === j.id){ X.enRoute = null; X.near = false; if (X.autoShift && G.on){ X.autoShift = false; shiftEnd(true); } }
       fetchTrack(j.id);
@@ -300,7 +302,8 @@
       h += '<p class="muted small">' + (phone ? (X.quiet[j.id] ? 'Au départ, pas de texto : ' + esc(who) + ' ne sera pas avisé (le suivi marche quand même).' : 'Au départ, ' + esc(who) + ' reçoit un texto pour suivre le camion.') : 'Pas de téléphone au dossier : le lien de suivi sera prêt à partager.') + '</p>';
       /* (to test, or a client who asked not to be texted: off for this departure only, back on for the next job) */
       if (phone && !busy) h += '<label class="check er-notify"><input type="checkbox" data-act="er-notify" data-id="' + esc(j.id) + '"' + (X.quiet[j.id] ? '' : ' checked') + '> Aviser ' + esc(who) + ' par texto</label>';
-      if (!mine && j.mechanic) h += '<p class="muted small">Le client suivra la position de ' + esc(j.mechanic) + '.</p>';
+      if (!mine && j.mechanic && !goesHimself(j)) h += '<p class="muted small">Le client suivra la position de ' + esc(j.mechanic) + '.</p>';
+      else if (!mine && j.mechanic) h += '<p class="muted small">C\'est la job de ' + esc(j.mechanic) + ' : si tu pars, le client suivra ta position.</p>';
       else if (!mine && !j.mechanic && !goesHimself(j)) h += '<p class="muted small">Pas de mécano sur cette job : appuie « En route » sur le téléphone de celui qui part, pour que le client voie le camion avancer.</p>';
     } else if (st === 'route'){
       var act = t && t.status === 'active';
@@ -650,7 +653,7 @@
     }
   }
   /* roles: boxes (a person can have several) */
-  var ROLE_HINT = {mecano:'ses jobs, « En route », la facture sur place', bureau:'agenda, clients, factures, carte', tresorier:'dépenses, rapport, taxes', owner:'tout, y compris les accès'};
+  var ROLE_HINT = {mecano:'toutes les routes, « En route », la facture sur place', bureau:'agenda, clients, factures, carte', tresorier:'dépenses, rapport, taxes', owner:'tout, y compris les accès'};
   function roleBoxes(pre, sel){
     return '<fieldset class="rbox"><legend>Rôles' + (A().help ? A().help('roles', 'les rôles') : '') + '</legend>' + ['mecano', 'bureau', 'tresorier', 'owner'].map(function(r){
       return '<label class="check" for="' + pre + '-r-' + r + '"><input type="checkbox" id="' + pre + '-r-' + r + '" data-act="rb" data-pre="' + pre + '" data-role="' + r + '"' + (sel.indexOf(r) >= 0 ? ' checked' : '') + '><span><b>' + ROLE[r] + '</b> <span class="small muted">· ' + esc(ROLE_HINT[r]) + '</span></span></label>'; }).join('') + '</fieldset>';
@@ -761,7 +764,7 @@
       '<div class="field"><label for="nw-email">Courriel</label><input id="nw-email" type="email" inputmode="email" autocapitalize="off" spellcheck="false" autocomplete="off"></div>' +
       roleBoxes('nw', nwr) + truckPick('nw-truck', '') + orphanPick('nw-mech') +
       rightsHTML('nw', nwd ? {perms:nwd.perms} : null, nwr, '') +
-      '<ul class="roles small"><li><b>Mécano</b> : seulement ses jobs, le bouton « En route », la facture sur place. Sa position est partagée pendant sa journée.</li><li><b>Bureau</b> : agenda, clients, factures et carte des mécanos. Pas les réglages.</li><li><b>Trésorier</b> : son propre écran, la trésorerie (dépenses avec photo des reçus, rapport, taxes à remettre, Excel).</li><li><b>Propriétaire</b> : tout, y compris les accès.</li></ul><p class="small muted">Ce que le mécano et le trésorier voient de plus : plus haut, « Ce que chaque rôle peut faire ».</p>' +
+      '<ul class="roles small"><li><b>Mécano</b> : toutes les routes (il peut aller aider un autre), le bouton « En route », la facture sur place. Sa position est partagée pendant sa journée.</li><li><b>Bureau</b> : agenda, clients, factures et carte des mécanos. Pas les réglages.</li><li><b>Trésorier</b> : son propre écran, la trésorerie (dépenses avec photo des reçus, rapport, taxes à remettre, Excel).</li><li><b>Propriétaire</b> : tout, y compris les accès.</li></ul><p class="small muted">Ce que le mécano et le trésorier voient de plus : plus haut, « Ce que chaque rôle peut faire ».</p>' +
       '<p class="formerr" id="nw-err" role="alert" hidden></p><button type="button" class="btn primary block" data-act="eq-invite">Envoyer l\'invitation</button>' +
       '<details class="small eq-more"><summary>Autre façon : créer un mot de passe temporaire</summary><p class="small">Pour quelqu\'un qui ne lit pas ses courriels : tu lui donnes toi-même un mot de passe.</p><button type="button" class="btn block" data-act="eq-add">Créer le compte avec un mot de passe temporaire</button></details></section>';
     var s = X.eq.secrets || {};
@@ -810,7 +813,7 @@
           return '<td><input type="checkbox" id="' + id + '" data-act="rp" data-role="' + r + '" data-k="' + p.k + '" aria-label="' + esc(ROLE[r] + ' : ' + p.t) + '"' + (perm(r, p.k) ? ' checked' : '') + (X.rolesLoaded ? '' : ' disabled') + '></td>';
         }).join('') + '</tr>';
       }).join('') + '</tbody></table></div>' +
-      '<p class="small muted">✓ = toujours avec ce rôle · — = pas pour ce rôle. Le mécano fait toujours ses propres jobs (« En route », décharge, facture sur place).</p>' +
+      '<p class="small muted">✓ = toujours avec ce rôle · — = pas pour ce rôle. Le mécano fait toujours les jobs (« En route », décharge, facture sur place), les siennes ou celles d\'un autre camion.</p>' +
       '<div class="er-acts"><button type="button" class="linkbtn" data-act="pv-role" data-role="mecano">👁 Voir ce que voit un mécano</button><button type="button" class="linkbtn" data-act="pv-role" data-role="tresorier">👁 Voir ce que voit le trésorier</button></div></div></details>';
     return h;
   }

@@ -1,5 +1,6 @@
 // « En route » : crée le lien de suivi, calcule l'itinéraire et texte le client (GoHighLevel).
-// POST { jobId, action: 'start' | 'refresh' | 'end', pos?: {lat, lon, acc}, resend?: boolean, notify?: boolean (false = no text to the client), reason?: 'arrived' | 'cancelled', base?: string }
+// POST { jobId, action: 'start' | 'refresh' | 'end', pos?: {lat, lon, acc}, resend?: boolean, notify?: boolean (false = no text to the client), self?: boolean (the one pressing is the one going), reason?: 'arrived' | 'cancelled', base?: string }
+// Any member may do it on any job (a family garage: a mechanic may go and help on another truck's job).
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0';
 
 const SB_URL = Deno.env.get('SUPABASE_URL')!;
@@ -147,11 +148,11 @@ Deno.serve(async (req) => {
     const job: any = jobRow?.data;
     if (!job) return json({ error: 'no_job', message: "Cette job n'existe plus." }, 404);
     const mine = me.mechanic && norm(job.mechanic) === norm(me.mechanic);
-    if (me.role === 'mecano' && !mine) return json({ error: 'forbidden', message: "Cette job n'est pas à toi." }, 403);
 
-    // whose position the client follows: the job's mechanic, otherwise the person who pressed the button
+    // whose position the client follows: the one going (« self »: a mechanic helping on another job goes himself);
+    // otherwise the job's mechanic (the office pressing for him); a job without a mechanic: the person who pressed the button
     let mech: any = me;
-    if (job.mechanic && !mine) {
+    if (job.mechanic && !mine && !body.self) {
       const { data: ms } = await admin.from('members').select('*').eq('active', true).not('mechanic', 'is', null);
       mech = (ms || []).find((m: any) => norm(m.mechanic) === norm(job.mechanic)) || me;
     }

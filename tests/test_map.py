@@ -51,7 +51,7 @@ with sync_playwright() as pl:
     m = txt(sp, 'main')
     check('under each mechanic: « Trajet du jour depuis la Centrale : 25 km · environ 42 min de route » (Ali : 12 km · 21 min)', 'Trajet du jour depuis la Centrale' in m and '25 km' in m and '42 min' in m and '12 km' in m and '21 min' in m, m[m.find('Trajet'):m.find('Trajet') + 120])
     check('he is on the map during his workday, with a dotted line to his next client', L['mech'] >= 1 and any(l[1] for l in L['lines']), L['lines'])
-    check('his own jobs can be opened from the list; the others cannot', sp.locator('.tm-stops [data-act="open"][data-id="j1"]').count() == 1 and sp.locator('.tm-stops [data-act="open"][data-id="j2"]').count() == 0)
+    check('every job can be opened from the list (his own and Ali\'s: every route)', sp.locator('.tm-stops [data-act="open"][data-id="j1"]').count() == 1 and sp.locator('.tm-stops [data-act="open"][data-id="j2"]').count() == 1)
     sp.screenshot(path='map_phone.png')
     sc.close()
     # ---------- the owner, on a computer ----------
